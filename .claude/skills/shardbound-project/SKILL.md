@@ -52,7 +52,7 @@ Language rule: compute-heavy code and business logic go to Java; code that calls
 
 The phases in `docs/design.md` §11 are ordered on purpose. Foundations come first (rules, content, an engine API serving its four consumers, a minimal test UI). AI work follows, because that is where the portfolio value is. The deck builder and the polished UI come last. A GPU is never used online.
 
-To know where things stand, check the roadmap and the repository itself. As of 2026-10-04 there is no code yet: phase 1 (rules and content) is underway. Rulebook v0.1, the card format and a first batch of 11 cards + 1 token (`content/cards/`) are done. The next steps are enough cards for two decks that can play each other (each deck needs at least 15 different cards, so about 12 per faction plus a few neutral ones), then the engine with the `random` / `greedy` bots.
+To know where things stand, check the roadmap and the repository itself. As of 2026-10-04 there is no code yet: phase 1 (rules and content) is underway. Rulebook v0.1, the card and deck formats, 30 cards + 1 token and two starter decks (Ember vs Root) are done, all covered by the content tests in CI. The next step is the engine (phase 2) with the `random` / `greedy` bots, playing the two starter decks against each other.
 
 ## Keeping the docs in sync
 

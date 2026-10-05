@@ -51,7 +51,7 @@ The maintainer set the core identities, **Ember = attack, Tide = buffs and debuf
 
 ## Deck constraints that shape card design
 
-A deck is 30 cards, from one faction plus neutral cards, with at most 2 copies of a card. Since decks cannot mix factions, a cross-faction combo can only happen through a neutral card. This is the main balance lever: for example, Ember's Sacrifice and Root's Anchor only meet if one side is neutral.
+A deck is 30 cards, from one faction plus neutral cards, with at most 2 copies of a card, so a faction needs at least 15 different non-token cards (its own plus neutrals) to fill a deck. Decks live in `content/decks/` (format and starter decks in its README) and the deck rules are tested. Since decks cannot mix factions, a cross-faction combo can only happen through a neutral card. This is the main balance lever: for example, Ember's Sacrifice and Root's Anchor only meet if one side is neutral.
 
 ## Numbers
 

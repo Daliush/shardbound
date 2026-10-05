@@ -1,0 +1,24 @@
+{
+  "id": "root-starter",
+  "name": "Root Starter",
+  "description": "Slow and sturdy: a wall of Sprouts protects the player while healing and Anchor units grind the opponent down.",
+  "faction": "root",
+  "cards": [
+    { "card": "root.sproutcaller", "count": 2 },
+    { "card": "neutral.shardling", "count": 2 },
+    { "card": "neutral.binding-thread", "count": 1 },
+    { "card": "root.root-sentinel", "count": 2 },
+    { "card": "root.mossmender", "count": 2 },
+    { "card": "root.deepening-roots", "count": 2 },
+    { "card": "root.renewing-sap", "count": 2 },
+    { "card": "root.bramble-warden", "count": 2 },
+    { "card": "root.verdant-burst", "count": 2 },
+    { "card": "root.oakheart-guardian", "count": 2 },
+    { "card": "root.heartwood-shrine", "count": 2 },
+    { "card": "neutral.shard-construct", "count": 2 },
+    { "card": "root.seedmother", "count": 2 },
+    { "card": "neutral.crystal-rupture", "count": 2 },
+    { "card": "root.thornback-ancient", "count": 2 },
+    { "card": "neutral.tempest", "count": 1 }
+  ]
+}

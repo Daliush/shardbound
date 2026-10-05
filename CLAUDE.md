@@ -11,6 +11,9 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 
 - `docs/design.md`: design document (architecture, evaluation, roadmap, decisions).
 - `docs/rules/`: game rules, the written source of truth. One file per section; start from `docs/rules/README.md`.
+- `content/cards/`: one JSON file per card, plus the card schema and text templates (`content/cards/README.md`).
+- `content/decks/`: one JSON file per deck, plus the deck schema (`content/decks/README.md`).
+- `content/tests/`: tests for all the content above.
 - `.claude/skills/`: project knowledge for Claude Code.
   - `shardbound-project`: architecture, principles, roadmap.
   - `shardbound-rules`: how the rulebook works; answering and changing rules.
@@ -18,7 +21,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 
 ## Commands
 
-- Content tests (card schema, card rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
+- Content tests (card and deck schemas, card and deck rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
 
 ## Working agreements
 

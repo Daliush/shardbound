@@ -1,6 +1,6 @@
 """Card rules the JSON Schema cannot express (listed in content/cards/README.md)."""
 
-from cardlib import CARD_FILES, CARDS_DIR, all_effects
+from contentlib import CARD_FILES, CARDS_DIR, all_effects
 
 
 def test_card_files_exist():

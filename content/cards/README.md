@@ -139,6 +139,8 @@ Every card is checked automatically, locally and in CI ([`.github/workflows/cont
 - `test_card_rules.py`: the rules the schema cannot express (below).
 - `test_text_templates.py`: `text-templates.json` has wording for every effect, target, trigger and keyword the schema allows.
 
+Decks have their own tests, described in [`content/decks/README.md`](../decks/README.md).
+
 Run them from the `content/` folder:
 
 ```bash

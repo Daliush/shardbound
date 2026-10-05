@@ -1,6 +1,6 @@
 name: Content checks
 
-# Card schema, card rules and text templates. Runs whenever the game content or this workflow change.
+# Card and deck schemas, card and deck rules, text templates. Runs whenever the game content or this workflow change.
 on:
   push:
     branches: [main]
@@ -15,7 +15,7 @@ on:
 
 jobs:
   content-tests:
-    name: Card schema, card rules, text templates
+    name: Cards, decks, text templates
     runs-on: ubuntu-latest
     defaults:
       run:

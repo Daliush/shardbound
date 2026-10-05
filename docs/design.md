@@ -26,6 +26,8 @@
 > **v2.3 (October 2026)** — card format defined in [`content/cards/`](../content/cards/README.md): one JSON file per card with a stable id, rules text generated from the data, game versions as git tags.
 >
 > **v2.4 (October 2026)** — faction identities set (Ember = attack, Tide = buffs and debuffs, Root = summoning), number scale adopted, first batch of 11 cards + 1 token.
+>
+> **v2.5 (October 2026)** — second batch of 19 cards (30 cards + 1 token in total), deck format in [`content/decks/`](../content/decks/README.md) with two 30-card starter decks, Ember vs Root. Content tests run in CI.
 
 ---
 
@@ -119,6 +121,7 @@ Target: **~80 cards** at launch, described in JSON validated by a **JSON Schema*
 
 - `content/cards/<faction>/<slug>.json`: one file per card, with a stable id (`ember.ash-warden`), validated by `card.schema.json`. The rules text is generated from the data with `text-templates.json`, never written by hand. See [`content/cards/README.md`](../content/cards/README.md).
 - `docs/rules/`: the rulebook in Markdown (partly generated from the JSON, partly written). Each rule has a stable identifier (e.g. `11.3.2`), reused by the engine's trace.
+- `content/decks/<id>.json`: decks (card ids + counts), validated by `deck.schema.json` and by tests of the deck-building rules. See [`content/decks/README.md`](../content/decks/README.md).
 - `docs/rulings/`: FAQ of edge cases ("rulings"), as in real TCGs.
 - `docs/patches/`: patch notes. Each game version is a git tag (`patch-1.0`, `patch-1.1`…).
 
@@ -666,7 +669,7 @@ Documented in `docs/dev-workflow.md`, with screenshots and real examples.
 - **Spec-driven**: each feature starts with a spec in `specs/`, implemented by a coding agent, reviewed by a human.
 - **PR review agent** in GitHub Actions.
 - **Per-ecosystem CI**, triggered by changed paths:
-  - Content (in place): card schema, card rules and text-template tests (`content/tests/`) on every push or PR touching `content/` (`.github/workflows/content.yml`);
+  - Content (in place): card and deck schemas, card and deck rules, text templates (`content/tests/`) on every push or PR touching `content/` (`.github/workflows/content.yml`);
   - Java: Maven build, engine JUnit tests (rules, interactions, **one test per ruling**), backend integration tests;
   - Python: lint, pytest, RAG "smoke" eval (≈ 50 questions, no GPU) on every PR touching `ai/rag/`, `docs/` or `content/` → PR blocked if accuracy drops by more than X points;
   - Proto: gRPC contract compatibility check (`buf breaking`);
@@ -690,7 +693,8 @@ shardbound/
 ├── content/
 │   ├── pyproject.toml          # small uv project that runs the content tests
 │   ├── cards/                  # card.schema.json, text-templates.json, README.md + <faction>/<slug>.json
-│   └── tests/                  # card schema, card rules and text-template tests
+│   ├── decks/                  # deck.schema.json, README.md + <id>.json (starter decks)
+│   └── tests/                  # card and deck schemas, card and deck rules, text templates
 ├── proto/                      # shared protobuf / gRPC contracts
 ├── java/                       # Maven multi-module
 │   ├── pom.xml

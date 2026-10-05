@@ -1,7 +1,7 @@
 [project]
 name = "shardbound-content"
 version = "0.1.0"
-description = "Checks for Shardbound's game content: card schema, card rules and text templates."
+description = "Checks for Shardbound's game content: card and deck schemas, card and deck rules, text templates."
 requires-python = ">=3.12"
 dependencies = []
 
