@@ -1,0 +1,13 @@
+{
+  "id": "root.deepening-roots",
+  "name": "Deepening Roots",
+  "faction": "root",
+  "type": "spell",
+  "cost": 2,
+  "effects": [
+    {
+      "effect": "gain_shards",
+      "mode": "max"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "ember.rise-from-cinders",
+  "name": "Rise from Cinders",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 4,
+  "effects": [
+    {
+      "effect": "recall"
+    }
+  ]
+}

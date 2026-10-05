@@ -1,0 +1,19 @@
+{
+  "id": "root.renewing-sap",
+  "name": "Renewing Sap",
+  "faction": "root",
+  "type": "spell",
+  "cost": 2,
+  "effects": [
+    {
+      "effect": "heal",
+      "amount": 4,
+      "target": "you"
+    },
+    {
+      "effect": "summon",
+      "token": "root.sprout",
+      "count": 1
+    }
+  ]
+}

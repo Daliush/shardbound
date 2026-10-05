@@ -1,0 +1,14 @@
+{
+  "id": "root.verdant-burst",
+  "name": "Verdant Burst",
+  "faction": "root",
+  "type": "spell",
+  "cost": 3,
+  "effects": [
+    {
+      "effect": "summon",
+      "token": "root.sprout",
+      "count": 3
+    }
+  ]
+}

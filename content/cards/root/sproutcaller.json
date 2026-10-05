@@ -1,0 +1,33 @@
+{
+  "id": "root.sproutcaller",
+  "name": "Sproutcaller",
+  "faction": "root",
+  "type": "unit",
+  "cost": 1,
+  "defense": 2,
+  "attacks": [
+    {
+      "name": "Nettle",
+      "cost": 1,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 2,
+          "target": "attack_target"
+        }
+      ]
+    }
+  ],
+  "abilities": [
+    {
+      "trigger": "arrival",
+      "effects": [
+        {
+          "effect": "summon",
+          "token": "root.sprout",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

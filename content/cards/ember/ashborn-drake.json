@@ -1,0 +1,22 @@
+{
+  "id": "ember.ashborn-drake",
+  "name": "Ashborn Drake",
+  "faction": "ember",
+  "type": "unit",
+  "cost": 6,
+  "defense": 11,
+  "attacks": [
+    {
+      "name": "Inferno Breath",
+      "cost": 3,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 7,
+          "target": "attack_target"
+        }
+      ],
+      "echo": 200
+    }
+  ]
+}

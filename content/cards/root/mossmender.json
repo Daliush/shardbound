@@ -1,0 +1,32 @@
+{
+  "id": "root.mossmender",
+  "name": "Mossmender",
+  "faction": "root",
+  "type": "unit",
+  "cost": 2,
+  "defense": 5,
+  "attacks": [
+    {
+      "name": "Lash",
+      "cost": 2,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 4,
+          "target": "attack_target"
+        }
+      ]
+    },
+    {
+      "name": "Mend",
+      "cost": 1,
+      "effects": [
+        {
+          "effect": "heal",
+          "amount": 2,
+          "target": "all_ally_units"
+        }
+      ]
+    }
+  ]
+}

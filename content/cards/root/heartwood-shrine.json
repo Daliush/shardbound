@@ -1,0 +1,19 @@
+{
+  "id": "root.heartwood-shrine",
+  "name": "Heartwood Shrine",
+  "faction": "root",
+  "type": "relic",
+  "cost": 4,
+  "abilities": [
+    {
+      "trigger": "turn_start",
+      "effects": [
+        {
+          "effect": "summon",
+          "token": "root.sprout",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

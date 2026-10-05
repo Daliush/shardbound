@@ -1,0 +1,14 @@
+{
+  "id": "ember.cinderfall",
+  "name": "Cinderfall",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 5,
+  "effects": [
+    {
+      "effect": "damage",
+      "amount": 4,
+      "target": "all_enemy_units"
+    }
+  ]
+}

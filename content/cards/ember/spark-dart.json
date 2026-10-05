@@ -1,0 +1,14 @@
+{
+  "id": "ember.spark-dart",
+  "name": "Spark Dart",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 1,
+  "effects": [
+    {
+      "effect": "damage",
+      "amount": 3,
+      "target": "enemy_unit"
+    }
+  ]
+}

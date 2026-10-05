@@ -1,0 +1,21 @@
+{
+  "id": "neutral.shard-construct",
+  "name": "Shard Construct",
+  "faction": "neutral",
+  "type": "unit",
+  "cost": 4,
+  "defense": 9,
+  "attacks": [
+    {
+      "name": "Crush",
+      "cost": 3,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 7,
+          "target": "attack_target"
+        }
+      ]
+    }
+  ]
+}

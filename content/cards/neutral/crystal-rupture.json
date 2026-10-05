@@ -1,0 +1,13 @@
+{
+  "id": "neutral.crystal-rupture",
+  "name": "Crystal Rupture",
+  "faction": "neutral",
+  "type": "spell",
+  "cost": 5,
+  "effects": [
+    {
+      "effect": "destroy",
+      "target": "enemy_unit"
+    }
+  ]
+}

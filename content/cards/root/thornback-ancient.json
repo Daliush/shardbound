@@ -1,0 +1,32 @@
+{
+  "id": "root.thornback-ancient",
+  "name": "Thornback Ancient",
+  "faction": "root",
+  "type": "unit",
+  "cost": 7,
+  "defense": 15,
+  "attacks": [
+    {
+      "name": "Thorn Crush",
+      "cost": 3,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 8,
+          "target": "attack_target"
+        }
+      ]
+    },
+    {
+      "name": "Thicket Call",
+      "cost": 2,
+      "effects": [
+        {
+          "effect": "summon",
+          "token": "root.sprout",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

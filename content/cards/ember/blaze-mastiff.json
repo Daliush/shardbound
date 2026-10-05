@@ -1,0 +1,24 @@
+{
+  "id": "ember.blaze-mastiff",
+  "name": "Blaze Mastiff",
+  "faction": "ember",
+  "type": "unit",
+  "cost": 2,
+  "keywords": [
+    "overcharge"
+  ],
+  "defense": 5,
+  "attacks": [
+    {
+      "name": "Maul",
+      "cost": 2,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 5,
+          "target": "attack_target"
+        }
+      ]
+    }
+  ]
+}

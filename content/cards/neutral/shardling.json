@@ -1,0 +1,21 @@
+{
+  "id": "neutral.shardling",
+  "name": "Shardling",
+  "faction": "neutral",
+  "type": "unit",
+  "cost": 1,
+  "defense": 3,
+  "attacks": [
+    {
+      "name": "Glint",
+      "cost": 1,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 3,
+          "target": "attack_target"
+        }
+      ]
+    }
+  ]
+}

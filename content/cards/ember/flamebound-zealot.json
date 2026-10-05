@@ -1,0 +1,22 @@
+{
+  "id": "ember.flamebound-zealot",
+  "name": "Flamebound Zealot",
+  "faction": "ember",
+  "type": "unit",
+  "cost": 3,
+  "sacrifice_cost": 1,
+  "defense": 9,
+  "attacks": [
+    {
+      "name": "Immolate",
+      "cost": 2,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 7,
+          "target": "attack_target"
+        }
+      ]
+    }
+  ]
+}

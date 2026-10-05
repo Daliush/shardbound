@@ -1,0 +1,16 @@
+{
+  "id": "ember.roaring-pyre",
+  "name": "Roaring Pyre",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 2,
+  "effects": [
+    {
+      "effect": "modify",
+      "attack_damage": 3,
+      "defense": 0,
+      "duration": "end_of_turn",
+      "target": "all_ally_units"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "root.oakheart-guardian",
+  "name": "Oakheart Guardian",
+  "faction": "root",
+  "type": "unit",
+  "cost": 4,
+  "keywords": [
+    "anchor"
+  ],
+  "defense": 10,
+  "attacks": [
+    {
+      "name": "Bough Slam",
+      "cost": 3,
+      "effects": [
+        {
+          "effect": "damage",
+          "amount": 6,
+          "target": "attack_target"
+        }
+      ]
+    }
+  ]
+}
