@@ -37,4 +37,4 @@
 - **8.19** "Until end of turn" means until the end of the current turn, whoever's turn it is (5.4.2).
 - **8.20** If Recall would put a card into a full hand (3.3), it does nothing: the card stays in the graveyard.
 - **8.21** When a stat aura that gives a defense malus stops applying, the unit gets back what it lost, as when a temporary malus expires (8.17).
-- **8.22** A Sacrifice effect that resolves while its controller does not have enough units does nothing: no unit is sacrificed (8.16). This happens in abilities triggered by something else than playing a card or attacking (Death, Turn start, an echo…), or when units died earlier in the same resolution. The other effects of the ability apply normally (10.3).
+- **8.22** No sacrifice, no ability. A triggered ability or an echo whose Sacrifice effects cannot all be made when it starts resolving does nothing at all. If a Sacrifice effect can no longer be made when it is reached (units died earlier in the same resolution), neither it nor the effects printed after it apply; the effects already applied stay.

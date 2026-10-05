@@ -34,7 +34,7 @@ Gaps found while specifying the engine (`specs/phase-2-engine.md`), settled with
 | 8.19 | "Until end of turn" means the end of the current turn, whoever's turn it is. |
 | 8.20 | Recall into a full hand does nothing. |
 | 8.21 | A stat aura's defense malus that stops applying gives back what it took, like 8.17. |
-| 8.22 | A Sacrifice effect that resolves without enough units (in a Death or Turn start ability, an echo…) does nothing; the ability's other effects still apply. |
+| 8.22 | No sacrifice, no ability: a triggered ability or an echo whose sacrifices cannot be made does nothing at all. |
 | 9.11 | An action or an ability resolves completely before the abilities it triggered. |
 | 10.5 | A spell's targets are all chosen when it is played. |
 | 10.6 | The targets of a triggered ability or an echo are all chosen when it starts resolving. |
