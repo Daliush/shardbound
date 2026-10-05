@@ -1,0 +1,9 @@
+{
+  "id": "ember.pyre-offering",
+  "name": "Pyre Offering",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 1,
+  "sacrifice_cost": 1,
+  "effects": [{ "effect": "damage", "amount": 8, "target": "enemy_unit" }]
+}

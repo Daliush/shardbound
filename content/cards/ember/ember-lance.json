@@ -1,0 +1,9 @@
+{
+  "id": "ember.ember-lance",
+  "name": "Ember Lance",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 4,
+  "keywords": ["overcharge"],
+  "effects": [{ "effect": "damage", "amount": 6, "target": "opponent" }]
+}

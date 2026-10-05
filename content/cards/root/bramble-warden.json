@@ -1,0 +1,21 @@
+{
+  "id": "root.bramble-warden",
+  "name": "Bramble Warden",
+  "faction": "root",
+  "type": "unit",
+  "cost": 3,
+  "defense": 6,
+  "attacks": [
+    {
+      "name": "Thorn Lash",
+      "cost": 2,
+      "effects": [{ "effect": "damage", "amount": 4, "target": "attack_target" }]
+    }
+  ],
+  "abilities": [
+    {
+      "trigger": "arrival",
+      "effects": [{ "effect": "summon", "token": "root.sprout", "count": 1 }]
+    }
+  ]
+}

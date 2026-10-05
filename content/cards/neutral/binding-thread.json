@@ -1,0 +1,8 @@
+{
+  "id": "neutral.binding-thread",
+  "name": "Binding Thread",
+  "faction": "neutral",
+  "type": "spell",
+  "cost": 1,
+  "effects": [{ "effect": "link" }]
+}

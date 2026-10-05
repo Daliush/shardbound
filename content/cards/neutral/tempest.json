@@ -1,0 +1,8 @@
+{
+  "id": "neutral.tempest",
+  "name": "Tempest",
+  "faction": "neutral",
+  "type": "spell",
+  "cost": 7,
+  "effects": [{ "effect": "destroy", "target": "all_units" }]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "root.sprout",
+  "name": "Sprout",
+  "faction": "root",
+  "type": "unit",
+  "token": true,
+  "defense": 2,
+  "attacks": [
+    {
+      "name": "Prick",
+      "cost": 1,
+      "effects": [{ "effect": "damage", "amount": 2, "target": "attack_target" }]
+    }
+  ]
+}

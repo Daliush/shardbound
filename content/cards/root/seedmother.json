@@ -1,0 +1,15 @@
+{
+  "id": "root.seedmother",
+  "name": "Seedmother",
+  "faction": "root",
+  "type": "unit",
+  "cost": 5,
+  "defense": 10,
+  "attacks": [
+    {
+      "name": "Call the Grove",
+      "cost": 2,
+      "effects": [{ "effect": "summon", "token": "root.sprout", "count": 2 }]
+    }
+  ]
+}

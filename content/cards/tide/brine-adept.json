@@ -1,0 +1,18 @@
+{
+  "id": "tide.brine-adept",
+  "name": "Brine Adept",
+  "faction": "tide",
+  "type": "unit",
+  "cost": 2,
+  "defense": 5,
+  "attacks": [
+    {
+      "name": "Undertow",
+      "cost": 1,
+      "effects": [
+        { "effect": "damage", "amount": 2, "target": "attack_target" },
+        { "effect": "modify", "attack_damage": -2, "defense": 0, "duration": "permanent", "target": "attack_target" }
+      ]
+    }
+  ]
+}

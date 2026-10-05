@@ -1,0 +1,15 @@
+{
+  "id": "tide.coral-font",
+  "name": "Coral Font",
+  "faction": "tide",
+  "type": "relic",
+  "cost": 3,
+  "abilities": [
+    {
+      "trigger": "continuous",
+      "effects": [
+        { "effect": "aura", "kind": "stats", "target": "all_ally_units", "attack_damage": 1, "defense": 2 }
+      ]
+    }
+  ]
+}

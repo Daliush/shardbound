@@ -1,0 +1,113 @@
+{
+  "$comment": [
+    "Wording used to generate every card's rules text from its JSON data. See README.md.",
+    "Placeholders: {amount}, {count}, {attack_damage}, {defense}, {target}, {token}, {cost}, {name}, {x}, {n}, {cards}, {change}, {card_type}.",
+    "{word|words} picks the singular or plural form from the closest number before it.",
+    "attack_damage and defense are always written with a sign: +2, -1, +0.",
+    "The generator capitalizes the first letter of each sentence.",
+    "A card's text is laid out in this order: keywords, sacrifice cost, attacks (with Echo), Fracture steps or spell effects, abilities."
+  ],
+
+  "layout": {
+    "keywords": "{keywords}.",
+    "sacrifice_cost": "To play this card, sacrifice {count} {unit|units}.",
+    "attack_named": "{name} ({cost} {Shard|Shards}): {effects}",
+    "attack_unnamed": "Attack ({cost} {Shard|Shards}): {effects}",
+    "echo": " Echo {x}.",
+    "ability": "{trigger}: {effects}",
+    "continuous_ability": "{effects}",
+    "fracture_header": "Fracture {n}.",
+    "fracture_step": "Step {n} ({cost} {Shard|Shards}): {effects}"
+  },
+
+  "keywords": {
+    "anchor": "Anchor",
+    "overcharge": "Overcharge"
+  },
+
+  "triggers": {
+    "arrival": "Arrival",
+    "death": "Death",
+    "departure": "Departure",
+    "turn_start": "Turn start",
+    "turn_end": "Turn end",
+    "attack": "On attack"
+  },
+
+  "targets": {
+    "ally_unit": "an allied unit",
+    "enemy_unit": "an enemy unit",
+    "any_unit": "a unit",
+    "random_ally_unit": "a random allied unit",
+    "random_enemy_unit": "a random enemy unit",
+    "self": "this {card_type}",
+    "attack_target": "the target",
+    "all_ally_units": "all your units",
+    "all_enemy_units": "all enemy units",
+    "all_units": "all units",
+    "you": "yourself",
+    "opponent": "your opponent",
+    "any_player": "a player",
+    "ally_relic": "an allied relic",
+    "enemy_relic": "an enemy relic",
+    "any_relic": "a relic"
+  },
+
+  "effects": {
+    "damage": "Deal {amount} damage to {target}.",
+    "destroy": "Destroy {target}.",
+    "sacrifice": "Sacrifice {count} {unit|units}.",
+    "heal": {
+      "unit": "Heal {target} for {amount} defense.",
+      "player": "Heal {target} for {amount} HP."
+    },
+    "modify": {
+      "permanent": "Give {target} {attack_damage}/{defense}.",
+      "end_of_turn": "Give {target} {attack_damage}/{defense} until end of turn."
+    },
+    "draw": {
+      "you": "Draw {amount} {card|cards}.",
+      "opponent": "Your opponent draws {amount} {card|cards}.",
+      "any_player": "A player of your choice draws {amount} {card|cards}."
+    },
+    "discard": {
+      "you.player": "Discard {amount} {card|cards}.",
+      "you.random": "Discard {amount} {card|cards} at random.",
+      "opponent.player": "Your opponent discards {amount} {card|cards} of their choice.",
+      "opponent.random": "Your opponent discards {amount} {card|cards} at random.",
+      "any_player.player": "A player of your choice discards {amount} {card|cards} of their choice.",
+      "any_player.random": "A player of your choice discards {amount} {card|cards} at random."
+    },
+    "return_to_hand": {
+      "single": "Return {target} to its owner's hand.",
+      "group": "Return {target} to their owners' hands."
+    },
+    "summon": "Summon {count} {token} {token|tokens}.",
+    "freeze": "Freeze {target}.",
+    "link": "Link two units.",
+    "gain_shards": {
+      "this_turn": "Gain {amount} {Shard|Shards} this turn.",
+      "max": "Gain 1 max Shard."
+    },
+    "recall": "Recall a unit from your graveyard.",
+    "aura": {
+      "stats": "{target} have {attack_damage}/{defense}.",
+      "cost": {
+        "you": "Your {cards} cost {change}.",
+        "opponent": "Your opponent's {cards} cost {change}."
+      }
+    }
+  },
+
+  "aura_cards": {
+    "unit": "units",
+    "spell": "spells",
+    "relic": "relics",
+    "any": "cards"
+  },
+
+  "aura_change": {
+    "negative": "{amount} less",
+    "positive": "{amount} more"
+  }
+}

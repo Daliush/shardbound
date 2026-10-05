@@ -1,0 +1,24 @@
+{
+  "id": "ember.ash-warden",
+  "name": "Ash Warden",
+  "faction": "ember",
+  "type": "unit",
+  "cost": 3,
+  "defense": 6,
+  "attacks": [
+    {
+      "name": "Cinder Bite",
+      "cost": 2,
+      "effects": [{ "effect": "damage", "amount": 4, "target": "attack_target" }],
+      "echo": 50
+    },
+    {
+      "name": "Kindle",
+      "cost": 1,
+      "effects": [
+        { "effect": "modify", "attack_damage": 2, "defense": 0, "duration": "end_of_turn", "target": "all_ally_units" }
+      ]
+    }
+  ],
+  "flavor": "The ashes remember."
+}

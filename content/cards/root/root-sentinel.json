@@ -1,0 +1,16 @@
+{
+  "id": "root.root-sentinel",
+  "name": "Root Sentinel",
+  "faction": "root",
+  "type": "unit",
+  "cost": 2,
+  "defense": 5,
+  "keywords": ["anchor"],
+  "attacks": [
+    {
+      "name": "Root Slam",
+      "cost": 2,
+      "effects": [{ "effect": "damage", "amount": 4, "target": "attack_target" }]
+    }
+  ]
+}

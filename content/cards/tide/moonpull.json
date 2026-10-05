@@ -1,0 +1,24 @@
+{
+  "id": "tide.moonpull",
+  "name": "Moonpull",
+  "faction": "tide",
+  "type": "spell",
+  "fracture": [
+    {
+      "cost": 1,
+      "effects": [
+        { "effect": "modify", "attack_damage": 2, "defense": 2, "duration": "permanent", "target": "ally_unit" }
+      ]
+    },
+    {
+      "cost": 2,
+      "effects": [
+        { "effect": "modify", "attack_damage": -2, "defense": -3, "duration": "permanent", "target": "enemy_unit" }
+      ]
+    },
+    {
+      "cost": 3,
+      "effects": [{ "effect": "freeze", "target": "all_enemy_units" }]
+    }
+  ]
+}

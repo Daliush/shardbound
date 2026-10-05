@@ -1,0 +1,904 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shardbound:card:v0.1",
+  "title": "Shardbound card",
+  "description": "One card per file: content/cards/<faction>/<slug>.json. Rules text is generated from this data with text-templates.json; there is no free-text rules field. Rule IDs in descriptions refer to docs/rules/. Some constraints cannot be expressed here and are checked by the card linter (see README.md).",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "faction",
+    "type"
+  ],
+  "properties": {
+    "id": {
+      "description": "Stable identifier <faction>.<slug>. Never changes, even if the card is renamed. Must match the file path.",
+      "type": "string",
+      "pattern": "^(ember|tide|root|neutral)\\.[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "faction": {
+      "enum": [
+        "ember",
+        "tide",
+        "root",
+        "neutral"
+      ]
+    },
+    "type": {
+      "enum": [
+        "unit",
+        "spell",
+        "relic"
+      ]
+    },
+    "flavor": {
+      "description": "Optional lore line. It has no game effect.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "unit"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/unitFields"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "spell"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/spellFields"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "relic"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/relicFields"
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "cost": {
+      "description": "Cost in Shards (6.1). Max Shards is 10 (4.1).",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "sacrificeCost": {
+      "description": "Number of your own units to sacrifice as an extra cost to play this card (8.3).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "positiveAmount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cardId": {
+      "type": "string",
+      "pattern": "^(ember|tide|root|neutral)\\.[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "targetSingleUnit": {
+      "description": "One unit (10.1). attack_target is the target chosen by an attack (7.3) and may be the opposing player.",
+      "enum": [
+        "ally_unit",
+        "enemy_unit",
+        "any_unit",
+        "random_ally_unit",
+        "random_enemy_unit",
+        "self",
+        "attack_target"
+      ]
+    },
+    "targetAllUnits": {
+      "enum": [
+        "all_ally_units",
+        "all_enemy_units",
+        "all_units"
+      ]
+    },
+    "targetPlayer": {
+      "enum": [
+        "you",
+        "opponent",
+        "any_player"
+      ]
+    },
+    "targetRelic": {
+      "description": "One relic (10.4).",
+      "enum": [
+        "ally_relic",
+        "enemy_relic",
+        "any_relic"
+      ]
+    },
+    "unitFields": {
+      "properties": {
+        "cost": {
+          "$ref": "#/$defs/cost"
+        },
+        "token": {
+          "description": "A token is created by Summon (8.9), has no cost and is never part of a deck (2.4).",
+          "const": true
+        },
+        "defense": {
+          "description": "Max defense (6.2).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "keywords": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "anchor",
+              "overcharge"
+            ]
+          }
+        },
+        "sacrifice_cost": {
+          "$ref": "#/$defs/sacrificeCost"
+        },
+        "attacks": {
+          "description": "One or two attack abilities (7.1). The unit uses one of them per turn (7.2).",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/attack"
+          }
+        },
+        "abilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/unitAbility"
+          }
+        }
+      },
+      "required": [
+        "defense",
+        "attacks"
+      ],
+      "if": {
+        "required": [
+          "token"
+        ]
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "cost"
+              ]
+            },
+            {
+              "required": [
+                "sacrifice_cost"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "cost"
+        ]
+      }
+    },
+    "spellFields": {
+      "properties": {
+        "cost": {
+          "$ref": "#/$defs/cost"
+        },
+        "effects": {
+          "$ref": "#/$defs/effectList"
+        },
+        "fracture": {
+          "description": "Fracture N (11.2): N steps from 2 to 5, each with its own cost and effects. Replaces cost and effects.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/fractureStep"
+          }
+        },
+        "keywords": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "const": "overcharge"
+          }
+        },
+        "sacrifice_cost": {
+          "$ref": "#/$defs/sacrificeCost"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "cost",
+            "effects"
+          ],
+          "not": {
+            "required": [
+              "fracture"
+            ]
+          }
+        },
+        {
+          "required": [
+            "fracture"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "cost"
+                ]
+              },
+              {
+                "required": [
+                  "effects"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "relicFields": {
+      "properties": {
+        "cost": {
+          "$ref": "#/$defs/cost"
+        },
+        "keywords": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "const": "overcharge"
+          }
+        },
+        "sacrifice_cost": {
+          "$ref": "#/$defs/sacrificeCost"
+        },
+        "abilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/relicAbility"
+          }
+        }
+      },
+      "required": [
+        "cost",
+        "abilities"
+      ]
+    },
+    "attack": {
+      "description": "An attack ability (7.1). Effects on attack_target hit the single target chosen with 7.3. Other effects may affect the attacking unit (self), its controller (you) or all their units (7.8). An attack with no attack_target effect has no target and cannot be intercepted.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Optional name, shown in the card text.",
+          "type": "string",
+          "minLength": 1
+        },
+        "cost": {
+          "$ref": "#/$defs/cost"
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/attackEffect"
+          }
+        },
+        "echo": {
+          "description": "Echo X (11.1): when the unit dies, this attack is replayed with every number at X%. X can exceed 100.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "cost",
+        "effects"
+      ],
+      "additionalProperties": false
+    },
+    "fractureStep": {
+      "type": "object",
+      "properties": {
+        "cost": {
+          "$ref": "#/$defs/cost"
+        },
+        "effects": {
+          "$ref": "#/$defs/effectList"
+        }
+      },
+      "required": [
+        "cost",
+        "effects"
+      ],
+      "additionalProperties": false
+    },
+    "unitAbility": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "trigger": {
+              "enum": [
+                "arrival",
+                "death",
+                "departure",
+                "turn_start",
+                "turn_end",
+                "attack"
+              ]
+            },
+            "effects": {
+              "$ref": "#/$defs/effectList"
+            }
+          },
+          "required": [
+            "trigger",
+            "effects"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/continuousAbility"
+        }
+      ]
+    },
+    "relicAbility": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "trigger": {
+              "enum": [
+                "arrival",
+                "death",
+                "departure",
+                "turn_start",
+                "turn_end"
+              ]
+            },
+            "effects": {
+              "$ref": "#/$defs/effectList"
+            }
+          },
+          "required": [
+            "trigger",
+            "effects"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/continuousAbility"
+        }
+      ]
+    },
+    "continuousAbility": {
+      "description": "A continuous ability (9.7) only contains auras (8.14).",
+      "type": "object",
+      "properties": {
+        "trigger": {
+          "const": "continuous"
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/auraEffect"
+          }
+        }
+      },
+      "required": [
+        "trigger",
+        "effects"
+      ],
+      "additionalProperties": false
+    },
+    "effectList": {
+      "description": "Effects of a spell, a Fracture step or a triggered ability. The attack's target is not available here.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/effect"
+          },
+          {
+            "properties": {
+              "target": {
+                "not": {
+                  "const": "attack_target"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "attackEffect": {
+      "description": "Effects inside an attack ability: on the attack's target, on the attacking unit (self), on its controller (you) or on all their units (7.8). Link is reserved for neutral spells (8.11).",
+      "allOf": [
+        {
+          "$ref": "#/$defs/effect"
+        },
+        {
+          "properties": {
+            "target": {
+              "enum": [
+                "attack_target",
+                "self",
+                "you",
+                "all_ally_units"
+              ]
+            }
+          }
+        },
+        {
+          "not": {
+            "properties": {
+              "effect": {
+                "const": "link"
+              }
+            },
+            "required": [
+              "effect"
+            ]
+          }
+        }
+      ]
+    },
+    "effect": {
+      "description": "Closed list of effects (8). Aura (8.14) is defined separately in auraEffect.",
+      "oneOf": [
+        {
+          "description": "8.1 Deal X damage.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "damage"
+            },
+            "amount": {
+              "$ref": "#/$defs/positiveAmount"
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/targetSingleUnit"
+                },
+                {
+                  "$ref": "#/$defs/targetAllUnits"
+                },
+                {
+                  "$ref": "#/$defs/targetPlayer"
+                }
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "amount",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.2 Destroy.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "destroy"
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/targetSingleUnit"
+                },
+                {
+                  "$ref": "#/$defs/targetAllUnits"
+                },
+                {
+                  "$ref": "#/$defs/targetRelic"
+                }
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.3 Sacrifice: the controller chooses which of their own units die.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "sacrifice"
+            },
+            "count": {
+              "$ref": "#/$defs/positiveAmount",
+              "default": 1
+            }
+          },
+          "required": [
+            "effect"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.4 Heal X.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "heal"
+            },
+            "amount": {
+              "$ref": "#/$defs/positiveAmount"
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/targetSingleUnit"
+                },
+                {
+                  "$ref": "#/$defs/targetAllUnits"
+                },
+                {
+                  "$ref": "#/$defs/targetPlayer"
+                }
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "amount",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.5 Modify +X/+Y: attack_damage is X (added to each damaging attack ability), defense is Y.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "modify"
+            },
+            "attack_damage": {
+              "type": "integer"
+            },
+            "defense": {
+              "type": "integer"
+            },
+            "duration": {
+              "enum": [
+                "permanent",
+                "end_of_turn"
+              ]
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/targetSingleUnit"
+                },
+                {
+                  "$ref": "#/$defs/targetAllUnits"
+                }
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "attack_damage",
+            "defense",
+            "duration",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.6 Draw X.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "draw"
+            },
+            "amount": {
+              "$ref": "#/$defs/positiveAmount"
+            },
+            "target": {
+              "$ref": "#/$defs/targetPlayer"
+            }
+          },
+          "required": [
+            "effect",
+            "amount",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.7 Discard X. choice: 'player' means the discarding player chooses, 'random' means at random.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "discard"
+            },
+            "amount": {
+              "$ref": "#/$defs/positiveAmount"
+            },
+            "target": {
+              "$ref": "#/$defs/targetPlayer"
+            },
+            "choice": {
+              "enum": [
+                "player",
+                "random"
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "amount",
+            "target",
+            "choice"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.8 Return to hand.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "return_to_hand"
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/targetSingleUnit"
+                },
+                {
+                  "$ref": "#/$defs/targetAllUnits"
+                },
+                {
+                  "$ref": "#/$defs/targetRelic"
+                }
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.9 Summon: token is the id of a card with \"token\": true.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "summon"
+            },
+            "token": {
+              "$ref": "#/$defs/cardId"
+            },
+            "count": {
+              "$ref": "#/$defs/positiveAmount",
+              "default": 1
+            }
+          },
+          "required": [
+            "effect",
+            "token"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.10 Freeze.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "freeze"
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/targetSingleUnit"
+                },
+                {
+                  "$ref": "#/$defs/targetAllUnits"
+                }
+              ]
+            }
+          },
+          "required": [
+            "effect",
+            "target"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.11 Link: the controller links any two units. Neutral spells only (checked by the linter).",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "link"
+            }
+          },
+          "required": [
+            "effect"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "8.12 Gain Shards: 'this_turn' gives amount Shards for this turn; 'max' gives +1 max Shard.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "gain_shards"
+            },
+            "mode": {
+              "enum": [
+                "this_turn",
+                "max"
+              ]
+            },
+            "amount": {
+              "$ref": "#/$defs/positiveAmount"
+            }
+          },
+          "required": [
+            "effect",
+            "mode"
+          ],
+          "additionalProperties": false,
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "this_turn"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "amount"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "amount"
+              ]
+            }
+          }
+        },
+        {
+          "description": "8.13 Recall: a unit from your graveyard returns to your hand. Ember only (checked by the linter).",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "recall"
+            }
+          },
+          "required": [
+            "effect"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "auraEffect": {
+      "description": "8.14 Aura, only inside a continuous ability.",
+      "oneOf": [
+        {
+          "description": "Stat aura: +X/+Y for a group of units while the card is on the board.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "aura"
+            },
+            "kind": {
+              "const": "stats"
+            },
+            "target": {
+              "$ref": "#/$defs/targetAllUnits"
+            },
+            "attack_damage": {
+              "type": "integer"
+            },
+            "defense": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "effect",
+            "kind",
+            "target",
+            "attack_damage",
+            "defense"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Cost aura: cards of one type cost more or less for one player. Negative change means cheaper. A cost never drops below 0.",
+          "type": "object",
+          "properties": {
+            "effect": {
+              "const": "aura"
+            },
+            "kind": {
+              "const": "cost"
+            },
+            "player": {
+              "enum": [
+                "you",
+                "opponent"
+              ]
+            },
+            "card_type": {
+              "enum": [
+                "unit",
+                "spell",
+                "relic",
+                "any"
+              ]
+            },
+            "change": {
+              "type": "integer",
+              "not": {
+                "const": 0
+              }
+            }
+          },
+          "required": [
+            "effect",
+            "kind",
+            "player",
+            "card_type",
+            "change"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
