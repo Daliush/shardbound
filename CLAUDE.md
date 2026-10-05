@@ -23,6 +23,27 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 
 - Content tests (card and deck schemas, card and deck rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
 
+## Commits
+
+This repository is a portfolio: its history is read by recruiters. Follow a light version of Conventional Commits:
+
+- Subject: `type(scope): summary`, in the imperative mood ("Add", not "Added"), no trailing period, 72 characters max.
+- Types: `feat` (new game content or behavior), `fix`, `test`, `docs`, `ci`, `refactor`, `chore`.
+- Scope: the area touched, e.g. `rules`, `cards`, `decks`, `content`, `engine`, `ai`, `skills`.
+- Body: explain why the change is made and the decisions behind it; the diff already shows what changed. Wrap lines at 72 characters.
+- One logical change per commit. New cards, a new format, and a docs-only update are separate commits. Tests go in the same commit as the code or content they cover, so every commit passes CI.
+- Commits made with Claude Code end with a `Co-Authored-By:` trailer for Claude: the agentic workflow is part of what the project shows.
+
+Example:
+
+```
+test(content): add card test suite and run it in CI
+
+Validates every card against the schema, checks the rules the schema
+can't express and makes sure every effect has a text template, so a
+bad card can't reach the engine or the RAG index.
+```
+
 ## Working agreements
 
 - Game and product decisions belong to the maintainer. Propose with a recommendation, and number your questions so they can be answered point by point. If a gap must be filled, mark it *(proposed)*.
