@@ -6,8 +6,6 @@
 > Backend and engine in **Java**, AI layer in **Python**, frontend in **Angular**.
 > Online demo with zero AI cost; the Arbiter is tested locally.
 
-*("Shardbound" is a working title.)*
-
 > **Changelog**
 >
 > **v2 (October 2026)** — main changes after review:
@@ -26,8 +24,10 @@
 > **v2.3 (October 2026)** — card format defined in [`content/cards/`](../content/cards/README.md): one JSON file per card with a stable id, rules text generated from the data, game versions as git tags.
 >
 > **v2.4 (October 2026)** — faction identities set (Ember = attack, Tide = buffs and debuffs, Root = summoning), number scale adopted, first batch of 11 cards + 1 token.
->
+> 
 > **v2.5 (October 2026)** — second batch of 19 cards (30 cards + 1 token in total), deck format in [`content/decks/`](../content/decks/README.md) with two 30-card starter decks, Ember vs Root. Content tests run in CI.
+> > **v2.6 (October 2026)** — engine architecture decided: `engine/core` (domain, immutable state, no Spring) and `engine/api` (Spring Boot), REST for resources and a WebSocket protocol for live games, a minimal Angular `frontend/`. Implementation spec: [`specs/phase-2-engine.md`](../specs/phase-2-engine.md).
+>
 
 ---
 
@@ -214,8 +214,8 @@ flowchart LR
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Backend language | Java 21+ (LTS) | Records, sealed interfaces, pattern matching, virtual threads |
-| Java build | Maven multi-module (or Gradle) | `engine`, `backend`, `simulator` |
+| Backend language | Java 21 (LTS) | Records, sealed interfaces, pattern matching, virtual threads |
+| Java build | Maven multi-module with the Maven Wrapper | `engine/core` (domain, no Spring) and `engine/api` (Spring Boot); a `repository` module later |
 | Backend | Spring Boot | REST, WebSocket, security, JPA |
 | Game engine | Pure Java, no framework dependency | Deterministic (seed), lists **legal actions**, emits the **rule trace** |
 | MCP | Java MCP SDK / Spring AI MCP Server | HTTP transport, called by the Python orchestrator |
@@ -664,7 +664,7 @@ If the LoRA Arbiter ever has to be queryable online:
 
 Documented in `docs/dev-workflow.md`, with screenshots and real examples.
 
-- `CLAUDE.md` / `AGENTS.md` at the root, plus one per sub-project (`java/`, `ai/`, `frontend/`) with each ecosystem's commands and conventions.
+- `CLAUDE.md` / `AGENTS.md` at the root, plus one per sub-project (`engine/`, `ai/`, `frontend/`) with each ecosystem's commands and conventions.
 - **Project knowledge as skills** in `.claude/skills/`: how the rules work, how cards are written, how the architecture fits together. Any contributor using Claude Code gets the same context.
 - **Spec-driven**: each feature starts with a spec in `specs/`, implemented by a coding agent, reviewed by a human.
 - **PR review agent** in GitHub Actions.
@@ -696,11 +696,11 @@ shardbound/
 │   ├── decks/                  # deck.schema.json, README.md + <id>.json (starter decks)
 │   └── tests/                  # card and deck schemas, card and deck rules, text templates
 ├── proto/                      # shared protobuf / gRPC contracts
-├── java/                       # Maven multi-module
+├── engine/                     # Maven multi-module (groupId fr.daliush.shardbound), see specs/phase-2-engine.md
 │   ├── pom.xml
-│   ├── engine/                 # pure engine: rules, legal actions, scenarios, trace, determinization, random/greedy/mcts bots
-│   ├── backend/                # Spring Boot: API, WebSocket, gRPC, MCP server
-│   └── simulator/              # standalone jar for mass simulations
+│   ├── core/                   # the domain, no Spring: rules, legal actions, events + rule trace, views, scenarios, determinization, bots
+│   ├── api/                    # Spring Boot: REST (cards, decks, games) + WebSocket game server; later MCP and gRPC
+│   └── (repository/)           # later, with Postgres
 ├── ai/                         # Python (uv)
 │   ├── chat/                   # orchestrator, coach, Arbiter, router, MCP client
 │   ├── rag/                    # ingestion, retrieval, reranking

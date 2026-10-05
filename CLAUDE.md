@@ -14,6 +14,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - `content/cards/`: one JSON file per card, plus the card schema and text templates (`content/cards/README.md`).
 - `content/decks/`: one JSON file per deck, plus the deck schema (`content/decks/README.md`).
 - `content/tests/`: tests for all the content above.
+- `specs/`: implementation specs. `specs/phase-2-engine.md` covers the engine, the game server and the test frontend.
 - `.claude/skills/`: project knowledge for Claude Code.
   - `shardbound-project`: architecture, principles, roadmap.
   - `shardbound-rules`: how the rulebook works; answering and changing rules.

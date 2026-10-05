@@ -21,8 +21,8 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 
 | Path | Stack | Role |
 |---|---|---|
-| `java/engine` | Java 21, no framework | Rules, legal actions, scenario service, rule trace, determinization, random / greedy / MCTS bots |
-| `java/backend` | Spring Boot | REST and WebSocket API, MCP server, gRPC server |
+| `engine/core` | Java 21, no Spring (Jackson only) | Rules, legal actions, events with rule trace, player views, scenarios, determinization, random / greedy (later MCTS) bots |
+| `engine/api` | Spring Boot | REST for resources (cards, decks, games), WebSocket protocol for live games; later MCP and gRPC |
 | `ai/` | Python (uv, FastAPI) | Chat orchestrator, RAG, LoRA, LLM and Jev bots, eval harness |
 | `frontend/` | Angular | Test UI first, polished UI later, results pages and answer comparator |
 | `proto/` | Protobuf / gRPC | Contract between the engine and the Python players |
@@ -52,7 +52,7 @@ Language rule: compute-heavy code and business logic go to Java; code that calls
 
 The phases in `docs/design.md` §11 are ordered on purpose. Foundations come first (rules, content, an engine API serving its four consumers, a minimal test UI). AI work follows, because that is where the portfolio value is. The deck builder and the polished UI come last. A GPU is never used online.
 
-To know where things stand, check the roadmap and the repository itself. As of 2026-10-04 there is no code yet: phase 1 (rules and content) is underway. Rulebook v0.1, the card and deck formats, 30 cards + 1 token and two starter decks (Ember vs Root) are done, all covered by the content tests in CI. The next step is the engine (phase 2) with the `random` / `greedy` bots, playing the two starter decks against each other.
+To know where things stand, check the roadmap and the repository itself. As of 2026-10-04 there is no code yet: phase 1 (rules and content) is underway. Rulebook v0.1, the card and deck formats, 30 cards + 1 token and two starter decks (Ember vs Root) are done, all covered by the content tests in CI. The next step is phase 2, fully specified in `specs/phase-2-engine.md`: the engine (`engine/core`), the game server (`engine/api`, REST + WebSocket), a minimal Angular frontend and the `random` / `greedy` bots. Read that spec before working on any of them.
 
 ## Keeping the docs in sync
 
