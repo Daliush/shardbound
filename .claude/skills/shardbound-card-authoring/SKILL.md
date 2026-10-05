@@ -82,6 +82,7 @@ The format is documented in `content/cards/README.md` and enforced by `content/c
 - No rules text in the file. The text is generated from the data with `content/cards/text-templates.json`; only the optional `flavor` line is free text. If a card needs wording the templates can't produce, change the templates (or the rules), not the card.
 - Echo lives on an attack (`attacks[].echo`), not in `keywords`. Fracture spells use `fracture` steps instead of `cost` + `effects`.
 - Game versions are git tags (`patch-1.0`…), so never add version fields to cards.
-- Some checks are beyond the schema (id matches path, Link only on neutral spells, Recall only on Ember, `summon.token` exists, `self` not on spells, Fracture 5 count). The README lists them; respect them until the linter exists.
+- Some checks are beyond the schema (id matches path, Link only on neutral spells, Recall only on Ember, `summon.token` exists, `self` not on spells, Fracture 5 count). They are tested in `content/tests/test_card_rules.py`.
+- After adding or editing cards, run the content tests from `content/`: `uv run pytest` (or `python -m pytest` with pytest and jsonschema installed). CI runs them too. If you add an effect, target, trigger or keyword to the schema, add its wording to `text-templates.json`, or `test_text_templates.py` fails.
 
 When the schema and the rulebook disagree, the rulebook wins: raise it and fix the schema.

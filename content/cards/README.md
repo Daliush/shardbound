@@ -131,9 +131,25 @@ These are rules of thumb for new cards, not game rules. If a card turns out too 
 
 The intent: a unit dies to an attack of the same cost, so trades are even, and once a board is cleared, 50 HP takes several turns of pressure to finish.
 
+## Tests
+
+Every card is checked automatically, locally and in CI ([`.github/workflows/content.yml`](../../.github/workflows/content.yml)), whenever `content/` changes. The tests live in [`content/tests/`](../tests/):
+
+- `test_card_schema.py`: every card matches the schema; broken cards are rejected and legal edge cases accepted.
+- `test_card_rules.py`: the rules the schema cannot express (below).
+- `test_text_templates.py`: `text-templates.json` has wording for every effect, target, trigger and keyword the schema allows.
+
+Run them from the `content/` folder:
+
+```bash
+uv run pytest
+```
+
+Without uv: `pip install pytest jsonschema`, then `python -m pytest`.
+
 ## Checks the schema cannot do
 
-These will be enforced by a card linter (to be written with the engine tooling):
+Enforced by `test_card_rules.py`:
 
 - `id` matches the file path, and its faction prefix matches `faction`.
 - Card names are unique.

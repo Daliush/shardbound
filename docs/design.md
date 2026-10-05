@@ -666,6 +666,7 @@ Documented in `docs/dev-workflow.md`, with screenshots and real examples.
 - **Spec-driven**: each feature starts with a spec in `specs/`, implemented by a coding agent, reviewed by a human.
 - **PR review agent** in GitHub Actions.
 - **Per-ecosystem CI**, triggered by changed paths:
+  - Content (in place): card schema, card rules and text-template tests (`content/tests/`) on every push or PR touching `content/` (`.github/workflows/content.yml`);
   - Java: Maven build, engine JUnit tests (rules, interactions, **one test per ruling**), backend integration tests;
   - Python: lint, pytest, RAG "smoke" eval (≈ 50 questions, no GPU) on every PR touching `ai/rag/`, `docs/` or `content/` → PR blocked if accuracy drops by more than X points;
   - Proto: gRPC contract compatibility check (`buf breaking`);
@@ -687,7 +688,9 @@ shardbound/
 │   └── skills/                 # project knowledge for Claude Code
 ├── specs/                      # feature specs (agentic workflow)
 ├── content/
-│   └── cards/                  # card.schema.json, text-templates.json, README.md + <faction>/<slug>.json
+│   ├── pyproject.toml          # small uv project that runs the content tests
+│   ├── cards/                  # card.schema.json, text-templates.json, README.md + <faction>/<slug>.json
+│   └── tests/                  # card schema, card rules and text-template tests
 ├── proto/                      # shared protobuf / gRPC contracts
 ├── java/                       # Maven multi-module
 │   ├── pom.xml

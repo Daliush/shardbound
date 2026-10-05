@@ -16,6 +16,10 @@ Open-source portfolio project: an invented trading card game used as a testbed f
   - `shardbound-rules`: how the rulebook works; answering and changing rules.
   - `shardbound-card-authoring`: designing and writing cards.
 
+## Commands
+
+- Content tests (card schema, card rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
+
 ## Working agreements
 
 - Game and product decisions belong to the maintainer. Propose with a recommendation, and number your questions so they can be answered point by point. If a gap must be filled, mark it *(proposed)*.
@@ -24,4 +28,4 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 
 ## Status
 
-Phase 1 (rules and content) of the roadmap in `docs/design.md` §11. No code yet.
+Phase 1 (rules and content) of the roadmap in `docs/design.md` §11. No game code yet; the only code is the content test suite in `content/tests/`.

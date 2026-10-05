@@ -1,0 +1,32 @@
+name: Content checks
+
+# Card schema, card rules and text templates. Runs whenever the game content or this workflow change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/**"
+      - ".github/workflows/content.yml"
+  pull_request:
+    paths:
+      - "content/**"
+      - ".github/workflows/content.yml"
+  workflow_dispatch:
+
+jobs:
+  content-tests:
+    name: Card schema, card rules, text templates
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: content
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Run content tests
+        run: uv run pytest
