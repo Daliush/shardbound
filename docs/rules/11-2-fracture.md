@@ -8,5 +8,6 @@
 - **11.2.4** After the last step, the card goes to the graveyard.
 - **11.2.5** The current step is not revealed. It remains public information, since every step played was seen, but the interface does not display it: the opponent has to remember it.
 - **11.2.6** If the card is discarded between two steps, its progress is lost.
+- **11.2.7** If the card would return to a full hand (3.3) after a step, it goes to the graveyard instead, and its progress is lost.
 
 > *Example*: a Fracture 5 whose steps 1 to 4 give a drawback to its own player and whose step 5 gives a huge bonus. High risk, high reward.

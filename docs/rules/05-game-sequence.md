@@ -30,4 +30,4 @@
 ## 5.5 During the opponent's turn
 
 - **5.5.1** A player can never play a card during the opponent's turn.
-- **5.5.2** Their only possible action is to intercept (7.5).
+- **5.5.2** They can intercept (7.5), and they make the choices that rules or effects ask of them during a resolution (for example an echo's new target, 11.1.3, or which cards to discard, 8.7).

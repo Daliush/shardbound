@@ -12,3 +12,7 @@
 - **6.5** A unit arrives on the board with a current defense equal to its max defense.
 - **6.6** A unit whose defense drops to 0 is destroyed immediately, unless it is protected by Anchor or doomed (11.3).
 - **6.7** A card returned to hand loses all its modifications and all its damage.
+- **6.8** **Cost of playing a card**: add up its printed cost (or the cost of its next Fracture step, 11.2), every cost change from auras (8.14), and −2 if it is overcharged (11.4.1). If the total is below 0, the card costs 0.
+
+  > *Example*: a 1-cost card, under an opposing aura that makes it cost 1 more, overcharged: 1 + 1 − 2 = 0 Shards. It still locks 2 Shards (11.4.2).
+- **6.9** A unit's current defense never goes below 0: damage beyond what it has left is lost. A player's HP, however, can drop below 0 (1.2).

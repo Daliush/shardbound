@@ -26,8 +26,10 @@
 > **v2.4 (October 2026)** — faction identities set (Ember = attack, Tide = buffs and debuffs, Root = summoning), number scale adopted, first batch of 11 cards + 1 token.
 > 
 > **v2.5 (October 2026)** — second batch of 19 cards (30 cards + 1 token in total), deck format in [`content/decks/`](../content/decks/README.md) with two 30-card starter decks, Ember vs Root. Content tests run in CI.
-> > **v2.6 (October 2026)** — engine architecture decided: `engine/core` (domain, immutable state, no Spring) and `engine/api` (Spring Boot), REST for resources and a WebSocket protocol for live games, a minimal Angular `frontend/`. Implementation spec: [`specs/phase-2-engine.md`](../specs/phase-2-engine.md).
 >
+> **v2.6 (October 2026)** — engine architecture decided: `engine/core` (domain, immutable state, no Spring) and `engine/api` (Spring Boot), REST for resources and a WebSocket protocol for live games, a minimal Angular `frontend/`. Implementation spec: [`specs/phase-2-engine.md`](../specs/phase-2-engine.md).
+>
+> **v2.7 (October 2026)** — rules clarified for the engine with the maintainer: 19 new rules (1.6, 3.8, 6.8, 6.9, 7.9, 7.10, 8.15–8.22, 9.11, 10.5, 10.6, 11.1.10, 11.2.7), and two rules reworded: Freeze lasts the current turn and the next one (8.10), and the non-active player also makes the choices effects ask of them (5.5.2). List in [`rules/12-open-points.md`](rules/12-open-points.md).
 
 ---
 
@@ -89,7 +91,7 @@ Why an invented game? Because a base LLM **cannot know** the rules. Every correc
 - Board: up to 6 units and 3 relics. Hand: up to 10 cards.
 - Card types: **Units** (defense + one or two attack abilities, each with its own cost), **Spells** (immediate effect), **Relics** (permanent abilities, cannot be attacked).
 - **Combat**: once per turn, a unit attacks by paying the cost of one of its attack abilities. A targeted attack hits an enemy unit; the player can only be attacked when they have no unit left. Some attacks have no target and only buff their own side. The defender can **intercept**: redirect the attack to another of their units. No retaliation. Spells, however, can target the player directly.
-- During the opponent's turn you play no cards: intercepting is the only possible action.
+- During the opponent's turn you play no cards: you can intercept, and you make the choices that effects ask of you (an echo's target, a discard).
 - **Victory**: bring the opponent to 0 HP. An empty deck does not lose the game, but each draw from an empty deck deals increasing **fatigue** (1, 2, 3… HP). Technical limit: the game is a draw after 50 turns per player.
 
 ### 2.2 Factions (3 + neutral)
