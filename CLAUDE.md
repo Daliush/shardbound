@@ -1,0 +1,27 @@
+# Shardbound
+
+Open-source portfolio project: an invented trading card game used as a testbed for AI engineering (an MCP coach agent, a RAG and LoRA rules Arbiter, AI opponents, rigorous evaluation). Java engine and backend, Python AI layer, Angular frontend.
+
+## Language
+
+- Everything committed to this repository is in English: code, docs, comments, card data, commit messages.
+- The maintainer writes to Claude in French or English. Answer in the language of their message; write files in English.
+
+## Where things are
+
+- `docs/design.md`: design document (architecture, evaluation, roadmap, decisions).
+- `docs/rules/`: game rules, the written source of truth. One file per section; start from `docs/rules/README.md`.
+- `.claude/skills/`: project knowledge for Claude Code.
+  - `shardbound-project`: architecture, principles, roadmap.
+  - `shardbound-rules`: how the rulebook works; answering and changing rules.
+  - `shardbound-card-authoring`: designing and writing cards.
+
+## Working agreements
+
+- Game and product decisions belong to the maintainer. Propose with a recommendation, and number your questions so they can be answered point by point. If a gap must be filled, mark it *(proposed)*.
+- Rule IDs are stable: never renumber them.
+- Keep the docs in sync: a decision that changes the design updates `docs/design.md` (and its changelog); a rule change also updates `docs/rules/12-open-points.md`.
+
+## Status
+
+Phase 1 (rules and content) of the roadmap in `docs/design.md` §11. No code yet.

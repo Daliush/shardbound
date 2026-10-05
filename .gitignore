@@ -1,0 +1,11 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code: personal settings stay local, skills are shared
+.claude/settings.local.json
