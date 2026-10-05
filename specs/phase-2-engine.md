@@ -380,7 +380,7 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `UnitArrived(unit)`, `RelicArrived(relic)` | 6.3, 6.5 | public |
 | `TokenSummoned(unit)`, `SummonFailed(player)` | 8.9, 3.4 | public |
 | `AttackDeclared(attacker, attackIndex, target)` | 7.4 | public |
-| `AttackIntercepted(originalTarget, interceptor)` | 7.5 | public |
+| `AttackIntercepted(originalTarget, interceptor)`, `InterceptDeclined(defender)` | 7.5 | public |
 | `DamageDealt(target, amount)`, `DamageShared(from, to, amount)` (amount can be 0, 8.15) | 8.1, 11.5.2 | public |
 | `Healed(target, amount)` | 8.4 | public |
 | `Modified(unit, attackDamage, defense, duration)`, `ModifierExpired(unit, …)` | 8.5, 5.4.2 | public |
@@ -712,7 +712,10 @@ interface SelfView extends PlayerBase { hand: HandCardView[]; mulliganDecided: b
 interface OpponentView extends PlayerBase { handCount: number; }
 
 interface CardRef { id: number; card: string; }                       // instance id + card id
-interface HandCardView extends CardRef { fractureStep: number | null; }  // 1-based next step, null if not Fracture
+interface HandCardView extends CardRef {
+  cost: number;                 // what playing it costs now (6.8: printed or next step cost + auras), without Overcharge
+  fractureStep: number | null;  // 1-based next step, null if not Fracture
+}
 interface RelicView extends CardRef { controller: Side; }
 interface UnitView extends CardRef {
   controller: Side; token: boolean;
