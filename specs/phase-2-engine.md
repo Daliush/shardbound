@@ -96,11 +96,12 @@ engine/
 └── api/
     ├── pom.xml                         Spring Boot (web, websocket, validation, test)
     └── src/main/java/fr/daliush/shardbound/api/
-        ├── rest/       CardsController, DecksController, BotsController, GamesController, error handling
-        ├── ws/         GameWebSocketHandler, handshake, protocol messages, PlayerConnections
-        ├── session/    GameSession, Seat, GameSessionService, GameRepository and GameUpdates (ports) with their *InMemory implementations
+        ├── rest/       ContentController (cards, decks, bots), GamesController, Problem Details
+        ├── ws/         the WebSocket adapter: handshake, GameWebSocketHandler, WebSocketSeatConnection
+        ├── session/    GameSession, Seat, Outbox, GameSessionService, PlayerConnections and SeatConnection, GameRepository and GameUpdates (ports) with their *InMemory implementations
+        ├── protocol/   ServerMessage, ClientMessage and their JSON
         ├── dto/        view, decision, action, event DTOs and mappers
-        └── config/     WebSocket and content configuration
+        └── config/     content, sessions, WebSocket, the shardbound.* properties
 frontend/                               Angular 21 workspace (section 14)
 .github/workflows/engine.yml            CI for engine/ (section 3.5)
 .github/workflows/frontend.yml          CI for frontend/ (section 3.5)
@@ -118,7 +119,7 @@ frontend/                               Angular 21 workspace (section 14)
 
 ```bash
 cd engine && ./mvnw verify                      # build and test everything
-cd engine && ./mvnw -pl api spring-boot:run     # run the server on http://localhost:8080
+cd engine && ./mvnw -pl api -am spring-boot:run # run the server on http://localhost:8080 (builds core in the reactor)
 cd frontend && npm start                        # run the client on http://localhost:4200 (proxies /api and /ws)
 cd frontend && npm test                         # client unit tests
 ```
@@ -136,7 +137,9 @@ cd frontend && npm test                         # client unit tests
 | `shardbound.content-dir` | auto-detected | Path to the repository's `content/` folder |
 | `shardbound.sessions.finished-ttl` | `30m` | How long a finished game is kept |
 | `shardbound.sessions.idle-ttl` | `2h` | How long a game without any action is kept |
-| `shardbound.bots.step-delay` | `0ms` | Optional pause between two bot actions (the client can also pace them) |
+| `shardbound.sessions.eviction-interval` | `1m` | How often the in-memory repository drops expired games |
+| `shardbound.bots.step-delay` | `0ms` | Optional pause between two bot actions (the client paces them already) |
+| `shardbound.websocket.allowed-origins` | `http://localhost:*`, `http://127.0.0.1:*`, `http://[::1]:*` | Origin patterns a browser may open a game's WebSocket from |
 
 ### 3.5 CI
 
@@ -759,15 +762,15 @@ Settled on 2026-10-06, for slice 2:
 - **Naming**: each port is an interface (`GameRepository`), and each implementation adds a suffix to its name: `GameRepositoryInMemory` now, `GameRepositoryDatabase` later.
 - **Bots are rebuilt at every step** from their name and RNG state, and their new RNG state is saved with the session. Any instance that loads a session whose decision belongs to a bot (because an instance stopped in the middle of a bot turn) resumes the bot loop; the versioned save makes sure only one instance does.
 - `GameRepository` (port): `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, `delete(gameId)`. `save` is an optimistic lock: it fails with `VersionConflict` if the stored version is no longer `expectedVersion`. Phase 2: `GameRepositoryInMemory` (`ConcurrentHashMap.compute`).
-- **Outbox.** Each save also stores the `update` message of each seat for that version (view and events, redacted for the seat). A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
+- **Outbox.** Each save also stores the `update` message of each human seat for that version (view and events, redacted for the seat), as the JSON sent. The outbox keeps the last 50 versions; a connection further behind gets the `state` instead. A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
 - `GameUpdates` (port): `publish(gameId, version)`, `connected(gameId, seat, connectionId)` (13.1) and `subscribe(gameId, listener)`. An instance subscribes to every game for which it holds a WebSocket. When notified, it reads from the repository the `update` messages its connections have not received yet (`version > lastSent`) and sends them in order. Phase 2: `GameUpdatesInMemory`, in-process. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
-- `PlayerConnections` (WebSocket adapter): this instance's connections only. A seat without a connection anywhere simply misses messages and will `sync`.
-- `GameSessionService` (no WebSocket types in it): `createGame`, `join`, `connect(gameId, token)` (returns the seat and the `state` payload), `act(gameId, seat, requestId, decisionId, actionIndex)`, `sync(gameId, seat)`.
+- `PlayerConnections`: this instance's connections only, behind a `SeatConnection` port (`send`, `replaced`), so it knows no transport and two instances can be tested without WebSockets; the `ws` package adapts a `WebSocketSession` to it. It subscribes to `GameUpdates` for each game it holds a connection to, sends every connection the updates it has not received, in order, from the outbox, and closes connections replaced elsewhere. A connection is registered before its `state` is read, under the connection's lock, so no update falls between the two. A seat without a connection anywhere simply misses messages and will `sync`.
+- `GameSessionService` (no WebSocket types in it): `create`, `join`, `authenticate(gameId, token)` (the seat, for the handshake), `state(gameId, seat)` (the `state` message and its version, on connection and `sync`), `act(gameId, seat, decisionId, actionIndex)` (an optional rejection), `resumeBots(gameId)`.
 - WebSocket threads never block: they hand each message to a virtual thread. Inside one instance, a per-game lock avoids pointless conflicts between two messages of the same game; correctness across instances comes from the versioned `save`, not from the lock.
 - **Processing `act`**, on any instance:
   1. Load the session. If the game is not started or is over: `rejected`.
   2. Recompute the decision from the state. Never trust the client.
-  3. If the seat is not the decision's player: `not_your_decision`. If the `decisionId` differs: `stale_decision`. If the index is out of range: `invalid_action`.
+  3. If the `decisionId` differs: `stale_decision` (an old click is stale, whoever holds the new decision). If the seat is not the decision's player: `not_your_decision`. If the index is out of range: `invalid_action`.
   4. `engine.apply`, then `version += 1`, append the events, the action and both seats' `update` messages, `save(session, version - 1)`. On `VersionConflict`, another instance moved the game first: reload and start again at step 1 (the request usually ends as `stale_decision`).
   5. `publish(gameId, version)`.
   6. While the next decision belongs to a bot seat and the game is not over: the bot chooses, then back to 4 (optional `step-delay` between iterations). Guard against bugs: at most 10,000 bot steps per human action, then fail loudly.
@@ -795,7 +798,7 @@ Minimal and plain: correctness first, no animations required.
   - **decision panel**: the `prompt` and the decision's actions, **grouped** (decided on 2026-10-06). The cards and units that are the source of an action are highlighted (the card played, the attacker, the interceptor); click one: its possible targets light up, and its actions without a target (an intercept, Kindle) show as buttons with their `label`. Clicking a target sends the action; when several actions share that target (with and without Overcharge), they show as buttons instead. Actions without a source (keep hand, mulligan, end turn, don't intercept) are plain buttons. The client still sends the index of the chosen action and never builds one: it only filters the decision's list. When `waitingFor` is set: "Waiting for your opponent (intercept)…";
   - **game log**: every event's `text` with its rule IDs (`[8.1] Sprout #12 takes 3 damage.`), newest at the bottom;
   - result banner and a "New game" link.
-- **GameSocketService**: connects with the token, exposes the view and the log as signals, sends `act` with a `requestId`, shows `rejected` messages, sends `sync` when versions have a gap, and reconnects with backoff (then `sync`).
+- **GameSocketService**: connects with the token, exposes the view and the log as signals, sends `act` with a `requestId`, shows `rejected` messages, sends `sync` when versions have a gap, and reconnects with backoff; the `state` the server sends on every connection resyncs it.
 - **Bot pacing** (decided on 2026-10-06): the client shows queued updates one by one, about 400 ms apart, so a bot's turn can be followed. The server keeps `shardbound.bots.step-delay = 0`.
 - Tests: the socket service's message handling (update, gap → sync, rejected, reconnect), and a smoke test per page.
 
