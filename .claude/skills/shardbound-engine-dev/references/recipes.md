@@ -80,7 +80,7 @@ Then:
 3. Private to one player: override `visibility()` and `redacted()`, as `CardDrawn` does, and add an assertion to `simulation/HiddenInformationTest`.
 4. Add the case to `text/EventDescriber` (the compiler insists), with a sentence from the viewer's point of view through `Wording` ("You…" / "Your opponent…").
 5. Add the event to the §6.4 table of the spec. `GameJson` needs nothing: it finds every record of the sealed type.
-6. The API needs nothing either: `api.dto.EventViews` writes every event from its record components. Only a component of a new type needs a case in `EventViews.wire` (the random games of `ViewsTest` fail until it has one).
+6. The API needs nothing either: `api.domain.mappers.view.EventViewMapper` writes every event from its record components. Only a component of a new type needs a case in its `wire` method (the random games of `ViewMappersTest` fail until it has one).
 
 ## 5. Add a step, or a decision in the middle of a resolution
 
@@ -99,7 +99,7 @@ Then:
 
 ## 6. Add an action type or a decision kind
 
-- **Action**: a record in `action/Action.java` with value components only, since `apply` checks it by equality. Add a case to `text/ActionDescriber` for its button label, and put it in canonical order where it is listed. On the API side: a case in `api.dto.DecisionViews` and a factory in `ActionView`; on the client: the `type` in `frontend/src/app/api/protocol.ts`, and its source in `DecisionGroups.sourceOf` if a card or unit performs it (see the `shardbound-game-server` skill).
+- **Action**: a record in `action/Action.java` with value components only, since `apply` checks it by equality. Add a case to `text/ActionDescriber` for its button label, and put it in canonical order where it is listed. On the API side: a case in `api.domain.mappers.view.DecisionViewMapper` and a factory in `domain.bo.view.ActionView`; on the client: the `type` in `frontend/src/app/api/protocol.ts`, and its source in `DecisionGroups.sourceOf` if a card or unit performs it (see the `shardbound-game-server` skill).
 - **Decision kind**: a kind is a *sort of answer* (a target, cards, an order), so first check whether an existing one fits: "the opponent picks one of their units" is a `CHOOSE_TARGET` for the opponent, not a new kind. If one is really needed: `decision/DecisionKind.java`. Check `pausesAStep()`: a kind asked in the middle of a step goes through `pauseAndAsk`; one that starts new work goes through `ask` and needs a case in `GameEngine.startNewWork`. Update `testing/Invariants.checkDecision` if it has its own constraints. Give it a prompt in `text/DecisionDescriber` (its `switch` is exhaustive), and add its string to `DecisionKind` in `frontend/src/app/api/protocol.ts`.
 
 ## 7. Change how an existing rule behaves

@@ -58,7 +58,7 @@ A keyword (section 11) usually touches several of these. Put each part where its
 - Records with domain methods. `Unit` and `PlayerState` change through a private `Draft`, so each method names only the fields it touches.
 - Booleans and their setters say who did what: `hasAttackedThisTurn` and `markHasAttacked`, not `attackedThisTurn` (which reads as "was attacked").
 - Imports, never fully qualified names. English everywhere. No code for a later slice "just in case". Small preparations the maintainer asked for are fine, such as `UnitCard.size()`.
-- Ports are interfaces, and implementations add a suffix: `GameRepository` → `GameRepositoryInMemory`, later `GameRepositoryDatabase`.
+- Interfaces with swappable implementations add a suffix to each implementation: `GameDao` → `GameDaoInMemory`, later `GameDaoDatabase` (see the `shardbound-game-server` skill for the server's layers).
 - Every package has a `package-info.java` saying in one or two sentences what it is for. A new package gets one, and a package whose role changes gets its description updated.
 
 ## Recipes

@@ -69,7 +69,7 @@ MCTS, gRPC and Python clients, any database or `repository` module, user account
 | Identity | A random seat token per game and seat, no accounts | Reconnection to the same seat without accounts; accounts come later. |
 | First version | Human vs bot, but the server supports two humans from day one (join code) | Lets the maintainer test intercepts with two browsers. |
 | Determinism | Seed + decks + actions reproduce a game exactly | Debugging, replays, evaluations. |
-| Several instances | No instance owns a game: sessions behind a repository port with versioned saves, updates through a pub/sub port; in-memory adapters in phase 2, a shared store at deployment (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
+| Several instances | No instance owns a game: sessions behind a port with versioned saves, notifications through another port; in-memory DAOs in phase 2, a shared store at deployment (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
 
 ---
 
@@ -95,13 +95,13 @@ engine/
 │       └── scenario/   ScenarioBuilder, ScenarioRunner
 └── api/
     ├── pom.xml                         Spring Boot (web, websocket, validation, test)
-    └── src/main/java/fr/daliush/shardbound/api/
-        ├── rest/       ContentController (cards, decks, bots), GamesController, Problem Details
-        ├── ws/         the WebSocket adapter: handshake, GameWebSocketHandler, WebSocketSeatConnection
-        ├── session/    GameSession, Seat, Outbox, GameSessionService, PlayerConnections and SeatConnection, GameRepository and GameUpdates (ports) with their *InMemory implementations
-        ├── protocol/   ServerMessage, ClientMessage and their JSON
-        ├── dto/        view, decision, action, event DTOs and mappers
-        └── config/     content, sessions, WebSocket, the shardbound.* properties
+    └── src/main/java/fr/daliush/shardbound/api/      controller → domain ← adapter → dao (checked by ArchitectureTest)
+        ├── controller/ the endpoints: rest/ (controllers, dto/), ws/ (handshake, handler, GameSocketRegistry, message/), mappers/
+        ├── domain/     no transport, no JSON: bo/ (game, view, command, error), services/ (game, update, bot, security,
+        │               content), mappers/view, ports/ (GameSessionPort, GameNotificationPort, GameWatcher)
+        ├── adapter/    the ports implemented on the DAOs: game/, notification/, mappers/ (entity ↔ business object)
+        ├── dao/        pure data: entities/, game/ (GameDao), notification/ (GameNotificationDao), each with *InMemory
+        └── config/     content and engine, clock and settings, WebSocket, the shardbound.* properties
 frontend/                               Angular 21 workspace (section 14)
 .github/workflows/engine.yml            CI for engine/ (section 3.5)
 .github/workflows/frontend.yml          CI for frontend/ (section 3.5)
@@ -137,7 +137,7 @@ cd frontend && npm test                         # client unit tests
 | `shardbound.content-dir` | auto-detected | Path to the repository's `content/` folder |
 | `shardbound.sessions.finished-ttl` | `30m` | How long a finished game is kept |
 | `shardbound.sessions.idle-ttl` | `2h` | How long a game without any action is kept |
-| `shardbound.sessions.eviction-interval` | `1m` | How often the in-memory repository drops expired games |
+| `shardbound.sessions.eviction-interval` | `1m` | How often the in-memory DAO drops expired games |
 | `shardbound.bots.step-delay` | `0ms` | Optional pause between two bot actions (the client paces them already) |
 | `shardbound.websocket.allowed-origins` | `http://localhost:*`, `http://127.0.0.1:*`, `http://[::1]:*` | Origin patterns a browser may open a game's WebSocket from |
 
@@ -669,7 +669,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - URL: `ws://host/ws/games/{gameId}?token={playerToken}`.
 - A `HandshakeInterceptor` resolves the game and the seat from the token. Unknown game → reject the handshake with `404`; bad token → `401`.
 - On connection, the server immediately sends a `state` message.
-- One connection per seat: a new connection with the same token replaces the old one, which the server closes with code `4409` (`"replaced by a newer connection"`). The old connection may be on another instance: the new one announces itself on `GameUpdates` (`connected(gameId, seat, connectionId)`), and whichever instance holds an older connection for that seat closes it.
+- One connection per seat: a new connection with the same token replaces the old one, which the server closes with code `4409` (`"replaced by a newer connection"`). The old connection may be on another instance: the new one announces itself through the notification port (`announce(gameId, seat, connectionId)`), and whichever instance holds an older connection for that seat closes it.
 - Wrap every `WebSocketSession` in Spring's `ConcurrentWebSocketSessionDecorator`: `sendMessage` is not thread-safe.
 
 ### 13.2 Messages
@@ -754,18 +754,18 @@ Settled on 2026-10-06, for slice 2:
 - **`UnitView.attacks[].damage`**: the damage the attack deals to its target, bonuses included (8.5, 8.18); `null` when it deals none (Mend, Call the Grove, Kindle). Core computes it, next to `Costs`, so labels, prompts and views cannot disagree.
 - **Optional fields** are written as explicit `null` in WebSocket messages, as typed above.
 
-### 13.4 Session server (`api/session`)
+### 13.4 Session server (`api/domain`, `api/adapter`, `api/dao`)
 
-**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions live behind a repository port, updates travel through a pub/sub port, and any instance can process any message. Phase 2 runs locally, in a single process, and ships in-memory adapters for both ports: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as a new adapter, without touching the service.
+**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions are kept through a port, notifications travel through another, and any instance can process any message. Phase 2 runs locally, in a single process, on in-memory DAOs: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as new DAOs, without touching the domain.
 
-- `GameSession`, a serializable record: game id; status; the setup (seed, decks); two `Seat`s (`PlayerId`, kind HUMAN or BOT, deck, SHA-256 hash of the seat token for a human, bot name and bot RNG state for a bot); the join code's hash; the current `GameState`; `version`; the event log (unredacted, in order); the action log; last activity time. The state is a snapshot for fast loading; the action log, with the setup, rebuilds it exactly (determinism), for replays and debugging.
-- **Naming**: each port is an interface (`GameRepository`), and each implementation adds a suffix to its name: `GameRepositoryInMemory` now, `GameRepositoryDatabase` later.
+- `GameSession`, a business object: game id; status; the seed; two `Seat`s (a human: deck and SHA-256 hash of the seat token; a bot: deck, name and RNG state; an open seat: the join code's hash); the current `GameState`; `version`; the event log (unredacted, in order); the action log; the outbox; last activity time. The adapter maps it to a `GameEntity` (plain values and engine types) that the DAO stores. The state is a snapshot for fast loading; the action log, with the setup, rebuilds it exactly (determinism), for replays and debugging.
+- **Layers**: the domain owns its ports (`GameSessionPort`, `GameNotificationPort`); the adapter layer implements them (`GameSessionAdapter`, `GameNotificationAdapter`) and maps entities to business objects; the DAO layer is pure data. Each DAO is an interface, and each implementation adds a suffix: `GameDaoInMemory` now, `GameDaoDatabase` later.
 - **Bots are rebuilt at every step** from their name and RNG state, and their new RNG state is saved with the session. Any instance that loads a session whose decision belongs to a bot (because an instance stopped in the middle of a bot turn) resumes the bot loop; the versioned save makes sure only one instance does.
-- `GameRepository` (port): `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, `delete(gameId)`. `save` is an optimistic lock: it fails with `VersionConflict` if the stored version is no longer `expectedVersion`. Phase 2: `GameRepositoryInMemory` (`ConcurrentHashMap.compute`).
-- **Outbox.** Each save also stores the `update` message of each human seat for that version (view and events, redacted for the seat), as the JSON sent. The outbox keeps the last 50 versions; a connection further behind gets the `state` instead. A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
-- `GameUpdates` (port): `publish(gameId, version)`, `connected(gameId, seat, connectionId)` (13.1) and `subscribe(gameId, listener)`. An instance subscribes to every game for which it holds a WebSocket. When notified, it reads from the repository the `update` messages its connections have not received yet (`version > lastSent`) and sends them in order. Phase 2: `GameUpdatesInMemory`, in-process. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
-- `PlayerConnections`: this instance's connections only, behind a `SeatConnection` port (`send`, `replaced`), so it knows no transport and two instances can be tested without WebSockets; the `ws` package adapts a `WebSocketSession` to it. It subscribes to `GameUpdates` for each game it holds a connection to, sends every connection the updates it has not received, in order, from the outbox, and closes connections replaced elsewhere. A connection is registered before its `state` is read, under the connection's lock, so no update falls between the two. A seat without a connection anywhere simply misses messages and will `sync`.
-- `GameSessionService` (no WebSocket types in it): `create`, `join`, `authenticate(gameId, token)` (the seat, for the handshake), `state(gameId, seat)` (the `state` message and its version, on connection and `sync`), `act(gameId, seat, decisionId, actionIndex)` (an optional rejection), `resumeBots(gameId)`.
+- `GameSessionPort`: `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, an optimistic lock that answers false when the stored version is no longer `expectedVersion` (the DAO throws `VersionConflict`, the adapter translates it). Phase 2: `GameDaoInMemory` keeps each game as a database row would: version and status beside its JSON.
+- **Outbox.** Each save also stores, for each human seat, what it may see after that save: the engine's `PlayerView`, the prompt and labels of its own decision (written then, since the describers read the full state), and the save's events redacted for it. The domain turns them into views when they are sent. The outbox keeps the last 50 versions; a connection further behind gets the `state` instead. A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
+- `GameNotificationPort`: `publish(gameId, version)`, `announce(gameId, seat, connectionId)` (13.1) and `watch(gameId, watcher)`. The `GameWatcher` callback is the domain's; the adapter forwards the DAO's notifications to it. Phase 2: `GameNotificationDaoInMemory`, in-process, which logs a failing listener instead of letting it reach the publisher. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
+- The services: `GameCreationService` (create, join), `GamePlayService` (act and its checks), `BotTurnService` (the bot loop), `SeatAuthenticationService` (the seat a token holds), `SeatUpdateService` (`state`, `since(version)` from the outbox, `watch`, `announce`), and `GameSaver`, the step every change ends with: outbox, versioned save, publish, log.
+- `GameSocketRegistry` (controller): this instance's sockets only. It watches every game it holds a socket to, sends every socket the updates it has not received, in order, and closes sockets replaced elsewhere. A socket is registered before its `state` is read, under the socket's lock, so no update falls between the two. A seat without a socket anywhere simply misses messages and will `sync`.
 - WebSocket threads never block: they hand each message to a virtual thread. Inside one instance, a per-game lock avoids pointless conflicts between two messages of the same game; correctness across instances comes from the versioned `save`, not from the lock.
 - **Processing `act`**, on any instance:
   1. Load the session. If the game is not started or is over: `rejected`.
@@ -775,7 +775,7 @@ Settled on 2026-10-06, for slice 2:
   5. `publish(gameId, version)`.
   6. While the next decision belongs to a bot seat and the game is not over: the bot chooses, then back to 4 (optional `step-delay` between iterations). Guard against bugs: at most 10,000 bot steps per human action, then fail loudly.
 - Human vs human: the same flow; whichever seat holds the decision acts, mid-turn intercepts and echo choices included, even when the two players are connected to different instances.
-- Eviction: finished games after `finished-ttl`, idle games after `idle-ttl`. The in-memory repository runs a scheduled task; a shared store will use its own expiry.
+- Eviction: finished games after `finished-ttl`, idle games after `idle-ttl`. A scheduled task evicts from the in-memory DAO; a shared store will use its own expiry.
 - Logging: one line per applied action (game id, seat, decision kind, action label, version, instance).
 
 ---
@@ -844,9 +844,10 @@ These gaps were found while writing this spec, then settled with the maintainer 
 
 **API**
 
-- `GameSessionService` with a recording `GameUpdates`: human vs bot to the end; stale and foreign decisions rejected; human vs human with a mid-turn intercept; `sync`.
-- **Two instances**: two `GameSessionService`s sharing one repository and one `GameUpdates`. A human vs human game where each player is connected to a different instance, mid-turn intercept included; the same `act` sent to both instances at once is applied once, the other gets `stale_decision`; a bot game whose messages alternate between instances.
-- `GameSession` survives a JSON round trip unchanged (state, seats, logs), so a shared store can hold it.
+- The domain services with a recording notification DAO: human vs bot to the end; stale and foreign decisions rejected; human vs human with a mid-turn intercept; the join as version 1; the state and the missed updates of a seat.
+- **Two instances**: two complete instances, wired by hand, sharing one game DAO and one notification DAO, with fake WebSockets. A human vs human game where each player is connected to a different instance, mid-turn intercept included; the same `act` sent to both instances at once is applied once, the other gets `stale_decision`; a bot game whose messages alternate between instances.
+- A `GameSession` comes back unchanged through the adapter and the in-memory DAO's JSON (state, seats, logs, outbox), so a shared store can hold it.
+- `ArchitectureTest` (ArchUnit): controller → domain ← adapter → dao, and no transport or JSON in the domain.
 - REST controllers with MockMvc (status codes, Problem Details).
 - WebSocket: an integration test with a real WebSocket client on a random port: connect, receive `state`, play, receive `update`; a bad token is refused; a second connection replaces the first.
 
