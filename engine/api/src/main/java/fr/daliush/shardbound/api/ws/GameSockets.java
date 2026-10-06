@@ -17,6 +17,6 @@ public final class GameSockets {
                                 PlayerConnections connections, List<String> allowedOrigins) {
         registry.addHandler(new GameWebSocketHandler(sessions, connections), PATH)
                 .addInterceptors(new GameHandshakeInterceptor(sessions))
-                .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
+                .setAllowedOriginPatterns(allowedOrigins.toArray(String[]::new));
     }
 }

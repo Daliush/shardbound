@@ -24,8 +24,8 @@ public record ShardboundProperties(
     public record Bots(@DefaultValue("0ms") Duration stepDelay) {
     }
 
-    /** The origins a browser may open a game's WebSocket from. */
-    public record Websocket(@DefaultValue({"http://localhost:4200", "http://127.0.0.1:4200"})
+    /** The origin patterns a browser may open a game's WebSocket from: local dev servers, whatever their port. */
+    public record Websocket(@DefaultValue({"http://localhost:*", "http://127.0.0.1:*", "http://[::1]:*"})
                             List<String> allowedOrigins) {
     }
 }
