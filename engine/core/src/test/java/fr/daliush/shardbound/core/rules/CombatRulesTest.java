@@ -49,7 +49,7 @@ class CombatRulesTest {
                 attack("root.thornback-ancient").withAttack(1));
 
         assertThat(result.pending().orElseThrow().actions()).noneMatch(Action.Attack.class::isInstance);
-        assertThat(result.unit("root.thornback-ancient").attackedThisTurn()).isTrue();
+        assertThat(result.unit("root.thornback-ancient").hasAttackedThisTurn()).isTrue();
     }
 
     @Test
@@ -116,7 +116,7 @@ class CombatRulesTest {
     void interceptLimits() {
         ScenarioResult result = run(scenario().turn(3).shards(P1, 1).unit(P1, "ember.cinderling")
                         .unit(P2, "neutral.shard-construct")
-                        .unit(P2, "neutral.shardling", unit -> unit.intercepted())
+                        .unit(P2, "neutral.shardling", unit -> unit.hasIntercepted())
                         .unit(P2, "root.sprout", unit -> unit.frozenThroughTurn(3)).build(),
                 attack("ember.cinderling").on(unit("neutral.shard-construct")));
 
@@ -153,7 +153,7 @@ class CombatRulesTest {
 
         assertThat(result.decisions()).hasSize(1);
         assertThat(result.unit("root.mossmender").defense()).isEqualTo(4);
-        assertThat(result.unit("root.mossmender").attackedThisTurn()).isTrue();
+        assertThat(result.unit("root.mossmender").hasAttackedThisTurn()).isTrue();
     }
 
     @Test
@@ -166,7 +166,7 @@ class CombatRulesTest {
         assertThat(result.decisions()).hasSize(1);
         assertThat(result.events(GameEvent.UnitDamaged.class)).hasSize(2);
         assertThat(result.player(P1).hp()).isEqualTo(41);
-        assertThat(result.unit("test.charger").attackedThisTurn()).isTrue();
+        assertThat(result.unit("test.charger").hasAttackedThisTurn()).isTrue();
     }
 
     @Test

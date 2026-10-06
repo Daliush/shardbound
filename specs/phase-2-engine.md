@@ -247,7 +247,7 @@ record Unit(
     int defense, int maxDefense,            // current and max, both already include modifiers and auras
     List<Modifier> modifiers,
     Map<InstanceId, AuraBonus> appliedAuras, // aura contributions currently applied (8.14)
-    boolean attackedThisTurn, boolean interceptedThisTurn,
+    boolean hasAttackedThisTurn, boolean hasInterceptedThisTurn,
     int frozenThroughTurn,                  // 0 = not frozen; frozen while state.turn <= this (8.10)
     boolean anchorProtected, boolean doomed, // 11.3
     Optional<InstanceId> linkedTo) {}       // 11.5
@@ -507,7 +507,7 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - **5.1.1** First player = `rng.nextBoolean()` (P1 or P2).
 - **5.1.2** Shuffle both decks (P1's, then P2's), then each player draws 5 (first player first).
 - **5.1.3** `MULLIGAN` decision for the first player, then the second. `Mulligan`: the whole hand goes back into the deck, shuffle, draw 4. Once both have decided, turn 1 starts for the first player.
-- **5.2** Start of turn, in order: first, units whose freeze has ended thaw (`UnitThawed`, 8.10); **5.2.1** end of Anchor protection for the active player's units; **5.2.2** Shards (4.1, 4.2); **5.2.3** draw 1 (except the first player's very first turn); **5.2.4** "Turn start" abilities of the active player's units and relics (by arrival order) go to the queue. At the same moment, reset `attackedThisTurn` and `interceptedThisTurn` on every unit: "this turn" in 7.2 and 7.5 means each turn, the opponent's included. When everything has resolved: `MAIN` decision.
+- **5.2** Start of turn, in order: first, units whose freeze has ended thaw (`UnitThawed`, 8.10); **5.2.1** end of Anchor protection for the active player's units; **5.2.2** Shards (4.1, 4.2); **5.2.3** draw 1 (except the first player's very first turn); **5.2.4** "Turn start" abilities of the active player's units and relics (by arrival order) go to the queue. At the same moment, reset `hasAttackedThisTurn` and `hasInterceptedThisTurn` on every unit: "this turn" in 7.2 and 7.5 means each turn, the opponent's included. When everything has resolved: `MAIN` decision.
 - **5.3** `MAIN` lists every legal `PlayCard`, `Attack` and `EndTurn`. It is always asked, even when `EndTurn` is the only option.
 - **5.4** `EndTurn`: **5.4.1** "Turn end" abilities of the active player's cards to the queue, then drain it; **5.4.2** remove `END_OF_TURN` modifiers (8.5 for defense); **5.4.3** destroy the active player's doomed units that are no longer protected and still have 0 defense (11.3.5); **5.4.4** `shards = 0`; then 1.5; then start the opponent's turn (`turn += 1`).
 - **5.5** The non-active player never gets `MAIN` or `PlayCard`: only `INTERCEPT` and the `CHOOSE_*` decisions that rules give them (5.5.2).
@@ -526,16 +526,16 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 ### Section 7 — Combat
 
 - **7.1** A unit has 1 or 2 attack abilities. An attack "has a target" if one of its effects targets `ATTACK_TARGET`.
-- **7.2** An `Attack` is legal if: the attacker belongs to the active player; `arrivedTurn < turn`; it is not frozen (`turn > frozenThroughTurn`); `!attackedThisTurn`; the player can pay that attack's cost. Overcharge never applies to attacks (11.4.5).
+- **7.2** An `Attack` is legal if: the attacker belongs to the active player; `arrivedTurn < turn`; it is not frozen (`turn > frozenThroughTurn`); `!hasAttackedThisTurn`; the player can pay that attack's cost. Overcharge never applies to attacks (11.4.5).
 - **7.3** Valid targets of an attack with a target: every enemy unit (frozen, anchored and doomed units included). If the enemy has no unit: the enemy player. Relics are never attack targets.
 - **7.4 / 9.9** Resolving an `Attack`:
-  1. pay the cost, set `attackedThisTurn`, emit `AttackDeclared`;
+  1. pay the cost, set `hasAttackedThisTurn`, emit `AttackDeclared`;
   2. resolve the attacker's "Attack" abilities **right away** (not through the queue: rule 9.9 places them before the intercept decision; their consequences, such as deaths, still queue normally);
   3. if the target is a unit still on the board and the defender has at least one eligible interceptor: `INTERCEPT` decision for the defender (7.5);
   4. resolve the attack's effects in printed order: `ATTACK_TARGET` is the (possibly redirected) target; `SELF` is the attacker, if still on the board; `YOU` is its controller; `ALL_ALLY_UNITS` are its controller's units; every damage effect adds the attacker's effective damage bonus (8.5, 8.18).
   - If the target left the board before step 3 (for example killed by an "Attack" ability): no intercept, effects on `ATTACK_TARGET` do nothing, the other effects apply, and it still counts as the unit's attack (7.9).
   - If the attacker left the board before step 4 (for example because of its own "Attack" abilities): the attack does not take place, none of its effects apply, the cost stays paid (7.10).
-- **7.5** Eligible interceptors: the defender's units other than the target, not frozen, `!interceptedThisTurn` (anchored and doomed units included). Intercepting sets `interceptedThisTurn` and emits `AttackIntercepted`. Spells, abilities and echoes are never intercepted.
+- **7.5** Eligible interceptors: the defender's units other than the target, not frozen, `!hasInterceptedThisTurn` (anchored and doomed units included). Intercepting sets `hasInterceptedThisTurn` and emits `AttackIntercepted`. Spells, abilities and echoes are never intercepted.
 - **7.6** No retaliation.
 - **7.7** Spell targets are not limited by 7.3.
 - **7.8** An attack without a target never asks for an intercept, still counts as the unit's attack and still triggers "Attack" abilities.
@@ -723,7 +723,7 @@ interface UnitView extends CardRef {
   controller: Side; token: boolean;
   defense: number; maxDefense: number;
   attacks: { index: number; name: string | null; cost: number; damage: number | null; hasTarget: boolean; echo: number | null }[];
-  arrivedThisTurn: boolean; attackedThisTurn: boolean; interceptedThisTurn: boolean;
+  arrivedThisTurn: boolean; hasAttackedThisTurn: boolean; hasInterceptedThisTurn: boolean;
   frozen: boolean; anchorProtected: boolean; doomed: boolean; linkedTo: number | null;
   modifiers: { attackDamage: number; defense: number; duration: "permanent" | "end_of_turn" }[];
 }

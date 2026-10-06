@@ -22,8 +22,8 @@ public record Unit(
         int maxDefense,
         List<Modifier> modifiers,
         List<AuraBonus> auras,
-        boolean attackedThisTurn,
-        boolean interceptedThisTurn,
+        boolean hasAttackedThisTurn,
+        boolean hasInterceptedThisTurn,
         int frozenThroughTurn,
         boolean anchorProtected,
         boolean doomed,
@@ -77,19 +77,19 @@ public record Unit(
         return change(draft -> draft.frozenThroughTurn = Math.max(frozenThroughTurn, turn));
     }
 
-    public Unit markAttacked() {
-        return change(draft -> draft.attackedThisTurn = true);
+    public Unit markHasAttacked() {
+        return change(draft -> draft.hasAttackedThisTurn = true);
     }
 
-    public Unit markIntercepted() {
-        return change(draft -> draft.interceptedThisTurn = true);
+    public Unit markHasIntercepted() {
+        return change(draft -> draft.hasInterceptedThisTurn = true);
     }
 
     /** "This turn" in 7.2 and 7.5 starts over at every turn, the opponent's included. */
     public Unit withTurnFlagsCleared() {
         return change(draft -> {
-            draft.attackedThisTurn = false;
-            draft.interceptedThisTurn = false;
+            draft.hasAttackedThisTurn = false;
+            draft.hasInterceptedThisTurn = false;
         });
     }
 
@@ -106,8 +106,8 @@ public record Unit(
         int maxDefense;
         List<Modifier> modifiers;
         List<AuraBonus> auras;
-        boolean attackedThisTurn;
-        boolean interceptedThisTurn;
+        boolean hasAttackedThisTurn;
+        boolean hasInterceptedThisTurn;
         int frozenThroughTurn;
         boolean anchorProtected;
         boolean doomed;
@@ -119,8 +119,8 @@ public record Unit(
             maxDefense = unit.maxDefense;
             modifiers = new ArrayList<>(unit.modifiers);
             auras = new ArrayList<>(unit.auras);
-            attackedThisTurn = unit.attackedThisTurn;
-            interceptedThisTurn = unit.interceptedThisTurn;
+            hasAttackedThisTurn = unit.hasAttackedThisTurn;
+            hasInterceptedThisTurn = unit.hasInterceptedThisTurn;
             frozenThroughTurn = unit.frozenThroughTurn;
             anchorProtected = unit.anchorProtected;
             doomed = unit.doomed;
@@ -129,7 +129,7 @@ public record Unit(
 
         Unit toUnit() {
             return new Unit(unit.id, unit.card, unit.owner, unit.controller, unit.token, unit.arrivalSeq,
-                    unit.arrivedTurn, defense, maxDefense, modifiers, auras, attackedThisTurn, interceptedThisTurn,
+                    unit.arrivedTurn, defense, maxDefense, modifiers, auras, hasAttackedThisTurn, hasInterceptedThisTurn,
                     frozenThroughTurn, anchorProtected, doomed, linkedTo);
         }
     }

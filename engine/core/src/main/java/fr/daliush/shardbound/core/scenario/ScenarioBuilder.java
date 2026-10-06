@@ -138,11 +138,11 @@ public final class ScenarioBuilder {
         if (setup.defense.isPresent()) {
             unit = unit.withDefense(setup.defense.getAsInt());
         }
-        if (setup.attacked) {
-            unit = unit.markAttacked();
+        if (setup.hasAttacked) {
+            unit = unit.markHasAttacked();
         }
-        if (setup.intercepted) {
-            unit = unit.markIntercepted();
+        if (setup.hasIntercepted) {
+            unit = unit.markHasIntercepted();
         }
         Unit placed = unit;
         return change(player, state -> state.addUnit(placed));

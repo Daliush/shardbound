@@ -7,8 +7,8 @@ public final class UnitSetup {
 
     OptionalInt defense = OptionalInt.empty();
     boolean arrivedThisTurn;
-    boolean attacked;
-    boolean intercepted;
+    boolean hasAttacked;
+    boolean hasIntercepted;
     int frozenThroughTurn;
 
     public UnitSetup defense(int value) {
@@ -21,13 +21,13 @@ public final class UnitSetup {
         return this;
     }
 
-    public UnitSetup attacked() {
-        attacked = true;
+    public UnitSetup hasAttacked() {
+        hasAttacked = true;
         return this;
     }
 
-    public UnitSetup intercepted() {
-        intercepted = true;
+    public UnitSetup hasIntercepted() {
+        hasIntercepted = true;
         return this;
     }
 

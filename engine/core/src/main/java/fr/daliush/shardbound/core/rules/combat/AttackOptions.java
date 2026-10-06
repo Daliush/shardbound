@@ -38,9 +38,9 @@ public final class AttackOptions {
         return attacks;
     }
 
-    /** 7.2: not arrived this turn, not frozen, not attacked yet this turn. */
+    /** 7.2: has not arrived this turn, is not frozen, has not attacked yet this turn. */
     private static boolean canAttack(Game game, Unit unit) {
-        return !unit.arrivedOn(game.turn()) && !unit.isFrozen(game.turn()) && !unit.attackedThisTurn();
+        return !unit.arrivedOn(game.turn()) && !unit.isFrozen(game.turn()) && !unit.hasAttackedThisTurn();
     }
 
     private static List<Action> withTargets(Game game, PlayerId player, Unit unit, int index, AttackAbility attack) {

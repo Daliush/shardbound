@@ -42,7 +42,7 @@ public final class AttackSequence {
         UnitCard card = game.catalog().unit(attacker.card());
         AttackAbility attack = card.attacks().get(step.attackIndex());
         game.updatePlayer(step.player(), state -> state.withShards(state.shards().pay(attack.cost())));
-        game.updateUnit(attacker.markAttacked());
+        game.updateUnit(attacker.markHasAttacked());
         game.emit(new GameEvent.AttackDeclared(attacker.asCard(), step.attackIndex(),
                 step.target().map(target -> describe(game, target))));
 
@@ -105,7 +105,7 @@ public final class AttackSequence {
     private static void redirect(Game game, Step.ResolveAttack step, Action.Intercept intercept) {
         Unit interceptor = game.unit(intercept.interceptor()).orElseThrow();
         Unit original = step.target().flatMap(target -> unitOf(game, target)).orElseThrow();
-        game.updateUnit(interceptor.markIntercepted());
+        game.updateUnit(interceptor.markHasIntercepted());
         game.emit(new GameEvent.AttackIntercepted(original.asCard(), interceptor.asCard()));
         game.push(step.redirectedTo(TargetRef.unit(interceptor.id())).inPhase(Step.AttackPhase.EFFECTS));
     }

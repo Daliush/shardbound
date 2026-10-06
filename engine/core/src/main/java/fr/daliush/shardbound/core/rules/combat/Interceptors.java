@@ -16,7 +16,7 @@ public final class Interceptors {
         return game.player(defender).units().stream()
                 .filter(unit -> !unit.id().equals(target.id()))
                 .filter(unit -> !unit.isFrozen(game.turn()))
-                .filter(unit -> !unit.interceptedThisTurn())
+                .filter(unit -> !unit.hasInterceptedThisTurn())
                 .sorted(Comparator.comparingInt(Unit::arrivalSeq))
                 .toList();
     }

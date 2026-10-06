@@ -115,7 +115,7 @@ Builder reference:
 
 - `turn`, `active`, `firstPlayer`, `seed`;
 - per player: `hp`, `fatigue`, `shards`, `maxShards`, `deck(…)` (top first), `hand(…)`, `graveyard(…)`;
-- `unit(player, card, setup -> setup.defense(2).arrivedThisTurn().attacked().intercepted().frozenThroughTurn(4))`;
+- `unit(player, card, setup -> setup.defense(2).arrivedThisTurn().hasAttacked().hasIntercepted().frozenThroughTurn(4))`;
 - `relic(player, card)`;
 - `decklist(player, deck)`.
 

@@ -301,7 +301,7 @@ What you receive at turn 5. `view` is the full `GameView` (spec §13.3); `histor
           "attacks": [
             { "index": 0, "name": "Flick", "cost": 1, "damage": 3, "hasTarget": true, "echo": null }
           ],
-          "arrivedThisTurn": false, "attackedThisTurn": false, "interceptedThisTurn": false,
+          "arrivedThisTurn": false, "hasAttackedThisTurn": false, "hasInterceptedThisTurn": false,
           "frozen": false, "anchorProtected": false, "doomed": false, "linkedTo": null,
           "modifiers": []
         },
@@ -311,7 +311,7 @@ What you receive at turn 5. `view` is the full `GameView` (spec §13.3); `histor
           "attacks": [
             { "index": 0, "name": "Glint", "cost": 1, "damage": 3, "hasTarget": true, "echo": null }
           ],
-          "arrivedThisTurn": false, "attackedThisTurn": false, "interceptedThisTurn": false,
+          "arrivedThisTurn": false, "hasAttackedThisTurn": false, "hasInterceptedThisTurn": false,
           "frozen": false, "anchorProtected": false, "doomed": false, "linkedTo": null,
           "modifiers": []
         }
@@ -333,7 +333,7 @@ What you receive at turn 5. `view` is the full `GameView` (spec §13.3); `histor
           "attacks": [
             { "index": 0, "name": "Prick", "cost": 1, "damage": 2, "hasTarget": true, "echo": null }
           ],
-          "arrivedThisTurn": false, "attackedThisTurn": false, "interceptedThisTurn": false,
+          "arrivedThisTurn": false, "hasAttackedThisTurn": false, "hasInterceptedThisTurn": false,
           "frozen": false, "anchorProtected": false, "doomed": false, "linkedTo": null,
           "modifiers": []
         },
@@ -343,7 +343,7 @@ What you receive at turn 5. `view` is the full `GameView` (spec §13.3); `histor
           "attacks": [
             { "index": 0, "name": "Root Slam", "cost": 2, "damage": 4, "hasTarget": true, "echo": null }
           ],
-          "arrivedThisTurn": false, "attackedThisTurn": false, "interceptedThisTurn": false,
+          "arrivedThisTurn": false, "hasAttackedThisTurn": false, "hasInterceptedThisTurn": false,
           "frozen": false, "anchorProtected": true, "doomed": false, "linkedTo": null,
           "modifiers": []
         }
