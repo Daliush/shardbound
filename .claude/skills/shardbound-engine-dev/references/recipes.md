@@ -90,17 +90,16 @@ Then:
    List<Action> options = …;              // canonical order
    if (options.isEmpty()) { …; return; }  // nothing to choose: the effect does nothing (10.3)
    if (options.size() == 1) { … }         // the only option, taken automatically
-   game.push(stepWithWhatWeKnowSoFar);    // the paused step is the memory of the choice
-   game.ask(player, DecisionKind.CHOOSE_TARGET, options);
-   return;
+   game.pauseAndAsk(stepWithWhatWeKnowSoFar, player, DecisionKind.CHOOSE_TARGET, options);
+   return;                                // the paused step is the memory of the choice
    ```
-   Then add a `case` to `StepRunner.resume`: record the answer and push the next step (or the updated step, if more choices follow, as in `AbilityTargets.answer`).
+   Then add a `resume` method to the step's rule class and a `case` to `StepRunner.resume` that calls it. The method checks that the step is in the phase that asked and that the answer has the expected type, records the answer, and pushes the next step (or the updated step, if more choices follow, as in `AbilityTargets.resume`). A step with phases dispatches on its phase in `resume` as it does in `run` (see `AttackSequence`).
 4. The deciding player can be the non-active one (5.5.2). The invariants check that only the active player ever gets `MAIN`, and that other decisions have at least two options.
 
 ## 6. Add an action type or a decision kind
 
 - **Action**: a record in `action/Action.java` with value components only, since `apply` checks it by equality. Add a case to `text/ActionDescriber` for its button label, and put it in canonical order where it is listed. The API's `ActionView` gets a matching `type` in slice 2.
-- **Decision kind**: `decision/DecisionKind.java`, `testing/Invariants.checkDecision` if it has its own constraints, and the API's `DecisionKind` string later.
+- **Decision kind**: `decision/DecisionKind.java`. Check `pausesAStep()`: a kind asked in the middle of a step goes through `pauseAndAsk`; one that starts new work goes through `ask` and needs a case in `GameEngine.startNewWork`. Update `testing/Invariants.checkDecision` if it has its own constraints, and add the API's `DecisionKind` string later.
 
 ## 7. Change how an existing rule behaves
 

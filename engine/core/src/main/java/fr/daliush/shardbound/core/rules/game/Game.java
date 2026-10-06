@@ -184,7 +184,27 @@ public final class Game {
         return pending;
     }
 
+    /** Asks a decision that starts new work: MULLIGAN or MAIN. */
     public void ask(PlayerId player, DecisionKind kind, List<Action> actions) {
+        if (kind.pausesAStep()) {
+            throw new IllegalStateException(kind + " is asked in the middle of a step: use pauseAndAsk");
+        }
+        setPending(player, kind, actions);
+    }
+
+    /**
+     * Puts {@code paused} back at the front of the pending work and asks: the answer will resume that step
+     * ({@code StepRunner.resume}). It is how a step stops in the middle to let a player choose.
+     */
+    public void pauseAndAsk(Step paused, PlayerId player, DecisionKind kind, List<Action> actions) {
+        if (!kind.pausesAStep()) {
+            throw new IllegalStateException(kind + " does not pause a step: use ask");
+        }
+        push(paused);
+        setPending(player, kind, actions);
+    }
+
+    private void setPending(PlayerId player, DecisionKind kind, List<Action> actions) {
         decisionSeq++;
         pending = Optional.of(new Decision("d-" + decisionSeq, player, kind, actions));
     }

@@ -26,9 +26,8 @@ public final class AbilityTargets {
             List<TargetRef> options = TargetOptions.forEffect(game, step.source().controller(),
                     effects.get(chosen.size()));
             if (options.size() > 1) {
-                game.push(new Step.ChooseTargets(step.source(), chosen));
-                game.ask(step.source().controller(), DecisionKind.CHOOSE_TARGET,
-                        options.stream().<Action>map(Action.ChooseTarget::new).toList());
+                game.pauseAndAsk(new Step.ChooseTargets(step.source(), chosen), step.source().controller(),
+                        DecisionKind.CHOOSE_TARGET, options.stream().<Action>map(Action.ChooseTarget::new).toList());
                 return;
             }
             chosen.add(options);
@@ -36,9 +35,13 @@ public final class AbilityTargets {
         game.push(new Step.ResolveEffects(step.source(), 0, chosen));
     }
 
-    public static void answer(Game game, Step.ChooseTargets step, Action answer) {
+    /** The chosen target is recorded; the next pass picks the following one. */
+    public static void resume(Game game, Step.ChooseTargets step, Action answer) {
+        if (!(answer instanceof Action.ChooseTarget choice)) {
+            throw new IllegalStateException(answer + " does not answer a target choice");
+        }
         List<List<TargetRef>> chosen = new ArrayList<>(step.chosen());
-        chosen.add(List.of(((Action.ChooseTarget) answer).target()));
+        chosen.add(List.of(choice.target()));
         game.push(new Step.ChooseTargets(step.source(), chosen));
     }
 }

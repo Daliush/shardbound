@@ -85,13 +85,22 @@ An `EffectSource` tells an effect where it comes from: an `EffectList` address (
 
 ## 6. Decisions in the middle of a resolution
 
+There are two kinds of decisions (`DecisionKind.pausesAStep()`):
+
+- **Decisions that start new work**: `MULLIGAN` and `MAIN`. They are asked with `game.ask(...)`, when there is nothing to resume.
+- **Decisions asked in the middle of a step**: `INTERCEPT` and every `CHOOSE_*`. The step waits for the answer.
+
 When a step needs a choice:
 
 1. With no option, the effect does nothing (10.3). With one, it is taken automatically. Only with two or more does the engine ask.
-2. The handler pushes a step back on the front. It is either itself, or an updated copy carrying what it has learned so far, such as the targets already chosen. Then it calls `game.ask(player, kind, actions)`, with the actions in canonical order. The loop stops, because a decision is pending.
-3. On the next `apply`, `GameEngine` pops that front step and calls `StepRunner.resume(game, step, answer)`. The handler records the answer and pushes the next step, and the loop goes on.
+2. The handler computes the options in canonical order, then calls `game.pauseAndAsk(step, player, kind, actions)`. That puts the step back at the front of the pending work and creates the decision. The step is either the handler's own, or an updated copy carrying what it has learned so far, such as the targets already chosen. The loop stops, because a decision is pending.
+3. On the next `apply`, `GameEngine` sees a decision that pauses a step. It pops the front step and calls `StepRunner.resume(game, step, answer)`; the step's rule class records the answer and pushes the next step, and the loop goes on.
 
-Since the paused step is data inside the state, a game can stop here, be written to JSON, and resume on another server instance. Today two steps pause: `ResolveAttack` (`INTERCEPT`) and `ChooseTargets` (`CHOOSE_TARGET`).
+The rule to remember: **the `Resolver` always calls `run`; only `GameEngine.apply` calls `resume`, at most once per call, right at the start, when the answered decision paused a step.** `run` means "do your work"; `resume` means "here is the answer to the question you asked".
+
+Misuse fails loudly: `ask` refuses a decision that pauses a step, `pauseAndAsk` refuses `MAIN` and `MULLIGAN`, and each step checks that it is resumed in the right phase with the right kind of answer (`AttackSequence.resume`, `AbilityTargets.resume`).
+
+Since the paused step is data inside the state, a game can stop here, be written to JSON, and resume on another server instance. Today two steps pause: `ResolveAttack`, in its `INTERCEPT` phase, and `ChooseTargets`.
 
 ## 7. Targets
 

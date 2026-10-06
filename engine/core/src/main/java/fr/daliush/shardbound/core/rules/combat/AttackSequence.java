@@ -14,7 +14,6 @@ import fr.daliush.shardbound.core.resolution.EffectSource;
 import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.rules.trigger.Abilities;
-import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,8 +68,7 @@ public final class AttackSequence {
             return;
         }
         List<Action> answers = interceptAnswers(interceptors);
-        game.push(step);
-        game.ask(step.player().opponent(), DecisionKind.INTERCEPT, answers);
+        game.pauseAndAsk(step, step.player().opponent(), DecisionKind.INTERCEPT, answers);
     }
 
     /** Nobody intercepts an attack on a player, or on a unit that already left the board (7.9). */
@@ -92,18 +90,29 @@ public final class AttackSequence {
         return answers;
     }
 
-    public static void answerIntercept(Game game, Step.ResolveAttack step, Action answer) {
-        PlayerId defender = step.player().opponent();
-        if (answer instanceof Action.Intercept intercept) {
-            Unit interceptor = game.unit(intercept.interceptor()).orElseThrow();
-            Unit original = step.target().flatMap(target -> unitOf(game, target)).orElseThrow();
-            game.updateUnit(interceptor.markIntercepted());
-            game.emit(new GameEvent.AttackIntercepted(original.asCard(), interceptor.asCard()));
-            game.push(step.redirectedTo(TargetRef.unit(interceptor.id())).inPhase(Step.AttackPhase.EFFECTS));
-        } else {
-            game.emit(new GameEvent.InterceptDeclined(defender));
-            game.push(step.inPhase(Step.AttackPhase.EFFECTS));
+    /** The defender's answer to the intercept question: the only question an attack asks. */
+    public static void resume(Game game, Step.ResolveAttack step, Action answer) {
+        if (step.phase() != Step.AttackPhase.INTERCEPT) {
+            throw new IllegalStateException("An attack only waits for a decision in its INTERCEPT phase: " + step);
         }
+        switch (answer) {
+            case Action.Intercept intercept -> redirect(game, step, intercept);
+            case Action.DeclineIntercept ignored -> decline(game, step);
+            default -> throw new IllegalStateException(answer + " does not answer an intercept");
+        }
+    }
+
+    private static void redirect(Game game, Step.ResolveAttack step, Action.Intercept intercept) {
+        Unit interceptor = game.unit(intercept.interceptor()).orElseThrow();
+        Unit original = step.target().flatMap(target -> unitOf(game, target)).orElseThrow();
+        game.updateUnit(interceptor.markIntercepted());
+        game.emit(new GameEvent.AttackIntercepted(original.asCard(), interceptor.asCard()));
+        game.push(step.redirectedTo(TargetRef.unit(interceptor.id())).inPhase(Step.AttackPhase.EFFECTS));
+    }
+
+    private static void decline(Game game, Step.ResolveAttack step) {
+        game.emit(new GameEvent.InterceptDeclined(step.player().opponent()));
+        game.push(step.inPhase(Step.AttackPhase.EFFECTS));
     }
 
     private static void applyEffects(Game game, Step.ResolveAttack step) {

@@ -61,13 +61,22 @@ public final class GameEngine {
         }
         Game game = Game.of(state, catalog);
         game.clearPending();
-        switch (decision.kind()) {
-            case MULLIGAN -> Mulligans.answer(game, decision.player(), action);
-            case MAIN -> MainPhase.answer(game, decision.player(), action);
-            default -> StepRunner.resume(game, game.popStep(), action);
+        if (decision.kind().pausesAStep()) {
+            StepRunner.resume(game, game.popStep(), action);
+        } else {
+            startNewWork(game, decision, action);
         }
         Resolver.run(game);
         return new Transition(game.toState(), game.events());
+    }
+
+    /** Answering MULLIGAN or MAIN starts new work; it does not resume a paused step. */
+    private static void startNewWork(Game game, Decision decision, Action action) {
+        switch (decision.kind()) {
+            case MULLIGAN -> Mulligans.answer(game, decision.player(), action);
+            case MAIN -> MainPhase.answer(game, decision.player(), action);
+            default -> throw new IllegalStateException(decision.kind() + " resumes a paused step");
+        }
     }
 
     /** What {@code viewer} may see; {@code history} is the game's event log so far. */
