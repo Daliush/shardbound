@@ -34,6 +34,8 @@
 > **v2.8 (October 2026)** — the game server is designed for several Cloud Run instances: no instance owns a game, sessions sit in a shared store with versioned saves, updates go through a pub/sub (§8.2, spec §13.4).
 >
 > **v2.9 (October 2026)** — phase 2, slice 1: the engine core plays full games (setup, turns, Shards, zones, cards, combat and intercepts, triggers, five effects) with a rule trace, player views, a scenario service, a random bot and JSON states. Cards that need a later effect or keyword are not playable yet.
+>
+> **v2.10 (October 2026)** — phase 2, slice 2: the game server (REST, WebSocket protocol, versioned sessions with an outbox, tested as two instances sharing one store) and a minimal Angular client. A human plays a bot or another human in the browser; everything the client shows comes from the engine.
 
 ---
 
