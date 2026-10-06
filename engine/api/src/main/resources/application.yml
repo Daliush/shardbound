@@ -4,9 +4,6 @@ spring:
   threads:
     virtual:
       enabled: true
-  mvc:
-    problemdetails:
-      enabled: true
 
 # See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set.
 shardbound:

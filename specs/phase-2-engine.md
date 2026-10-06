@@ -645,7 +645,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 | `GET` | `/api/cards` | — | `[{ id, name, faction, type, cost?, defense?, token, keywords, text: [lines], flavor? , fracture?: [{ step, cost }] }]` |
 | `GET` | `/api/decks` | — | `[{ id, name, description?, faction, cards: [{ card, count }] }]` |
 | `GET` | `/api/bots` | — | `["random", "greedy"]` (only the bots implemented so far) |
-| `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, joinCode?: null, websocketPath: "/ws/games/{id}" }` |
+| `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, websocketPath: "/ws/games/{id}" }` |
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "human" } }` | `201 { gameId, playerToken, joinCode, websocketPath }` |
 | `POST` | `/api/games/{id}/join` | `{ "joinCode": "…", "deck": "root-starter" }` | `200 { gameId, playerToken, websocketPath }` |
 

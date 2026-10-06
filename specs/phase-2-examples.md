@@ -222,12 +222,11 @@ POST /api/games
 {
   "gameId": "8f2c6d1e-3b7a-4c59-9e10-5a4b2d7f9c31",
   "playerToken": "kq3V9xYp0dLmR2tB7wZc4nHf8sJe1uGa6oQiTlXy5vM",
-  "joinCode": null,
   "websocketPath": "/ws/games/8f2c6d1e-3b7a-4c59-9e10-5a4b2d7f9c31"
 }
 ```
 
-Against a human: the same request with `"opponent": { "type": "human" }` returns a `joinCode`. The second player opens the invite link `/join/8f2c…?code=…`, and their client calls:
+A game against a bot has no `joinCode`: optional fields are left out of REST responses (decision 6). Against a human: the same request with `"opponent": { "type": "human" }` returns a `joinCode`. The second player opens the invite link `/join/8f2c…?code=…`, and their client calls:
 
 ```http
 POST /api/games/8f2c6d1e-3b7a-4c59-9e10-5a4b2d7f9c31/join

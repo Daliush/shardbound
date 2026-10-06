@@ -1,7 +1,7 @@
 package fr.daliush.shardbound.api.session;
 
 /** A request the session server refuses, with the reason a client can act on. */
-public sealed class SessionException extends RuntimeException {
+public abstract sealed class SessionException extends RuntimeException {
 
     private SessionException(String message) {
         super(message);
