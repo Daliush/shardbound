@@ -12,6 +12,7 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 - Full design: `docs/design.md`.
 - Rules: `docs/rules/`, one file per section, indexed by `docs/rules/README.md` (see the `shardbound-rules` skill).
 - Cards: see the `shardbound-card-authoring` skill.
+- Engine: the `shardbound-engine` skill explains how it works and how to call it; `shardbound-engine-dev` explains how to change it.
 
 ## Design doc map
 
