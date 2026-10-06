@@ -69,6 +69,7 @@ MCTS, gRPC and Python clients, any database or `repository` module, user account
 | Identity | A random seat token per game and seat, no accounts | Reconnection to the same seat without accounts; accounts come later. |
 | First version | Human vs bot, but the server supports two humans from day one (join code) | Lets the maintainer test intercepts with two browsers. |
 | Determinism | Seed + decks + actions reproduce a game exactly | Debugging, replays, evaluations. |
+| Several instances | No instance owns a game: sessions behind a repository port with versioned saves, updates through a pub/sub port; in-memory adapters in phase 2, a shared store at deployment (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
 
 ---
 
@@ -97,7 +98,7 @@ engine/
     └── src/main/java/fr/daliush/shardbound/api/
         ├── rest/       CardsController, DecksController, BotsController, GamesController, error handling
         ├── ws/         GameWebSocketHandler, handshake, protocol messages, PlayerConnections
-        ├── session/    GameSession, Seat, GameSessionService, GameNotifier (port), GameRepository (port), in-memory repository
+        ├── session/    GameSession, Seat, GameSessionService, GameRepository and GameUpdates (ports) with their *InMemory implementations
         ├── dto/        view, decision, action, event DTOs and mappers
         └── config/     WebSocket and content configuration
 frontend/                               Angular 21 workspace (section 14)
@@ -133,8 +134,8 @@ cd frontend && npm test                         # client unit tests
 | Property | Default | Meaning |
 |---|---|---|
 | `shardbound.content-dir` | auto-detected | Path to the repository's `content/` folder |
-| `shardbound.sessions.finished-ttl` | `30m` | How long a finished game stays in memory |
-| `shardbound.sessions.idle-ttl` | `2h` | How long a game without any action stays in memory |
+| `shardbound.sessions.finished-ttl` | `30m` | How long a finished game is kept |
+| `shardbound.sessions.idle-ttl` | `2h` | How long a game without any action is kept |
 | `shardbound.bots.step-delay` | `0ms` | Optional pause between two bot actions (the client can also pace them) |
 
 ### 3.5 CI
@@ -662,7 +663,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - URL: `ws://host/ws/games/{gameId}?token={playerToken}`.
 - A `HandshakeInterceptor` resolves the game and the seat from the token. Unknown game → reject the handshake with `404`; bad token → `401`.
 - On connection, the server immediately sends a `state` message.
-- One connection per seat: a new connection with the same token replaces the old one, which the server closes with code `4409` (`"replaced by a newer connection"`).
+- One connection per seat: a new connection with the same token replaces the old one, which the server closes with code `4409` (`"replaced by a newer connection"`). The old connection may be on another instance: the new one announces itself on `GameUpdates` (`connected(gameId, seat, connectionId)`), and whichever instance holds an older connection for that seat closes it.
 - Wrap every `WebSocketSession` in Spring's `ConcurrentWebSocketSessionDecorator`: `sendMessage` is not thread-safe.
 
 ### 13.2 Messages
@@ -741,20 +742,27 @@ interface EventView { type: string; rules: string[]; text: string; [field: strin
 
 ### 13.4 Session server (`api/session`)
 
-- `GameSession`: game id; two `Seat`s (`PlayerId`, kind HUMAN or BOT, token for humans, bot instance, deck); the current `GameState`; `version`; the event log (unredacted, in order); status; last activity time.
+**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions live behind a repository port, updates travel through a pub/sub port, and any instance can process any message. Phase 2 runs locally, in a single process, and ships in-memory adapters for both ports: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as a new adapter, without touching the service.
+
+- `GameSession`, a serializable record: game id; status; the setup (seed, decks); two `Seat`s (`PlayerId`, kind HUMAN or BOT, deck, SHA-256 hash of the seat token for a human, bot name and bot RNG state for a bot); the join code's hash; the current `GameState`; `version`; the event log (unredacted, in order); the action log; last activity time. The state is a snapshot for fast loading; the action log, with the setup, rebuilds it exactly (determinism), for replays and debugging.
+- **Naming**: each port is an interface (`GameRepository`), and each implementation adds a suffix to its name: `GameRepositoryInMemory` now, `GameRepositoryDatabase` later.
+- **Bots are rebuilt at every step** from their name and RNG state, and their new RNG state is saved with the session. Any instance that loads a session whose decision belongs to a bot (because an instance stopped in the middle of a bot turn) resumes the bot loop; the versioned save makes sure only one instance does.
+- `GameRepository` (port): `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, `delete(gameId)`. `save` is an optimistic lock: it fails with `VersionConflict` if the stored version is no longer `expectedVersion`. Phase 2: `GameRepositoryInMemory` (`ConcurrentHashMap.compute`).
+- **Outbox.** Each save also stores the `update` message of each seat for that version (view and events, redacted for the seat). A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
+- `GameUpdates` (port): `publish(gameId, version)`, `connected(gameId, seat, connectionId)` (13.1) and `subscribe(gameId, listener)`. An instance subscribes to every game for which it holds a WebSocket. When notified, it reads from the repository the `update` messages its connections have not received yet (`version > lastSent`) and sends them in order. Phase 2: `GameUpdatesInMemory`, in-process. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
+- `PlayerConnections` (WebSocket adapter): this instance's connections only. A seat without a connection anywhere simply misses messages and will `sync`.
 - `GameSessionService` (no WebSocket types in it): `createGame`, `join`, `connect(gameId, token)` (returns the seat and the `state` payload), `act(gameId, seat, requestId, decisionId, actionIndex)`, `sync(gameId, seat)`.
-- **One game processes its messages one at a time, in order**: each session owns a single-threaded executor running on a virtual thread (`Executors.newSingleThreadExecutor(Thread.ofVirtual().factory())`). WebSocket threads only submit work to it, so they never block, even when a bot thinks.
-- **Processing `act`**:
-  1. If the game is not started or is over: `rejected`.
+- WebSocket threads never block: they hand each message to a virtual thread. Inside one instance, a per-game lock avoids pointless conflicts between two messages of the same game; correctness across instances comes from the versioned `save`, not from the lock.
+- **Processing `act`**, on any instance:
+  1. Load the session. If the game is not started or is over: `rejected`.
   2. Recompute the decision from the state. Never trust the client.
   3. If the seat is not the decision's player: `not_your_decision`. If the `decisionId` differs: `stale_decision`. If the index is out of range: `invalid_action`.
-  4. `engine.apply`, then `version += 1`, append the events to the log, notify both seats.
-  5. While the next decision belongs to a bot seat and the game is not over: the bot chooses, then back to 4 (optional `step-delay` between iterations). Guard against bugs: at most 10,000 bot steps per human action, then fail loudly.
-- Human vs human: the same flow; whichever seat holds the decision acts, mid-turn intercepts and echo choices included.
-- `GameNotifier` (port): `send(gameId, seat, message)`. The WebSocket adapter implements it with `PlayerConnections`; tests use a recording fake. A seat without a connection simply misses the message and will `sync`.
-- `GameRepository` (port) with `InMemoryGameRepository` (`ConcurrentHashMap`). A scheduled task evicts finished games after `finished-ttl` and idle games after `idle-ttl`, shutting down their executors.
-- Logging: one line per applied action (game id, seat, decision kind, action label, version).
-- Single instance only: sessions live in memory. Several instances would need sticky sessions or a shared store; that is out of scope.
+  4. `engine.apply`, then `version += 1`, append the events, the action and both seats' `update` messages, `save(session, version - 1)`. On `VersionConflict`, another instance moved the game first: reload and start again at step 1 (the request usually ends as `stale_decision`).
+  5. `publish(gameId, version)`.
+  6. While the next decision belongs to a bot seat and the game is not over: the bot chooses, then back to 4 (optional `step-delay` between iterations). Guard against bugs: at most 10,000 bot steps per human action, then fail loudly.
+- Human vs human: the same flow; whichever seat holds the decision acts, mid-turn intercepts and echo choices included, even when the two players are connected to different instances.
+- Eviction: finished games after `finished-ttl`, idle games after `idle-ttl`. The in-memory repository runs a scheduled task; a shared store will use its own expiry.
+- Logging: one line per applied action (game id, seat, decision kind, action label, version, instance).
 
 ---
 
@@ -821,7 +829,9 @@ These gaps were found while writing this spec, then settled with the maintainer 
 
 **API**
 
-- `GameSessionService` with a recording `GameNotifier`: human vs bot to the end; stale and foreign decisions rejected; human vs human with a mid-turn intercept; `sync`.
+- `GameSessionService` with a recording `GameUpdates`: human vs bot to the end; stale and foreign decisions rejected; human vs human with a mid-turn intercept; `sync`.
+- **Two instances**: two `GameSessionService`s sharing one repository and one `GameUpdates`. A human vs human game where each player is connected to a different instance, mid-turn intercept included; the same `act` sent to both instances at once is applied once, the other gets `stale_decision`; a bot game whose messages alternate between instances.
+- `GameSession` survives a JSON round trip unchanged (state, seats, logs), so a shared store can hold it.
 - REST controllers with MockMvc (status codes, Problem Details).
 - WebSocket: an integration test with a real WebSocket client on a random port: connect, receive `state`, play, receive `update`; a bad token is refused; a second connection replaces the first.
 

@@ -30,6 +30,8 @@
 > **v2.6 (October 2026)** — engine architecture decided: `engine/core` (domain, immutable state, no Spring) and `engine/api` (Spring Boot), REST for resources and a WebSocket protocol for live games, a minimal Angular `frontend/`. Implementation spec: [`specs/phase-2-engine.md`](../specs/phase-2-engine.md).
 >
 > **v2.7 (October 2026)** — rules clarified for the engine with the maintainer: 19 new rules (1.6, 3.8, 6.8, 6.9, 7.9, 7.10, 8.15–8.22, 9.11, 10.5, 10.6, 11.1.10, 11.2.7), and two rules reworded: Freeze lasts the current turn and the next one (8.10), and the non-active player also makes the choices effects ask of them (5.5.2). List in [`rules/12-open-points.md`](rules/12-open-points.md).
+>
+> **v2.8 (October 2026)** — the game server is designed for several Cloud Run instances: no instance owns a game, sessions sit in a shared store with versioned saves, updates go through a pub/sub (§8.2, spec §13.4).
 
 ---
 
@@ -641,7 +643,7 @@ Reminder: most recruiters will not click on the demo. The README GIF, the result
 
 The comparator shows the Arbiter at work without running anything: far more telling than a table.
 
-With no user accounts online, **the demo needs no database**. If one is ever needed: a managed Cloud SQL instance stays on permanently and is billed monthly; compare with a serverless Postgres offering (with pgvector) that has a free tier.
+Cloud Run can run several instances of the game server and does not guarantee that two messages of a game reach the same one. So no instance keeps a game in memory between two messages: **games live in a small shared store**, and a pub/sub carries each update to the instance holding the player's connection (see `specs/phase-2-engine.md` §13.4). Phase 2 runs on in-memory adapters; the store is chosen when going online. Options: a serverless Postgres with a free tier (LISTEN/NOTIFY for the pub/sub, pgvector later), Firestore (serverless, built-in listeners) or Redis. A managed Cloud SQL instance stays on permanently and is billed monthly.
 
 Protection, even without AI: per-visitor rate limiting, a cap on concurrent games and a bounded MCTS thinking budget in demo mode, a budget alert on the GCP project.
 
