@@ -1,0 +1,125 @@
+package fr.daliush.shardbound.core.rules.combat;
+
+import fr.daliush.shardbound.core.action.Action;
+import fr.daliush.shardbound.core.action.TargetRef;
+import fr.daliush.shardbound.core.content.Ability;
+import fr.daliush.shardbound.core.content.AttackAbility;
+import fr.daliush.shardbound.core.content.Trigger;
+import fr.daliush.shardbound.core.content.UnitCard;
+import fr.daliush.shardbound.core.decision.DecisionKind;
+import fr.daliush.shardbound.core.event.EventTarget;
+import fr.daliush.shardbound.core.event.GameEvent;
+import fr.daliush.shardbound.core.resolution.EffectList;
+import fr.daliush.shardbound.core.resolution.EffectSource;
+import fr.daliush.shardbound.core.resolution.Step;
+import fr.daliush.shardbound.core.rules.game.Game;
+import fr.daliush.shardbound.core.rules.trigger.Abilities;
+import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.core.state.Unit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 7.4, one phase per step: declare and pay, resolve "Attack" abilities (9.9), offer an intercept (7.5),
+ * then apply the attack ability's effects to the (possibly redirected) target.
+ */
+public final class AttackSequence {
+
+    private AttackSequence() {
+    }
+
+    public static void run(Game game, Step.ResolveAttack step) {
+        switch (step.phase()) {
+            case DECLARE -> declare(game, step);
+            case INTERCEPT -> offerIntercept(game, step);
+            case EFFECTS -> applyEffects(game, step);
+        }
+    }
+
+    private static void declare(Game game, Step.ResolveAttack step) {
+        Unit attacker = game.unit(step.attacker().id()).orElseThrow();
+        UnitCard card = game.catalog().unit(attacker.card());
+        AttackAbility attack = card.attacks().get(step.attackIndex());
+        game.updatePlayer(step.player(), state -> state.withShards(state.shards().pay(attack.cost())));
+        game.updateUnit(attacker.markAttacked());
+        game.emit(new GameEvent.AttackDeclared(attacker.asCard(), step.attackIndex(),
+                step.target().map(target -> describe(game, target))));
+
+        List<Step> next = new ArrayList<>();
+        for (int index = 0; index < card.abilities().size(); index++) {
+            Ability ability = card.abilities().get(index);
+            if (ability.trigger() == Trigger.ATTACK) {
+                next.add(Abilities.begin(game, attacker.asCard(), step.player(), Trigger.ATTACK, index));
+            }
+        }
+        next.add(step.inPhase(Step.AttackPhase.INTERCEPT));
+        game.push(next.toArray(Step[]::new));
+    }
+
+    private static void offerIntercept(Game game, Step.ResolveAttack step) {
+        if (attackerLeft(game, step)) {
+            return;
+        }
+        Optional<Unit> targetUnit = step.target().flatMap(target -> unitOf(game, target));
+        PlayerId defender = step.player().opponent();
+        List<Unit> interceptors = targetUnit.map(target -> Interceptors.eligible(game, defender, target))
+                .orElse(List.of());
+        if (interceptors.isEmpty()) {
+            game.push(step.inPhase(Step.AttackPhase.EFFECTS));
+            return;
+        }
+        List<Action> answers = new ArrayList<>();
+        answers.add(new Action.DeclineIntercept());
+        interceptors.forEach(unit -> answers.add(new Action.Intercept(unit.id())));
+        game.push(step);
+        game.ask(defender, DecisionKind.INTERCEPT, answers);
+    }
+
+    public static void answerIntercept(Game game, Step.ResolveAttack step, Action answer) {
+        PlayerId defender = step.player().opponent();
+        if (answer instanceof Action.Intercept intercept) {
+            Unit interceptor = game.unit(intercept.interceptor()).orElseThrow();
+            Unit original = step.target().flatMap(target -> unitOf(game, target)).orElseThrow();
+            game.updateUnit(interceptor.markIntercepted());
+            game.emit(new GameEvent.AttackIntercepted(original.asCard(), interceptor.asCard()));
+            game.push(step.redirectedTo(TargetRef.unit(interceptor.id())).inPhase(Step.AttackPhase.EFFECTS));
+        } else {
+            game.emit(new GameEvent.InterceptDeclined(defender));
+            game.push(step.inPhase(Step.AttackPhase.EFFECTS));
+        }
+    }
+
+    private static void applyEffects(Game game, Step.ResolveAttack step) {
+        if (attackerLeft(game, step)) {
+            return;
+        }
+        Unit attacker = game.unit(step.attacker().id()).orElseThrow();
+        EffectList effects = new EffectList.AttackEffects(attacker.card(), step.attackIndex());
+        int effectCount = effects.effects(game.catalog()).size();
+        EffectSource source = new EffectSource(effects, attacker.id(), step.player(), step.target());
+        game.push(new Step.ResolveEffects(source, 0, Collections.nCopies(effectCount, List.of())));
+    }
+
+    /** 7.10: an attacker that left the board before its attack applies does not attack. */
+    private static boolean attackerLeft(Game game, Step.ResolveAttack step) {
+        if (game.unit(step.attacker().id()).isPresent()) {
+            return false;
+        }
+        game.emit(new GameEvent.AttackCancelled(step.attacker()));
+        return true;
+    }
+
+    private static Optional<Unit> unitOf(Game game, TargetRef target) {
+        return target instanceof TargetRef.UnitTarget unit ? game.unit(unit.id()) : Optional.empty();
+    }
+
+    private static EventTarget describe(Game game, TargetRef target) {
+        return switch (target) {
+            case TargetRef.UnitTarget unit -> new EventTarget.UnitHit(game.unit(unit.id()).orElseThrow().asCard());
+            case TargetRef.PlayerTarget player -> new EventTarget.PlayerHit(player.player());
+            default -> throw new IllegalStateException("An attack cannot target " + target);
+        };
+    }
+}
