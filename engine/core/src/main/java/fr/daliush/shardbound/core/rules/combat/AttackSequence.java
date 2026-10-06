@@ -58,23 +58,37 @@ public final class AttackSequence {
         game.push(next.toArray(Step[]::new));
     }
 
+    /** 7.5: the defender may redirect the attack, if one of their other units can intercept. */
     private static void offerIntercept(Game game, Step.ResolveAttack step) {
         if (attackerLeft(game, step)) {
             return;
         }
-        Optional<Unit> targetUnit = step.target().flatMap(target -> unitOf(game, target));
-        PlayerId defender = step.player().opponent();
-        List<Unit> interceptors = targetUnit.map(target -> Interceptors.eligible(game, defender, target))
-                .orElse(List.of());
+        List<Unit> interceptors = eligibleInterceptors(game, step);
         if (interceptors.isEmpty()) {
             game.push(step.inPhase(Step.AttackPhase.EFFECTS));
             return;
         }
+        game.push(step);
+        game.ask(step.player().opponent(), DecisionKind.INTERCEPT, interceptAnswers(interceptors));
+    }
+
+    /** Nobody intercepts an attack on a player, or on a unit that already left the board (7.9). */
+    private static List<Unit> eligibleInterceptors(Game game, Step.ResolveAttack step) {
+        Optional<Unit> target = step.target().flatMap(ref -> unitOf(game, ref));
+        if (target.isEmpty()) {
+            return List.of();
+        }
+        return Interceptors.eligible(game, step.player().opponent(), target.get());
+    }
+
+    /** Declining first, then one answer per interceptor, by arrival (spec §6.2). */
+    private static List<Action> interceptAnswers(List<Unit> interceptors) {
         List<Action> answers = new ArrayList<>();
         answers.add(new Action.DeclineIntercept());
-        interceptors.forEach(unit -> answers.add(new Action.Intercept(unit.id())));
-        game.push(step);
-        game.ask(defender, DecisionKind.INTERCEPT, answers);
+        for (Unit interceptor : interceptors) {
+            answers.add(new Action.Intercept(interceptor.id()));
+        }
+        return answers;
     }
 
     public static void answerIntercept(Game game, Step.ResolveAttack step, Action answer) {
