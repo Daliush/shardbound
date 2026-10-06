@@ -2,12 +2,18 @@ package fr.daliush.shardbound.core.content;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.daliush.shardbound.core.content.json.DeckParser;
 import fr.daliush.shardbound.core.testing.TestContent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 class DeckValidatorTest {
 
@@ -59,6 +65,22 @@ class DeckValidatorTest {
 
         assertThat(validator.problems(deck))
                 .contains("contains the token root.sprout; tokens are never in a deck (2.4)");
+    }
+
+    /** The Python content tests check these same cases, so the two checkers cannot drift apart. */
+    @TestFactory
+    Stream<DynamicTest> agreesWithThePythonChecksOnTheSharedCases() {
+        JsonNode cases = JsonMapper.builder().build()
+                .readTree(TestContent.contentDir().resolve("tests/fixtures/deck-rules.json"))
+                .get("cases");
+        return cases.values().stream().map(testCase -> {
+            String name = testCase.get("name").stringValue();
+            return DynamicTest.dynamicTest(name, () -> {
+                Deck deck = new DeckParser().parse(testCase.get("deck"), "deck-rules.json: " + name);
+                List<String> expected = testCase.get("problems").values().stream().map(JsonNode::stringValue).toList();
+                assertThat(validator.problems(deck)).isEqualTo(expected);
+            });
+        });
     }
 
     private Deck replaceFirstEntry(DeckEntry entry) {

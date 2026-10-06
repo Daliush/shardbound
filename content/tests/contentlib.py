@@ -7,6 +7,7 @@ from pathlib import Path
 CONTENT_DIR = Path(__file__).resolve().parents[1]
 CARDS_DIR = CONTENT_DIR / "cards"
 DECKS_DIR = CONTENT_DIR / "decks"
+FIXTURES_DIR = CONTENT_DIR / "tests" / "fixtures"
 CARD_FILES = sorted(CARDS_DIR.glob("*/*.json"))
 DECK_FILES = sorted(p for p in DECKS_DIR.glob("*.json") if not p.name.endswith(".schema.json"))
 

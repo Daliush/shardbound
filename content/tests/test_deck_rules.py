@@ -5,7 +5,7 @@ The illegal decks are built from synthetic cards, so these tests do not depend o
 
 import pytest
 
-from contentlib import DECK_FILES, DECKS_DIR, deck_problems
+from contentlib import DECK_FILES, DECKS_DIR, FIXTURES_DIR, deck_problems, load_json
 
 
 def synthetic_card(card_id, **extra):
@@ -87,3 +87,12 @@ def test_checker_reports_illegal_deck(name):
 def test_checker_reports_unknown_card():
     deck = variant(lambda d: swap_first(d, "ember.does-not-exist"))
     assert any("does not exist" in problem for problem in deck_problems(deck, CARDS))
+
+
+# The Java engine's DeckValidatorTest checks these same cases, so the two checkers cannot drift apart.
+SHARED_CASES = load_json(FIXTURES_DIR / "deck-rules.json")["cases"]
+
+
+@pytest.mark.parametrize("case", SHARED_CASES, ids=[case["name"] for case in SHARED_CASES])
+def test_checker_agrees_with_the_engine_on_the_shared_cases(case, all_cards):
+    assert deck_problems(case["deck"], all_cards) == case["problems"]

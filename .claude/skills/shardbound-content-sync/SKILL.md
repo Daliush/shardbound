@@ -19,6 +19,7 @@ Both must agree exactly, messages included: the API returns the engine's message
 | Side | Files |
 |---|---|
 | Rulebook | `docs/rules/02-deck-building.md`, the summary in `docs/design.md` §2.1, and `12-open-points.md`. The maintainer decides (see `shardbound-rules`). |
+| Shared cases | `content/tests/fixtures/deck-rules.json`: decks with the exact problems both checkers must report. Change it first: both suites check it, so a side left behind fails its CI. |
 | Python | `content/tests/contentlib.py` (`deck_problems`, `DECK_SIZE`, `MAX_COPIES`) and `content/tests/test_deck_rules.py` |
 | Java | `engine/core/.../content/DeckValidator.java` (same constants, same message strings) and `DeckValidatorTest.java` |
 | Docs | the "Deck-building rules" list in `content/decks/README.md`, and the deck constraints in the `shardbound-card-authoring` skill |
@@ -68,4 +69,4 @@ The engine, for its part, checks only what it needs to run safely: strict struct
    cd content && uv run pytest
    cd engine && ./mvnw verify
    ```
-4. Compare the messages: for one illegal deck, the Python problem list and `DeckValidator.problems` must be identical strings.
+4. For deck rules, the shared cases do the comparison: both suites assert the same problem strings. For format changes there is no shared file yet, so compare by hand: a file the schema rejects must also be rejected by the Java parser.

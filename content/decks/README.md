@@ -42,3 +42,4 @@ Run from the `content/` folder with `uv run pytest`; CI runs them on every chang
 
 - `tests/test_deck_schema.py`: every deck matches the schema, and malformed decks are rejected.
 - `tests/test_deck_rules.py`: every deck follows the deck-building rules above, its id matches its file name, and the rule checker itself catches each kind of illegal deck.
+- `tests/fixtures/deck-rules.json`: decks with the exact problems a checker must report. The Python tests and the Java engine (`DeckValidatorTest`) both check them, so the two deck checkers cannot disagree.
