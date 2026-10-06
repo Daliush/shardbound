@@ -8,7 +8,13 @@ public sealed interface Effect {
         TargetSpec target();
     }
 
-    record Damage(int amount, TargetSpec target) implements Targeted {}
+    record Damage(int amount, TargetSpec target) implements Targeted {
+
+        /** The damage dealt with a bonus, never below 0 (8.15). */
+        public int withBonus(int bonus) {
+            return Math.max(0, amount + bonus);
+        }
+    }
 
     record Destroy(TargetSpec target) implements Targeted {}
 

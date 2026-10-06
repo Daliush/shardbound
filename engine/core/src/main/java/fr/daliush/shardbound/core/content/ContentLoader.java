@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -17,6 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
 public final class ContentLoader {
 
     private static final String SCHEMA_SUFFIX = ".schema.json";
+    private static final String MARKER = "content/cards/card.schema.json";
 
     private final JsonMapper mapper = JsonMapper.builder().build();
     private final CardParser cardParser = new CardParser();
@@ -24,6 +26,16 @@ public final class ContentLoader {
 
     public static Content load(Path contentDir) {
         return new ContentLoader().read(contentDir);
+    }
+
+    /** The repository's {@code content/} folder, found by walking up from {@code start} (spec §3.3). */
+    public static Optional<Path> find(Path start) {
+        for (Path dir = start.toAbsolutePath(); dir != null; dir = dir.getParent()) {
+            if (Files.exists(dir.resolve(MARKER))) {
+                return Optional.of(dir.resolve("content"));
+            }
+        }
+        return Optional.empty();
     }
 
     private Content read(Path contentDir) {

@@ -4,6 +4,7 @@ import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.state.CardInstance;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.PlayerId;
 
 /** Small pieces of English shared by the describers, always from one player's point of view. */
@@ -19,7 +20,11 @@ final class Wording {
 
     /** "Sprout #61". */
     String card(CardInstance card) {
-        return name(card.card()) + " #" + card.id().value();
+        return card(card.card(), card.id());
+    }
+
+    String card(CardId card, InstanceId id) {
+        return name(card) + " #" + id.value();
     }
 
     String name(CardId card) {

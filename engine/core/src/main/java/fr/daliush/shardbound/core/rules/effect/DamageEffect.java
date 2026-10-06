@@ -15,7 +15,7 @@ final class DamageEffect {
     }
 
     static void apply(Game game, Effect.Damage damage, EffectSource source, List<TargetRef> chosen) {
-        int amount = Math.max(0, damage.amount() + attackBonus(game, source));
+        int amount = damage.withBonus(attackBonus(game, source));
         for (TargetRef target : Targets.resolve(game, damage.target(), source, chosen)) {
             switch (target) {
                 case TargetRef.UnitTarget unitTarget -> game.unit(unitTarget.id()).ifPresent(unit -> {

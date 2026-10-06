@@ -12,10 +12,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
+import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.testing.TestCards;
+import fr.daliush.shardbound.core.testing.TestContent;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,7 @@ class DescribersTest {
 
     private final EventDescriber events = new EventDescriber(TestCards.CATALOG);
     private final ActionDescriber actions = new ActionDescriber(TestCards.CATALOG);
+    private final DecisionDescriber decisions = new DecisionDescriber(TestCards.CATALOG);
 
     @Test
     void describesEventsFromEachPlayersPointOfView() {
@@ -62,6 +65,29 @@ class DescribersTest {
                 "Play Spark Dart (1 Shard) on Sprout #3",
                 "Cinderling #2 attacks Sprout #3 with Flick (1 Shard)",
                 "End your turn");
+    }
+
+    @Test
+    void asksEachDecisionFromTheDecidingPlayersPointOfView() {
+        GameState setup = ENGINE.newGame(new GameSetup(TestContent.content().deck("ember-starter"),
+                TestContent.content().deck("root-starter"), 1)).state();
+        GameState main = ENGINE.resume(scenario().build()).state();
+        ScenarioResult attacked = run(scenario().shards(P1, 1).unit(P1, "ember.cinderling")
+                        .unit(P2, "neutral.shard-construct").unit(P2, "neutral.shardling").build(),
+                attack("ember.cinderling").on(unit("neutral.shard-construct")));
+        ScenarioResult arrived = run(scenario().shards(P1, 1).hand(P1, "test.watcher")
+                        .unit(P2, "neutral.shard-construct").unit(P2, "root.thornback-ancient").build(),
+                play("test.watcher"));
+
+        assertThat(prompt(setup)).isEqualTo("Keep your opening hand, or shuffle it back and draw 4?");
+        assertThat(prompt(main)).isEqualTo("Your turn: play a card, attack, or end your turn.");
+        assertThat(prompt(attacked.state())).isEqualTo(
+                "Cinderling #1 attacks your Shard Construct #2 with Flick (3 damage). Intercept with another unit?");
+        assertThat(prompt(arrived.state())).isEqualTo("Choose a target for the Arrival ability of Watcher #1.");
+    }
+
+    private String prompt(GameState state) {
+        return decisions.describe(state.pending().orElseThrow(), state);
     }
 
     private List<String> describe(ScenarioResult result, PlayerId viewer) {
