@@ -1,0 +1,5 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <!-- One line per applied action is useful when running the server, not across thousands of test moves. -->
+    <logger name="fr.daliush.shardbound.api.session.GameSessionService" level="WARN"/>
+</configuration>

@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: shardbound
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+# See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set.
+shardbound:
+  sessions:
+    finished-ttl: 30m
+    idle-ttl: 2h
+  bots:
+    step-delay: 0ms
