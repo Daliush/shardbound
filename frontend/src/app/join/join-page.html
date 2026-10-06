@@ -1,0 +1,20 @@
+<h1>Join a game</h1>
+
+<form (submit)="$event.preventDefault(); join()">
+  <label>
+    Your deck
+    <select name="deck" (change)="deck.set(value($event))">
+      @for (d of decks(); track d.id) {
+        <option [value]="d.id" [selected]="d.id === deck()">{{ d.name }}</option>
+      }
+    </select>
+  </label>
+  <button type="submit" [disabled]="deck() === '' || code() === ''">Join</button>
+</form>
+
+@if (code() === '') {
+  <p class="error">This link has no join code.</p>
+}
+@if (error(); as message) {
+  <p class="error">{{ message }}</p>
+}

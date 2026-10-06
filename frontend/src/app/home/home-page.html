@@ -1,0 +1,58 @@
+<h1>New game</h1>
+
+<form (submit)="$event.preventDefault(); create()">
+  <label>
+    Your deck
+    <select name="deck" (change)="deck.set(value($event))">
+      @for (d of decks(); track d.id) {
+        <option [value]="d.id" [selected]="d.id === deck()">{{ d.name }}</option>
+      }
+    </select>
+  </label>
+
+  <fieldset>
+    <legend>Opponent</legend>
+    <label>
+      <input type="radio" name="opponent" value="bot" [checked]="opponent() === 'bot'" (change)="opponent.set('bot')" />
+      A bot
+    </label>
+    <label>
+      <input type="radio" name="opponent" value="human" [checked]="opponent() === 'human'"
+        (change)="opponent.set('human')" />
+      A human, with an invite link
+    </label>
+
+    @if (opponent() === 'bot') {
+      <label>
+        Bot
+        <select name="bot" (change)="bot.set(value($event))">
+          @for (b of bots(); track b) {
+            <option [value]="b" [selected]="b === bot()">{{ b }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Its deck
+        <select name="botDeck" (change)="botDeck.set(value($event))">
+          @for (d of decks(); track d.id) {
+            <option [value]="d.id" [selected]="d.id === botDeck()">{{ d.name }}</option>
+          }
+        </select>
+      </label>
+    }
+  </fieldset>
+
+  <button type="submit" [disabled]="deck() === ''">Create game</button>
+</form>
+
+@if (error(); as message) {
+  <p class="error">{{ message }}</p>
+}
+
+@if (invitation(); as invitation) {
+  <section class="invitation">
+    <p>Send this link to your opponent:</p>
+    <p><a [href]="invitation.link">{{ invitation.link }}</a></p>
+    <p><a [routerLink]="['/games', invitation.gameId]">Go to the game</a></p>
+  </section>
+}

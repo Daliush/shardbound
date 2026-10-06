@@ -1,0 +1,43 @@
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 9rem;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.tile:disabled {
+  cursor: default;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.defense,
+.cost {
+  font-variant-numeric: tabular-nums;
+}
+
+.type {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+.attacks {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.85em;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

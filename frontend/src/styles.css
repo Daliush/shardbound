@@ -1,0 +1,44 @@
+:root {
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #c7c7cc;
+  --panel: #f2f2f4;
+  --card: #ffffff;
+  --accent: #2f6fde;
+  --target: #d9822b;
+  --alert: #c0392b;
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+body {
+  margin: 0;
+  background: #fafafa;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+.badge {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.8em;
+}
+
+/* How the board shows a decision (spec §14): sources to select, the selection, targets to click. */
+.selectable {
+  outline: 2px dashed var(--accent);
+}
+
+.selected {
+  outline: 3px solid var(--accent);
+}
+
+.targetable {
+  outline: 3px solid var(--target);
+}

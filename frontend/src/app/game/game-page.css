@@ -1,0 +1,59 @@
+.game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 16px;
+  height: calc(100vh - 5rem);
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.units {
+  min-height: 5rem;
+}
+
+.empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.relic {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  font: inherit;
+}
+
+.notice,
+.result {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+}
+
+.result {
+  font-weight: 600;
+}
+
+hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px dashed var(--line);
+}
+
+.log {
+  border-left: 1px solid var(--line);
+  padding-left: 12px;
+}
