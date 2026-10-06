@@ -58,7 +58,7 @@ public final class ActionDescriber {
     private String attack(Wording w, Action.Attack attack, GameState state) {
         Unit attacker = unit(state, attack.attacker());
         AttackAbility ability = catalog.unit(attacker.card()).attacks().get(attack.attackIndex());
-        String name = ability.name().orElse("its attack") + " (" + Wording.shards(ability.cost()) + ")";
+        String name = ability.name().orElse("its attack") + " (" + Wording.shards(Costs.toAttack(ability)) + ")";
         return attack.target()
                 .map(target -> w.card(attacker.asCard()) + " attacks " + target(w, target, state) + " with " + name)
                 .orElse(w.card(attacker.asCard()) + " uses " + name);

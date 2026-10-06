@@ -5,6 +5,7 @@ import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.AttackAbility;
 import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.rules.game.Game;
+import fr.daliush.shardbound.core.rules.play.Costs;
 import fr.daliush.shardbound.core.rules.play.EngineSupport;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.PlayerState;
@@ -30,7 +31,7 @@ public final class AttackOptions {
             }
             for (int index = 0; index < card.attacks().size(); index++) {
                 AttackAbility attack = card.attacks().get(index);
-                if (state.shards().canPay(attack.cost())) {
+                if (state.shards().canPay(Costs.toAttack(attack))) {
                     attacks.addAll(withTargets(game, player, unit, index, attack));
                 }
             }

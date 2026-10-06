@@ -13,7 +13,9 @@ import fr.daliush.shardbound.core.resolution.EffectList;
 import fr.daliush.shardbound.core.resolution.EffectSource;
 import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.rules.game.Game;
+import fr.daliush.shardbound.core.rules.play.Costs;
 import fr.daliush.shardbound.core.rules.trigger.Abilities;
+import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,20 +43,29 @@ public final class AttackSequence {
         Unit attacker = game.unit(step.attacker().id()).orElseThrow();
         UnitCard card = game.catalog().unit(attacker.card());
         AttackAbility attack = card.attacks().get(step.attackIndex());
-        game.updatePlayer(step.player(), state -> state.withShards(state.shards().pay(attack.cost())));
+        game.updatePlayer(step.player(), state -> state.withShards(state.shards().pay(Costs.toAttack(attack))));
         game.updateUnit(attacker.markHasAttacked());
         game.emit(new GameEvent.AttackDeclared(attacker.asCard(), step.attackIndex(),
                 step.target().map(target -> describe(game, target))));
 
-        List<Step> next = new ArrayList<>();
+        List<Step> next = new ArrayList<>(onAttackAbilities(game, attacker, card, step.player()));
+        next.add(step.inPhase(Step.AttackPhase.INTERCEPT));
+        game.push(next.toArray(Step[]::new));
+    }
+
+    /**
+     * 9.9: the unit's "On attack" abilities, triggered abilities that are not its attack abilities.
+     * They resolve right away, before the intercept decision, instead of waiting in the queue.
+     */
+    private static List<Step> onAttackAbilities(Game game, Unit attacker, UnitCard card, PlayerId controller) {
+        List<Step> abilities = new ArrayList<>();
         for (int index = 0; index < card.abilities().size(); index++) {
             Ability ability = card.abilities().get(index);
             if (ability.trigger() == Trigger.ATTACK) {
-                next.add(Abilities.begin(game, attacker.asCard(), step.player(), Trigger.ATTACK, index));
+                abilities.add(Abilities.begin(game, attacker.asCard(), controller, Trigger.ATTACK, index));
             }
         }
-        next.add(step.inPhase(Step.AttackPhase.INTERCEPT));
-        game.push(next.toArray(Step[]::new));
+        return abilities;
     }
 
     /** 7.5: the defender may redirect the attack, if one of their other units can intercept. */
