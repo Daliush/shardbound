@@ -382,8 +382,9 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `TokenSummoned(unit)`, `SummonFailed(player)` | 8.9, 3.4 | public |
 | `AttackDeclared(attacker, attackIndex, target)` | 7.4 | public |
 | `AttackIntercepted(originalTarget, interceptor)`, `InterceptDeclined(defender)` | 7.5 | public |
-| `DamageDealt(target, amount)`, `DamageShared(from, to, amount)` (amount can be 0, 8.15) | 8.1, 11.5.2 | public |
-| `Healed(target, amount)` | 8.4 | public |
+| `AttackCancelled(attacker)` | 7.10 | public |
+| `UnitDamaged(unit, amount)`, `PlayerDamaged(player, amount)`, `DamageShared(from, to, amount)` (amount can be 0, 8.15) | 8.1, 11.5.2 | public |
+| `UnitHealed(unit, amount)`, `PlayerHealed(player, amount)` | 8.4 | public |
 | `Modified(unit, attackDamage, defense, duration)`, `ModifierExpired(unit, …)` | 8.5, 5.4.2 | public |
 | `Frozen(unit, throughTurn)`, `UnitThawed(unit)` | 8.10 | public |
 | `Linked(a, b)`, `LinkBroken(a, b)` | 8.11, 11.5.4 | public |
@@ -401,7 +402,7 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `TurnEnded(player)` | 5.4 | public |
 | `GameEnded(result)` | 1.2, 1.3, 1.5 | public |
 
-`core/text/EventDescriber` turns an event into an English sentence from a viewer's point of view ("You draw Spark Dart.", "Your opponent draws a card.", "Sprout #12 takes 3 damage."). The API sends it with each event; it will also feed the LLM work later.
+Events name the cards they involve (`CardInstance`: instance id, card id, owner), so a log can be read without the state. `core/text/EventDescriber` turns an event into an English sentence from a viewer's point of view ("You draw Spark Dart.", "Your opponent draws a card.", "Sprout #12 takes 3 damage."). The API sends it with each event; it will also feed the LLM work later.
 
 ---
 

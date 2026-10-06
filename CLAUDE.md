@@ -14,7 +14,8 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - `content/cards/`: one JSON file per card, plus the card schema and text templates (`content/cards/README.md`).
 - `content/decks/`: one JSON file per deck, plus the deck schema (`content/decks/README.md`).
 - `content/tests/`: tests for all the content above.
-- `specs/`: implementation specs. `specs/phase-2-engine.md` covers the engine, the game server and the test frontend.
+- `engine/`: the Java engine, a Maven multi-module build. `engine/core` is the rules engine (no Spring: content, state, rules, views, events, bots, scenarios); `engine/api` is the Spring Boot game server.
+- `specs/`: implementation specs. `specs/phase-2-engine.md` covers the engine, the game server and the test frontend; `specs/phase-2-examples.md` shows its payloads on a real situation.
 - `.claude/skills/`: project knowledge for Claude Code.
   - `shardbound-project`: architecture, principles, roadmap.
   - `shardbound-rules`: how the rulebook works; answering and changing rules.
@@ -23,6 +24,8 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 ## Commands
 
 - Content tests (card and deck schemas, card and deck rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
+- Engine build and tests, from `engine/`: `./mvnw verify` (`mvnw.cmd verify` on Windows). Run it after any change to `engine/` or `content/`, since the engine loads the content. CI runs it too (`.github/workflows/engine.yml`).
+- Game server, from `engine/`: `./mvnw -pl api spring-boot:run` (http://localhost:8080).
 
 ## Commits
 
@@ -53,4 +56,4 @@ bad card can't reach the engine or the RAG index.
 
 ## Status
 
-Phase 1 (rules and content) of the roadmap in `docs/design.md` §11. No game code yet; the only code is the content test suite in `content/tests/`.
+Phase 2 of the roadmap in `docs/design.md` §11, built in the five slices of `specs/phase-2-engine.md` §17. Slice 1 (engine foundation) is done: `engine/core` plays full games with the rules of setup, turns, Shards, zones, cards, combat with intercepts, triggers and the effects Damage, Destroy, Heal, Draw and Summon. Cards needing a later effect or keyword are not playable yet. Next: slice 2, the game server and the test frontend.

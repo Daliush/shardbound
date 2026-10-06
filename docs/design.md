@@ -32,6 +32,8 @@
 > **v2.7 (October 2026)** — rules clarified for the engine with the maintainer: 19 new rules (1.6, 3.8, 6.8, 6.9, 7.9, 7.10, 8.15–8.22, 9.11, 10.5, 10.6, 11.1.10, 11.2.7), and two rules reworded: Freeze lasts the current turn and the next one (8.10), and the non-active player also makes the choices effects ask of them (5.5.2). List in [`rules/12-open-points.md`](rules/12-open-points.md).
 >
 > **v2.8 (October 2026)** — the game server is designed for several Cloud Run instances: no instance owns a game, sessions sit in a shared store with versioned saves, updates go through a pub/sub (§8.2, spec §13.4).
+>
+> **v2.9 (October 2026)** — phase 2, slice 1: the engine core plays full games (setup, turns, Shards, zones, cards, combat and intercepts, triggers, five effects) with a rule trace, player views, a scenario service, a random bot and JSON states. Cards that need a later effect or keyword are not playable yet.
 
 ---
 
