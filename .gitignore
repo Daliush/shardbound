@@ -15,3 +15,6 @@ __pycache__/
 
 # Claude Code: personal settings stay local, skills are shared
 .claude/settings.local.json
+
+# Java
+target/
