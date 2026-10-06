@@ -56,6 +56,7 @@ A keyword (section 11) usually touches several of these. Put each part where its
 - Records with domain methods. `Unit` and `PlayerState` change through a private `Draft`, so each method names only the fields it touches.
 - Imports, never fully qualified names. English everywhere. No code for a later slice "just in case". Small preparations the maintainer asked for are fine, such as `UnitCard.size()`.
 - Ports are interfaces, and implementations add a suffix: `GameRepository` → `GameRepositoryInMemory`, later `GameRepositoryDatabase`.
+- Every package has a `package-info.java` saying in one or two sentences what it is for. A new package gets one, and a package whose role changes gets its description updated.
 
 ## Recipes
 
