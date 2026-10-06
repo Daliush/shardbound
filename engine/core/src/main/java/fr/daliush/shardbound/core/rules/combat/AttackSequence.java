@@ -68,8 +68,9 @@ public final class AttackSequence {
             game.push(step.inPhase(Step.AttackPhase.EFFECTS));
             return;
         }
+        List<Action> answers = interceptAnswers(interceptors);
         game.push(step);
-        game.ask(step.player().opponent(), DecisionKind.INTERCEPT, interceptAnswers(interceptors));
+        game.ask(step.player().opponent(), DecisionKind.INTERCEPT, answers);
     }
 
     /** Nobody intercepts an attack on a player, or on a unit that already left the board (7.9). */
