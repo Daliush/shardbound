@@ -22,6 +22,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
   - `shardbound-card-authoring`: designing and writing cards.
   - `shardbound-engine`: how the engine works and how to use it (API, resolution model, scenarios, bots, JSON).
   - `shardbound-engine-dev`: how to change the engine (workflow, design rules, recipes, tests, docs to keep in sync).
+  - `shardbound-content-sync`: deck rules and content formats are checked by both the Python content tests and the Java engine; what to change on each side.
 
 ## Commands
 

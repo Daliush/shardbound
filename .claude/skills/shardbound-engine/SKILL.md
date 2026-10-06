@@ -20,7 +20,7 @@ It serves four consumers, so its API is shaped for all of them, not just the UI 
 
 1. **A `GameState` is immutable and complete**: both hands, deck orders, the pending work, the RNG state. It never leaves the server. Clients and bots only get a `PlayerView`.
 2. **`apply(state, action)` returns a `Transition`**: the new state and the events that led to it. The old state stays valid, so branching is free.
-3. **The engine lists every legal action**, fully specified with targets included, in a canonical order (spec §6.2). A player answers by picking one, and the engine checks it by value equality. The client never builds an action.
+3. **The engine lists every legal action**, fully specified with targets included, in a canonical order (spec §6.2). The list is computed once, when the decision is created, and stored in the state (`state.pending()`). A player answers by picking one, and `apply` checks it with `contains`, by value equality, without recomputing anything. The client never builds an action.
 4. **A `Decision`** says who must choose (`player`), what kind of choice it is (`MULLIGAN`, `MAIN`, `INTERCEPT`, `CHOOSE_TARGET`…) and the options (`actions`). It can belong to the non-active player in the middle of a turn, for example to intercept. The engine only asks when there are at least 2 options, except for `MAIN`, which is always asked.
 5. **Events are the rule trace.** Each `GameEvent` has `rules()` (rule IDs, never empty), a `visibility()`, and a `redacted()` form for the players who may not see it. Events name the cards they involve (`CardInstance`), so a log reads without the state.
 6. **Same seed, same decks and same actions give the same game**, events included. Bots have their own RNG and never touch the game's.
