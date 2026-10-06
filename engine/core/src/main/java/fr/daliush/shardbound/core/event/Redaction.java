@@ -10,8 +10,6 @@ public final class Redaction {
     }
 
     public static List<GameEvent> forViewer(List<GameEvent> events, PlayerId viewer) {
-        return events.stream()
-                .map(event -> event.visibility().isVisibleTo(viewer) ? event : event.redacted())
-                .toList();
+        return events.stream().map(event -> event.seenBy(viewer)).toList();
     }
 }

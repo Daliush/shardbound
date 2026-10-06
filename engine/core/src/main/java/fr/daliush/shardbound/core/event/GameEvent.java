@@ -27,6 +27,11 @@ public sealed interface GameEvent {
         return this;
     }
 
+    /** This event as {@code viewer} may see it: as it is if it is visible to them, redacted otherwise. */
+    default GameEvent seenBy(PlayerId viewer) {
+        return visibility().isVisibleTo(viewer) ? this : redacted();
+    }
+
     // Setup and turns
 
     record GameStarted(PlayerId firstPlayer, List<String> rules) implements GameEvent {

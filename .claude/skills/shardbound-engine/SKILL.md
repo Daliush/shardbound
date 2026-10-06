@@ -53,7 +53,7 @@ GameResult result = state.result().orElseThrow();      // Win(winner, reason) or
 | `apply(state, action)` | `IllegalActionException` if the action is not one of the decision's actions. Runs until the next decision or the end of the game, which can take many steps: ending a turn runs the opponent's whole start of turn. |
 | `resume(state)` | Runs a state built outside a game (a scenario) until its first decision. |
 | `view(state, viewer, history)` | What `viewer` may see: own hand, the opponent's hand count, public zones, the decision only if it is theirs (otherwise `waitingFor`), and the redacted history. |
-| `eventsFor(events, viewer)` | The same events, redacted for `viewer`. Send these to a player, never the raw list. |
+| `eventsFor(events, viewer)` | The same events, redacted for `viewer` (each event's `seenBy(viewer)`: as it is if its `visibility()` lets the viewer see it, `redacted()` otherwise). Send these to a player, never the raw list. |
 
 Rule of thumb for any consumer: **talk to players only through `view` and `eventsFor`**. Anything built from a raw `GameState` or from unredacted events leaks hidden information. The design doc treats this as cheating: it inflates a bot's Elo and shows the human's hand.
 
