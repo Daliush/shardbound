@@ -652,6 +652,8 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - The creator always takes seat P1, and the bot or the joiner seat P2. Who plays first is decided by the RNG (5.1.1).
 - A bot game starts at creation. A human vs human game starts when the second player joins; before that, the creator's view has status `waiting_for_opponent`.
 - `seed` is optional (random when missing). It is never returned while the game runs.
+- `text` is added in slice 3, with `CardTextRenderer` (section 9). Until then the field is absent, rather than an empty list.
+- Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
 
@@ -686,7 +688,8 @@ Server to client:
 
 - `state`: the full view plus the whole history redacted for this seat. Sent on connection and in answer to `sync`.
 - `update`: sent to **both** seats after **each** applied action (bot actions included, one `update` per action): the new view and that action's events, redacted per seat.
-- `view.version` increases by 1 with every applied action. If a client receives a version that is not `last + 1`, it sends `sync`.
+- `view.version` increases by 1 with every save of the session: every applied action, and the join. If a client receives a version that is not `last + 1`, it sends `sync`.
+- A game against a human is created at version 0, waiting for the opponent. The join sets the game up and is saved as version 1, so the creator receives the setup as an `update` (first player, draws, the mulligan decision); the joiner gets a `state` when it connects. A game against a bot is set up at creation, at version 0.
 - `rejected` goes only to the sender. Reasons: `not_your_decision`, `stale_decision`, `invalid_action`, `malformed_message`, `game_not_started`, `game_over`.
 
 ### 13.3 DTOs (TypeScript notation; the Java DTOs mirror them)
@@ -741,6 +744,13 @@ interface TargetView { kind: "unit" | "relic" | "player" | "graveyard_card"; id?
 interface EventView { type: string; rules: string[]; text: string; [field: string]: unknown; }   // fields per event, sides as "you"/"opponent"
 ```
 
+Settled on 2026-10-06, for slice 2:
+
+- **Events, one to one.** `type` is the engine event's record name in snake_case (`UnitDamaged` → `unit_damaged`, `PlayerDamaged` → `player_damaged`). The other fields are the record's components in camelCase, `rules` excepted, with: players as `"you"` / `"opponent"`; a `CardInstance` as a `CardRef`; an `EventTarget` as `{ kind: "unit", id, card }` or `{ kind: "player", player }`; enums in snake_case; an empty `Optional` as `null`; a `GameResult` as `{ outcome, reason }` seen by the viewer. One generic mapper builds them from the record components, so a new engine event needs no API change. `text` comes from core's `EventDescriber`.
+- **`DecisionView.prompt`** comes from core's `DecisionDescriber` (`core/text`), from the deciding player's point of view. An intercept prompt names the attack, read from the paused attack step.
+- **`UnitView.attacks[].damage`**: the damage the attack deals to its target, bonuses included (8.5, 8.18); `null` when it deals none (Mend, Call the Grove, Kindle). Core computes it, next to `Costs`, so labels, prompts and views cannot disagree.
+- **Optional fields** are written as explicit `null` in WebSocket messages, as typed above.
+
 ### 13.4 Session server (`api/session`)
 
 **No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions live behind a repository port, updates travel through a pub/sub port, and any instance can process any message. Phase 2 runs locally, in a single process, and ships in-memory adapters for both ports: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as a new adapter, without touching the service.
@@ -777,15 +787,16 @@ Minimal and plain: correctness first, no animations required.
   - `/`: choose your deck (`GET /api/decks`) and an opponent: a bot (`GET /api/bots`, opponent deck) or a human; "Create game". For a human opponent, show the invite link `/join/{gameId}?code={joinCode}`.
   - `/join/:gameId`: choose your deck, join, then go to the game.
   - `/games/:gameId`: the game.
-- **Token storage**: `localStorage["shardbound.game.<gameId>.token"]`. Opening `/games/:id` without a token: message plus a link home.
+- **Token storage**: `localStorage["shardbound.game.<gameId>.token"]`. Opening `/games/:id` without a token: message plus a link home. Every tab of a browser shares it: to play both seats on one machine, use a second browser or a private window.
 - **Game screen**:
   - opponent: faction, HP, Shards (available / max, locked), hand count, deck count, fatigue, units, relics, graveyard count;
-  - you: the same, plus your hand. Each card shows name, cost, rendered text (`GET /api/cards`, cached) and the Fracture step;
+  - you: the same, plus your hand. Each card shows name, type, cost and the Fracture step (`GET /api/cards`, cached); its rendered text comes with slice 3;
   - each unit shows name, defense / max defense, its attacks (name, cost, damage, Echo X) and badges: arrived this turn, attacked, intercepted, frozen, anchored, doomed, linked to #id;
-  - **decision panel**: the `prompt` and one button per action (`label`). When `waitingFor` is set: "Waiting for your opponent (intercept)…";
+  - **decision panel**: the `prompt` and the decision's actions, **grouped** (decided on 2026-10-06). The cards and units that are the source of an action are highlighted (the card played, the attacker, the interceptor); click one: its possible targets light up, and its actions without a target (an intercept, Kindle) show as buttons with their `label`. Clicking a target sends the action; when several actions share that target (with and without Overcharge), they show as buttons instead. Actions without a source (keep hand, mulligan, end turn, don't intercept) are plain buttons. The client still sends the index of the chosen action and never builds one: it only filters the decision's list. When `waitingFor` is set: "Waiting for your opponent (intercept)…";
   - **game log**: every event's `text` with its rule IDs (`[8.1] Sprout #12 takes 3 damage.`), newest at the bottom;
   - result banner and a "New game" link.
 - **GameSocketService**: connects with the token, exposes the view and the log as signals, sends `act` with a `requestId`, shows `rejected` messages, sends `sync` when versions have a gap, and reconnects with backoff (then `sync`).
+- **Bot pacing** (decided on 2026-10-06): the client shows queued updates one by one, about 400 ms apart, so a bot's turn can be followed. The server keeps `shardbound.bots.step-delay = 0`.
 - Tests: the socket service's message handling (update, gap → sync, rejected, reconnect), and a smoke test per page.
 
 ---
