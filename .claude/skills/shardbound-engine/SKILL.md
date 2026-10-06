@@ -11,7 +11,7 @@ It serves four consumers, so its API is shaped for all of them, not just the UI 
 
 | Consumer | What it uses |
 |---|---|
-| Game server (`engine/api`) | `newGame`, `apply`, `view`, `eventsFor`, `GameJson` |
+| Game server (`engine/api`) | `newGame`, `apply`, `view`, `eventsFor`, the three describers, `AttackDamage`, `Bot`, `GameJson` (see the `shardbound-game-server` skill) |
 | Bots | `Player.choose(PlayerView, Decision)` → one of the decision's actions |
 | Scenario service (tests, Arbiter answer keys) | `ScenarioBuilder`, `ScenarioRunner`, the unredacted events |
 | MCTS (later) | immutable states to branch from, determinization from a view |
@@ -93,9 +93,9 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 | `resolution` | The pending work stored in the state: `Step` (sealed), `QueuedTrigger`, `EffectSource`, `EffectList`, `Resolution` |
 | `rules` | `GameEngine` (the facade), `GameSetup`, `Transition`, then one sub-package per rulebook area: `game` (working copy, loop, state check), `setup`, `turn`, `play`, `combat`, `effect`, `trigger`, `board` |
 | `scenario` | `ScenarioBuilder`, `ScenarioRunner`, `ScenarioResult`, `Choices`, `Pick` |
-| `text` | `EventDescriber` (event → English sentence), `ActionDescriber` (action → button label) |
-| `bot` | `Player`, `RandomBot` (later: `GreedyBot`, `Determinizer`) |
-| `json` | `GameJson`: a state or an event log to JSON and back |
+| `text` | `EventDescriber` (event → English sentence), `ActionDescriber` (action → button label), `DecisionDescriber` (decision → prompt; an intercept prompt reads the paused attack step) |
+| `bot` | `Player`; `Bot`, a player whose only memory is its generator (`rngState()`, rebuilt with `new RandomBot(state)`); `RandomBot` (later: `GreedyBot`, `Determinizer`) |
+| `json` | `GameJson`: a state, an event log, or any record made of engine types (a server's session) to JSON and back |
 | `random` | `SplitMix64`, the only randomness the engine uses |
 
 ## How one `apply` is resolved, in short
