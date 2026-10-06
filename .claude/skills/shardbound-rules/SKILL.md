@@ -84,12 +84,12 @@ Game design decisions belong to the maintainer. They like to go point by point a
 2. If a gap must be filled to keep the book complete, write the rule, mark it *(proposed)* and tell the maintainer.
 3. In the same change, update the rule's file, `12-open-points.md`, and `docs/design.md` §2 if the summary is affected.
 4. Turn the edge case into a ruling in `docs/rulings/`. Each ruling becomes documentation, a JUnit test and an eval question.
-5. Once the engine and the evals exist, update the engine tests and regenerate the eval answer keys.
+5. Update the engine: the test that carries the rule ID, then the code, following the `shardbound-engine-dev` skill. Once the evals exist, regenerate their answer keys.
 
 ## Design decisions and why (don't undo them by accident)
 
 - **Combat is Pokémon-like, not Magic-like.** Attacking costs Shards and uses one of the unit's one or two attack abilities, once per turn. Playing a card costs Shards too: the maintainer first assumed cards were free and only abilities cost Shards, so restate this when it matters. Attacks target units; the player can only be attacked once they have no unit left. The defender intercepts (redirects) rather than blocks, and there is no retaliation. A Magic-style model (free attacks, attack/defense stats, blocking with retaliation) was proposed and rejected.
-- **Nothing is played during the opponent's turn** except intercepting. This keeps the engine and the player protocol simple.
+- **Nothing is played during the opponent's turn.** The non-active player can intercept and makes the choices effects ask of them (an echo's target, a discard). This keeps the engine and the player protocol simple. Rule 5.5.2 is worded openly on purpose, so later rules can add more.
 - **Fatigue and the 50-turn limit** guarantee every game ends. Simulations and MCTS rollouts depend on it, since an empty deck alone does not lose.
 - **Anchor lasts through the opponent's turn.** Without a response window it would otherwise be useless. A doomed unit gets one last turn.
 - **Echo is a passive of an attack ability**, not of the unit. It triggers on death only, so Tide can answer an Echo 300 attacker by returning it to hand.
@@ -112,3 +112,6 @@ Game design decisions belong to the maintainer. They like to go point by point a
 - A buffed unit dies with Echo: the echo uses the printed values, buffs are lost (11.1.9).
 - A no-target attack ("give all your units +5/+0"): cannot be intercepted but still triggers "Attack" abilities (7.8).
 - An "Attack" ability that freezes the enemy unit about to intercept: it fires just before the intercept decision (9.9).
+- A temporary malus expiring on a damaged unit: it gets back what it lost (8.17), unlike an expiring bonus (8.5).
+- Freeze cast during your turn on an enemy unit: no intercept for the rest of your turn, no attack on their next turn, thawed at the start of your following turn (8.10).
+- An attack whose target died to an "Attack" ability still happens (7.9); an attack whose attacker left the board does not (7.10).

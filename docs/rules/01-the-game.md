@@ -7,3 +7,4 @@
 - **1.3** If both players drop to 0 HP at the same time, the game is a draw.
 - **1.4** **Fatigue.** When a player must draw from an empty deck, they draw nothing and lose 1 HP; 2 HP the next time, then 3, and so on. This loss hits them directly, even if they have units on the board. An empty deck alone does not lose the game.
 - **1.5** **Technical limit.** If no player has won by the end of each player's 50th turn, the game is a draw.
+- **1.6** **The game ends at once.** As soon as a player drops to 0 HP or less, the game ends, even in the middle of a card's or an ability's resolution: the remaining effects and the abilities waiting to resolve never resolve. Both players drop to 0 "at the same time" (1.3) when the same effect brings them both there.

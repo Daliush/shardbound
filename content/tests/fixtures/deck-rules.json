@@ -1,0 +1,228 @@
+{
+  "$comment": [
+    "Deck-building cases checked by both the Python content tests (test_deck_rules.py) and the Java engine (DeckValidatorTest).",
+    "Each case is a deck and the exact problems both checkers must report, in this order. A case named after a rule breaks only that rule.",
+    "To change a deck rule or one of its messages: change this file first, then contentlib.py and DeckValidator.java, until both suites pass."
+  ],
+  "cases": [
+    {
+      "name": "legal starter deck",
+      "problems": [],
+      "deck": {
+        "id": "legal", "name": "legal", "faction": "ember",
+        "cards": [
+          { "card": "ember.cinderling", "count": 2 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 }
+        ]
+      }
+    },
+    {
+      "name": "2.1 — 29 cards",
+      "problems": ["has 29 cards, needs exactly 30 (2.1)"],
+      "deck": {
+        "id": "short", "name": "short", "faction": "ember",
+        "cards": [
+          { "card": "ember.cinderling", "count": 1 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 }
+        ]
+      }
+    },
+    {
+      "name": "2.1 — 31 cards",
+      "problems": ["has 31 cards, needs exactly 30 (2.1)"],
+      "deck": {
+        "id": "long", "name": "long", "faction": "ember",
+        "cards": [
+          { "card": "ember.cinderling", "count": 2 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 },
+          { "card": "neutral.tempest", "count": 1 }
+        ]
+      }
+    },
+    {
+      "name": "2.2 — a card from another faction",
+      "problems": ["contains root.mossmender, a root card, in a deck of faction ember (2.2)"],
+      "deck": {
+        "id": "mixed", "name": "mixed", "faction": "ember",
+        "cards": [
+          { "card": "root.mossmender", "count": 2 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 }
+        ]
+      }
+    },
+    {
+      "name": "2.3 — three copies in one entry",
+      "problems": ["has 3 copies of ember.cinderling, max 2 (2.3)"],
+      "deck": {
+        "id": "three-copies", "name": "three-copies", "faction": "ember",
+        "cards": [
+          { "card": "ember.cinderling", "count": 3 },
+          { "card": "ember.spark-dart", "count": 1 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 }
+        ]
+      }
+    },
+    {
+      "name": "2.3 — one card listed in two entries",
+      "problems": ["lists ember.spark-dart 2 times; use one entry with a count (2.3)", "has 3 copies of ember.spark-dart, max 2 (2.3)"],
+      "deck": {
+        "id": "listed-twice", "name": "listed-twice", "faction": "ember",
+        "cards": [
+          { "card": "ember.cinderling", "count": 1 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 },
+          { "card": "ember.spark-dart", "count": 1 }
+        ]
+      }
+    },
+    {
+      "name": "2.4 — a token in the deck",
+      "problems": ["contains the token root.sprout; tokens are never in a deck (2.4)"],
+      "deck": {
+        "id": "token", "name": "token", "faction": "root",
+        "cards": [
+          { "card": "root.sprout", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 1 },
+          { "card": "root.root-sentinel", "count": 2 },
+          { "card": "root.mossmender", "count": 2 },
+          { "card": "root.deepening-roots", "count": 2 },
+          { "card": "root.renewing-sap", "count": 2 },
+          { "card": "root.bramble-warden", "count": 2 },
+          { "card": "root.verdant-burst", "count": 2 },
+          { "card": "root.oakheart-guardian", "count": 2 },
+          { "card": "root.heartwood-shrine", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "root.seedmother", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "root.thornback-ancient", "count": 2 },
+          { "card": "neutral.tempest", "count": 1 }
+        ]
+      }
+    },
+    {
+      "name": "a card that does not exist",
+      "problems": ["contains ember.does-not-exist, which does not exist"],
+      "deck": {
+        "id": "unknown", "name": "unknown", "faction": "ember",
+        "cards": [
+          { "card": "ember.does-not-exist", "count": 2 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 }
+        ]
+      }
+    },
+    {
+      "name": "several problems, in order",
+      "problems": ["has 29 cards, needs exactly 30 (2.1)", "contains root.mossmender, a root card, in a deck of faction ember (2.2)"],
+      "deck": {
+        "id": "several", "name": "several", "faction": "ember",
+        "cards": [
+          { "card": "root.mossmender", "count": 1 },
+          { "card": "ember.spark-dart", "count": 2 },
+          { "card": "ember.pyre-offering", "count": 2 },
+          { "card": "neutral.shardling", "count": 2 },
+          { "card": "neutral.binding-thread", "count": 2 },
+          { "card": "ember.blaze-mastiff", "count": 2 },
+          { "card": "ember.roaring-pyre", "count": 2 },
+          { "card": "ember.ash-warden", "count": 2 },
+          { "card": "ember.flamebound-zealot", "count": 2 },
+          { "card": "ember.ember-lance", "count": 2 },
+          { "card": "ember.rise-from-cinders", "count": 2 },
+          { "card": "neutral.shard-construct", "count": 2 },
+          { "card": "ember.cinderfall", "count": 2 },
+          { "card": "neutral.crystal-rupture", "count": 2 },
+          { "card": "ember.ashborn-drake", "count": 2 }
+        ]
+      }
+    }
+  ]
+}

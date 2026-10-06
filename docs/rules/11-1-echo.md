@@ -11,5 +11,6 @@
 - **11.1.7** In v1, Echo only exists on attack abilities, so only units have it. If a spell ever gets Echo, it will be replayed immediately after it resolves.
 - **11.1.8** If both attack abilities of a unit have Echo, both are replayed, each with its own X, in the order chosen by the owner.
 - **11.1.9** Echo replays the attack ability **as printed on the card**. Modifications (8.5) and auras (8.14) that applied to the unit are lost when it dies, so they do not boost the echo.
+- **11.1.10** "Rounded down" applies to the size of the number: a negative value is rounded toward 0. Echo 50 on −3 gives −1, so rounding always weakens the echo, whether the value is a bonus or a malus.
 
 > *Example*: a unit dies; its attack ability "Freeze + 10 damage" has Echo 50. The echo applies "Freeze + 5 damage" to a new target. If the unit's other attack ability has no Echo, it is not replayed.

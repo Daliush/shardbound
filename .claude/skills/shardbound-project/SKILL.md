@@ -12,6 +12,7 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 - Full design: `docs/design.md`.
 - Rules: `docs/rules/`, one file per section, indexed by `docs/rules/README.md` (see the `shardbound-rules` skill).
 - Cards: see the `shardbound-card-authoring` skill.
+- Engine: the `shardbound-engine` skill explains how it works and how to call it; `shardbound-engine-dev` explains how to change it.
 
 ## Design doc map
 
@@ -21,8 +22,8 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 
 | Path | Stack | Role |
 |---|---|---|
-| `java/engine` | Java 21, no framework | Rules, legal actions, scenario service, rule trace, determinization, random / greedy / MCTS bots |
-| `java/backend` | Spring Boot | REST and WebSocket API, MCP server, gRPC server |
+| `engine/core` | Java 21, no Spring (Jackson only) | Rules, legal actions, events with rule trace, player views, scenarios, determinization, random / greedy (later MCTS) bots |
+| `engine/api` | Spring Boot | REST for resources (cards, decks, games), WebSocket protocol for live games; later MCP and gRPC |
 | `ai/` | Python (uv, FastAPI) | Chat orchestrator, RAG, LoRA, LLM and Jev bots, eval harness |
 | `frontend/` | Angular | Test UI first, polished UI later, results pages and answer comparator |
 | `proto/` | Protobuf / gRPC | Contract between the engine and the Python players |
@@ -52,7 +53,9 @@ Language rule: compute-heavy code and business logic go to Java; code that calls
 
 The phases in `docs/design.md` §11 are ordered on purpose. Foundations come first (rules, content, an engine API serving its four consumers, a minimal test UI). AI work follows, because that is where the portfolio value is. The deck builder and the polished UI come last. A GPU is never used online.
 
-To know where things stand, check the roadmap and the repository itself. As of 2026-10-04 there is no code yet: phase 1 (rules and content) is underway. Rulebook v0.1, the card and deck formats, 30 cards + 1 token and two starter decks (Ember vs Root) are done, all covered by the content tests in CI. The next step is the engine (phase 2) with the `random` / `greedy` bots, playing the two starter decks against each other.
+To know where things stand, check the roadmap and the repository itself. Phase 1 (rulebook, card and deck formats, 30 cards + 1 token, two starter decks, content tests in CI) is done. Phase 2 is underway, fully specified in `specs/phase-2-engine.md` and built in five slices: as of 2026-10-06, slice 1 is done (`engine/core` plays full games for the rules of sections 1 to 7 and 9, the effects Damage, Destroy, Heal, Draw and Summon, with the scenario service, the random bot, fuzz, determinism and JSON round-trip tests). Next come the game server and test frontend (slice 2), the other effects (slice 3), the keywords (slice 4), then determinization and the greedy bot (slice 5). Read the spec before working on any of them.
+
+Engine layout, so new code lands in the right place: `content` (card and deck model, strict loader), `state` / `action` / `decision` / `event` / `view` (immutable API types), `resolution` (pending steps and queued triggers, stored in the state), `rules` (`GameEngine` facade, then one sub-package per rulebook area: `game` loop and state check, `setup`, `turn`, `play`, `combat`, `effect`, `trigger`, `board`), `scenario`, `text`, `bot`, `json`. The game server is designed for several instances: no instance owns a game, sessions sit behind `GameRepository` / `GameUpdates` interfaces with `*InMemory` implementations for now (spec §13.4).
 
 ## Keeping the docs in sync
 

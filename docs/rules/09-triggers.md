@@ -12,3 +12,6 @@
 - **9.8** **Order of simultaneous effects**: when several abilities trigger at the same time, the active player's resolve first, then their opponent's. For each player, from the card that arrived on the board earliest to the most recent. A card that just left the board keeps the place it had there. Abilities triggered during this resolution are queued **after** those already waiting.
 - **9.9** **Attack**: when this unit attacks. It triggers once the attack ability, its target and its cost are settled, just before the defender decides whether to intercept (7.4). An echo is not an attack (11.1.4), so it does not trigger "Attack" abilities.
 - **9.10** When several abilities of the same card trigger at the same time, Echo resolves first (11.1), then "Death" abilities, then "Departure" abilities. Several abilities of the same kind resolve in the order they are printed on the card (two Echoes follow 11.1.8).
+- **9.11** An action (playing a card, an attack) or an ability resolves completely before the abilities it triggered, which wait in order (9.8). The only exception is "Attack" abilities, which resolve before the intercept decision (9.9).
+
+  > *Example*: I play Pyre Offering and sacrifice Cinderling to pay for it. Pyre Offering deals its 8 damage first; then Cinderling's "Death" ability deals 2 damage to my opponent.

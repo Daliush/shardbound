@@ -9,3 +9,4 @@
 - **3.5** **Graveyard**: public. It holds dead cards, discarded cards and resolved spells.
 - **3.6** A token that leaves the board vanishes: it goes neither to the hand nor to the graveyard.
 - **3.7** **Information.** Each player knows the opposing faction from the start of the game, but neither the opposing decklist nor hand. Played cards are public: it is up to the players to remember what they saw (see Fracture, 11.2.5).
+- **3.8** A unit card with a sacrifice cost (8.3) can be played while its controller already has 6 units, if paying that cost frees a place: at least one of the sacrificed units must actually leave the board. An anchored unit stays when sacrificed (11.3.3), so it frees nothing.

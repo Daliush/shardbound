@@ -6,8 +6,6 @@
 > Backend and engine in **Java**, AI layer in **Python**, frontend in **Angular**.
 > Online demo with zero AI cost; the Arbiter is tested locally.
 
-*("Shardbound" is a working title.)*
-
 > **Changelog**
 >
 > **v2 (October 2026)** — main changes after review:
@@ -26,8 +24,16 @@
 > **v2.3 (October 2026)** — card format defined in [`content/cards/`](../content/cards/README.md): one JSON file per card with a stable id, rules text generated from the data, game versions as git tags.
 >
 > **v2.4 (October 2026)** — faction identities set (Ember = attack, Tide = buffs and debuffs, Root = summoning), number scale adopted, first batch of 11 cards + 1 token.
->
+> 
 > **v2.5 (October 2026)** — second batch of 19 cards (30 cards + 1 token in total), deck format in [`content/decks/`](../content/decks/README.md) with two 30-card starter decks, Ember vs Root. Content tests run in CI.
+>
+> **v2.6 (October 2026)** — engine architecture decided: `engine/core` (domain, immutable state, no Spring) and `engine/api` (Spring Boot), REST for resources and a WebSocket protocol for live games, a minimal Angular `frontend/`. Implementation spec: [`specs/phase-2-engine.md`](../specs/phase-2-engine.md).
+>
+> **v2.7 (October 2026)** — rules clarified for the engine with the maintainer: 19 new rules (1.6, 3.8, 6.8, 6.9, 7.9, 7.10, 8.15–8.22, 9.11, 10.5, 10.6, 11.1.10, 11.2.7), and two rules reworded: Freeze lasts the current turn and the next one (8.10), and the non-active player also makes the choices effects ask of them (5.5.2). List in [`rules/12-open-points.md`](rules/12-open-points.md).
+>
+> **v2.8 (October 2026)** — the game server is designed for several Cloud Run instances: no instance owns a game, sessions sit in a shared store with versioned saves, updates go through a pub/sub (§8.2, spec §13.4).
+>
+> **v2.9 (October 2026)** — phase 2, slice 1: the engine core plays full games (setup, turns, Shards, zones, cards, combat and intercepts, triggers, five effects) with a rule trace, player views, a scenario service, a random bot and JSON states. Cards that need a later effect or keyword are not playable yet.
 
 ---
 
@@ -89,7 +95,7 @@ Why an invented game? Because a base LLM **cannot know** the rules. Every correc
 - Board: up to 6 units and 3 relics. Hand: up to 10 cards.
 - Card types: **Units** (defense + one or two attack abilities, each with its own cost), **Spells** (immediate effect), **Relics** (permanent abilities, cannot be attacked).
 - **Combat**: once per turn, a unit attacks by paying the cost of one of its attack abilities. A targeted attack hits an enemy unit; the player can only be attacked when they have no unit left. Some attacks have no target and only buff their own side. The defender can **intercept**: redirect the attack to another of their units. No retaliation. Spells, however, can target the player directly.
-- During the opponent's turn you play no cards: intercepting is the only possible action.
+- During the opponent's turn you play no cards: you can intercept, and you make the choices that effects ask of you (an echo's target, a discard).
 - **Victory**: bring the opponent to 0 HP. An empty deck does not lose the game, but each draw from an empty deck deals increasing **fatigue** (1, 2, 3… HP). Technical limit: the game is a draw after 50 turns per player.
 
 ### 2.2 Factions (3 + neutral)
@@ -214,8 +220,8 @@ flowchart LR
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Backend language | Java 21+ (LTS) | Records, sealed interfaces, pattern matching, virtual threads |
-| Java build | Maven multi-module (or Gradle) | `engine`, `backend`, `simulator` |
+| Backend language | Java 21 (LTS) | Records, sealed interfaces, pattern matching, virtual threads |
+| Java build | Maven multi-module with the Maven Wrapper | `engine/core` (domain, no Spring) and `engine/api` (Spring Boot); a `repository` module later |
 | Backend | Spring Boot | REST, WebSocket, security, JPA |
 | Game engine | Pure Java, no framework dependency | Deterministic (seed), lists **legal actions**, emits the **rule trace** |
 | MCP | Java MCP SDK / Spring AI MCP Server | HTTP transport, called by the Python orchestrator |
@@ -639,7 +645,7 @@ Reminder: most recruiters will not click on the demo. The README GIF, the result
 
 The comparator shows the Arbiter at work without running anything: far more telling than a table.
 
-With no user accounts online, **the demo needs no database**. If one is ever needed: a managed Cloud SQL instance stays on permanently and is billed monthly; compare with a serverless Postgres offering (with pgvector) that has a free tier.
+Cloud Run can run several instances of the game server and does not guarantee that two messages of a game reach the same one. So no instance keeps a game in memory between two messages: **games live in a small shared store**, and a pub/sub carries each update to the instance holding the player's connection (see `specs/phase-2-engine.md` §13.4). Phase 2 runs on in-memory adapters; the store is chosen when going online. Options: a serverless Postgres with a free tier (LISTEN/NOTIFY for the pub/sub, pgvector later), Firestore (serverless, built-in listeners) or Redis. A managed Cloud SQL instance stays on permanently and is billed monthly.
 
 Protection, even without AI: per-visitor rate limiting, a cap on concurrent games and a bounded MCTS thinking budget in demo mode, a budget alert on the GCP project.
 
@@ -664,7 +670,7 @@ If the LoRA Arbiter ever has to be queryable online:
 
 Documented in `docs/dev-workflow.md`, with screenshots and real examples.
 
-- `CLAUDE.md` / `AGENTS.md` at the root, plus one per sub-project (`java/`, `ai/`, `frontend/`) with each ecosystem's commands and conventions.
+- `CLAUDE.md` / `AGENTS.md` at the root, plus one per sub-project (`engine/`, `ai/`, `frontend/`) with each ecosystem's commands and conventions.
 - **Project knowledge as skills** in `.claude/skills/`: how the rules work, how cards are written, how the architecture fits together. Any contributor using Claude Code gets the same context.
 - **Spec-driven**: each feature starts with a spec in `specs/`, implemented by a coding agent, reviewed by a human.
 - **PR review agent** in GitHub Actions.
@@ -696,11 +702,11 @@ shardbound/
 │   ├── decks/                  # deck.schema.json, README.md + <id>.json (starter decks)
 │   └── tests/                  # card and deck schemas, card and deck rules, text templates
 ├── proto/                      # shared protobuf / gRPC contracts
-├── java/                       # Maven multi-module
+├── engine/                     # Maven multi-module (groupId fr.daliush.shardbound), see specs/phase-2-engine.md
 │   ├── pom.xml
-│   ├── engine/                 # pure engine: rules, legal actions, scenarios, trace, determinization, random/greedy/mcts bots
-│   ├── backend/                # Spring Boot: API, WebSocket, gRPC, MCP server
-│   └── simulator/              # standalone jar for mass simulations
+│   ├── core/                   # the domain, no Spring: rules, legal actions, events + rule trace, views, scenarios, determinization, bots
+│   ├── api/                    # Spring Boot: REST (cards, decks, games) + WebSocket game server; later MCP and gRPC
+│   └── (repository/)           # later, with Postgres
 ├── ai/                         # Python (uv)
 │   ├── chat/                   # orchestrator, coach, Arbiter, router, MCP client
 │   ├── rag/                    # ingestion, retrieval, reranking
