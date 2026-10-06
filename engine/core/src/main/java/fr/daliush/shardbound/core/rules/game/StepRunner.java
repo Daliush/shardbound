@@ -28,12 +28,24 @@ public final class StepRunner {
         }
     }
 
-    /** Gives a player's answer to the step that paused to ask for it ({@link Game#pauseAndAsk}). */
+    /**
+     * Gives a player's answer to the step that paused to ask for it ({@link Game#pauseAndAsk}).
+     * Every step is listed, so a new step must say whether it can pause.
+     */
     public static void resume(Game game, Step paused, Action answer) {
         switch (paused) {
             case Step.ResolveAttack attack -> AttackSequence.resume(game, attack, answer);
             case Step.ChooseTargets choose -> AbilityTargets.resume(game, choose, answer);
-            default -> throw new IllegalStateException(paused + " never pauses for a decision");
+            case Step.StartTurn ignored -> throw neverPauses(paused);
+            case Step.TriggerTurnEnd ignored -> throw neverPauses(paused);
+            case Step.FinishTurn ignored -> throw neverPauses(paused);
+            case Step.ResolvePlay ignored -> throw neverPauses(paused);
+            case Step.FinishSpell ignored -> throw neverPauses(paused);
+            case Step.ResolveEffects ignored -> throw neverPauses(paused);
         }
+    }
+
+    private static IllegalStateException neverPauses(Step step) {
+        return new IllegalStateException(step + " never pauses for a decision");
     }
 }

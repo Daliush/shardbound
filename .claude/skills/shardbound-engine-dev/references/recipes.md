@@ -84,7 +84,7 @@ Then:
 ## 5. Add a step, or a decision in the middle of a resolution
 
 1. A record in `resolution/Step.java` carrying everything needed to resume: ids, card ids, indexes, the choices made so far, and a phase enum if the step has several phases (like `ResolveAttack`). Override `waitsForTriggers()` only if queued abilities must resolve before it, as for `FinishTurn`.
-2. Add a `case` to `StepRunner.run` that calls the rule class's method.
+2. Add a `case` to `StepRunner.run` that calls the rule class's method, and one to `StepRunner.resume`. Both switches list every step, so the compiler asks for both: a step that never pauses throws `neverPauses` in `resume`.
 3. If it may need a choice:
    ```java
    List<Action> options = …;              // canonical order
