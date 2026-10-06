@@ -84,7 +84,7 @@ Game design decisions belong to the maintainer. They like to go point by point a
 2. If a gap must be filled to keep the book complete, write the rule, mark it *(proposed)* and tell the maintainer.
 3. In the same change, update the rule's file, `12-open-points.md`, and `docs/design.md` §2 if the summary is affected.
 4. Turn the edge case into a ruling in `docs/rulings/`. Each ruling becomes documentation, a JUnit test and an eval question.
-5. Once the engine and the evals exist, update the engine tests and regenerate the eval answer keys.
+5. Update the engine: the test that carries the rule ID, then the code, following the `shardbound-engine-dev` skill. Once the evals exist, regenerate their answer keys.
 
 ## Design decisions and why (don't undo them by accident)
 

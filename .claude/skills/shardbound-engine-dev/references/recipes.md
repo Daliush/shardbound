@@ -99,7 +99,7 @@ Then:
 ## 6. Add an action type or a decision kind
 
 - **Action**: a record in `action/Action.java` with value components only, since `apply` checks it by equality. Add a case to `text/ActionDescriber` for its button label, and put it in canonical order where it is listed. The API's `ActionView` gets a matching `type` in slice 2.
-- **Decision kind**: `decision/DecisionKind.java`. Check `pausesAStep()`: a kind asked in the middle of a step goes through `pauseAndAsk`; one that starts new work goes through `ask` and needs a case in `GameEngine.startNewWork`. Update `testing/Invariants.checkDecision` if it has its own constraints, and add the API's `DecisionKind` string later.
+- **Decision kind**: a kind is a *sort of answer* (a target, cards, an order), so first check whether an existing one fits: "the opponent picks one of their units" is a `CHOOSE_TARGET` for the opponent, not a new kind. If one is really needed: `decision/DecisionKind.java`. Check `pausesAStep()`: a kind asked in the middle of a step goes through `pauseAndAsk`; one that starts new work goes through `ask` and needs a case in `GameEngine.startNewWork`. Update `testing/Invariants.checkDecision` if it has its own constraints, and add the API's `DecisionKind` string later.
 
 ## 7. Change how an existing rule behaves
 

@@ -16,12 +16,35 @@ It serves four consumers, so its API is shaped for all of them, not just the UI 
 | Scenario service (tests, Arbiter answer keys) | `ScenarioBuilder`, `ScenarioRunner`, the unredacted events |
 | MCTS (later) | immutable states to branch from, determinization from a view |
 
+## Vocabulary: one word, one thing
+
+These words are easy to blur, and most confusions about the engine come from blurring them.
+
+| Word | What it is | Type | Example |
+|---|---|---|---|
+| Card definition | What a card **is**: static, shared by every game | `content.UnitCard`, `SpellCard`, `RelicCard` | Ash Warden: cost 3, defense 6, Cinder Bite… |
+| Card instance | One copy of a card in one game | `state.CardInstance` (instance id + card id + owner) | `#15`, an Ash Warden of P1 |
+| Unit | A card instance on the board, with its game state | `state.Unit` | `#15` at 2/6 defense, has attacked this turn |
+| Decklist and deck | The registered list, and the shuffled draw pile | `content.Deck`; `PlayerState.deck` | "ember-starter"; the 23 cards left to draw |
+| Decision | A **question** the game asks one player, with its options | `decision.Decision` | "P2, do you intercept?" |
+| Action | One **answer**, always one of the decision's options | `action.Action` | `Intercept(#38)` |
+| Step | One piece of **work** left to do | `resolution.Step` | `ResolveAttack(…, phase INTERCEPT)` |
+| Resolution | The **to-do list**: the steps, plus the triggered abilities waiting in the queue | `resolution.Resolution` | |
+| Transition | What one engine call returns | `rules.Transition` | the new state + the events |
+| Event | What **happened**, with the rule IDs applied | `event.GameEvent` | `UnitDamaged[8.1]` |
+| View | What one player may see | `view.PlayerView` | own hand, the opponent's hand count |
+
+Two traps:
+
+- An **attack ability** is the attack printed on a unit, with its cost and effects ("Gore: deal 2 damage"). An **"On attack" ability** is a *triggered* ability that fires when the unit attacks (trigger `attack` in the card format, rule 9.9). They are resolved at different moments of an attack.
+- The state holds both the to-do list (`resolution`) and the question (`pending`). When a step needs an answer, it waits at the front of the to-do list **and** a decision is pending: that is what "paused" means. No flag says it.
+
 ## The mental model in six points
 
 1. **A `GameState` is immutable and complete**: both hands, deck orders, the pending work, the RNG state. It never leaves the server. Clients and bots only get a `PlayerView`.
 2. **`apply(state, action)` returns a `Transition`**: the new state and the events that led to it. The old state stays valid, so branching is free.
 3. **The engine lists every legal action**, fully specified with targets included, in a canonical order (spec §6.2). The list is computed once, when the decision is created, and stored in the state (`state.pending()`). A player answers by picking one, and `apply` checks it with `contains`, by value equality, without recomputing anything. The client never builds an action.
-4. **A `Decision`** says who must choose (`player`), what kind of choice it is (`MULLIGAN`, `MAIN`, `INTERCEPT`, `CHOOSE_TARGET`…) and the options (`actions`). It can belong to the non-active player in the middle of a turn, for example to intercept. The engine only asks when there are at least 2 options, except for `MAIN`, which is always asked.
+4. **A `Decision`** says who must choose (`player`), what kind of choice it is (`MULLIGAN`, `MAIN`, `INTERCEPT`, `CHOOSE_TARGET`…) and the options (`actions`). It can belong to the non-active player in the middle of a turn, for example to intercept. The engine only asks when there are at least 2 options, except for `MAIN`, which is always asked. **There is at most one decision at a time**: the engine stops as soon as one is pending, so choices always come one after another, never at once.
 5. **Events are the rule trace.** Each `GameEvent` has `rules()` (rule IDs, never empty), a `visibility()`, and a `redacted()` form for the players who may not see it. Events name the cards they involve (`CardInstance`), so a log reads without the state.
 6. **Same seed, same decks and same actions give the same game**, events included. Bots have their own RNG and never touch the game's.
 
@@ -48,6 +71,7 @@ GameResult result = state.result().orElseThrow();      // Win(winner, reason) or
 
 | Method | Contract |
 |---|---|
+| (persistence) | The engine stores nothing: it is a library. Whoever calls it keeps the returned state, decision included: the game server in its `GameRepository`, a test in a variable. |
 | `newGame(GameSetup)` | Validates both decks (illegal deck → `IllegalArgumentException` with rule IDs), runs the setup (5.1) and stops at the first mulligan decision. |
 | `decision(state)` | The pending decision, empty once the game is over. |
 | `apply(state, action)` | `IllegalActionException` if the action is not one of the decision's actions. Runs until the next decision or the end of the game, which can take many steps: ending a turn runs the opponent's whole start of turn. |
