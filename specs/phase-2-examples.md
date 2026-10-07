@@ -506,6 +506,6 @@ Reviewed with the maintainer on 2026-10-05.
 Reviewed with the maintainer on 2026-10-06, before slice 2:
 
 8. **Events are the engine's, one to one** (spec §13.3): `type` is the record name in snake_case, the fields are the record's components. Damage to a unit and to a player are two events, `unit_damaged` and `player_damaged`, as in the engine; `unit_destroyed` has no `cause`, since its rule IDs say why (6.6 at zero defense, 8.2 for a Destroy effect).
-9. **Card text comes with slice 3.** Until `CardTextRenderer` exists, `GET /api/cards` has no `text` field, and the frontend shows names, costs, defenses and attacks.
+9. **Card text came with slice 3.** `GET /api/cards` now carries each card's `text`, written by `CardTextRenderer`, one line per entry with its kind (section 2.1); before slice 3 the field was absent.
 10. **Prompts and attack damage come from the engine**: `DecisionDescriber` writes the decision prompts, and core computes `attacks[].damage` (the damage dealt to the target, bonuses included, `null` when none).
 11. **A join is a save**: version 1 of a game between two humans (section 3.6).

@@ -379,9 +379,10 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `AnchorProtectionEnded(unit)` | 5.2.1, 11.3.1 | public |
 | `ShardsRefilled(player, max, available, locked)` | 4.1, 4.2, 11.4.2 | public |
 | `HpLost(player, amount, reason)` | 1.4 (fatigue) | public |
-| `CardDiscarded(player, card, reason)` | 3.3 (overdraw), 8.7, 11.2.6 | public (the graveyard is public) |
+| `CardDiscarded(player, card, reason)` (reason `OVERDRAW` or `EFFECT`) | 3.3 (overdraw), 8.7, 11.2.6 | public (the graveyard is public) |
 | `CardPlayed(player, card, cost, overcharged, fractureStep)` | 6.3, 11.4.1, 11.2.2 | public |
-| `UnitSacrificed(unit)`, `SacrificeFailed(player, needed, available)` | 8.3, 8.22 | public |
+| `UnitSacrificed(unit, controller)` | 6.3 and 8.3 for a sacrifice cost, 8.3 for an effect | public |
+| `SacrificeFailed(player, needed, available)` | 8.22 | public |
 | `UnitArrived(unit)`, `RelicArrived(relic)` | 6.3, 6.5 | public |
 | `TokenSummoned(unit)`, `SummonFailed(player)` | 8.9, 3.4 | public |
 | `AttackDeclared(attacker, attackIndex, target)` | 7.4 | public |
@@ -389,20 +390,22 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `AttackCancelled(attacker)` | 7.10 | public |
 | `UnitDamaged(unit, amount)`, `PlayerDamaged(player, amount)`, `DamageShared(from, to, amount)` (amount can be 0, 8.15) | 8.1, 11.5.2 | public |
 | `UnitHealed(unit, amount)`, `PlayerHealed(player, amount)` | 8.4 | public |
-| `Modified(unit, attackDamage, defense, duration)`, `ModifierExpired(unit, …)` | 8.5, 5.4.2 | public |
+| `Modified(unit, attackDamage, defense, duration)` | 8.5 | public |
+| `ModifierExpired(unit, attackDamage, defense)` | 5.4.2, then 8.5 for a bonus or 8.17 for a malus | public |
 | `Frozen(unit, throughTurn)`, `UnitThawed(unit)` | 8.10 | public |
 | `Linked(a, b)`, `LinkBroken(a, b)` | 8.11, 11.5.4 | public |
 | `ShardsGained(player, amount, mode)` | 8.12 | public |
-| `ReturnedToHand(card)`, `SentToGraveyardHandFull(card)` | 8.8 | public |
-| `Recalled(card)` | 8.13 | public |
+| `ReturnedToHand(card)` | 8.8, 6.7 | public |
+| `SentToGraveyardHandFull(card)` | 8.8, 3.3 | public |
+| `Recalled(card)`, `RecallFailed(card)` | 8.13; 8.13, 8.20 | public |
 | `UnitDestroyed(unit, cause)`, `RelicDestroyed(relic)` | 6.6, 8.2, 5.4.3 | public |
-| `TokenVanished(unit)` | 3.6 | public |
+| `TokenVanished(unit)` | 3.6 (8.8, 3.6 when returned to hand) | public |
 | `AnchorPrevented(unit, what)` | 11.3.2, 11.3.3 | public |
 | `UnitDoomed(unit)`, `DoomLifted(unit)` | 11.3.4 | public |
 | `AbilityTriggered(source, trigger)` | 9.x | public |
 | `EchoTriggered(unit, attackIndex, percent)` | 11.1.1, 11.1.2 | public |
 | `FractureAdvanced(card, nextStep)`, `SpellResolved(card)` | 11.2.2, 11.2.4 | public |
-| `AuraApplied`, `AuraRemoved` | 8.14 | public |
+| `AuraApplied(unit, source, attackDamage, defense)`, `AuraRemoved(unit, source, attackDamage, defense)` | 8.14 (8.14, 8.21 when a defense malus ends) | public |
 | `TurnEnded(player)` | 5.4 | public |
 | `GameEnded(result)` | 1.2, 1.3, 1.5 | public |
 
@@ -495,7 +498,8 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - **3.3** Drawing with 10 cards in hand: the drawn card goes to the graveyard (`CardDiscarded(reason OVERDRAW)`, public).
 - **3.4** A unit cannot be played with 6 own units on the board, nor a relic with 3 relics (not a legal action). Summon with a full board: nothing (`SummonFailed`).
 - **Board places**: count them through a single function, summing each unit's size. `UnitCard.size()` is always 1 for now (not in the card format yet): the maintainer plans a `size` field, so keep board-limit and sacrifice counting in one place each.
-- **3.8** Exception: a unit with a sacrifice cost is playable on a full board when at least one of the units in `PlayCard.sacrificed` is not Anchor-protected (it really leaves). The triggers of the sacrifice wait (9.11), so the freed place is still free when the unit arrives.
+- **3.8** Exception: a unit with a sacrifice cost is playable on a full board when at least one of the units in `PlayCard.sacrificed` is not Anchor-protected (it really leaves). The triggers of the sacrifice wait (9.11), so the freed place is still free when the unit arrives. *Built in slice 3 as "the places of the sacrificed units are free again" (`BoardSpace.hasRoomFor`); the anchored exception comes with Anchor in slice 4.*
+- **Sacrifices are counted in one place** (`rules.effect.Sacrifices`), through unit sizes like board places: a unit counts as many sacrifices as the places it takes, one for now.
 - **3.5** The graveyard keeps insertion order. Dead cards, discarded cards and resolved spells go there. Tokens never do.
 - **3.6** A token leaving the board vanishes: when it dies, its Death abilities still trigger, then `TokenVanished`. When returned to hand: `TokenVanished` instead of going to the hand.
 - **3.7** Views and events are redacted (6.3, 6.4).
@@ -553,6 +557,8 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - `ALL_*`: the matching units when the effect starts; each receives it in arrival order; then one state check (simultaneous deaths).
 - `YOU` / `OPPONENT`: relative to C. `ATTACK_TARGET`: only inside attacks and echoes.
 - Relics can only be targeted by Destroy and Return to hand (10.4).
+- The attack's target is the opposing player when they have no unit (7.3): an effect on `ATTACK_TARGET` that only takes units or relics (Destroy, Modify, Freeze, Return to hand) does nothing to them (10.3); Damage and Heal hit them.
+- An effect that makes a player pick cards (a Sacrifice effect, a player's Discard) pauses its `ResolveEffects` step on a `CHOOSE_CARDS` decision; the answer resumes the step. The decision's actions are every combination, in canonical order (units by arrival, cards in hand order). A spell paused this way is held by its resolution, between hand and graveyard.
 
 **Effects:**
 - **8.1 Damage**: the amount (printed + bonuses) is floored at 0 (8.15). On a unit: Link first (11.5.2), then `defense = max(0, defense - amount)` (6.9); on a player: `hp -= amount` (HP can go below 0). A 0 amount still hits: `DamageDealt(target, 0)` is emitted and nothing changes (with Link, both shares are emitted, 0 and 0).
@@ -567,11 +573,12 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - **8.9 Summon**: create `count` token units for C, until the board is full (3.4): arrival sequence, `arrivedTurn = turn`, Anchor protection if the token has Anchor; their Arrival abilities trigger.
 - **8.10 Freeze**: `frozenThroughTurn = max(frozenThroughTurn, turn + 1)`: frozen for the rest of this turn and the whole next turn, whoever's turns they are. At the start of turn `frozenThroughTurn + 1` it thaws (`UnitThawed`). A frozen unit cannot attack or intercept.
 - **8.11 Link**: two different units, any side, neither already linked (11.5.1). Fewer than two eligible units → nothing.
-- **8.12 Gain Shards**: `THIS_TURN`: `shards += amount`, which can exceed `maxShards` for this turn. `MAX`: `maxShards = min(10, maxShards + 1)` (current Shards unchanged).
-- **8.13 Recall**: a unit card from C's graveyard (chosen: a `PlayCard` slot for spells, `CHOOSE_TARGET` for abilities) goes to C's hand. With a full hand, nothing happens and the card stays in the graveyard (8.20).
+- **8.12 Gain Shards**: `THIS_TURN`: `shards += amount`, which can exceed `maxShards` for this turn. `MAX`: `maxShards = min(10, maxShards + 1)` (current Shards unchanged). `ShardsGained.amount` is what the player got: 0 for a max Shard at the cap.
+- **8.13 Recall**: a unit card from C's graveyard (chosen: a `PlayCard` slot for spells, `CHOOSE_TARGET` for abilities) goes to C's hand. With a full hand, nothing happens and the card stays in the graveyard (8.20, `RecallFailed`).
 - **8.14 Auras** (continuous abilities of units and relics on the board):
   - *Stat aura*: every unit in the target group gets `+attackDamage/+defense`. **Reconciliation**, run in every state check: compute for each unit the bonus each active aura should give, compare with `appliedAuras`; a new or larger contribution adds to `maxDefense` and `defense`; a removed or smaller one lowers `maxDefense` and caps `defense` at the new max (like an expiring bonus, 8.5). A defense malus works the other way: a new or larger malus lowers both `maxDefense` and `defense` (it can kill, 6.6), and a removed or smaller one gives both back (8.21, like 8.17). The attack part is just recomputed. A unit arriving under an aura arrives with the bonus (6.5).
   - *Cost aura*: changes the cost of the given card type for the given player while the source is on the board (cost computation, 6.8).
+  - Built in `rules.aura` (continuous abilities, 9.7): `StatAuras.reconcile` runs at the start of every state check and after each round of deaths; `CostAuras` is summed inside `Costs.toPlay`. A hand card's cost in a view needs both boards, so the server writes it into the seat snapshot (section 13.4).
 
 ### Section 9 — Triggers
 
@@ -657,7 +664,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - The creator always takes seat P1, and the bot or the joiner seat P2. Who plays first is decided by the RNG (5.1.1).
 - A bot game starts at creation. A human vs human game starts when the second player joins; before that, the creator's view has status `waiting_for_opponent`.
 - `seed` is optional (random when missing). It is never returned while the game runs.
-- `text` is added in slice 3, with `CardTextRenderer` (section 9): one `{ kind, text }` per line, in the renderer's order. Until then the field is absent, rather than an empty list.
+- `text` comes from `CardTextRenderer` (section 9): one `{ kind, text }` per line, in the renderer's order (added in slice 3).
 - Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
@@ -764,7 +771,7 @@ Settled on 2026-10-06, for slice 2:
 - **Layers**: the domain owns its ports (`GameSessionPort`, `GameNotificationPort`); the adapter layer implements them (`GameSessionAdapter`, `GameNotificationAdapter`) and maps entities to business objects; the DAO layer is pure data. Each DAO is an interface, and each implementation adds a suffix: `GameDaoInMemory` now, `GameDaoDatabase` later.
 - **Bots are rebuilt at every step** from their name and RNG state, and their new RNG state is saved with the session. Any instance that loads a session whose decision belongs to a bot (because an instance stopped in the middle of a bot turn) resumes the bot loop; the versioned save makes sure only one instance does.
 - `GameSessionPort`: `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, an optimistic lock that answers false when the stored version is no longer `expectedVersion` (the DAO throws `VersionConflict`, the adapter translates it). Phase 2: `GameDaoInMemory` keeps each game as a database row would: version and status beside its JSON.
-- **Outbox.** Each save also stores, for each human seat, what it may see after that save: the engine's `PlayerView`, the prompt and labels of its own decision (written then, since the describers read the full state), and the save's events redacted for it. The domain turns them into views when they are sent. The outbox keeps the last 50 versions; a connection further behind gets the `state` instead. A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
+- **Outbox.** Each save also stores, for each human seat, what it may see after that save: the engine's `PlayerView`, what each card of its hand costs and the prompt and labels of its own decision (written then, since cost auras and the describers read the full state), and the save's events redacted for it. The domain turns them into views when they are sent. The outbox keeps the last 50 versions; a connection further behind gets the `state` instead. A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
 - `GameNotificationPort`: `publish(gameId, version)`, `announce(gameId, seat, connectionId)` (13.1) and `watch(gameId, watcher)`. The `GameWatcher` callback is the domain's; the adapter forwards the DAO's notifications to it. Phase 2: `GameNotificationDaoInMemory`, in-process, which logs a failing listener instead of letting it reach the publisher. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
 - The services: `GameCreationService` (create, join), `GamePlayService` (act and its checks), `BotTurnService` (the bot loop), `SeatAuthenticationService` (the seat a token holds), `SeatUpdateService` (`state`, `since(version)` from the outbox, `watch`, `announce`), and `GameSaver`, the step every change ends with: outbox, versioned save, publish, log.
 - `GameSocketRegistry` (controller): this instance's sockets only. It watches every game it holds a socket to, sends every socket the updates it has not received, in order, and closes sockets replaced elsewhere. A socket is registered before its `state` is read, under the socket's lock, so no update falls between the two. A seat without a socket anywhere simply misses messages and will `sync`.
@@ -796,7 +803,7 @@ Minimal and plain: correctness first, no animations required.
 - **Game screen**:
   - opponent: faction, HP, Shards (available / max, locked), hand count, deck count, fatigue, units, relics, graveyard count;
   - you: the same, plus your hand. Each card shows name, type, cost and the Fracture step (`GET /api/cards`, cached), and its rendered text (slice 3, see below);
-  - each unit shows name, defense / max defense, its attacks (name, cost, damage, Echo X) and badges: arrived this turn, attacked, intercepted, frozen, anchored, doomed, linked to #id;
+  - each unit shows name, defense / max defense, its attacks (name, cost, damage, Echo X) and badges: arrived this turn, attacked, intercepted, frozen, anchored, doomed, linked to #id, and each modifier ("+3/+0 this turn", "-2/+0");
   - **decision panel**: the `prompt` and the decision's actions, **grouped** (decided on 2026-10-06). The cards and units that are the source of an action are highlighted (the card played, the attacker, the interceptor); click one: its possible targets light up, and its actions without a target (an intercept, Kindle) show as buttons with their `label`. Clicking a target sends the action; when several actions share that target (with and without Overcharge), they show as buttons instead. Actions without a source (keep hand, mulligan, end turn, don't intercept) are plain buttons. The client still sends the index of the chosen action and never builds one: it only filters the decision's list. When `waitingFor` is set: "Waiting for your opponent (intercept)…";
   - **game log**: every event's `text` with its rule IDs (`[8.1] Sprout #12 takes 3 damage.`), newest at the bottom;
   - result banner and a "New game" link.
@@ -845,7 +852,7 @@ These gaps were found while writing this spec, then settled with the maintainer 
 - **Rule tests**, built with `ScenarioBuilder` and `ScenarioRunner`. The display name starts with the rule ID: `@DisplayName("11.3.2 — an anchored unit cannot be destroyed by Tempest")`. Assert on the final state **and** on the events, including their rule IDs.
 - **Rulebook coverage test** (slice 4): reads every rule ID (`**N.N**` or `**N.N.N**`) from `docs/rules/*.md` and every test display name. It fails if a rule from sections 1–11 has no test, except rules in an explicit allowlist with a reason (purely descriptive rules such as 6.1).
 - **Content tests**: the loader loads every card and deck; the deck validator agrees with the Python content tests; the text renderer golden tests (section 9).
-- **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over both starter decks, with different seeds. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
+- **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over both starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
 - **Determinism**: same seed, decks and bot seeds → identical event lists and final state.
 - **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card.
 - Performance smoke test: 1,000 random games run within a minute on a laptop (report the number).
