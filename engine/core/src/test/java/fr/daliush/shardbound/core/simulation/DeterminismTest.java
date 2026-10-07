@@ -8,6 +8,7 @@ import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.testing.GameDriver;
 import fr.daliush.shardbound.core.testing.GameDriver.PlayedGame;
+import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +23,19 @@ class DeterminismTest {
         for (int seed = 1; seed <= 20; seed++) {
             PlayedGame first = play(seed);
             PlayedGame second = play(seed);
+
+            assertThat(second.events()).isEqualTo(first.events());
+            assertThat(second.finalState()).isEqualTo(first.finalState());
+        }
+    }
+
+    @Test
+    void randomDiscardsAndRandomTargetsReplayToo() {
+        GameEngine withTestCards = new GameEngine(TestCards.CATALOG);
+        for (int seed = 1; seed <= 20; seed++) {
+            GameSetup setup = new GameSetup(TestCards.EFFECTS_DECK, content.deck("root-starter"), seed);
+            PlayedGame first = GameDriver.play(withTestCards, setup, new RandomBot(seed), new RandomBot(-seed));
+            PlayedGame second = GameDriver.play(withTestCards, setup, new RandomBot(seed), new RandomBot(-seed));
 
             assertThat(second.events()).isEqualTo(first.events());
             assertThat(second.finalState()).isEqualTo(first.finalState());

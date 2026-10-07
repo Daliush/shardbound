@@ -13,6 +13,7 @@ import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.testing.GameDriver;
+import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
 import fr.daliush.shardbound.core.view.PlayerView;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,15 @@ class HiddenInformationTest {
         for (int seed = 1; seed <= 20; seed++) {
             GameSetup setup = new GameSetup(content.deck("ember-starter"), content.deck("root-starter"), seed);
             GameDriver.play(engine, setup, checking(new RandomBot(seed)), checking(new RandomBot(-seed)));
+        }
+    }
+
+    @Test
+    void choicesOfCardsOnlyShowTheDecidersOwnCards() {
+        GameEngine withTestCards = new GameEngine(TestCards.CATALOG);
+        for (int seed = 1; seed <= 20; seed++) {
+            GameSetup setup = new GameSetup(TestCards.EFFECTS_DECK, content.deck("ember-starter"), seed);
+            GameDriver.play(withTestCards, setup, checking(new RandomBot(seed)), checking(new RandomBot(-seed)));
         }
     }
 
@@ -51,6 +61,11 @@ class HiddenInformationTest {
         for (Action action : decision.actions()) {
             if (action instanceof Action.PlayCard play) {
                 assertThat(view.self().hand()).anyMatch(card -> card.id().equals(play.card()));
+            }
+            if (action instanceof Action.ChooseCards choice) {
+                assertThat(choice.cards()).as("a discard or a sacrifice picks the decider's own cards")
+                        .allMatch(id -> view.self().hand().stream().anyMatch(card -> card.id().equals(id))
+                                || view.self().units().stream().anyMatch(unit -> unit.id().equals(id)));
             }
         }
         assertThat(view.self().hand()).allMatch(card -> card.card().owner() == view.viewer());

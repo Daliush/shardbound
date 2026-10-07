@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.decision.DecisionKind;
+import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.rules.board.BoardSpace;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.HandCard;
@@ -52,8 +53,16 @@ public final class Invariants {
             player.graveyard().forEach(card -> ids.add(card.id()));
             deckCards += player.decklist().size();
         }
+        // A spell waiting for a choice while it resolves is held by its resolution, between hand and graveyard.
+        state.resolution().steps().stream()
+                .filter(Step.FinishSpell.class::isInstance)
+                .forEach(step -> ids.add(((Step.FinishSpell) step).spell().id()));
         Set<InstanceId> unique = new HashSet<>(ids);
         assertThat(unique).as("instance ids are unique").hasSameSizeAs(ids);
+        if (state.isOver()) {
+            // 1.6: a game can end while a spell resolves; the spell never reaches the graveyard.
+            return;
+        }
         for (int id = 1; id <= deckCards; id++) {
             assertThat(unique).as("card #%s is somewhere", id).contains(InstanceId.of(id));
         }

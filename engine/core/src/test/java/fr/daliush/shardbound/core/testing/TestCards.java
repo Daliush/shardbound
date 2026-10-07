@@ -2,9 +2,16 @@ package fr.daliush.shardbound.core.testing;
 
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
+import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.Deck;
+import fr.daliush.shardbound.core.content.DeckEntry;
+import fr.daliush.shardbound.core.content.DeckId;
+import fr.daliush.shardbound.core.content.Faction;
 import fr.daliush.shardbound.core.content.json.CardParser;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -146,6 +153,18 @@ public final class TestCards {
     };
 
     public static final CardCatalog CATALOG = build();
+
+    /**
+     * A legal deck that plays the effects no real card has yet (Discard, a Sacrifice effect, Return to hand, Freeze,
+     * stat and cost auras), so random games exercise them.
+     */
+    public static final Deck EFFECTS_DECK = new Deck(new DeckId("test-effects"), "Test effects", Optional.empty(),
+            Faction.TIDE, Stream.of("tide.brine-adept", "tide.coral-font", "neutral.shardling",
+                            "neutral.shard-construct", "neutral.crystal-rupture", "test.ritual", "test.altar",
+                            "test.blood-knight", "test.hex", "test.mind-rot", "test.purge", "test.recede", "test.frost",
+                            "test.blight", "test.tithe")
+                    .map(card -> new DeckEntry(new CardId(card), 2))
+                    .toList());
 
     private TestCards() {
     }
