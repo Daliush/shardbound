@@ -47,4 +47,4 @@ The domain knows neither persistence nor transport. No server instance keeps a g
 
 ## Status
 
-Rules, 30 cards and two decks, the engine, the game server and the client are done. Some cards still wait for their effects and keywords; the AI work comes next ([roadmap](docs/design.md)).
+Rules, 39 cards and three decks, the engine with every rule, effect and keyword, the game server and the client are done; the AI work comes next ([roadmap](docs/design.md)).
