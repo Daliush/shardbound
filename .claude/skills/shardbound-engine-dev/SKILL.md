@@ -31,7 +31,8 @@ Read the `shardbound-engine` skill first (and its `references/resolution.md`): t
 | `rules.turn` | 4, 5.2–5.4, draws (1.4, 3.3) | `TurnStart`, `TurnEnd`, `MainPhase`, `CardDraws` |
 | `rules.play` | 6.3, costs (6.8), legal plays | `CardPlay`, `Costs`, `PlayOptions`, `ChoiceSlots`, `EngineSupport` |
 | `rules.combat` | 7 | `AttackSequence`, `AttackOptions`, `Interceptors` |
-| `rules.effect` | 8, 10 | one `XxxEffect` per effect, `EffectResolution`, `Targets`, `TargetOptions` |
+| `rules.effect` | 8, 10 | one `XxxEffect` per effect that resolves, `EffectResolution`, `Targets`, `TargetOptions`, `Sacrifices` (8.16, counted through unit sizes) |
+| `rules.aura` | 8.14, 9.7 | `StatAuras` (reconciled by the state check), `CostAuras` (summed by `Costs`) |
 | `rules.trigger` | 9 | `Triggers`, `TriggerOrder`, `Abilities`, `AbilityTargets` |
 | `rules.board` | arriving on and leaving the board (3.4, 3.6, 6.5) | `Arrivals`, `Departures`, `BoardSpace` |
 
@@ -42,7 +43,7 @@ A keyword (section 11) usually touches several of these. Put each part where its
 - **Outside, immutable; inside, one mutable `Game`.** Rule classes change the game only through `Game` (`updatePlayer`, `updateUnit`, `push`, `raise`, `ask`, `emit`, `end`) and through the domain methods of the records (`unit.damaged(3)`, `player.addToHand(card)`, `shards.pay(cost)`). States must stay immutable: MCTS and scenarios branch from them.
 - **Steps are data.** A new `Step` is a record of plain values (ids, card ids, indexes, small records): no lambdas, no services. A paused game must survive `GameJson` and resume on another server instance. `GameJson` picks up new records of sealed types by itself. Avoid maps with record keys and non-record classes in the state.
 - **Behavior lives in rule classes, never on records.** States, steps, actions and events are data; `StepRunner` and `EffectResolution` dispatch them to rule classes with `switch`es over sealed types. Do not give steps a `run()`/`resume()` method or an interface: steps must serialize, and `resolution` must not depend on `rules`.
-- **Costs only through `rules.play.Costs`.** `toPlay` for cards (6.8), `toAttack` for attack abilities (Overcharge never applies to them, 11.4.5). Legal actions, payment and button labels all call them, so they cannot disagree.
+- **Costs only through `rules.play.Costs`.** `toPlay` for cards (6.8, cost auras included, so it reads both boards), `toAttack` for attack abilities (Overcharge never applies to them, 11.4.5). Legal actions, payment and button labels all call them, so they cannot disagree.
 - **One atomic effect per step.** The state check runs after every step: that is what makes "deal 4 to all enemy units" kill simultaneously, and keeps deaths and triggers in order.
 - **Triggered abilities go through `Triggers.raise`.** Never resolve one inline: the buffer, `TriggerOrder` and the queue implement 9.8, 9.10 and 9.11. The only exception is "Attack" abilities, which `AttackSequence` starts right away (9.9).
 - **Ask only for real choices.** No option: the effect does nothing (10.3). One option: take it automatically. Two or more: `game.pauseAndAsk(step, …)`, with the actions in canonical order. `MAIN` is the exception: it is always asked, with `game.ask`. The `Resolver` only ever `run`s steps; `GameEngine.apply` `resume`s the paused one with the answer.
@@ -82,7 +83,7 @@ Read `references/recipes.md` for the step-by-step version of each:
   - An empty deck means fatigue at the next draw: give the next player a `deck(...)` when a turn passes.
   - "0 actions match" in an error usually means too few Shards, or a unit that cannot attack.
 - **Name ids by card.** Instance ids and arrival order follow the builder's call order, so a test can rely on them, but `Pick.unit(card)` reads better than raw ids.
-- **Full-game tests guard everything else**: `RandomGamesTest` (invariants, every action applicable), `DeterminismTest`, `HiddenInformationTest`, `GameJsonTest`. If one fails after your change, print a described log of that seed (see below) before touching the test.
+- **Full-game tests guard everything else**: `RandomGamesTest` (invariants, every action applicable; the starter decks, plus `TestCards.EFFECTS_DECK` for the effects no real card has), `DeterminismTest`, `HiddenInformationTest`, `GameJsonTest`. If one fails after your change, print a described log of that seed (see below) before touching the test.
 
 ## Debugging
 

@@ -19,7 +19,7 @@ Step-by-step changes, with the files each one touches. Paths are relative to `en
 
 Every effect of the closed list (rulebook section 8) is already parsed into `content/Effect.java`. Implementing one in the engine, for example Freeze (8.10):
 
-1. **Test first**, in `rules/EffectRulesTest.java`: `@DisplayName("8.10 — …")`. If no playable real card has the effect, add a `test.*` card to `testing/TestCards.java` (JSON, same format as `content/cards/`).
+1. **Test first**, in `rules/EffectRulesTest.java`: `@DisplayName("8.10 — …")`. If no playable real card has the effect, add a `test.*` card to `testing/TestCards.java` (JSON, same format as `content/cards/`), and put it in `TestCards.EFFECTS_DECK` so random games play it.
 2. **Handler**: `rules/effect/FreezeEffect.java`, a package-private `final` class with one method:
    ```java
    /** 8.10 Freeze: the rest of this turn and the next one; the unit thaws at the start of the turn after. */
@@ -33,7 +33,7 @@ Every effect of the closed list (rulebook section 8) is already parsed into `con
    ```
    Change units through a domain method of `state/Unit.java` (here `frozenThrough(turn)`), never through the canonical constructor.
 3. **Event**: add the record to `event/GameEvent.java` (see recipe 4). The exhaustive `switch` in `text/EventDescriber.java` will not compile until you describe it.
-4. **Dispatch**: add a `case` in `rules/effect/EffectResolution.apply`. That `switch` keeps a `default` branch while some effects are missing, so the compiler does not remind you: once the last effect lands, remove the `default` and let the `switch` become exhaustive.
+4. **Dispatch**: add a `case` in `rules/effect/EffectResolution.apply`. That `switch` keeps a `default` branch while Link is missing, so the compiler does not remind you: once Link lands (slice 4), remove the `default` and let the `switch` become exhaustive. An effect that makes a player pick cards gets its own `case` in `resolveNext`, computes its options in canonical order and goes through `pickCards` (`CHOOSE_CARDS`, asked only with two options or more); `resume` applies the answer, like Sacrifice and Discard. An effect that only takes units reads its targets with `Targets.units`, which skips an attacked player.
 5. **Targets**: plain targets work as they are. New kinds of choices need `rules/effect/TargetOptions` (the options), `rules/play/ChoiceSlots` (one entry per slot in `PlayCard.targets`) and `rules/effect/Targets.resolve` (what is still valid when the effect applies). Link has two slots (two different units); Recall has one, a card in the controller's graveyard.
 6. **Rules around the effect**: put them where they live. Freeze's thaw is at the start of a turn (`rules/turn/TurnStart`), and the frozen checks already exist (`AttackOptions`, `Interceptors`, via `Unit.isFrozen`).
 7. **Support**: add the effect class to `EngineSupport.IMPLEMENTED_EFFECTS`, and update the list in `rules/EngineSupportTest.java`.

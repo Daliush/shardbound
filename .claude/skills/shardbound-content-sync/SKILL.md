@@ -44,7 +44,10 @@ Both must agree exactly, messages included: the API returns the engine's message
 
 ### The text templates
 
-Python checks that every effect, target, trigger and keyword has wording (`test_text_templates.py`). The engine renders card text from the same file (`CardTextRenderer`, slice 3), and its golden tests use the two examples of `content/cards/README.md`.
+Python checks that every effect, target, trigger and keyword has wording (`test_text_templates.py`). The engine loads the same file strictly (`ContentLoader` into `content.TextTemplates`, by dotted key such as `effects.heal.player`) and writes card text with it (`text.CardTextRenderer`). On the Java side:
+
+- `CardTextRendererTest` has one case per template key, and fails when a key of the file has no case: a new key needs a case there, and a new effect, target, trigger or keyword needs its rendering in `CardTextRenderer`;
+- its golden test reads the two examples of `content/cards/README.md` itself, so changing their wording there or in the templates changes what the test expects.
 
 ## Checks that exist only in Python, on purpose
 
