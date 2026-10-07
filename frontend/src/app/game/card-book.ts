@@ -1,7 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiClient } from '../api/api-client';
-import { Card } from '../api/protocol';
+import { Card, TextLine } from '../api/protocol';
 
 /** Card names and data, loaded once: views only carry card ids (examples doc, decision 2). */
 @Injectable({ providedIn: 'root' })
@@ -15,5 +15,10 @@ export class CardBook {
 
   name(id: string): string {
     return this.card(id)?.name ?? id;
+  }
+
+  /** The card's rules text, line by line, each line with its kind. */
+  text(id: string): TextLine[] {
+    return this.card(id)?.text ?? [];
   }
 }

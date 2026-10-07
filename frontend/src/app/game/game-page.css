@@ -27,14 +27,6 @@
   color: var(--muted);
 }
 
-.relic {
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--card);
-  font: inherit;
-}
-
 .notice,
 .result {
   margin: 0;

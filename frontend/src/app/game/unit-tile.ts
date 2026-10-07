@@ -1,10 +1,16 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { UnitView } from '../api/protocol';
 import { CardBook } from './card-book';
+import { CardTextLines } from './card-text-lines';
 import { Mark } from './decision-groups';
 
+/**
+ * A unit on the board. Its attacks are listed with their cost and damage, and their full line as a tooltip; the
+ * other lines of its text, its keywords and abilities, are shown below (spec §14).
+ */
 @Component({
   selector: 'app-unit-tile',
+  imports: [CardTextLines],
   template: `
     @let u = unit();
     <button
@@ -20,7 +26,7 @@ import { Mark } from './decision-groups';
       <span class="defense">{{ u.defense }} / {{ u.maxDefense }}</span>
       <ul class="attacks">
         @for (attack of u.attacks; track attack.index) {
-          <li>
+          <li [title]="attackLines()[attack.index]?.text ?? ''">
             {{ attack.name ?? 'Attack' }} ({{ attack.cost }})
             @if (attack.damage !== null) {
               · {{ attack.damage }} dmg
@@ -31,6 +37,7 @@ import { Mark } from './decision-groups';
           </li>
         }
       </ul>
+      <app-card-text-lines [lines]="otherLines()" />
       <span class="badges">
         @if (u.token) {
           <span class="badge">token</span>
@@ -66,4 +73,12 @@ export class UnitTile {
   readonly mark = input<Mark>(null);
   readonly picked = output<void>();
   protected readonly book = inject(CardBook);
+  private readonly text = computed(() => this.book.text(this.unit().card));
+  protected readonly attackLines = computed(() =>
+    this.text().filter((line) => line.kind === 'attack'),
+  );
+  /** A sacrifice cost only matters in hand. */
+  protected readonly otherLines = computed(() =>
+    this.text().filter((line) => line.kind !== 'attack' && line.kind !== 'sacrifice_cost'),
+  );
 }

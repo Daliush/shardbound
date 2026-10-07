@@ -1,11 +1,13 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { HandCardView } from '../api/protocol';
 import { CardBook } from './card-book';
+import { CardTextLines } from './card-text-lines';
 import { Mark } from './decision-groups';
 
-/** A card in your hand. Its rules text comes with slice 3. */
+/** A card in your hand, with its full rules text. */
 @Component({
   selector: 'app-hand-card-tile',
+  imports: [CardTextLines],
   template: `
     @let c = card();
     <button
@@ -26,6 +28,7 @@ import { Mark } from './decision-groups';
       @for (keyword of details()?.keywords ?? []; track keyword) {
         <span class="badge">{{ keyword }}</span>
       }
+      <app-card-text-lines [lines]="details()?.text ?? []" />
     </button>
   `,
   styleUrl: './tile.css',
