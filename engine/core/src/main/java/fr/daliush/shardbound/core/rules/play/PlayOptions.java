@@ -32,8 +32,7 @@ public final class PlayOptions {
         List<Action> plays = new ArrayList<>();
         for (HandCard inHand : state.hand()) {
             CardDefinition card = game.catalog().card(inHand.card().card());
-            if (!EngineSupport.supports(card) || playedThisTurn(game, inHand)
-                    || !canMakeItsSacrifices(game, state, inHand, card)) {
+            if (playedThisTurn(game, inHand) || !canMakeItsSacrifices(game, state, inHand, card)) {
                 continue;
             }
             for (boolean overcharge : overchargeChoices(game, player, inHand, card)) {

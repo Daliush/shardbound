@@ -8,7 +8,6 @@ import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.rules.effect.Sacrifices;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.rules.play.Costs;
-import fr.daliush.shardbound.core.rules.play.EngineSupport;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.PlayerState;
 import fr.daliush.shardbound.core.state.Unit;
@@ -28,7 +27,7 @@ public final class AttackOptions {
         List<Action> attacks = new ArrayList<>();
         for (Unit unit : state.units().stream().sorted(Comparator.comparingInt(Unit::arrivalSeq)).toList()) {
             UnitCard card = game.catalog().unit(unit.card());
-            if (!canAttack(game, unit) || !EngineSupport.supports(card)) {
+            if (!canAttack(game, unit)) {
                 continue;
             }
             for (int index = 0; index < card.attacks().size(); index++) {
