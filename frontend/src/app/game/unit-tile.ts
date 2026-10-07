@@ -1,5 +1,7 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { UnitView } from '../api/protocol';
+
+type Modifier = UnitView['modifiers'][number];
 import { CardBook } from './card-book';
 import { CardTextLines } from './card-text-lines';
 import { Mark } from './decision-groups';
@@ -63,6 +65,9 @@ import { Mark } from './decision-groups';
         @if (u.linkedTo !== null) {
           <span class="badge">linked to #{{ u.linkedTo }}</span>
         }
+        @for (modifier of u.modifiers; track $index) {
+          <span class="badge">{{ modifierText(modifier) }}</span>
+        }
       </span>
     </button>
   `,
@@ -77,8 +82,18 @@ export class UnitTile {
   protected readonly attackLines = computed(() =>
     this.text().filter((line) => line.kind === 'attack'),
   );
+  /** "+3/+0 this turn", "-2/+0": a Modify on the unit (8.5), as the view gives it. */
+  protected modifierText(modifier: Modifier): string {
+    const until = modifier.duration === 'end_of_turn' ? ' this turn' : '';
+    return `${signed(modifier.attackDamage)}/${signed(modifier.defense)}${until}`;
+  }
+
   /** A sacrifice cost only matters in hand. */
   protected readonly otherLines = computed(() =>
     this.text().filter((line) => line.kind !== 'attack' && line.kind !== 'sacrifice_cost'),
   );
+}
+
+function signed(value: number): string {
+  return (value < 0 ? '-' : '+') + Math.abs(value);
 }

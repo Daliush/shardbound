@@ -94,6 +94,21 @@ describe('GamePage', () => {
     expect(page.querySelector('app-relic-tile')?.textContent).toContain('All your units have +1/+2.');
   });
 
+  it('shows the modifiers of a unit as badges', async () => {
+    const base = aView(12);
+    const cinderling = {
+      ...base.you.units[0],
+      modifiers: [
+        { attackDamage: 3, defense: 0, duration: 'end_of_turn' as const },
+        { attackDamage: -2, defense: 0, duration: 'permanent' as const },
+      ],
+    };
+    const page = await playing(aView(12, { you: { ...base.you, units: [cinderling] } }));
+
+    const badges = [...page.querySelectorAll('app-unit-tile .badge')].map((b) => b.textContent?.trim());
+    expect(badges).toEqual(['+3/+0 this turn', '-2/+0']);
+  });
+
   it('answers a discard by clicking the card to discard', async () => {
     const base = aView(20);
     const view = aView(20, {
