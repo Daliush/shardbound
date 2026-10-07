@@ -96,6 +96,22 @@ class CardRulesTest {
     }
 
     @Test
+    @DisplayName("6.7 — a card returned to hand loses all its modifications and all its damage")
+    void returnedCardIsReset() {
+        ScenarioResult result = run(scenario().shards(P1, 3).hand(P1, "test.bulwark", "test.flood")
+                        .unit(P1, "neutral.shardling", unit -> unit.defense(1)).build(),
+                play("test.bulwark").on(unit("neutral.shardling")),
+                play("test.flood"),
+                play("neutral.shardling"));
+
+        Unit shardling = result.unit("neutral.shardling");
+        assertThat(shardling.id()).isEqualTo(InstanceId.of(3));
+        assertThat(shardling.defense()).isEqualTo(3);
+        assertThat(shardling.maxDefense()).isEqualTo(3);
+        assertThat(shardling.modifiers()).isEmpty();
+    }
+
+    @Test
     @DisplayName("6.8 — with no cost change, a card costs its printed cost")
     void printedCost() {
         ScenarioResult result = run(scenario().shards(P1, 7).hand(P1, "root.thornback-ancient").build(),

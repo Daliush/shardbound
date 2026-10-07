@@ -215,6 +215,20 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 8.8: a unit or a relic back in its owner's hand, reset (6.7). It did not die. */
+    record ReturnedToHand(CardInstance card, List<String> rules) implements GameEvent {
+        public ReturnedToHand(CardInstance card) {
+            this(card, List.of("8.8", "6.7"));
+        }
+    }
+
+    /** 8.8: a card returned to a full hand (3.3) goes to the graveyard instead. It did not die. */
+    record SentToGraveyardHandFull(CardInstance card, List<String> rules) implements GameEvent {
+        public SentToGraveyardHandFull(CardInstance card) {
+            this(card, List.of("8.8", "3.3"));
+        }
+    }
+
     /** {@code rules} say whether the unit paid a sacrifice cost (6.3, 8.3) or a Sacrifice effect (8.3). */
     record UnitSacrificed(CardInstance unit, PlayerId controller, List<String> rules) implements GameEvent {}
 

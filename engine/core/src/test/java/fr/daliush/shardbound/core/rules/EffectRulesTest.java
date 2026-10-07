@@ -28,6 +28,7 @@ import fr.daliush.shardbound.core.scenario.Pick;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.state.HandCard;
 import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
@@ -314,6 +315,49 @@ class EffectRulesTest {
         assertThat(result.player(P2).hand()).hasSize(2);
         assertThat(result.events(GameEvent.CardDiscarded.class)).hasSize(1)
                 .isEqualTo(again.events(GameEvent.CardDiscarded.class));
+    }
+
+    @Test
+    @DisplayName("8.8 — a returned unit goes back to its owner's hand without dying: only \"Departure\" triggers")
+    void returnToHand() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.recede")
+                        .unit(P2, "test.guard", unit -> unit.defense(1)).deck(P2, "neutral.shardling").build(),
+                play("test.recede").on(unit("test.guard")));
+
+        assertThat(result.player(P2).units()).isEmpty();
+        assertThat(result.player(P2).hand()).extracting(HandCard::id).containsExactly(InstanceId.of(2), InstanceId.of(3));
+        assertThat(trace(result)).containsSubsequence("ReturnedToHand[8.8, 6.7]", "SpellResolved[6.3, 3.5]",
+                "AbilityTriggered[9.4]", "CardDrawn[8.6]");
+        assertThat(result.events(GameEvent.UnitDestroyed.class)).isEmpty();
+        assertThat(result.player(P1).hp()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("8.8 — a card returned to a full hand goes to the graveyard; it still does not die")
+    void returnToFullHand() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.recede").unit(P2, "ember.cinderling")
+                        .hand(P2, "neutral.shardling", "neutral.shardling", "neutral.shardling", "neutral.shardling",
+                                "neutral.shardling", "neutral.shardling", "neutral.shardling", "neutral.shardling",
+                                "neutral.shardling", "neutral.shardling").build(),
+                play("test.recede").on(unit("ember.cinderling")));
+
+        assertThat(result.player(P2).graveyard()).extracting(CardInstance::card)
+                .containsExactly(new CardId("ember.cinderling"));
+        assertThat(trace(result)).contains("SentToGraveyardHandFull[8.8, 3.3]");
+        assertThat(result.events(GameEvent.AbilityTriggered.class)).isEmpty();
+        assertThat(result.player(P1).hp()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("8.8 — a relic can be returned to its owner's hand")
+    void returnRelic() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.uproot")
+                        .relic(P2, "root.heartwood-shrine").build(),
+                play("test.uproot").on(relic("root.heartwood-shrine")));
+
+        assertThat(result.player(P2).relics()).isEmpty();
+        assertThat(result.player(P2).hand()).extracting(HandCard::id).containsExactly(InstanceId.of(2));
+        assertThat(trace(result)).contains("ReturnedToHand[8.8, 6.7]");
     }
 
     @Test

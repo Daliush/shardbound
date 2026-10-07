@@ -92,6 +92,7 @@ public final class EffectResolution {
             case Effect.Modify modify -> ModifyEffect.apply(game, modify, source, chosen);
             case Effect.Draw draw -> DrawEffect.apply(game, draw, source, chosen);
             case Effect.Discard discard -> DiscardEffect.atRandom(game, discard, source, chosen);
+            case Effect.ReturnToHand returnToHand -> ReturnToHandEffect.apply(game, returnToHand, source, chosen);
             case Effect.Summon summon -> SummonEffect.apply(game, summon, source);
             default -> throw new IllegalStateException("Not implemented yet: " + effect);
         }

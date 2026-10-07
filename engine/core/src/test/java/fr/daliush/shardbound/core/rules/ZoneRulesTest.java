@@ -121,6 +121,17 @@ class ZoneRulesTest {
     }
 
     @Test
+    @DisplayName("3.6 — a token returned to hand vanishes too")
+    void returnedTokenVanishes() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.flood").unit(P2, "root.sprout").build(),
+                play("test.flood"));
+
+        assertThat(trace(result)).contains("TokenVanished[8.8, 3.6]");
+        assertThat(result.player(P2).hand()).isEmpty();
+        assertThat(result.player(P2).graveyard()).isEmpty();
+    }
+
+    @Test
     @DisplayName("3.7 — a player sees how many cards the opponent holds, never which ones")
     void hiddenHand() {
         ScenarioResult result = run(scenario().deck(P2, "neutral.tempest").hand(P2, "neutral.shardling").build(),

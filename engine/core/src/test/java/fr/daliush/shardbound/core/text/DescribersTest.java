@@ -120,6 +120,16 @@ class DescribersTest {
     }
 
     @Test
+    void describesReturnsToHand() {
+        CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
+
+        assertThat(events.describe(new GameEvent.ReturnedToHand(cinderling), P1))
+                .isEqualTo("Cinderling #1 returns to your opponent's hand.");
+        assertThat(events.describe(new GameEvent.SentToGraveyardHandFull(cinderling), P2))
+                .isEqualTo("Your hand is full: Cinderling #1 goes to the graveyard.");
+    }
+
+    @Test
     void describesModifiers() {
         CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
 

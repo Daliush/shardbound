@@ -99,6 +99,18 @@ public final class TestCards {
         """
         { "id": "test.purge", "name": "Purge", "faction": "neutral", "type": "spell", "cost": 1,
           "effects": [{ "effect": "discard", "amount": 1, "target": "opponent", "choice": "random" }] }""",
+        // Returns an enemy unit to its owner's hand (8.8).
+        """
+        { "id": "test.recede", "name": "Recede", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "return_to_hand", "target": "enemy_unit" }] }""",
+        // Returns every unit to its owner's hand (8.8).
+        """
+        { "id": "test.flood", "name": "Flood", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "return_to_hand", "target": "all_units" }] }""",
+        // Returns an enemy relic to its owner's hand (8.8, 10.4).
+        """
+        { "id": "test.uproot", "name": "Uproot", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "return_to_hand", "target": "enemy_relic" }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,
