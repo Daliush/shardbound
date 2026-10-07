@@ -82,6 +82,10 @@ public final class EventDescriber {
             case GameEvent.ModifierExpired e -> "The " + Wording.stats(e.attackDamage(), e.defense()) + " on "
                     + w.card(e.unit()) + " ends.";
             case GameEvent.ShardsGained e -> shardsGained(w, e);
+            case GameEvent.Recalled e -> w.card(e.card()) + " returns from " + w.possessive(e.card().owner())
+                    + " graveyard to " + w.possessive(e.card().owner()) + " hand.";
+            case GameEvent.RecallFailed e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
+                    + w.card(e.card()) + " stays in the graveyard.";
             case GameEvent.Frozen e -> w.card(e.unit()) + " is frozen until the end of turn " + e.throughTurn() + ".";
             case GameEvent.UnitThawed e -> w.card(e.unit()) + " thaws.";
             case GameEvent.ReturnedToHand e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())

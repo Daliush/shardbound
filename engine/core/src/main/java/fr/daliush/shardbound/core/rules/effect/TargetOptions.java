@@ -3,6 +3,7 @@ package fr.daliush.shardbound.core.rules.effect;
 import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.content.TargetSpec;
+import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Relic;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
 
 /**
  * The targets a player may choose for an effect, in canonical order (spec §6.2): units by arrival,
- * then relics by arrival, then players (the deciding player first).
+ * then relics by arrival, then players (the deciding player first), then graveyard cards from oldest to newest.
  */
 public final class TargetOptions {
 
@@ -22,10 +23,19 @@ public final class TargetOptions {
 
     /** Empty when the effect has no chosen target, or when no target is valid (10.3). */
     public static List<TargetRef> forEffect(Game game, PlayerId decider, Effect effect) {
-        if (effect instanceof Effect.Targeted targeted && targeted.target().isChosen()) {
-            return forSpec(game, decider, targeted.target());
-        }
-        return List.of();
+        return switch (effect) {
+            case Effect.Recall ignored -> unitCardsInGraveyard(game, decider);
+            case Effect.Targeted targeted when targeted.target().isChosen() -> forSpec(game, decider, targeted.target());
+            default -> List.of();
+        };
+    }
+
+    /** 8.13: the unit cards in the decider's own graveyard. Tokens never get there (3.6). */
+    private static List<TargetRef> unitCardsInGraveyard(Game game, PlayerId decider) {
+        return game.player(decider).graveyard().stream()
+                .filter(card -> game.catalog().card(card.card()) instanceof UnitCard)
+                .<TargetRef>map(card -> new TargetRef.GraveyardCardTarget(card.id()))
+                .toList();
     }
 
     public static List<TargetRef> forSpec(Game game, PlayerId decider, TargetSpec spec) {

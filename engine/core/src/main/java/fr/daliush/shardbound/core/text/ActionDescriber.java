@@ -87,7 +87,8 @@ public final class ActionDescriber {
             case TargetRef.RelicTarget relic -> w.card(Stream.of(state.p1(), state.p2())
                     .flatMap(player -> player.relic(relic.id()).stream()).findFirst().orElseThrow().asCard());
             case TargetRef.PlayerTarget player -> w.reflexive(player.player());
-            case TargetRef.GraveyardCardTarget card -> w.card(findCard(state, card.id()));
+            case TargetRef.GraveyardCardTarget card -> w.card(findCard(state, card.id())) + " in "
+                    + w.possessive(findCard(state, card.id()).owner()) + " graveyard";
         };
     }
 

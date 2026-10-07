@@ -57,6 +57,10 @@ public record PlayerState(
         return hand.stream().filter(card -> card.id().equals(cardId)).findFirst();
     }
 
+    public Optional<CardInstance> graveyardCard(InstanceId cardId) {
+        return graveyard.stream().filter(card -> card.id().equals(cardId)).findFirst();
+    }
+
     public boolean handIsFull() {
         return hand.size() >= MAX_HAND;
     }
@@ -107,6 +111,10 @@ public record PlayerState(
 
     public PlayerState addToGraveyard(CardInstance card) {
         return withGraveyard(append(graveyard, card));
+    }
+
+    public PlayerState removeFromGraveyard(InstanceId cardId) {
+        return withGraveyard(graveyard.stream().filter(card -> !card.id().equals(cardId)).toList());
     }
 
     public PlayerState removeFromHand(InstanceId cardId) {

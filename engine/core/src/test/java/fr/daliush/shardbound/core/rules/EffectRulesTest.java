@@ -6,6 +6,7 @@ import static fr.daliush.shardbound.core.scenario.Choices.discard;
 import static fr.daliush.shardbound.core.scenario.Choices.endTurn;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
 import static fr.daliush.shardbound.core.scenario.Choices.sacrifice;
+import static fr.daliush.shardbound.core.scenario.Pick.graveyardCard;
 import static fr.daliush.shardbound.core.scenario.Pick.player;
 import static fr.daliush.shardbound.core.scenario.Pick.relic;
 import static fr.daliush.shardbound.core.scenario.Pick.unit;
@@ -417,6 +418,41 @@ class EffectRulesTest {
         assertThat(atCap.player(P1).shards()).isEqualTo(new Shards(10, 8, 0));
         assertThat(atCap.events(GameEvent.ShardsGained.class)).extracting(GameEvent.ShardsGained::amount)
                 .containsExactly(0);
+    }
+
+    @Test
+    @DisplayName("8.13 — Recall returns the unit card its controller chooses from their graveyard to their hand")
+    void recall() {
+        GameState start = scenario().shards(P1, 4).hand(P1, "ember.rise-from-cinders")
+                .graveyard(P1, "ember.cinderling", "ember.spark-dart", "neutral.shardling").build();
+
+        ScenarioResult result = run(start, play("ember.rise-from-cinders").on(graveyardCard("neutral.shardling")));
+
+        assertThat(result.decisions().getFirst().actions()).filteredOn(Action.PlayCard.class::isInstance)
+                .extracting(action -> ((Action.PlayCard) action).targets())
+                .containsExactly(List.of(new TargetRef.GraveyardCardTarget(InstanceId.of(2))),
+                        List.of(new TargetRef.GraveyardCardTarget(InstanceId.of(4))));
+        assertThat(result.player(P1).hand()).extracting(HandCard::id).containsExactly(InstanceId.of(4));
+        assertThat(result.player(P1).graveyard()).extracting(CardInstance::card).containsExactly(
+                new CardId("ember.cinderling"), new CardId("ember.spark-dart"), new CardId("ember.rise-from-cinders"));
+        assertThat(trace(result)).containsSubsequence("CardPlayed[6.3]", "Recalled[8.13]", "SpellResolved[6.3, 3.5]");
+    }
+
+    @Test
+    @DisplayName("8.20 — Recall into a full hand does nothing: the card stays in the graveyard")
+    void recallIntoFullHand() {
+        GameState start = scenario().shards(P1, 1)
+                .hand(P1, "test.second-wind", "neutral.shardling", "neutral.shardling", "neutral.shardling",
+                        "neutral.shardling", "neutral.shardling", "neutral.shardling", "neutral.shardling",
+                        "neutral.shardling", "neutral.shardling")
+                .deck(P1, "ember.spark-dart").graveyard(P1, "ember.cinderling").build();
+
+        ScenarioResult result = run(start, play("test.second-wind").on(graveyardCard("ember.cinderling")));
+
+        assertThat(result.player(P1).hand()).hasSize(10);
+        assertThat(result.player(P1).graveyard()).extracting(CardInstance::card)
+                .containsExactly(new CardId("ember.cinderling"), new CardId("test.second-wind"));
+        assertThat(trace(result)).containsSubsequence("CardDrawn[8.6]", "RecallFailed[8.13, 8.20]");
     }
 
     @Test

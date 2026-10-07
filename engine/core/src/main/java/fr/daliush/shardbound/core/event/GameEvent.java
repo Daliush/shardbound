@@ -223,6 +223,20 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 8.13: a unit card back from its controller's graveyard to their hand. */
+    record Recalled(CardInstance card, List<String> rules) implements GameEvent {
+        public Recalled(CardInstance card) {
+            this(card, List.of("8.13"));
+        }
+    }
+
+    /** 8.20: the hand was full, so the card stays in the graveyard. */
+    record RecallFailed(CardInstance card, List<String> rules) implements GameEvent {
+        public RecallFailed(CardInstance card) {
+            this(card, List.of("8.13", "8.20"));
+        }
+    }
+
     /** 8.10: the unit can neither attack nor intercept until the end of turn {@code throughTurn}. */
     record Frozen(CardInstance unit, int throughTurn, List<String> rules) implements GameEvent {
         public Frozen(CardInstance unit, int throughTurn) {

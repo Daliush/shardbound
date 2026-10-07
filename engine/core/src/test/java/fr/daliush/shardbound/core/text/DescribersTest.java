@@ -150,6 +150,20 @@ class DescribersTest {
     }
 
     @Test
+    void describesRecalls() {
+        GameState start = scenario().shards(P1, 4).hand(P1, "ember.rise-from-cinders")
+                .graveyard(P1, "ember.cinderling").build();
+        CardInstance cinderling = new CardInstance(InstanceId.of(2), new CardId("ember.cinderling"), P1);
+
+        assertThat(labels(ENGINE.resume(start).state())).containsExactly(
+                "Play Rise from Cinders (4 Shards) on Cinderling #2 in your graveyard", "End your turn");
+        assertThat(events.describe(new GameEvent.Recalled(cinderling), P1))
+                .isEqualTo("Cinderling #2 returns from your graveyard to your hand.");
+        assertThat(events.describe(new GameEvent.RecallFailed(cinderling), P2))
+                .isEqualTo("Your opponent's hand is full: Cinderling #2 stays in the graveyard.");
+    }
+
+    @Test
     void describesModifiers() {
         CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
 
