@@ -1,17 +1,20 @@
 name: Engine
 
-# Rules engine and game server. Runs when the engine, the content it loads or this workflow change.
+# Rules engine and game server. Runs when the engine, the content it loads, the rulebook its coverage test reads
+# or this workflow change.
 on:
   push:
     branches: [main]
     paths:
       - "engine/**"
       - "content/**"
+      - "docs/rules/**"
       - ".github/workflows/engine.yml"
   pull_request:
     paths:
       - "engine/**"
       - "content/**"
+      - "docs/rules/**"
       - ".github/workflows/engine.yml"
   workflow_dispatch:
 
