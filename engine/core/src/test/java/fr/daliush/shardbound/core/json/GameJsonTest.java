@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import fr.daliush.shardbound.core.bot.RandomBot;
 import fr.daliush.shardbound.core.content.Content;
 import fr.daliush.shardbound.core.decision.Decision;
+import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.testing.GameDriver;
 import fr.daliush.shardbound.core.testing.GameDriver.PlayedGame;
 import fr.daliush.shardbound.core.testing.TestContent;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +37,17 @@ class GameJsonTest {
         GameState restored = json.readState(json.write(midGame));
 
         assertThat(playToTheEnd(restored)).isEqualTo(playToTheEnd(midGame));
+    }
+
+    @Test
+    void anyRecordMadeOfEngineTypesSurvivesARoundTrip() {
+        PlayedGame game = GameDriver.play(engine, setup(4), new RandomBot(4), new RandomBot(5));
+        Saved saved = new Saved("a game", game.finalState(), game.events());
+
+        assertThat(json.readValue(json.writeValue(saved), Saved.class)).isEqualTo(saved);
+    }
+
+    record Saved(String name, GameState state, List<GameEvent> events) {
     }
 
     private GameState stateAfter(int decisions) {

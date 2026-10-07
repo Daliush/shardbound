@@ -73,7 +73,7 @@ PlayerView view = engine.view(newState, seat, fullHistory);           // the sta
 List<GameEvent> news = engine.eventsFor(transition.events(), seat);   // this action's events, redacted
 ```
 
-The full history and the `GameState` stay on the server. A reconnecting client gets `view` again, with the whole redacted history (spec §13).
+The full history and the `GameState` stay on the server. A reconnecting client gets `view` again, with the whole redacted history (spec §13). `engine/api` does exactly this; the `shardbound-game-server` skill explains how.
 
 ## 5. Readable logs and button labels
 
@@ -89,7 +89,7 @@ ActionDescriber actions = new ActionDescriber(catalog);
 String label = actions.describe(action, state, decision.player());   // "Play Spark Dart (1 Shard) on Sprout #3"
 ```
 
-Always describe events after redaction. `ActionDescriber` reads the real state to name cards, so it runs on the server, and only for the deciding player's own actions.
+Always describe events after redaction. `ActionDescriber` reads the real state to name cards, so it runs on the server, and only for the deciding player's own actions. `DecisionDescriber.describe(decision, state)` writes the decision's prompt under the same condition, and `rules.combat.AttackDamage.toTarget(attack, unit)` gives the damage an attack shows (bonuses included, empty when it deals none).
 
 Printing a described log of a seeded game is the fastest way to see what the engine did.
 

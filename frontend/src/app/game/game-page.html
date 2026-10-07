@@ -1,0 +1,106 @@
+@if (token() === null) {
+  <p>This browser holds no seat in this game. <a routerLink="/">Back home</a></p>
+} @else {
+  @switch (socket.status()) {
+    @case ('replaced') {
+      <p class="notice">This game is open in another tab or window: this one is disconnected.</p>
+    }
+    @case ('reconnecting') {
+      <p class="notice">Connection lost, reconnecting…</p>
+    }
+  }
+  @if (socket.view(); as view) {
+    <div class="game">
+      <section class="board">
+        @if (view.result; as result) {
+          <p class="result">
+            @switch (result.outcome) {
+              @case ('win') { You win }
+              @case ('loss') { You lose }
+              @case ('draw') { Draw }
+            }
+            ({{ result.reason.replace('_', ' ') }}). <a routerLink="/">New game</a>
+          </p>
+        }
+
+        @if (view.opponent; as opponent) {
+          <app-player-panel
+            title="Opponent"
+            [player]="opponent"
+            [handCount]="opponent.handCount"
+            [mark]="mark('player:opponent')"
+            (picked)="click('player:opponent')"
+          />
+          <div class="row">
+            @for (relic of opponent.relics; track relic.id) {
+              <button type="button" class="relic" [class.targetable]="mark('relic:' + relic.id) === 'targetable'"
+                [disabled]="mark('relic:' + relic.id) === null" (click)="click('relic:' + relic.id)">
+                {{ book.name(relic.card) }} #{{ relic.id }}
+              </button>
+            }
+          </div>
+          <div class="row units">
+            @for (unit of opponent.units; track unit.id) {
+              <app-unit-tile [unit]="unit" [mark]="mark('unit:' + unit.id)" (picked)="click('unit:' + unit.id)" />
+            } @empty {
+              <p class="empty">No units</p>
+            }
+          </div>
+        } @else {
+          <p class="notice">
+            Waiting for your opponent to join.
+            @if (invite(); as link) {
+              Send them this link: <a [href]="link">{{ link }}</a>
+            }
+          </p>
+        }
+
+        <hr />
+
+        <div class="row units">
+          @for (unit of view.you.units; track unit.id) {
+            <app-unit-tile [unit]="unit" [mark]="mark('unit:' + unit.id)" (picked)="click('unit:' + unit.id)" />
+          } @empty {
+            <p class="empty">No units</p>
+          }
+        </div>
+        <div class="row">
+          @for (relic of view.you.relics; track relic.id) {
+            <button type="button" class="relic" [class.targetable]="mark('relic:' + relic.id) === 'targetable'"
+              [disabled]="mark('relic:' + relic.id) === null" (click)="click('relic:' + relic.id)">
+              {{ book.name(relic.card) }} #{{ relic.id }}
+            </button>
+          }
+        </div>
+        <app-player-panel
+          title="You"
+          [player]="view.you"
+          [handCount]="view.you.hand.length"
+          [mark]="mark('player:you')"
+          (picked)="click('player:you')"
+        />
+        <div class="row hand">
+          @for (card of view.you.hand; track card.id) {
+            <app-hand-card-tile [card]="card" [mark]="mark('card:' + card.id)" (picked)="click('card:' + card.id)" />
+          }
+        </div>
+
+        <app-decision-panel
+          [decision]="decision()"
+          [waitingFor]="view.waitingFor"
+          [buttons]="buttons()"
+          [hint]="hint()"
+          [canCancel]="selected() !== null"
+          [busy]="sent()"
+          [rejection]="socket.rejection()"
+          (chosen)="choose($event)"
+          (cancelled)="cancel()"
+        />
+      </section>
+
+      <app-game-log class="log" [events]="socket.log()" />
+    </div>
+  } @else {
+    <p>Connecting…</p>
+  }
+}

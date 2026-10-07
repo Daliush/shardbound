@@ -20,6 +20,7 @@ import tools.jackson.databind.jsontype.NamedType;
 /**
  * Game states and events to JSON and back, so a shared store can hold a game between two messages.
  * Records are read and written through their components; sealed types carry their record name.
+ * Any record made of engine types works too, such as a game server's session.
  */
 public final class GameJson {
 
@@ -59,6 +60,14 @@ public final class GameJson {
 
     public List<GameEvent> readEvents(String json) {
         return mapper.readValue(json, new TypeReference<List<GameEvent>>() { });
+    }
+
+    public String writeValue(Object value) {
+        return mapper.writeValueAsString(value);
+    }
+
+    public <T> T readValue(String json, Class<T> type) {
+        return mapper.readValue(json, type);
     }
 
     private static List<NamedType> namedSubtypes(Class<?> sealed) {

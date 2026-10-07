@@ -1,0 +1,10 @@
+# The game server's image needs engine/ and content/ only.
+.git
+.claude
+docs
+specs
+frontend
+**/target
+**/node_modules
+**/__pycache__
+**/.venv

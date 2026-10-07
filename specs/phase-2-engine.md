@@ -45,7 +45,7 @@
 
 **Out of scope (do not build)**
 
-MCTS, gRPC and Python clients, any database or `repository` module, user accounts and authentication, timers for human vs human games, replay endpoint, Docker and deployment, polished UI, animations, deck builder, collection, boosters, MCP server, anything AI.
+MCTS, gRPC and Python clients, any database or `repository` module, user accounts and authentication, timers for human vs human games, replay endpoint, deployment (a local `docker compose up` runs the game), polished UI, animations, deck builder, collection, boosters, MCP server, anything AI.
 
 ---
 
@@ -69,7 +69,7 @@ MCTS, gRPC and Python clients, any database or `repository` module, user account
 | Identity | A random seat token per game and seat, no accounts | Reconnection to the same seat without accounts; accounts come later. |
 | First version | Human vs bot, but the server supports two humans from day one (join code) | Lets the maintainer test intercepts with two browsers. |
 | Determinism | Seed + decks + actions reproduce a game exactly | Debugging, replays, evaluations. |
-| Several instances | No instance owns a game: sessions behind a repository port with versioned saves, updates through a pub/sub port; in-memory adapters in phase 2, a shared store at deployment (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
+| Several instances | No instance owns a game: sessions behind a port with versioned saves, notifications through another port; in-memory DAOs in phase 2, a shared store at deployment (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
 
 ---
 
@@ -95,12 +95,13 @@ engine/
 │       └── scenario/   ScenarioBuilder, ScenarioRunner
 └── api/
     ├── pom.xml                         Spring Boot (web, websocket, validation, test)
-    └── src/main/java/fr/daliush/shardbound/api/
-        ├── rest/       CardsController, DecksController, BotsController, GamesController, error handling
-        ├── ws/         GameWebSocketHandler, handshake, protocol messages, PlayerConnections
-        ├── session/    GameSession, Seat, GameSessionService, GameRepository and GameUpdates (ports) with their *InMemory implementations
-        ├── dto/        view, decision, action, event DTOs and mappers
-        └── config/     WebSocket and content configuration
+    └── src/main/java/fr/daliush/shardbound/api/      controller → domain ← adapter → dao (checked by ArchitectureTest)
+        ├── controller/ the endpoints: rest/ (controllers, dto/), ws/ (handshake, handler, GameSocketRegistry, message/), mappers/
+        ├── domain/     no transport, no JSON: bo/ (game, view, command, error), services/ (game, update, bot, security,
+        │               content), mappers/view, ports/ (GameSessionPort, GameNotificationPort, GameWatcher)
+        ├── adapter/    the ports implemented on the DAOs: game/, notification/, mappers/ (entity ↔ business object)
+        ├── dao/        pure data: entities/, game/ (GameDao), notification/ (GameNotificationDao), each with *InMemory
+        └── config/     content and engine, clock and settings, WebSocket, the shardbound.* properties
 frontend/                               Angular 21 workspace (section 14)
 .github/workflows/engine.yml            CI for engine/ (section 3.5)
 .github/workflows/frontend.yml          CI for frontend/ (section 3.5)
@@ -118,9 +119,10 @@ frontend/                               Angular 21 workspace (section 14)
 
 ```bash
 cd engine && ./mvnw verify                      # build and test everything
-cd engine && ./mvnw -pl api spring-boot:run     # run the server on http://localhost:8080
+cd engine && ./mvnw -pl api -am spring-boot:run # run the server on http://localhost:8080 (builds core in the reactor)
 cd frontend && npm start                        # run the client on http://localhost:4200 (proxies /api and /ws)
 cd frontend && npm test                         # client unit tests
+docker compose up --build                       # both, from the root: client on http://localhost:4200
 ```
 
 ### 3.3 Locating the content
@@ -136,7 +138,9 @@ cd frontend && npm test                         # client unit tests
 | `shardbound.content-dir` | auto-detected | Path to the repository's `content/` folder |
 | `shardbound.sessions.finished-ttl` | `30m` | How long a finished game is kept |
 | `shardbound.sessions.idle-ttl` | `2h` | How long a game without any action is kept |
-| `shardbound.bots.step-delay` | `0ms` | Optional pause between two bot actions (the client can also pace them) |
+| `shardbound.sessions.eviction-interval` | `1m` | How often the in-memory DAO drops expired games |
+| `shardbound.bots.step-delay` | `0ms` | Optional pause between two bot actions (the client paces them already) |
+| `shardbound.websocket.allowed-origins` | `http://localhost:*`, `http://127.0.0.1:*`, `http://[::1]:*` | Origin patterns a browser may open a game's WebSocket from |
 
 ### 3.5 CI
 
@@ -645,13 +649,15 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 | `GET` | `/api/cards` | — | `[{ id, name, faction, type, cost?, defense?, token, keywords, text: [lines], flavor? , fracture?: [{ step, cost }] }]` |
 | `GET` | `/api/decks` | — | `[{ id, name, description?, faction, cards: [{ card, count }] }]` |
 | `GET` | `/api/bots` | — | `["random", "greedy"]` (only the bots implemented so far) |
-| `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, joinCode?: null, websocketPath: "/ws/games/{id}" }` |
+| `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, websocketPath: "/ws/games/{id}" }` |
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "human" } }` | `201 { gameId, playerToken, joinCode, websocketPath }` |
 | `POST` | `/api/games/{id}/join` | `{ "joinCode": "…", "deck": "root-starter" }` | `200 { gameId, playerToken, websocketPath }` |
 
 - The creator always takes seat P1, and the bot or the joiner seat P2. Who plays first is decided by the RNG (5.1.1).
 - A bot game starts at creation. A human vs human game starts when the second player joins; before that, the creator's view has status `waiting_for_opponent`.
 - `seed` is optional (random when missing). It is never returned while the game runs.
+- `text` is added in slice 3, with `CardTextRenderer` (section 9). Until then the field is absent, rather than an empty list.
+- Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
 
@@ -664,7 +670,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - URL: `ws://host/ws/games/{gameId}?token={playerToken}`.
 - A `HandshakeInterceptor` resolves the game and the seat from the token. Unknown game → reject the handshake with `404`; bad token → `401`.
 - On connection, the server immediately sends a `state` message.
-- One connection per seat: a new connection with the same token replaces the old one, which the server closes with code `4409` (`"replaced by a newer connection"`). The old connection may be on another instance: the new one announces itself on `GameUpdates` (`connected(gameId, seat, connectionId)`), and whichever instance holds an older connection for that seat closes it.
+- One connection per seat: a new connection with the same token replaces the old one, which the server closes with code `4409` (`"replaced by a newer connection"`). The old connection may be on another instance: the new one announces itself through the notification port (`announce(gameId, seat, connectionId)`), and whichever instance holds an older connection for that seat closes it.
 - Wrap every `WebSocketSession` in Spring's `ConcurrentWebSocketSessionDecorator`: `sendMessage` is not thread-safe.
 
 ### 13.2 Messages
@@ -686,7 +692,8 @@ Server to client:
 
 - `state`: the full view plus the whole history redacted for this seat. Sent on connection and in answer to `sync`.
 - `update`: sent to **both** seats after **each** applied action (bot actions included, one `update` per action): the new view and that action's events, redacted per seat.
-- `view.version` increases by 1 with every applied action. If a client receives a version that is not `last + 1`, it sends `sync`.
+- `view.version` increases by 1 with every save of the session: every applied action, and the join. If a client receives a version that is not `last + 1`, it sends `sync`.
+- A game against a human is created at version 0, waiting for the opponent. The join sets the game up and is saved as version 1, so the creator receives the setup as an `update` (first player, draws, the mulligan decision); the joiner gets a `state` when it connects. A game against a bot is set up at creation, at version 0.
 - `rejected` goes only to the sender. Reasons: `not_your_decision`, `stale_decision`, `invalid_action`, `malformed_message`, `game_not_started`, `game_over`.
 
 ### 13.3 DTOs (TypeScript notation; the Java DTOs mirror them)
@@ -741,28 +748,35 @@ interface TargetView { kind: "unit" | "relic" | "player" | "graveyard_card"; id?
 interface EventView { type: string; rules: string[]; text: string; [field: string]: unknown; }   // fields per event, sides as "you"/"opponent"
 ```
 
-### 13.4 Session server (`api/session`)
+Settled on 2026-10-06, for slice 2:
 
-**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions live behind a repository port, updates travel through a pub/sub port, and any instance can process any message. Phase 2 runs locally, in a single process, and ships in-memory adapters for both ports: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as a new adapter, without touching the service.
+- **Events, one to one.** `type` is the engine event's record name in snake_case (`UnitDamaged` → `unit_damaged`, `PlayerDamaged` → `player_damaged`). The other fields are the record's components in camelCase, `rules` excepted, with: players as `"you"` / `"opponent"`; a `CardInstance` as a `CardRef`; an `EventTarget` as `{ kind: "unit", id, card }` or `{ kind: "player", player }`; enums in snake_case; an empty `Optional` as `null`; a `GameResult` as `{ outcome, reason }` seen by the viewer. One generic mapper builds them from the record components, so a new engine event needs no API change. `text` comes from core's `EventDescriber`.
+- **`DecisionView.prompt`** comes from core's `DecisionDescriber` (`core/text`), from the deciding player's point of view. An intercept prompt names the attack, read from the paused attack step.
+- **`UnitView.attacks[].damage`**: the damage the attack deals to its target, bonuses included (8.5, 8.18); `null` when it deals none (Mend, Call the Grove, Kindle). Core computes it, next to `Costs`, so labels, prompts and views cannot disagree.
+- **Optional fields** are written as explicit `null` in WebSocket messages, as typed above.
 
-- `GameSession`, a serializable record: game id; status; the setup (seed, decks); two `Seat`s (`PlayerId`, kind HUMAN or BOT, deck, SHA-256 hash of the seat token for a human, bot name and bot RNG state for a bot); the join code's hash; the current `GameState`; `version`; the event log (unredacted, in order); the action log; last activity time. The state is a snapshot for fast loading; the action log, with the setup, rebuilds it exactly (determinism), for replays and debugging.
-- **Naming**: each port is an interface (`GameRepository`), and each implementation adds a suffix to its name: `GameRepositoryInMemory` now, `GameRepositoryDatabase` later.
+### 13.4 Session server (`api/domain`, `api/adapter`, `api/dao`)
+
+**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions are kept through a port, notifications travel through another, and any instance can process any message. Phase 2 runs locally, in a single process, on in-memory DAOs: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as new DAOs, without touching the domain.
+
+- `GameSession`, a business object: game id; status; the seed; two `Seat`s (a human: deck and SHA-256 hash of the seat token; a bot: deck, name and RNG state; an open seat: the join code's hash); the current `GameState`; `version`; the event log (unredacted, in order); the action log; the outbox; last activity time. The adapter maps it to a `GameEntity` (plain values and engine types) that the DAO stores. The state is a snapshot for fast loading; the action log, with the setup, rebuilds it exactly (determinism), for replays and debugging.
+- **Layers**: the domain owns its ports (`GameSessionPort`, `GameNotificationPort`); the adapter layer implements them (`GameSessionAdapter`, `GameNotificationAdapter`) and maps entities to business objects; the DAO layer is pure data. Each DAO is an interface, and each implementation adds a suffix: `GameDaoInMemory` now, `GameDaoDatabase` later.
 - **Bots are rebuilt at every step** from their name and RNG state, and their new RNG state is saved with the session. Any instance that loads a session whose decision belongs to a bot (because an instance stopped in the middle of a bot turn) resumes the bot loop; the versioned save makes sure only one instance does.
-- `GameRepository` (port): `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, `delete(gameId)`. `save` is an optimistic lock: it fails with `VersionConflict` if the stored version is no longer `expectedVersion`. Phase 2: `GameRepositoryInMemory` (`ConcurrentHashMap.compute`).
-- **Outbox.** Each save also stores the `update` message of each seat for that version (view and events, redacted for the seat). A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
-- `GameUpdates` (port): `publish(gameId, version)`, `connected(gameId, seat, connectionId)` (13.1) and `subscribe(gameId, listener)`. An instance subscribes to every game for which it holds a WebSocket. When notified, it reads from the repository the `update` messages its connections have not received yet (`version > lastSent`) and sends them in order. Phase 2: `GameUpdatesInMemory`, in-process. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
-- `PlayerConnections` (WebSocket adapter): this instance's connections only. A seat without a connection anywhere simply misses messages and will `sync`.
-- `GameSessionService` (no WebSocket types in it): `createGame`, `join`, `connect(gameId, token)` (returns the seat and the `state` payload), `act(gameId, seat, requestId, decisionId, actionIndex)`, `sync(gameId, seat)`.
+- `GameSessionPort`: `create(session)`, `find(gameId)`, `save(session, expectedVersion)`, an optimistic lock that answers false when the stored version is no longer `expectedVersion` (the DAO throws `VersionConflict`, the adapter translates it). Phase 2: `GameDaoInMemory` keeps each game as a database row would: version and status beside its JSON.
+- **Outbox.** Each save also stores, for each human seat, what it may see after that save: the engine's `PlayerView`, the prompt and labels of its own decision (written then, since the describers read the full state), and the save's events redacted for it. The domain turns them into views when they are sent. The outbox keeps the last 50 versions; a connection further behind gets the `state` instead. A notification never carries the message itself: it only says "game X is now at version n", so it stays tiny (a Postgres `NOTIFY` is capped at 8 KB) and a lost notification costs nothing, since the next one, or a `sync`, catches up.
+- `GameNotificationPort`: `publish(gameId, version)`, `announce(gameId, seat, connectionId)` (13.1) and `watch(gameId, watcher)`. The `GameWatcher` callback is the domain's; the adapter forwards the DAO's notifications to it. Phase 2: `GameNotificationDaoInMemory`, in-process, which logs a failing listener instead of letting it reach the publisher. Later: the shared store's pub/sub (for example Postgres `LISTEN/NOTIFY`).
+- The services: `GameCreationService` (create, join), `GamePlayService` (act and its checks), `BotTurnService` (the bot loop), `SeatAuthenticationService` (the seat a token holds), `SeatUpdateService` (`state`, `since(version)` from the outbox, `watch`, `announce`), and `GameSaver`, the step every change ends with: outbox, versioned save, publish, log.
+- `GameSocketRegistry` (controller): this instance's sockets only. It watches every game it holds a socket to, sends every socket the updates it has not received, in order, and closes sockets replaced elsewhere. A socket is registered before its `state` is read, under the socket's lock, so no update falls between the two. A seat without a socket anywhere simply misses messages and will `sync`.
 - WebSocket threads never block: they hand each message to a virtual thread. Inside one instance, a per-game lock avoids pointless conflicts between two messages of the same game; correctness across instances comes from the versioned `save`, not from the lock.
 - **Processing `act`**, on any instance:
   1. Load the session. If the game is not started or is over: `rejected`.
   2. Recompute the decision from the state. Never trust the client.
-  3. If the seat is not the decision's player: `not_your_decision`. If the `decisionId` differs: `stale_decision`. If the index is out of range: `invalid_action`.
+  3. If the `decisionId` differs: `stale_decision` (an old click is stale, whoever holds the new decision). If the seat is not the decision's player: `not_your_decision`. If the index is out of range: `invalid_action`.
   4. `engine.apply`, then `version += 1`, append the events, the action and both seats' `update` messages, `save(session, version - 1)`. On `VersionConflict`, another instance moved the game first: reload and start again at step 1 (the request usually ends as `stale_decision`).
   5. `publish(gameId, version)`.
   6. While the next decision belongs to a bot seat and the game is not over: the bot chooses, then back to 4 (optional `step-delay` between iterations). Guard against bugs: at most 10,000 bot steps per human action, then fail loudly.
 - Human vs human: the same flow; whichever seat holds the decision acts, mid-turn intercepts and echo choices included, even when the two players are connected to different instances.
-- Eviction: finished games after `finished-ttl`, idle games after `idle-ttl`. The in-memory repository runs a scheduled task; a shared store will use its own expiry.
+- Eviction: finished games after `finished-ttl`, idle games after `idle-ttl`. A scheduled task evicts from the in-memory DAO; a shared store will use its own expiry.
 - Logging: one line per applied action (game id, seat, decision kind, action label, version, instance).
 
 ---
@@ -777,15 +791,16 @@ Minimal and plain: correctness first, no animations required.
   - `/`: choose your deck (`GET /api/decks`) and an opponent: a bot (`GET /api/bots`, opponent deck) or a human; "Create game". For a human opponent, show the invite link `/join/{gameId}?code={joinCode}`.
   - `/join/:gameId`: choose your deck, join, then go to the game.
   - `/games/:gameId`: the game.
-- **Token storage**: `localStorage["shardbound.game.<gameId>.token"]`. Opening `/games/:id` without a token: message plus a link home.
+- **Token storage**: `localStorage["shardbound.game.<gameId>.token"]`. Opening `/games/:id` without a token: message plus a link home. Every tab of a browser shares it: to play both seats on one machine, use a second browser or a private window.
 - **Game screen**:
   - opponent: faction, HP, Shards (available / max, locked), hand count, deck count, fatigue, units, relics, graveyard count;
-  - you: the same, plus your hand. Each card shows name, cost, rendered text (`GET /api/cards`, cached) and the Fracture step;
+  - you: the same, plus your hand. Each card shows name, type, cost and the Fracture step (`GET /api/cards`, cached); its rendered text comes with slice 3;
   - each unit shows name, defense / max defense, its attacks (name, cost, damage, Echo X) and badges: arrived this turn, attacked, intercepted, frozen, anchored, doomed, linked to #id;
-  - **decision panel**: the `prompt` and one button per action (`label`). When `waitingFor` is set: "Waiting for your opponent (intercept)…";
+  - **decision panel**: the `prompt` and the decision's actions, **grouped** (decided on 2026-10-06). The cards and units that are the source of an action are highlighted (the card played, the attacker, the interceptor); click one: its possible targets light up, and its actions without a target (an intercept, Kindle) show as buttons with their `label`. Clicking a target sends the action; when several actions share that target (with and without Overcharge), they show as buttons instead. Actions without a source (keep hand, mulligan, end turn, don't intercept) are plain buttons. The client still sends the index of the chosen action and never builds one: it only filters the decision's list. When `waitingFor` is set: "Waiting for your opponent (intercept)…";
   - **game log**: every event's `text` with its rule IDs (`[8.1] Sprout #12 takes 3 damage.`), newest at the bottom;
   - result banner and a "New game" link.
-- **GameSocketService**: connects with the token, exposes the view and the log as signals, sends `act` with a `requestId`, shows `rejected` messages, sends `sync` when versions have a gap, and reconnects with backoff (then `sync`).
+- **GameSocketService**: connects with the token, exposes the view and the log as signals, sends `act` with a `requestId`, shows `rejected` messages, sends `sync` when versions have a gap, and reconnects with backoff; the `state` the server sends on every connection resyncs it.
+- **Bot pacing** (decided on 2026-10-06): the client shows queued updates one by one, about 400 ms apart, so a bot's turn can be followed. The server keeps `shardbound.bots.step-delay = 0`.
 - Tests: the socket service's message handling (update, gap → sync, rejected, reconnect), and a smoke test per page.
 
 ---
@@ -830,9 +845,10 @@ These gaps were found while writing this spec, then settled with the maintainer 
 
 **API**
 
-- `GameSessionService` with a recording `GameUpdates`: human vs bot to the end; stale and foreign decisions rejected; human vs human with a mid-turn intercept; `sync`.
-- **Two instances**: two `GameSessionService`s sharing one repository and one `GameUpdates`. A human vs human game where each player is connected to a different instance, mid-turn intercept included; the same `act` sent to both instances at once is applied once, the other gets `stale_decision`; a bot game whose messages alternate between instances.
-- `GameSession` survives a JSON round trip unchanged (state, seats, logs), so a shared store can hold it.
+- The domain services with a recording notification DAO: human vs bot to the end; stale and foreign decisions rejected; human vs human with a mid-turn intercept; the join as version 1; the state and the missed updates of a seat.
+- **Two instances**: two complete instances, wired by hand, sharing one game DAO and one notification DAO, with fake WebSockets. A human vs human game where each player is connected to a different instance, mid-turn intercept included; the same `act` sent to both instances at once is applied once, the other gets `stale_decision`; a bot game whose messages alternate between instances.
+- A `GameSession` comes back unchanged through the adapter and the in-memory DAO's JSON (state, seats, logs, outbox), so a shared store can hold it.
+- `ArchitectureTest` (ArchUnit): controller → domain ← adapter → dao, and no transport or JSON in the domain.
 - REST controllers with MockMvc (status codes, Problem Details).
 - WebSocket: an integration test with a real WebSocket client on a random port: connect, receive `state`, play, receive `update`; a bad token is refused; a second connection replaces the first.
 
