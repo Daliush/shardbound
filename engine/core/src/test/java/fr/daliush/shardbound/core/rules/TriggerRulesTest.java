@@ -24,6 +24,16 @@ import org.junit.jupiter.api.Test;
 class TriggerRulesTest {
 
     @Test
+    @DisplayName("9.1 — a spell's Cast is the spell itself: its effects apply as it is played, then it is put away")
+    void cast() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "ember.spark-dart")
+                        .unit(P2, "neutral.shard-construct").build(),
+                play("ember.spark-dart").on(unit("neutral.shard-construct")));
+
+        assertThat(trace(result)).containsExactly("CardPlayed[6.3]", "UnitDamaged[8.1]", "SpellResolved[6.3, 3.5]");
+    }
+
+    @Test
     @DisplayName("9.2 — \"Arrival\" abilities trigger when the card arrives on the board")
     void arrival() {
         ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "root.sproutcaller").build(),

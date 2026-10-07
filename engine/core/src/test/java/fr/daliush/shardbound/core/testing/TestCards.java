@@ -88,6 +88,10 @@ public final class TestCards {
         """
         { "id": "test.ward", "name": "Ward", "faction": "neutral", "type": "spell", "cost": 1,
           "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 2, "duration": "end_of_turn", "target": "any_unit" }] }""",
+        // A permanent attack malus bigger than most attacks (8.15).
+        """
+        { "id": "test.sap", "name": "Sap Strength", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": -5, "defense": 0, "duration": "permanent", "target": "enemy_unit" }] }""",
         // A temporary malus (8.5, 8.17).
         """
         { "id": "test.hex", "name": "Hex", "faction": "neutral", "type": "spell", "cost": 1,

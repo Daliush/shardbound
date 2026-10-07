@@ -57,6 +57,19 @@ class EffectRulesTest {
     }
 
     @Test
+    @DisplayName("8.15 — attack damage never goes below 0, and a 0-damage hit still hits its target")
+    void damageFloor() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.sap").unit(P1, "root.sprout")
+                        .unit(P2, "neutral.shardling").deck(P2, "neutral.shardling").build(),
+                play("test.sap").on(unit("neutral.shardling")), endTurn(),
+                attack("neutral.shardling").on(unit("root.sprout")));
+
+        assertThat(result.events(GameEvent.UnitDamaged.class)).singleElement()
+                .matches(damaged -> damaged.amount() == 0, "3 - 5, floored at 0");
+        assertThat(result.unit("root.sprout").defense()).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("8.2 — destroy sends a unit to the graveyard whatever its defense")
     void destroyUnit() {
         ScenarioResult result = run(scenario().shards(P1, 5).hand(P1, "neutral.crystal-rupture")

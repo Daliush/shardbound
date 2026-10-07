@@ -8,9 +8,13 @@ import static fr.daliush.shardbound.core.testing.RuleTesting.run;
 import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
 import static fr.daliush.shardbound.core.testing.RuleTesting.trace;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import fr.daliush.shardbound.core.action.Action;
+import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.ContentException;
+import fr.daliush.shardbound.core.content.json.CardParser;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
@@ -21,6 +25,7 @@ import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Rulebook section 6: playing cards, defense. */
 class CardRulesTest {
@@ -152,5 +157,26 @@ class CardRulesTest {
                 PlayerId.P1, true, 2, 1, 1);
 
         assertThat(sprout.damaged(5).defense()).isZero();
+    }
+
+    @Test
+    @DisplayName("6.4 — abilities use only the closed lists: an unknown trigger, effect or target is refused")
+    void closedLists() {
+        assertThatThrownBy(() -> parse("""
+                { "id": "neutral.x", "name": "X", "faction": "neutral", "type": "relic", "cost": 1,
+                  "abilities": [{ "trigger": "on_draw", "effects": [{ "effect": "draw", "amount": 1, "target": "you" }] }] }"""))
+                .isInstanceOf(ContentException.class).hasMessageContaining("unknown value 'on_draw'");
+        assertThatThrownBy(() -> parse("""
+                { "id": "neutral.x", "name": "X", "faction": "neutral", "type": "spell", "cost": 1,
+                  "effects": [{ "effect": "teleport", "target": "enemy_unit" }] }"""))
+                .isInstanceOf(ContentException.class).hasMessageContaining("unknown effect 'teleport'");
+        assertThatThrownBy(() -> parse("""
+                { "id": "neutral.x", "name": "X", "faction": "neutral", "type": "spell", "cost": 1,
+                  "effects": [{ "effect": "damage", "amount": 1, "target": "everyone" }] }"""))
+                .isInstanceOf(ContentException.class).hasMessageContaining("unknown value 'everyone'");
+    }
+
+    private static CardDefinition parse(String json) {
+        return new CardParser().parse(JsonMapper.builder().build().readTree(json), "test");
     }
 }
