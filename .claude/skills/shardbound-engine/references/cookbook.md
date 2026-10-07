@@ -122,8 +122,9 @@ These come from static imports of `testing.RuleTesting` (`scenario()`, `run(…)
 Builder reference:
 
 - `turn`, `active`, `firstPlayer`, `seed`;
-- per player: `hp`, `fatigue`, `shards`, `maxShards`, `deck(…)` (top first), `hand(…)`, `graveyard(…)`;
-- `unit(player, card, setup -> setup.defense(2).arrivedThisTurn().hasAttacked().hasIntercepted().frozenThroughTurn(4))`;
+- per player: `hp`, `fatigue`, `shards`, `maxShards`, `lockedShards` (Overcharge), `deck(…)` (top first), `hand(…)`, `handAtStep(player, card, nextStep)` (a Fracture card in progress, 1-based), `graveyard(…)`;
+- `unit(player, card, setup -> setup.defense(2).arrivedThisTurn().hasAttacked().hasIntercepted().frozenThroughTurn(4).anchorProtected().doomed())`;
+- `link(card, otherCard)`: links two units already placed (the builder checks links are mutual);
 - `relic(player, card)`;
 - `decklist(player, deck)`.
 
@@ -131,7 +132,8 @@ Choices:
 
 - `keepHand()`, `mulligan()`, `endTurn()`, `declineIntercept()`;
 - `interceptWith(card)`, `chooseTarget(pick)`;
-- `play(card).on(pick…)`, with one pick per choice slot, and `.sacrificing(pick…)` for a sacrifice cost;
+- `play(card).on(pick…)`, with one pick per choice slot (two for Link), `.sacrificing(pick…)` for a sacrifice cost and `.overcharged()` (11.4.1);
+- `chooseOrder(i, j)` for the order of two echoes (11.1.8);
 - `sacrifice(pick…)` and `discard(card…)` to answer a `CHOOSE_CARDS` decision;
 - `attack(card).withAttack(i).on(pick)`.
 

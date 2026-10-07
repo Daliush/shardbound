@@ -129,9 +129,19 @@ Defaults worth knowing: turn 3, P1 active and first player, 50 HP, 0 Shards, **e
 
 ## What is implemented
 
-The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 3 cover the rules of sections 1 to 10 and every effect of section 8 but Link, auras included; the keywords (Echo, Fracture, Anchor, Overcharge) and Link come with slice 4. Cards that need one of them are never offered as legal actions (`rules.play.EngineSupport`). `EngineSupportTest` holds the live list of those cards. Check both before relying on a card in a test or a demo.
+The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 4 cover the whole rulebook, sections 1 to 11: every effect of section 8, auras and Link included, and the five keywords. Every card of the catalog is playable (`PlayableCardsTest`), and `RulebookCoverageTest` fails when a rule has no test. Three rules are still *(proposed)* (6.10, 11.1.11, 11.2.8, listed in `docs/rules/12-open-points.md`): the engine follows them until the maintainer decides. Slice 5 brings determinization, the greedy bot and the scenario service as a public API.
 
-No real card has Discard, a Sacrifice effect, Return to hand, Freeze outside Fracture or a cost aura yet: `testing.TestCards` has a `test.*` card for each, and `TestCards.EFFECTS_DECK` plays them in random games.
+Where each keyword lives:
+
+| Keyword | Parts |
+|---|---|
+| Echo (11.1) | `trigger.Echoes` (raise on death, `StartEchoes` and `CHOOSE_ORDER`), `content.AttackAbility.echoEffects()` (X%, toward 0), the `EchoEffects` address, the new attack target in `trigger.AbilityTargets` |
+| Fracture (11.2) | `SpellCard.effectsAtStep`, the step in `EffectList.SpellEffects`, `play.CardPlay.finishSpell` (back to hand or graveyard), `PlayOptions` (one step per turn) |
+| Anchor (11.3) | `board.Arrivals` (protected on arrival), `board.Departures` (`AnchorPrevented`), `game.StateCheck` (doom and its lifting), `turn.TurnStart` (5.2.1), `turn.TurnEnd.finish` (5.4.3) |
+| Overcharge (11.4) | `play.PlayOptions` (both plays), `play.Costs` (−2), `play.CardPlay` (`ShardsLocked`), `Shards.refilled` |
+| Link (8.11, 11.5) | `effect.TargetOptions.linkPairs`, `play.ChoiceSlots` (two slots), `effect.LinkEffect`, `effect.DamageEffect` (sharing), `board.Departures` (`LinkBroken`) |
+
+No real card has a Sacrifice effect or a cost aura yet, and none has two Echo attacks: `testing.TestCards` has a `test.*` card for each, and `TestCards.EFFECTS_DECK` plays them in random games, as the three starter decks play the rest.
 
 ## Further reading
 

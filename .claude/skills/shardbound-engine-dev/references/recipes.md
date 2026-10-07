@@ -33,10 +33,10 @@ Every effect of the closed list (rulebook section 8) is already parsed into `con
    ```
    Change units through a domain method of `state/Unit.java` (here `frozenThrough(turn)`), never through the canonical constructor.
 3. **Event**: add the record to `event/GameEvent.java` (see recipe 4). The exhaustive `switch` in `text/EventDescriber.java` will not compile until you describe it.
-4. **Dispatch**: add a `case` in `rules/effect/EffectResolution.apply`. That `switch` keeps a `default` branch while Link is missing, so the compiler does not remind you: once Link lands (slice 4), remove the `default` and let the `switch` become exhaustive. An effect that makes a player pick cards gets its own `case` in `resolveNext`, computes its options in canonical order and goes through `pickCards` (`CHOOSE_CARDS`, asked only with two options or more); `resume` applies the answer, like Sacrifice and Discard. An effect that only takes units reads its targets with `Targets.units`, which skips an attacked player.
-5. **Targets**: plain targets work as they are. New kinds of choices need `rules/effect/TargetOptions` (the options), `rules/play/ChoiceSlots` (one entry per slot in `PlayCard.targets`) and `rules/effect/Targets.resolve` (what is still valid when the effect applies). Link has two slots (two different units); Recall has one, a card in the controller's graveyard.
+4. **Dispatch**: add a `case` in `rules/effect/EffectResolution.apply`. The `switch` is exhaustive, so the compiler points at it as soon as the new record exists. An effect that makes a player pick cards gets its own `case` in `resolveNext`, computes its options in canonical order and goes through `pickCards` (`CHOOSE_CARDS`, asked only with two options or more); `resume` applies the answer, like Sacrifice and Discard. An effect that only takes units reads its targets with `Targets.units`, which skips an attacked player.
+5. **Targets**: plain targets work as they are. New kinds of choices need `rules/effect/TargetOptions` (the options), `rules/play/ChoiceSlots` (one entry per slot in `PlayCard.targets`) and `rules/effect/Targets.resolve` (what is still valid when the effect applies). Link fills two slots at once (`TargetOptions.linkPairs`, one option per pair); Recall has one, a card in the controller's graveyard.
 6. **Rules around the effect**: put them where they live. Freeze's thaw is at the start of a turn (`rules/turn/TurnStart`), and the frozen checks already exist (`AttackOptions`, `Interceptors`, via `Unit.isFrozen`).
-7. **Support**: add the effect class to `EngineSupport.IMPLEMENTED_EFFECTS`, and update the list in `rules/EngineSupportTest.java`.
+7. **Random games**: if no starter deck plays the effect, put its `test.*` card in `TestCards.EFFECTS_DECK`.
 8. **Spec**: the event table (§6.4), and the §8 note if what you built differs from it.
 
 ### b. A brand-new effect
@@ -54,7 +54,7 @@ Example: the "After attack" trigger, still an open point in `12-open-points.md`.
 1. Content and rulebook, as in 1b: the `Trigger` enum (schema and `content/Trigger.java`), its template label, a new rule in section 9, and parser constraints (which card types may have it) in `content/json/CardParser.java`.
 2. **Where it fires**: call `Triggers.raise(game, card, controller, arrivalSeq, Trigger.X)` at the moment the rule names. For "After attack", that is the end of `rules/combat/AttackSequence`'s `EFFECTS` phase. Raised abilities then resolve after the attack completes, through the queue (9.11). Do not start them inline unless the rule says they resolve right away, as 9.9 does for "Attack".
 3. `Triggers.ruleOf` (its rule ID in the trace), `TriggerOrder.rank` (only if the rulebook orders it against other triggers of one card), and `text/Wording.trigger` (its label in the log).
-4. `EngineSupport`: allow the trigger. Tests: one per new rule, plus a 9.8 ordering case if it can fire together with others.
+4. Tests: one per new rule, plus a 9.8 ordering case if it can fire together with others.
 
 ## 3. Add a keyword
 
@@ -70,8 +70,8 @@ A keyword is several small rules in different places. Example: Anchor (11.3):
 
 Then:
 
-- **Support**: `EngineSupport.supports` refuses every keyword today (`card.keywords().isEmpty()`). When the first keyword lands, replace that with a set of implemented keywords, the same way as for effects. Do the same for Echo (on attacks) and Fracture (on spells).
-- **Tests**: one per 11.3.x rule, in a `KeywordRulesTest` or one test class per keyword. The interactions in the `shardbound-rules` skill's "edge cases" make good extra tests.
+- **Tests**: one per rule, in one test class per keyword (`AnchorRulesTest`, `EchoRulesTest`…). The interactions in the `shardbound-rules` skill's "edge cases" make good extra tests.
+- **A queued effect that is not a card's ability**, like an echo, gets its own `QueuedTrigger` record, its rank in `TriggerOrder`, and a step that starts it (`StartEchoes`), rather than pretending to be a `Trigger` of the card format.
 
 ## 4. Add an event
 
