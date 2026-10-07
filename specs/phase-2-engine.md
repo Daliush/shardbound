@@ -607,6 +607,7 @@ Renders a card's rules text from its data and `content/cards/text-templates.json
 - `{target}` uses the `targets` phrases; `self` gives `"this unit"` or `"this relic"`; `{token}` is the token's name.
 - `{word|words}` picks singular when the closest preceding number is 1. Modify and aura values are always signed (`+2`, `-1`, `+0`). The first letter of each sentence is capitalized.
 - **Golden tests**: the two examples in `content/cards/README.md` (Ash Warden and Moonpull) must render exactly as shown there. Add one test per template key.
+- Each line comes with its kind: `keywords`, `sacrifice_cost`, `attack`, `fracture` (the header and each step), `effect` (a spell's effects, on one line) or `ability`. A client can then leave out what it already shows another way, such as a unit's attacks (section 14).
 - The API returns the rendered lines with each card (`GET /api/cards`).
 
 ---
@@ -646,7 +647,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 
 | Method | Path | Request | Response |
 |---|---|---|---|
-| `GET` | `/api/cards` | — | `[{ id, name, faction, type, cost?, defense?, token, keywords, text: [lines], flavor? , fracture?: [{ step, cost }] }]` |
+| `GET` | `/api/cards` | — | `[{ id, name, faction, type, cost?, defense?, token, keywords, text: [{ kind, text }], flavor? , fracture?: [{ step, cost }] }]` |
 | `GET` | `/api/decks` | — | `[{ id, name, description?, faction, cards: [{ card, count }] }]` |
 | `GET` | `/api/bots` | — | `["random", "greedy"]` (only the bots implemented so far) |
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, websocketPath: "/ws/games/{id}" }` |
@@ -656,7 +657,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - The creator always takes seat P1, and the bot or the joiner seat P2. Who plays first is decided by the RNG (5.1.1).
 - A bot game starts at creation. A human vs human game starts when the second player joins; before that, the creator's view has status `waiting_for_opponent`.
 - `seed` is optional (random when missing). It is never returned while the game runs.
-- `text` is added in slice 3, with `CardTextRenderer` (section 9). Until then the field is absent, rather than an empty list.
+- `text` is added in slice 3, with `CardTextRenderer` (section 9): one `{ kind, text }` per line, in the renderer's order. Until then the field is absent, rather than an empty list.
 - Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
@@ -794,7 +795,7 @@ Minimal and plain: correctness first, no animations required.
 - **Token storage**: `localStorage["shardbound.game.<gameId>.token"]`. Opening `/games/:id` without a token: message plus a link home. Every tab of a browser shares it: to play both seats on one machine, use a second browser or a private window.
 - **Game screen**:
   - opponent: faction, HP, Shards (available / max, locked), hand count, deck count, fatigue, units, relics, graveyard count;
-  - you: the same, plus your hand. Each card shows name, type, cost and the Fracture step (`GET /api/cards`, cached); its rendered text comes with slice 3;
+  - you: the same, plus your hand. Each card shows name, type, cost and the Fracture step (`GET /api/cards`, cached), and its rendered text (slice 3, see below);
   - each unit shows name, defense / max defense, its attacks (name, cost, damage, Echo X) and badges: arrived this turn, attacked, intercepted, frozen, anchored, doomed, linked to #id;
   - **decision panel**: the `prompt` and the decision's actions, **grouped** (decided on 2026-10-06). The cards and units that are the source of an action are highlighted (the card played, the attacker, the interceptor); click one: its possible targets light up, and its actions without a target (an intercept, Kindle) show as buttons with their `label`. Clicking a target sends the action; when several actions share that target (with and without Overcharge), they show as buttons instead. Actions without a source (keep hand, mulligan, end turn, don't intercept) are plain buttons. The client still sends the index of the chosen action and never builds one: it only filters the decision's list. When `waitingFor` is set: "Waiting for your opponent (intercept)…";
   - **game log**: every event's `text` with its rule IDs (`[8.1] Sprout #12 takes 3 damage.`), newest at the bottom;
@@ -802,6 +803,12 @@ Minimal and plain: correctness first, no animations required.
 - **GameSocketService**: connects with the token, exposes the view and the log as signals, sends `act` with a `requestId`, shows `rejected` messages, sends `sync` when versions have a gap, and reconnects with backoff; the `state` the server sends on every connection resyncs it.
 - **Bot pacing** (decided on 2026-10-06): the client shows queued updates one by one, about 400 ms apart, so a bot's turn can be followed. The server keeps `shardbound.bots.step-delay = 0`.
 - Tests: the socket service's message handling (update, gap → sync, rejected, reconnect), and a smoke test per page.
+
+Settled on 2026-10-07, for slice 3:
+
+1. **Card text on screen.** A card in hand shows its full text. A unit shows only its lines that are not attacks (its keywords and abilities, auras included), since its attacks are already listed with their cost and damage; each attack's own line is its tooltip. A relic shows all its lines. The lines and their kinds come from `GET /api/cards` (section 9); the client only picks which kinds to show.
+2. **Answering `CHOOSE_CARDS`** (cards to discard, units to sacrifice). When each action names a single card or unit, that card or unit is highlighted and clicked like a target. When the actions are combinations of several, they stay buttons with the engine's labels. A sacrifice *cost* is part of the `PlayCard` action, so it keeps the grouping above: the card, then its target, then a button per sacrifice when several match.
+3. **What the browser can show.** No real card has Discard, a Sacrifice effect, Return to hand, Freeze outside a Fracture step, or a cost aura yet. Those effects are tested in the engine with `test.*` cards, and the client's handling of `CHOOSE_CARDS` with unit tests. In the browser, the sacrifice choice to play is the sacrifice cost of Pyre Offering and Flamebound Zealot.
 
 ---
 
