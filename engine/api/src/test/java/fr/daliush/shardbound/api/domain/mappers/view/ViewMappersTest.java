@@ -9,17 +9,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import fr.daliush.shardbound.api.domain.bo.game.GameId;
 import fr.daliush.shardbound.api.domain.bo.view.EventView;
 import fr.daliush.shardbound.api.domain.bo.view.GameView;
+import fr.daliush.shardbound.api.domain.bo.view.HandCardView;
 import fr.daliush.shardbound.core.bot.RandomBot;
+import fr.daliush.shardbound.core.content.CardCatalog;
+import fr.daliush.shardbound.core.content.CardDefinition;
+import fr.daliush.shardbound.core.content.json.CardParser;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
+import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.rules.Transition;
+import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 class ViewMappersTest {
 
@@ -43,6 +50,22 @@ class ViewMappersTest {
         assertThat(theirs.waitingFor()).hasValueSatisfying(waiting -> assertThat(waiting.player()).isEqualTo("opponent"));
         assertThat(theirs.opponent().orElseThrow().handCount()).isEqualTo(mine.you().hand().size());
         assertThat(mine.you().hand()).allSatisfy(card -> assertThat(card.cost()).isNotNegative());
+    }
+
+    @Test
+    void aHandCardCostsWhatTheCostAurasOnTheBoardMakeItCost() {
+        CardCatalog catalog = withCard("""
+                { "id": "test.tithe", "name": "Tithe Stone", "faction": "neutral", "type": "relic", "cost": 1,
+                  "abilities": [{ "trigger": "continuous", "effects": [
+                    { "effect": "aura", "kind": "cost", "player": "opponent", "card_type": "any", "change": 1 }] }] }""");
+        GameEngine engine = new GameEngine(catalog);
+        GameState state = engine.resume(ScenarioBuilder.of(catalog).shards(P1, 2).hand(P1, "ember.spark-dart")
+                .relic(P2, "test.tithe").build()).state();
+
+        GameView view = new GameViewMapper(engine, new DecisionViewMapper())
+                .toView(game, 1, new SeatSnapshotMapper(engine).toSnapshot(state, P1));
+
+        assertThat(view.you().hand()).extracting(HandCardView::cost).containsExactly(2);
     }
 
     @Test
@@ -87,6 +110,12 @@ class ViewMappersTest {
         assertThat(view.activePlayer()).isEmpty();
         assertThat(view.you().deckCount()).isEqualTo(30);
         assertThat(view.you().faction()).isEqualTo("ember");
+    }
+
+    private static CardCatalog withCard(String json) {
+        List<CardDefinition> cards = new ArrayList<>(CONTENT.catalog().all());
+        cards.add(new CardParser().parse(JsonMapper.builder().build().readTree(json), "test card"));
+        return new CardCatalog(cards);
     }
 
     private record Played(GameState state, List<GameEvent> events) {}

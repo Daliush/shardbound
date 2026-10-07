@@ -8,6 +8,7 @@ import static fr.daliush.shardbound.core.state.PlayerId.P2;
 import static fr.daliush.shardbound.core.testing.RuleTesting.ENGINE;
 import static fr.daliush.shardbound.core.testing.RuleTesting.run;
 import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
+import static fr.daliush.shardbound.core.testing.RuleTesting.trace;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.daliush.shardbound.core.action.Action;
@@ -16,6 +17,7 @@ import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.view.PlayerView;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +52,23 @@ class ZoneRulesTest {
                 .unit(P1, "root.sprout").unit(P1, "root.sprout").unit(P1, "root.sprout").build();
 
         assertThat(mainActions(start)).noneMatch(Action.PlayCard.class::isInstance);
+    }
+
+    @Test
+    @DisplayName("3.8 — a unit with a sacrifice cost can be played onto a full board: the sacrifice frees a place")
+    void sacrificeFreesAPlace() {
+        GameState start = scenario().shards(P1, 3).hand(P1, "ember.flamebound-zealot", "neutral.shardling")
+                .unit(P1, "root.sprout").unit(P1, "root.sprout").unit(P1, "root.sprout")
+                .unit(P1, "root.sprout").unit(P1, "root.sprout").unit(P1, "root.sprout").build();
+
+        ScenarioResult result = run(start, play("ember.flamebound-zealot").sacrificing(unit("root.sprout", 2)));
+
+        assertThat(result.decisions().getFirst().actions()).filteredOn(Action.PlayCard.class::isInstance)
+                .hasSize(6).allMatch(action -> ((Action.PlayCard) action).card().equals(InstanceId.of(1)));
+        assertThat(trace(result)).containsSubsequence("UnitSacrificed[6.3, 8.3]", "TokenVanished[3.6]",
+                "UnitArrived[6.3, 6.5]");
+        assertThat(result.player(P1).units()).hasSize(6);
+        assertThat(result.unit("ember.flamebound-zealot").arrivalSeq()).isEqualTo(7);
     }
 
     @Test
@@ -98,6 +117,17 @@ class ZoneRulesTest {
                 play("ember.spark-dart").on(unit("root.sprout")));
 
         assertThat(result.events(GameEvent.TokenVanished.class)).hasSize(1);
+        assertThat(result.player(P2).graveyard()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("3.6 — a token returned to hand vanishes too")
+    void returnedTokenVanishes() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.flood").unit(P2, "root.sprout").build(),
+                play("test.flood"));
+
+        assertThat(trace(result)).contains("TokenVanished[8.8, 3.6]");
+        assertThat(result.player(P2).hand()).isEmpty();
         assertThat(result.player(P2).graveyard()).isEmpty();
     }
 

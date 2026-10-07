@@ -2,19 +2,19 @@ import { Component, OnInit, computed, inject, input, linkedSignal } from '@angul
 import { RouterLink } from '@angular/router';
 import { ActionView } from '../api/protocol';
 import { SeatStore, inviteLink } from '../api/seat-store';
-import { CardBook } from './card-book';
-import { DecisionGroups, ElementKey, Mark } from './decision-groups';
+import { DecisionGroups, ElementKey, Mark, locateIn } from './decision-groups';
 import { DecisionPanel } from './decision-panel';
 import { GameLog } from './game-log';
 import { GameSocketService } from './game-socket.service';
 import { HandCardTile } from './hand-card-tile';
 import { PlayerPanel } from './player-panel';
+import { RelicTile } from './relic-tile';
 import { UnitTile } from './unit-tile';
 
 /** The game screen: everything shown comes from the server's view and events. */
 @Component({
   selector: 'app-game-page',
-  imports: [RouterLink, DecisionPanel, GameLog, HandCardTile, PlayerPanel, UnitTile],
+  imports: [RouterLink, DecisionPanel, GameLog, HandCardTile, PlayerPanel, RelicTile, UnitTile],
   providers: [GameSocketService],
   templateUrl: './game-page.html',
   styleUrl: './game-page.css',
@@ -23,7 +23,6 @@ export class GamePage implements OnInit {
   readonly gameId = input.required<string>();
 
   protected readonly socket = inject(GameSocketService);
-  protected readonly book = inject(CardBook);
   private readonly seats = inject(SeatStore);
 
   protected readonly token = computed(() => this.seats.token(this.gameId()));
@@ -33,7 +32,9 @@ export class GamePage implements OnInit {
   });
 
   protected readonly decision = computed(() => this.socket.view()?.decision ?? null);
-  private readonly groups = computed(() => new DecisionGroups(this.decision()?.actions ?? []));
+  private readonly groups = computed(
+    () => new DecisionGroups(this.decision()?.actions ?? [], locateIn(this.socket.view())),
+  );
   private readonly sources = computed(() => this.groups().sources());
   private readonly targets = computed(() => this.groups().targets(this.selected()));
 
@@ -42,7 +43,7 @@ export class GamePage implements OnInit {
     source: () => this.decision()?.id,
     computation: () => null,
   });
-  /** Several actions share the clicked target (with and without Overcharge): the player picks a button. */
+  /** Several actions share the clicked target (Overcharge, sacrifices): the player picks a button. */
   private readonly candidates = linkedSignal<string | undefined, ActionView[] | null>({
     source: () => this.decision()?.id,
     computation: () => null,

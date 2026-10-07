@@ -33,10 +33,7 @@
           />
           <div class="row">
             @for (relic of opponent.relics; track relic.id) {
-              <button type="button" class="relic" [class.targetable]="mark('relic:' + relic.id) === 'targetable'"
-                [disabled]="mark('relic:' + relic.id) === null" (click)="click('relic:' + relic.id)">
-                {{ book.name(relic.card) }} #{{ relic.id }}
-              </button>
+              <app-relic-tile [relic]="relic" [mark]="mark('relic:' + relic.id)" (picked)="click('relic:' + relic.id)" />
             }
           </div>
           <div class="row units">
@@ -66,10 +63,7 @@
         </div>
         <div class="row">
           @for (relic of view.you.relics; track relic.id) {
-            <button type="button" class="relic" [class.targetable]="mark('relic:' + relic.id) === 'targetable'"
-              [disabled]="mark('relic:' + relic.id) === null" (click)="click('relic:' + relic.id)">
-              {{ book.name(relic.card) }} #{{ relic.id }}
-            </button>
+            <app-relic-tile [relic]="relic" [mark]="mark('relic:' + relic.id)" (picked)="click('relic:' + relic.id)" />
           }
         </div>
         <app-player-panel

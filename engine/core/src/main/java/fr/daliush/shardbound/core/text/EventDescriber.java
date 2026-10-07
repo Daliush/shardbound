@@ -2,10 +2,12 @@ package fr.daliush.shardbound.core.text;
 
 import fr.daliush.shardbound.core.content.AttackAbility;
 import fr.daliush.shardbound.core.content.CardCatalog;
+import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.event.EventTarget;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.core.state.Shards;
 
 /** Turns an event into an English sentence for one player: "You draw Spark Dart.", "Sprout #61 takes 3 damage." */
 public final class EventDescriber {
@@ -36,8 +38,12 @@ public final class EventDescriber {
             case GameEvent.HpLost e -> w.subject(e.player()) + " " + w.verb(e.player(), "draw", "draws")
                     + " from an empty deck and " + w.verb(e.player(), "lose", "loses") + " " + e.amount()
                     + " HP (fatigue).";
-            case GameEvent.CardDiscarded e -> capitalize(w.possessive(e.player())) + " hand is full: "
-                    + w.name(e.card().card()) + " goes to the graveyard.";
+            case GameEvent.CardDiscarded e -> switch (e.reason()) {
+                case OVERDRAW -> capitalize(w.possessive(e.player())) + " hand is full: " + w.name(e.card().card())
+                        + " goes to the graveyard.";
+                case EFFECT -> w.subject(e.player()) + " " + w.verb(e.player(), "discard", "discards") + " "
+                        + w.name(e.card().card()) + ".";
+            };
             case GameEvent.TurnEnded e -> w.subject(e.player()) + " " + w.verb(e.player(), "end", "ends") + " "
                     + w.own(e.player()) + " turn.";
             case GameEvent.GameEnded e -> ending(e.result(), viewer);
@@ -71,6 +77,29 @@ public final class EventDescriber {
             case GameEvent.UnitDestroyed e -> w.card(e.unit()) + " is destroyed.";
             case GameEvent.RelicDestroyed e -> w.card(e.relic()) + " is destroyed.";
             case GameEvent.TokenVanished e -> w.card(e.unit()) + " vanishes.";
+            case GameEvent.Modified e -> w.card(e.unit()) + " gets " + Wording.stats(e.attackDamage(), e.defense())
+                    + (e.duration() == Duration.END_OF_TURN ? " until end of turn." : ".");
+            case GameEvent.ModifierExpired e -> "The " + Wording.stats(e.attackDamage(), e.defense()) + " on "
+                    + w.card(e.unit()) + " ends.";
+            case GameEvent.ShardsGained e -> shardsGained(w, e);
+            case GameEvent.AuraApplied e -> w.card(e.source()) + " gives " + w.card(e.unit()) + " "
+                    + Wording.stats(e.attackDamage(), e.defense()) + ".";
+            case GameEvent.AuraRemoved e -> w.card(e.unit()) + " loses the "
+                    + Wording.stats(e.attackDamage(), e.defense()) + " of " + w.card(e.source()) + ".";
+            case GameEvent.Recalled e -> w.card(e.card()) + " returns from " + w.possessive(e.card().owner())
+                    + " graveyard to " + w.possessive(e.card().owner()) + " hand.";
+            case GameEvent.RecallFailed e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
+                    + w.card(e.card()) + " stays in the graveyard.";
+            case GameEvent.Frozen e -> w.card(e.unit()) + " is frozen until the end of turn " + e.throughTurn() + ".";
+            case GameEvent.UnitThawed e -> w.card(e.unit()) + " thaws.";
+            case GameEvent.ReturnedToHand e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
+                    + " hand.";
+            case GameEvent.SentToGraveyardHandFull e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
+                    + w.card(e.card()) + " goes to the graveyard.";
+            case GameEvent.UnitSacrificed e -> w.card(e.unit()) + " is sacrificed.";
+            case GameEvent.SacrificeFailed e -> w.subject(e.player()) + " cannot sacrifice "
+                    + Wording.count(e.needed(), "unit", "units") + " (only " + e.available() + " on "
+                    + w.own(e.player()) + " board): nothing more happens.";
         };
     }
 
@@ -80,6 +109,15 @@ public final class EventDescriber {
         return e.target()
                 .map(target -> w.card(e.attacker()) + " attacks " + target(w, target) + " with " + name + ".")
                 .orElse(w.card(e.attacker()) + " uses " + name + ".");
+    }
+
+    private static String shardsGained(Wording w, GameEvent.ShardsGained e) {
+        String gain = w.subject(e.player()) + " " + w.verb(e.player(), "gain", "gains") + " ";
+        return switch (e.mode()) {
+            case THIS_TURN -> gain + Wording.shards(e.amount()) + " this turn.";
+            case MAX -> e.amount() > 0 ? gain + "1 max Shard."
+                    : capitalize(w.possessive(e.player())) + " max Shards are already at " + Shards.CAP + ".";
+        };
     }
 
     private static String target(Wording w, EventTarget target) {

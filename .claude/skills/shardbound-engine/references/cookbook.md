@@ -89,6 +89,14 @@ ActionDescriber actions = new ActionDescriber(catalog);
 String label = actions.describe(action, state, decision.player());   // "Play Spark Dart (1 Shard) on Sprout #3"
 ```
 
+A card's rules text, line by line, comes from the card data (spec §9):
+
+```java
+CardText text = new CardTextRenderer(catalog, content.textTemplates()).render(catalog.card(new CardId("ember.ash-warden")));
+text.texts();   // ["Cinder Bite (2 Shards): Deal 4 damage to the target. Echo 50.", "Kindle (1 Shard): Give all your units +2/+0 until end of turn."]
+text.lines();   // the same, each with its kind: ATTACK, ATTACK
+```
+
 Always describe events after redaction. `ActionDescriber` reads the real state to name cards, so it runs on the server, and only for the deciding player's own actions. `DecisionDescriber.describe(decision, state)` writes the decision's prompt under the same condition, and `rules.combat.AttackDamage.toTarget(attack, unit)` gives the damage an attack shows (bonuses included, empty when it deals none).
 
 Printing a described log of a seeded game is the fastest way to see what the engine did.
@@ -123,10 +131,11 @@ Choices:
 
 - `keepHand()`, `mulligan()`, `endTurn()`, `declineIntercept()`;
 - `interceptWith(card)`, `chooseTarget(pick)`;
-- `play(card).on(pick…)`, with one pick per choice slot;
+- `play(card).on(pick…)`, with one pick per choice slot, and `.sacrificing(pick…)` for a sacrifice cost;
+- `sacrifice(pick…)` and `discard(card…)` to answer a `CHOOSE_CARDS` decision;
 - `attack(card).withAttack(i).on(pick)`.
 
-Picks: `unit(card)`, `unit(card, nth)`, `relic(card)`, `player(id)`.
+Picks: `unit(card)`, `unit(card, nth)`, `relic(card)`, `player(id)`, `graveyardCard(card)` (Recall).
 
 ## 7. An answer key: the exact outcome and the rules applied
 

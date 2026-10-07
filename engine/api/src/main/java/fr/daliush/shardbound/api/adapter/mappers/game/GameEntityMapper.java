@@ -59,13 +59,14 @@ public class GameEntityMapper {
     private static SeatUpdateEntity update(SeatUpdate update) {
         Optional<SeatSnapshot.DecisionText> text = update.snapshot().decisionText();
         return new SeatUpdateEntity(update.version(), update.seat(), update.snapshot().view(),
-                text.map(SeatSnapshot.DecisionText::prompt).orElse(null),
+                update.snapshot().handCosts(), text.map(SeatSnapshot.DecisionText::prompt).orElse(null),
                 text.map(SeatSnapshot.DecisionText::labels).orElse(List.of()), update.events());
     }
 
     private static SeatUpdate update(SeatUpdateEntity entity) {
         Optional<SeatSnapshot.DecisionText> text = Optional.ofNullable(entity.prompt())
                 .map(prompt -> new SeatSnapshot.DecisionText(prompt, entity.labels()));
-        return new SeatUpdate(entity.version(), entity.seat(), new SeatSnapshot(entity.view(), text), entity.events());
+        SeatSnapshot snapshot = new SeatSnapshot(entity.view(), entity.handCosts(), text);
+        return new SeatUpdate(entity.version(), entity.seat(), snapshot, entity.events());
     }
 }

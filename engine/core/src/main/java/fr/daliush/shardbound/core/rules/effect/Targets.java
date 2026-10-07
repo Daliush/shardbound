@@ -7,6 +7,7 @@ import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * What an effect actually hits when it applies (section 10): chosen targets that are still valid,
@@ -33,6 +34,14 @@ public final class Targets {
             case YOU -> List.of(TargetRef.player(controller));
             case OPPONENT -> List.of(TargetRef.player(opponent));
         };
+    }
+
+    /** The units an effect hits. The attack's target may be the opposing player: a unit-only effect skips them (10.3). */
+    public static List<Unit> units(Game game, TargetSpec spec, EffectSource source, List<TargetRef> chosen) {
+        return resolve(game, spec, source, chosen).stream()
+                .flatMap(target -> target instanceof TargetRef.UnitTarget unit ? game.unit(unit.id()).stream()
+                        : Stream.empty())
+                .toList();
     }
 
     /** A chosen target that is no longer valid makes its effect do nothing (10.3, 10.5). */

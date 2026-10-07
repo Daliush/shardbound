@@ -12,6 +12,7 @@ import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.testing.GameDriver;
 import fr.daliush.shardbound.core.testing.GameDriver.PlayedGame;
 import fr.daliush.shardbound.core.testing.Invariants;
+import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +47,26 @@ class RandomGamesTest {
                                     .doesNotThrowAnyException();
                         }
                     }));
+        }
+    }
+
+    @Test
+    void randomGamesWithTheEffectsOfTestCardsEndAndKeepTheInvariants() {
+        GameEngine withTestCards = new GameEngine(TestCards.CATALOG);
+        for (int seed = 1; seed <= 300; seed++) {
+            Deck opponent = content.deck(seed % 2 == 0 ? "ember-starter" : "root-starter");
+            GameSetup setup = new GameSetup(TestCards.EFFECTS_DECK, opponent, seed);
+            boolean checkEveryAction = seed <= 20;
+            PlayedGame game = GameDriver.play(withTestCards, setup, new RandomBot(seed * 31L), new RandomBot(seed * 17L),
+                    (state, decision) -> {
+                        Invariants.check(state, decision, TestCards.CATALOG);
+                        if (checkEveryAction) {
+                            decision.ifPresent(pending -> pending.actions().forEach(action ->
+                                    assertThatCode(() -> withTestCards.apply(state, action)).as("%s", action)
+                                            .doesNotThrowAnyException()));
+                        }
+                    });
+            assertThat(game.finalState().result()).as("game %s has a result", seed).isPresent();
         }
     }
 

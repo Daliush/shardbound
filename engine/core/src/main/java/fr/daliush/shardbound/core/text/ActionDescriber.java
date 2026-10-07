@@ -5,6 +5,7 @@ import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.AttackAbility;
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
+import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.rules.play.Costs;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
@@ -35,8 +36,7 @@ public final class ActionDescriber {
             case Action.Intercept intercept -> "Intercept with " + w.card(unit(state, intercept.interceptor()).asCard());
             case Action.DeclineIntercept ignored -> "Don't intercept";
             case Action.ChooseTarget choose -> "Choose " + target(w, choose.target(), state);
-            case Action.ChooseCards choose -> "Choose " + choose.cards().stream()
-                    .map(id -> w.card(findCard(state, id))).collect(Collectors.joining(", "));
+            case Action.ChooseCards choose -> chooseCards(w, choose, state);
             case Action.ChooseOrder order -> "Resolve in the order " + order.order();
             case Action.EndTurn ignored -> "End your turn";
         };
@@ -45,14 +45,28 @@ public final class ActionDescriber {
     private String play(Wording w, Action.PlayCard play, GameState state, PlayerId decider) {
         HandCard inHand = state.player(decider).handCard(play.card()).orElseThrow();
         CardDefinition card = catalog.card(inHand.card().card());
-        int cost = Costs.toPlay(card, inHand, play.overcharge());
+        int cost = Costs.toPlay(catalog, state.player(decider), state.player(decider.opponent()), inHand,
+                play.overcharge());
         String label = "Play " + card.name() + (play.overcharge() ? " overcharged" : "") + " ("
                 + Wording.shards(cost) + (play.overcharge() ? ", locks 2 next turn" : "") + ")";
-        if (!play.sacrificed().isEmpty()) {
-            label += ", sacrificing " + play.sacrificed().stream()
-                    .map(id -> w.card(unit(state, id).asCard())).collect(Collectors.joining(", "));
+        if (!play.targets().isEmpty()) {
+            label += " on " + targets(w, play.targets(), state);
         }
-        return play.targets().isEmpty() ? label : label + " on " + targets(w, play.targets(), state);
+        return play.sacrificed().isEmpty() ? label : label + ", sacrificing " + cards(w, play.sacrificed(), state);
+    }
+
+    /** "Sacrifice Cinderling #1": the verb comes from the effect that asks. */
+    private String chooseCards(Wording w, Action.ChooseCards choose, GameState state) {
+        String verb = switch (PausedStep.effect(state, catalog)) {
+            case Effect.Sacrifice ignored -> "Sacrifice ";
+            case Effect.Discard ignored -> "Discard ";
+            case Effect effect -> throw new IllegalStateException(effect + " never asks for cards");
+        };
+        return verb + cards(w, choose.cards(), state);
+    }
+
+    private static String cards(Wording w, List<InstanceId> cards, GameState state) {
+        return cards.stream().map(id -> w.card(findCard(state, id))).collect(Collectors.joining(", "));
     }
 
     private String attack(Wording w, Action.Attack attack, GameState state) {
@@ -74,7 +88,8 @@ public final class ActionDescriber {
             case TargetRef.RelicTarget relic -> w.card(Stream.of(state.p1(), state.p2())
                     .flatMap(player -> player.relic(relic.id()).stream()).findFirst().orElseThrow().asCard());
             case TargetRef.PlayerTarget player -> w.reflexive(player.player());
-            case TargetRef.GraveyardCardTarget card -> w.card(findCard(state, card.id()));
+            case TargetRef.GraveyardCardTarget card -> w.card(findCard(state, card.id())) + " in "
+                    + w.possessive(findCard(state, card.id()).owner()) + " graveyard";
         };
     }
 
@@ -82,10 +97,11 @@ public final class ActionDescriber {
         return state.unit(id).orElseThrow(() -> new IllegalStateException("No unit " + id));
     }
 
+    /** A card on the board, in a graveyard or in a hand. */
     private static CardInstance findCard(GameState state, InstanceId id) {
         return Stream.of(state.p1(), state.p2())
-                .flatMap(player -> Stream.concat(player.graveyard().stream(),
-                        player.hand().stream().map(HandCard::card)))
+                .flatMap(player -> Stream.of(player.units().stream().map(Unit::asCard), player.graveyard().stream(),
+                        player.hand().stream().map(HandCard::card)).flatMap(cards -> cards))
                 .filter(card -> card.id().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No card " + id));

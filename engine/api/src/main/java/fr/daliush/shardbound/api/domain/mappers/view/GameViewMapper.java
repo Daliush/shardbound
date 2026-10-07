@@ -49,7 +49,8 @@ public class GameViewMapper {
         PlayerId seat = view.viewer();
         return new GameView(game.toString(), version,
                 view.result().isPresent() ? GameView.FINISHED : GameView.IN_PROGRESS, view.turn(),
-                Optional.of(Wire.side(seat, view.active())), view.yourTurn(), self(view.self(), seat, view.turn()),
+                Optional.of(Wire.side(seat, view.active())), view.yourTurn(),
+                self(view.self(), snapshot.handCosts(), seat, view.turn()),
                 Optional.of(opponent(view.opponent(), seat, view.turn())),
                 view.decision().map(decision -> decisions.toView(decision, snapshot.decisionText().orElseThrow())),
                 view.waitingFor().map(waiting -> new GameView.WaitingForView(Wire.side(seat, waiting.player()),
@@ -65,10 +66,13 @@ public class GameViewMapper {
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    private SelfView self(SelfState self, PlayerId seat, int turn) {
+    private SelfView self(SelfState self, List<Integer> handCosts, PlayerId seat, int turn) {
+        List<HandCardView> hand = IntStream.range(0, self.hand().size())
+                .mapToObj(index -> handCard(self.hand().get(index), handCosts.get(index)))
+                .toList();
         return new SelfView(Wire.name(self.faction()), self.hp(), self.maxHp(), self.shards().available(),
-                self.shards().max(), self.shards().lockedNextTurn(), self.fatigue(), self.deckCount(),
-                self.hand().stream().map(this::handCard).toList(), self.mulliganDecided(),
+                self.shards().max(), self.shards().lockedNextTurn(), self.fatigue(), self.deckCount(), hand,
+                self.mulliganDecided(),
                 units(self.units(), seat, turn), relics(self.relics(), seat),
                 self.graveyard().stream().map(CardRef::of).toList());
     }
@@ -80,13 +84,13 @@ public class GameViewMapper {
                 relics(opponent.relics(), seat), opponent.graveyard().stream().map(CardRef::of).toList());
     }
 
-    private HandCardView handCard(HandCard inHand) {
+    /** {@code cost} comes from the snapshot: cost auras need the full state. */
+    private HandCardView handCard(HandCard inHand, int cost) {
         CardDefinition card = catalog.card(inHand.card().card());
         OptionalInt fractureStep = card instanceof SpellCard spell && spell.isFracture()
                 ? OptionalInt.of(inHand.fractureStep() + 1)
                 : OptionalInt.empty();
-        return new HandCardView(inHand.id().value(), card.id().value(), Costs.toPlay(card, inHand, false),
-                fractureStep);
+        return new HandCardView(inHand.id().value(), card.id().value(), cost, fractureStep);
     }
 
     private List<UnitView> units(List<Unit> units, PlayerId seat, int turn) {

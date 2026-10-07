@@ -18,6 +18,7 @@ public final class TurnStart {
     public static void run(Game game, PlayerId player) {
         game.startTurnOf(player);
         game.emit(new GameEvent.TurnStarted(player, game.turn()));
+        thaw(game);
         clearTurnFlags(game);
         refillShards(game, player);
         boolean firstTurnOfTheGame = player == game.firstPlayer() && game.player(player).turnsTaken() == 0;
@@ -26,6 +27,16 @@ public final class TurnStart {
             CardDraws.draw(game, player, "5.2.3");
         }
         Triggers.raiseForBoard(game, player, Trigger.TURN_START);
+    }
+
+    /** 8.10: first, the units whose freeze ended with the last turn thaw, on both boards. */
+    private static void thaw(Game game) {
+        for (Unit unit : game.unitsByArrival()) {
+            if (unit.frozenThroughTurn() > 0 && !unit.isFrozen(game.turn())) {
+                game.updateUnit(unit.thawed());
+                game.emit(new GameEvent.UnitThawed(unit.asCard()));
+            }
+        }
     }
 
     private static void clearTurnFlags(Game game) {

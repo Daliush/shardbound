@@ -7,6 +7,7 @@ import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.event.Redaction;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.rules.game.Resolver;
+import fr.daliush.shardbound.core.rules.game.StateCheck;
 import fr.daliush.shardbound.core.rules.game.StepRunner;
 import fr.daliush.shardbound.core.rules.setup.GameFactory;
 import fr.daliush.shardbound.core.rules.setup.Mulligans;
@@ -40,9 +41,10 @@ public final class GameEngine {
         return new Transition(game.toState(), game.events());
     }
 
-    /** Runs a state built outside a game, such as a scenario, until its next decision. */
+    /** Runs a state built outside a game, such as a scenario, until its next decision. It is checked first. */
     public Transition resume(GameState state) {
         Game game = Game.of(state, catalog);
+        StateCheck.run(game);
         Resolver.run(game);
         return new Transition(game.toState(), game.events());
     }

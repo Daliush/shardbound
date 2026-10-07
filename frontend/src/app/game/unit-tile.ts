@@ -1,10 +1,18 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { UnitView } from '../api/protocol';
+
+type Modifier = UnitView['modifiers'][number];
 import { CardBook } from './card-book';
+import { CardTextLines } from './card-text-lines';
 import { Mark } from './decision-groups';
 
+/**
+ * A unit on the board. Its attacks are listed with their cost and damage, and their full line as a tooltip; the
+ * other lines of its text, its keywords and abilities, are shown below (spec §14).
+ */
 @Component({
   selector: 'app-unit-tile',
+  imports: [CardTextLines],
   template: `
     @let u = unit();
     <button
@@ -20,7 +28,7 @@ import { Mark } from './decision-groups';
       <span class="defense">{{ u.defense }} / {{ u.maxDefense }}</span>
       <ul class="attacks">
         @for (attack of u.attacks; track attack.index) {
-          <li>
+          <li [title]="attackLines()[attack.index]?.text ?? ''">
             {{ attack.name ?? 'Attack' }} ({{ attack.cost }})
             @if (attack.damage !== null) {
               · {{ attack.damage }} dmg
@@ -31,6 +39,7 @@ import { Mark } from './decision-groups';
           </li>
         }
       </ul>
+      <app-card-text-lines [lines]="otherLines()" />
       <span class="badges">
         @if (u.token) {
           <span class="badge">token</span>
@@ -56,6 +65,9 @@ import { Mark } from './decision-groups';
         @if (u.linkedTo !== null) {
           <span class="badge">linked to #{{ u.linkedTo }}</span>
         }
+        @for (modifier of u.modifiers; track $index) {
+          <span class="badge">{{ modifierText(modifier) }}</span>
+        }
       </span>
     </button>
   `,
@@ -66,4 +78,22 @@ export class UnitTile {
   readonly mark = input<Mark>(null);
   readonly picked = output<void>();
   protected readonly book = inject(CardBook);
+  private readonly text = computed(() => this.book.text(this.unit().card));
+  protected readonly attackLines = computed(() =>
+    this.text().filter((line) => line.kind === 'attack'),
+  );
+  /** "+3/+0 this turn", "-2/+0": a Modify on the unit (8.5), as the view gives it. */
+  protected modifierText(modifier: Modifier): string {
+    const until = modifier.duration === 'end_of_turn' ? ' this turn' : '';
+    return `${signed(modifier.attackDamage)}/${signed(modifier.defense)}${until}`;
+  }
+
+  /** A sacrifice cost only matters in hand. */
+  protected readonly otherLines = computed(() =>
+    this.text().filter((line) => line.kind !== 'attack' && line.kind !== 'sacrifice_cost'),
+  );
+}
+
+function signed(value: number): string {
+  return (value < 0 ? '-' : '+') + Math.abs(value);
 }

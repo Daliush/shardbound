@@ -4,15 +4,18 @@ import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.decision.DecisionKind;
+import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.resolution.Step;
+import fr.daliush.shardbound.core.rules.effect.Sacrifices;
 import fr.daliush.shardbound.core.rules.effect.TargetOptions;
 import fr.daliush.shardbound.core.rules.game.Game;
+import fr.daliush.shardbound.core.state.PlayerState;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A triggered ability picks all of its targets when it starts resolving, in printed order (10.6).
- * The controller is asked only when there are at least two options.
+ * A triggered ability picks all of its targets when it starts resolving, in printed order (10.6), unless it
+ * cannot make its sacrifices (8.22). The controller is asked only when there are at least two options.
  */
 public final class AbilityTargets {
 
@@ -21,6 +24,14 @@ public final class AbilityTargets {
 
     public static void choose(Game game, Step.ChooseTargets step) {
         List<Effect> effects = step.source().effects().effects(game.catalog());
+        PlayerState controller = game.player(step.source().controller());
+        int sacrifices = Sacrifices.askedBy(effects);
+        if (step.chosen().isEmpty() && !Sacrifices.canMake(controller, game.catalog(), sacrifices)) {
+            // 8.22: the ability starts resolving, and without all of its sacrifices it does nothing at all.
+            game.emit(new GameEvent.SacrificeFailed(controller.id(), sacrifices,
+                    Sacrifices.available(controller, game.catalog())));
+            return;
+        }
         List<List<TargetRef>> chosen = new ArrayList<>(step.chosen());
         while (chosen.size() < effects.size()) {
             List<TargetRef> options = TargetOptions.forEffect(game, step.source().controller(),

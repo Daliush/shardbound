@@ -11,14 +11,18 @@ import fr.daliush.shardbound.core.resolution.EffectList;
 import fr.daliush.shardbound.core.resolution.EffectSource;
 import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.rules.board.Arrivals;
+import fr.daliush.shardbound.core.rules.board.Departures;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.HandCard;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.PlayerId;
 import java.util.List;
 import java.util.Optional;
 
-/** 6.3: paying a card's cost, then the unit or relic arrives, or the spell applies its effects. */
+/**
+ * 6.3: paying a card's cost and its sacrifice cost, then the unit or relic arrives, or the spell applies its effects.
+ */
 public final class CardPlay {
 
     private CardPlay() {
@@ -34,9 +38,14 @@ public final class CardPlay {
                 ? ChoiceSlots.perEffect(game, player, spell.effects(), play.targets())
                 : List.of();
 
-        int cost = Costs.toPlay(card, inHand, play.overcharge());
+        int cost = Costs.toPlay(game.catalog(), game.player(player), game.player(player.opponent()), inHand,
+                play.overcharge());
         game.updatePlayer(player, state -> state.withShards(state.shards().pay(cost)).removeFromHand(play.card()));
         game.emit(new GameEvent.CardPlayed(player, inHand.card(), cost, play.overcharge()));
+        // 6.3, 8.3: the units paid die together; their abilities wait until the card has resolved (9.11).
+        for (InstanceId sacrificed : play.sacrificed()) {
+            Departures.sacrifice(game, game.unit(sacrificed).orElseThrow(), List.of("6.3", "8.3"));
+        }
         switch (card) {
             case UnitCard ignored -> Arrivals.unit(game, inHand.card(), player);
             case RelicCard ignored -> Arrivals.relic(game, inHand.card(), player);

@@ -72,9 +72,46 @@ public record Unit(
         return change(draft -> draft.defense = value);
     }
 
+    /** 8.5: +Y (or −Y) on both max and current defense at once; the attack part counts in {@link #attackBonus()}. */
+    public Unit withModifier(Modifier modifier) {
+        return change(draft -> {
+            draft.modifiers.add(modifier);
+            draft.startDefenseChange(modifier.defense());
+        });
+    }
+
+    /** 8.5, 8.17: an ended bonus takes its max defense back and never kills; an ended malus gives back what it took. */
+    public Unit withModifierEnded(Modifier modifier) {
+        return change(draft -> {
+            draft.modifiers.remove(modifier);
+            draft.endDefenseChange(modifier.defense());
+        });
+    }
+
+    /** 8.14: a stat aura's bonus starts like a Modify, so a unit arriving under it gets it in full (6.5). */
+    public Unit withAura(AuraBonus bonus) {
+        return change(draft -> {
+            draft.auras.add(bonus);
+            draft.startDefenseChange(bonus.defense());
+        });
+    }
+
+    /** 8.14, 8.21: a stat aura that stops applying ends like an expiring modifier. */
+    public Unit withAuraEnded(AuraBonus bonus) {
+        return change(draft -> {
+            draft.auras.remove(bonus);
+            draft.endDefenseChange(bonus.defense());
+        });
+    }
+
     /** Frozen until the end of {@code turn} (8.10). */
     public Unit frozenThrough(int turn) {
         return change(draft -> draft.frozenThroughTurn = Math.max(frozenThroughTurn, turn));
+    }
+
+    /** 8.10: the turn after its freeze, the unit is no longer frozen. */
+    public Unit thawed() {
+        return change(draft -> draft.frozenThroughTurn = 0);
     }
 
     public Unit markHasAttacked() {
@@ -125,6 +162,18 @@ public record Unit(
             anchorProtected = unit.anchorProtected;
             doomed = unit.doomed;
             linkedTo = unit.linkedTo;
+        }
+
+        /** Both defenses move; the current one never below 0 (6.9). */
+        void startDefenseChange(int change) {
+            maxDefense += change;
+            defense = Math.max(0, defense + change);
+        }
+
+        /** A bonus ending lowers the max and caps the current defense (8.5); a malus ending gives both back (8.17). */
+        void endDefenseChange(int change) {
+            maxDefense -= change;
+            defense = change > 0 ? Math.min(defense, maxDefense) : Math.min(maxDefense, defense - change);
         }
 
         Unit toUnit() {

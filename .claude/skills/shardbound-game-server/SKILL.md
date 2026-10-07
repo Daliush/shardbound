@@ -31,7 +31,7 @@ controller ──▶ domain ◀── adapter ──▶ dao
 | Session | Everything about one game, saved between two messages: seed, seats, state, logs, outbox, version | `domain.bo.game.GameSession` |
 | Seat | P1 or P2 and who sits there: a human (token hash), a bot (name + generator state), or an open seat (join code hash) | `domain.bo.game.Seat` |
 | Version | +1 at every save of the session: each applied action, and the join of a human game | `GameSession.version` |
-| Snapshot | What one seat may see of a state: the engine's `PlayerView`, plus the prompt and labels of its own decision | `domain.bo.game.SeatSnapshot` |
+| Snapshot | What one seat may see of a state: the engine's `PlayerView`, plus what each card of its hand costs (cost auras read both boards) and the prompt and labels of its own decision | `domain.bo.game.SeatSnapshot` |
 | Outbox | Each human seat's `SeatUpdate` (snapshot + redacted events) for the last 50 versions, saved with the session | `domain.bo.game.Outbox` |
 | Notification | "game X is at version n", nothing more | `GameNotificationPort.publish` |
 | Socket | One seat's live WebSocket on this instance | `controller.ws.SeatSocket` |
@@ -51,12 +51,13 @@ controller ──▶ domain ◀── adapter ──▶ dao
 - **Views** are domain business objects built from the engine's `PlayerView` and the snapshot's texts (`domain.mappers.view`). They carry no JSON annotation: `controller.mappers.ws.ProtocolJson` says, with mix-ins, that empty optionals are written as `null`, that `ActionView`, `TargetView` and `EventTargetView` only carry their own fields, and that an event's fields sit beside its type.
 - **Events** are one to one with the engine's records (`EventViewMapper`, which redacts first): `type` is the record name in snake_case, then `rules`, `text` (`EventDescriber`, from the seat's point of view), then the record's components. A new engine event needs no change.
 - **Secrets**: seat tokens and join codes are 32 random bytes in base64url, stored as SHA-256 hashes, compared in constant time (`SeatTokens`). The seed is never returned.
-- **REST** bodies leave optional fields out; errors are Problem Details (`ApiExceptionHandler` maps each `GameException`).
+- **REST** bodies leave optional fields out; errors are Problem Details (`ApiExceptionHandler` maps each `GameException`). `GET /api/cards` carries each card's `text` from core's `CardTextRenderer`, through `ContentService`.
 
 ## The client, in short
 
 - `GameSocketService` (one per game page) holds the connection (RxJS `webSocket()`) and exposes `view`, `log`, `rejection` and `status` as signals. It applies `update`s in version order, one every 400 ms so a bot's turn can be followed (the server keeps `step-delay` at 0). A version gap clears the queue and sends `sync`. A dropped connection reconnects with a backoff, and the `state` the server sends on connection resyncs it. Close code 4409 stops it for good.
-- `DecisionGroups` turns the decision's actions into clicks: sources (the card played, the attacker, the interceptor) are highlighted; selecting one lights up its targets and shows its target-less actions as buttons; a target click sends the action if only one matches, otherwise the matches become buttons.
+- `DecisionGroups` turns the decision's actions into clicks: sources (the card played, the attacker, the interceptor) are highlighted; selecting one lights up its targets and shows its target-less actions as buttons; a target click sends the action if only one matches, otherwise the matches become buttons (with and without Overcharge, one per sacrifice). A `choose_cards` action naming one card or unit is clicked on it (`locateIn` finds it in the view); combinations stay buttons.
+- Card texts come from `GET /api/cards` (`CardBook.text`), one line per entry with its kind: a hand card and a relic (`RelicTile`) show every line, a unit only its keywords and abilities, each attack's line being its tooltip. The unit tile also shows each modifier as a badge.
 - Tokens live in `localStorage` (`shardbound.game.<id>.token`), so a reload resumes the game. Two seats on one machine need two browsers, a private window, or a second dev server (`npm start -- --port 4201`).
 
 ## Changing it

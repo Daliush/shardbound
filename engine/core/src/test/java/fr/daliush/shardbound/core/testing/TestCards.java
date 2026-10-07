@@ -2,9 +2,16 @@ package fr.daliush.shardbound.core.testing;
 
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
+import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.Deck;
+import fr.daliush.shardbound.core.content.DeckEntry;
+import fr.daliush.shardbound.core.content.DeckId;
+import fr.daliush.shardbound.core.content.Faction;
 import fr.daliush.shardbound.core.content.json.CardParser;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -57,10 +64,107 @@ public final class TestCards {
         """
         { "id": "test.reckless", "name": "Reckless Imp", "faction": "neutral", "type": "unit", "cost": 1, "defense": 3,
           "attacks": [{ "name": "Lunge", "cost": 1, "effects": [{ "effect": "damage", "amount": 5, "target": "attack_target" }] }],
-          "abilities": [{ "trigger": "attack", "effects": [{ "effect": "destroy", "target": "self" }] }] }"""
+          "abilities": [{ "trigger": "attack", "effects": [{ "effect": "destroy", "target": "self" }] }] }""",
+        // A Sacrifice effect on a spell (8.3, 8.16).
+        """
+        { "id": "test.ritual", "name": "Blood Ritual", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "sacrifice", "count": 1 }, { "effect": "draw", "amount": 2, "target": "you" }] }""",
+        // A sacrifice that its own first effect can make impossible (8.22).
+        """
+        { "id": "test.cataclysm", "name": "Cataclysm", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "damage", "amount": 9, "target": "all_units" }, { "effect": "sacrifice" },
+                      { "effect": "draw", "amount": 2, "target": "you" }] }""",
+        // An Arrival ability that asks for two sacrifices (8.22).
+        """
+        { "id": "test.altar", "name": "Bone Altar", "faction": "neutral", "type": "unit", "cost": 1, "defense": 3,
+          "attacks": [{ "name": "Jab", "cost": 1, "effects": [{ "effect": "damage", "amount": 1, "target": "attack_target" }] }],
+          "abilities": [{ "trigger": "arrival", "effects": [{ "effect": "sacrifice", "count": 2 },
+                                                             { "effect": "damage", "amount": 5, "target": "opponent" }] }] }""",
+        // A permanent defense bonus (8.5).
+        """
+        { "id": "test.bulwark", "name": "Bulwark", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 3, "duration": "permanent", "target": "ally_unit" }] }""",
+        // A temporary defense bonus on any unit (8.5).
+        """
+        { "id": "test.ward", "name": "Ward", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 2, "duration": "end_of_turn", "target": "any_unit" }] }""",
+        // A temporary malus (8.5, 8.17).
+        """
+        { "id": "test.hex", "name": "Hex", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": -1, "defense": -2, "duration": "end_of_turn", "target": "enemy_unit" }] }""",
+        // A "Death" ability that buffs its controller's units until end of turn, whoever's turn it is (8.19).
+        """
+        { "id": "test.martyr", "name": "Martyr", "faction": "neutral", "type": "unit", "cost": 1, "defense": 1,
+          "attacks": [{ "name": "Jab", "cost": 1, "effects": [{ "effect": "damage", "amount": 1, "target": "attack_target" }] }],
+          "abilities": [{ "trigger": "death", "effects": [
+            { "effect": "modify", "attack_damage": 1, "defense": 2, "duration": "end_of_turn", "target": "all_ally_units" }] }] }""",
+        // The opponent discards two cards of their choice (8.7).
+        """
+        { "id": "test.mind-rot", "name": "Mind Rot", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "discard", "amount": 2, "target": "opponent", "choice": "player" }] }""",
+        // The opponent discards a card at random (8.7).
+        """
+        { "id": "test.purge", "name": "Purge", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "discard", "amount": 1, "target": "opponent", "choice": "random" }] }""",
+        // Returns an enemy unit to its owner's hand (8.8).
+        """
+        { "id": "test.recede", "name": "Recede", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "return_to_hand", "target": "enemy_unit" }] }""",
+        // Returns every unit to its owner's hand (8.8).
+        """
+        { "id": "test.flood", "name": "Flood", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "return_to_hand", "target": "all_units" }] }""",
+        // Returns an enemy relic to its owner's hand (8.8, 10.4).
+        """
+        { "id": "test.uproot", "name": "Uproot", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "return_to_hand", "target": "enemy_relic" }] }""",
+        // Freezes an enemy unit (8.10).
+        """
+        { "id": "test.frost", "name": "Frost", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "freeze", "target": "enemy_unit" }] }""",
+        // Shards for this turn only (8.12).
+        """
+        { "id": "test.surge", "name": "Surge", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "gain_shards", "mode": "this_turn", "amount": 2 }] }""",
+        // A draw that fills the hand before a Recall (8.20).
+        """
+        { "id": "test.second-wind", "name": "Second Wind", "faction": "ember", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "draw", "amount": 1, "target": "you" }, { "effect": "recall" }] }""",
+        // A stat aura with a defense malus for enemy units (8.14, 8.21).
+        """
+        { "id": "test.blight", "name": "Blight Totem", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "continuous", "effects": [
+            { "effect": "aura", "kind": "stats", "target": "all_enemy_units", "attack_damage": -1, "defense": -2 }] }] }""",
+        // A cost aura that makes its controller's units cheaper (6.8, 8.14).
+        """
+        { "id": "test.forge", "name": "Forge", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "continuous", "effects": [
+            { "effect": "aura", "kind": "cost", "player": "you", "card_type": "unit", "change": -1 }] }] }""",
+        // A cost aura that makes every card of the opponent dearer (6.8, 8.14).
+        """
+        { "id": "test.tithe", "name": "Tithe Stone", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "continuous", "effects": [
+            { "effect": "aura", "kind": "cost", "player": "opponent", "card_type": "any", "change": 1 }] }] }""",
+        // An attack ability that asks for two sacrifices (8.16).
+        """
+        { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,
+          "attacks": [{ "name": "Blood Strike", "cost": 1, "effects": [{ "effect": "sacrifice", "count": 2 },
+                        { "effect": "damage", "amount": 8, "target": "attack_target" }] }] }"""
     };
 
     public static final CardCatalog CATALOG = build();
+
+    /**
+     * A legal deck that plays the effects no real card has yet (Discard, a Sacrifice effect, Return to hand, Freeze,
+     * stat and cost auras), so random games exercise them.
+     */
+    public static final Deck EFFECTS_DECK = new Deck(new DeckId("test-effects"), "Test effects", Optional.empty(),
+            Faction.TIDE, Stream.of("tide.brine-adept", "tide.coral-font", "neutral.shardling",
+                            "neutral.shard-construct", "neutral.crystal-rupture", "test.ritual", "test.altar",
+                            "test.blood-knight", "test.hex", "test.mind-rot", "test.purge", "test.recede", "test.frost",
+                            "test.blight", "test.tithe")
+                    .map(card -> new DeckEntry(new CardId(card), 2))
+                    .toList());
 
     private TestCards() {
     }

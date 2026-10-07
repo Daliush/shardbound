@@ -151,8 +151,15 @@ export interface Card {
   defense?: number;
   token: boolean;
   keywords: string[];
+  text: TextLine[];
   flavor?: string;
   fracture?: { step: number; cost: number }[];
+}
+
+/** One line of a card's rules text, written by the engine from the card data (spec §9). */
+export interface TextLine {
+  kind: 'keywords' | 'sacrifice_cost' | 'attack' | 'fracture' | 'effect' | 'ability';
+  text: string;
 }
 
 export interface Deck {

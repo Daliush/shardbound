@@ -15,6 +15,7 @@ import fr.daliush.shardbound.api.domain.bo.game.GameId;
 import fr.daliush.shardbound.api.domain.bo.game.GameStatus;
 import fr.daliush.shardbound.api.testing.FakeWebSocketSession;
 import fr.daliush.shardbound.api.testing.TestInstance;
+import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.decision.DecisionKind;
 import fr.daliush.shardbound.core.random.SplitMix64;
@@ -52,7 +53,7 @@ class TwoInstancesTest {
             if (decision.get().kind() == DecisionKind.INTERCEPT) {
                 intercepts++;
             }
-            int index = TestInstance.anyIndex(decision.get(), players);
+            int index = attackingWhenPossible(decision.get(), players);
             assertThat(instance.play.act(id, decision.get().player(), decision.get().id(), index)).isEmpty();
         }
 
@@ -121,6 +122,16 @@ class TwoInstancesTest {
         b.play.act(id, P1, a.decision(id).orElseThrow().id(), 0);
         assertThat(first.received()).hasSize(before);
         assertThat(second.types()).contains("update");
+    }
+
+    /** Players who attack whenever they can, so that defenders get intercept decisions whatever the cards. */
+    private static int attackingWhenPossible(Decision decision, SplitMix64 random) {
+        List<Integer> attacks = IntStream.range(0, decision.actions().size())
+                .filter(index -> decision.actions().get(index) instanceof Action.Attack)
+                .boxed()
+                .toList();
+        return attacks.isEmpty() ? TestInstance.anyIndex(decision, random)
+                : attacks.get(random.nextInt(attacks.size()));
     }
 
     private static void await(CountDownLatch latch) {

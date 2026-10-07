@@ -25,8 +25,8 @@ class EngineSupportTest {
 
         assertThat(unsupported).containsExactly(
                 "ember.ash-warden", "ember.ashborn-drake", "ember.blaze-mastiff", "ember.ember-lance",
-                "ember.flamebound-zealot", "ember.pyre-offering", "ember.rise-from-cinders", "ember.roaring-pyre",
-                "neutral.binding-thread", "root.deepening-roots", "root.oakheart-guardian", "root.root-sentinel",
-                "tide.brine-adept", "tide.coral-font", "tide.moonpull");
+
+                "neutral.binding-thread", "root.oakheart-guardian", "root.root-sentinel",
+                "tide.moonpull");
     }
 }

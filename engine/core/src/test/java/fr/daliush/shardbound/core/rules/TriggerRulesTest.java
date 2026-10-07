@@ -3,6 +3,7 @@ package fr.daliush.shardbound.core.rules;
 import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.endTurn;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
+import static fr.daliush.shardbound.core.scenario.Pick.relic;
 import static fr.daliush.shardbound.core.scenario.Pick.unit;
 import static fr.daliush.shardbound.core.state.PlayerId.P1;
 import static fr.daliush.shardbound.core.state.PlayerId.P2;
@@ -62,6 +63,18 @@ class TriggerRulesTest {
 
         assertThat(triggered(result)).containsExactly(Trigger.TURN_START);
         assertThat(result.player(P2).units()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("9.7 — a continuous ability applies only while its card is on the board")
+    void continuous() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.uproot").relic(P2, "tide.coral-font")
+                        .unit(P2, "neutral.shardling").build(),
+                play("test.uproot").on(relic("tide.coral-font")));
+
+        assertThat(trace(result)).containsSubsequence("AuraApplied[8.14]", "ReturnedToHand[8.8, 6.7]",
+                "AuraRemoved[8.14]");
+        assertThat(result.unit("neutral.shardling").maxDefense()).isEqualTo(3);
     }
 
     @Test

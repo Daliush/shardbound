@@ -2,6 +2,7 @@ package fr.daliush.shardbound.core.rules;
 
 import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.endTurn;
+import static fr.daliush.shardbound.core.scenario.Choices.play;
 import static fr.daliush.shardbound.core.scenario.Pick.unit;
 import static fr.daliush.shardbound.core.state.PlayerId.P1;
 import static fr.daliush.shardbound.core.state.PlayerId.P2;
@@ -51,6 +52,18 @@ class TurnRulesTest {
                 "AbilityTriggered[9.6]", "PlayerHealed[8.4]", "TurnEnded[5.4]", "TurnStarted[5.2]");
         assertThat(result.player(P1).hp()).isEqualTo(42);
         assertThat(result.player(P1).shards().available()).isZero();
+    }
+
+    @Test
+    @DisplayName("5.4.2 — \"until end of turn\" effects end once the \"Turn end\" abilities have resolved")
+    void temporaryEffectsEnd() {
+        ScenarioResult result = run(scenario().hp(P1, 40).shards(P1, 2).hand(P1, "ember.roaring-pyre")
+                        .unit(P1, "test.guard").build(),
+                play("ember.roaring-pyre"), endTurn());
+
+        assertThat(trace(result)).containsSubsequence("Modified[8.5]", "AbilityTriggered[9.6]", "PlayerHealed[8.4]",
+                "ModifierExpired[5.4.2, 8.5]", "TurnEnded[5.4]");
+        assertThat(result.unit("test.guard").attackBonus()).isZero();
     }
 
     @Test

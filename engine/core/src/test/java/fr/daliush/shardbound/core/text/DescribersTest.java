@@ -10,11 +10,16 @@ import static fr.daliush.shardbound.core.testing.RuleTesting.run;
 import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.Duration;
+import fr.daliush.shardbound.core.content.GainMode;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
+import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
@@ -84,6 +89,110 @@ class DescribersTest {
         assertThat(prompt(attacked.state())).isEqualTo(
                 "Cinderling #1 attacks your Shard Construct #2 with Flick (3 damage). Intercept with another unit?");
         assertThat(prompt(arrived.state())).isEqualTo("Choose a target for the Arrival ability of Watcher #1.");
+    }
+
+    @Test
+    void describesSacrifices() {
+        GameState start = scenario().shards(P1, 2).hand(P1, "ember.pyre-offering", "test.ritual")
+                .unit(P1, "ember.cinderling").unit(P1, "neutral.shardling").unit(P2, "neutral.shard-construct")
+                .build();
+        GameState main = ENGINE.resume(start).state();
+        ScenarioResult ritual = run(start, play("test.ritual"));
+
+        assertThat(labels(main))
+                .contains("Play Pyre Offering (1 Shard) on Shard Construct #5, sacrificing Cinderling #3");
+        assertThat(prompt(ritual.state())).isEqualTo("Choose 1 unit to sacrifice for Blood Ritual #2.");
+        assertThat(labels(ritual.state())).containsExactly("Sacrifice Cinderling #3", "Sacrifice Shardling #4");
+        assertThat(events.describe(new GameEvent.SacrificeFailed(P2, 2, 1), P1))
+                .isEqualTo("Your opponent cannot sacrifice 2 units (only 1 on their board): nothing more happens.");
+    }
+
+    @Test
+    void describesDiscards() {
+        ScenarioResult mindRot = run(scenario().shards(P1, 1).hand(P1, "test.mind-rot")
+                        .hand(P2, "ember.spark-dart", "neutral.shardling", "neutral.tempest").build(),
+                play("test.mind-rot"));
+        CardInstance dart = new CardInstance(InstanceId.of(2), new CardId("ember.spark-dart"), P2);
+
+        assertThat(prompt(mindRot.state())).isEqualTo("Choose 2 cards to discard for your opponent's Mind Rot #1.");
+        assertThat(labels(mindRot.state())).containsExactly("Discard Spark Dart #2, Shardling #3",
+                "Discard Spark Dart #2, Tempest #4", "Discard Shardling #3, Tempest #4");
+        assertThat(events.describe(new GameEvent.CardDiscarded(P2, dart, GameEvent.DiscardReason.EFFECT,
+                List.of("8.7")), P1)).isEqualTo("Your opponent discards Spark Dart.");
+    }
+
+    @Test
+    void describesReturnsToHand() {
+        CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
+
+        assertThat(events.describe(new GameEvent.ReturnedToHand(cinderling), P1))
+                .isEqualTo("Cinderling #1 returns to your opponent's hand.");
+        assertThat(events.describe(new GameEvent.SentToGraveyardHandFull(cinderling), P2))
+                .isEqualTo("Your hand is full: Cinderling #1 goes to the graveyard.");
+    }
+
+    @Test
+    void describesFreezes() {
+        CardInstance shardling = new CardInstance(InstanceId.of(3), new CardId("neutral.shardling"), P2);
+
+        assertThat(events.describe(new GameEvent.Frozen(shardling, 4), P1))
+                .isEqualTo("Shardling #3 is frozen until the end of turn 4.");
+        assertThat(events.describe(new GameEvent.UnitThawed(shardling), P1)).isEqualTo("Shardling #3 thaws.");
+    }
+
+    @Test
+    void describesShardsGained() {
+        assertThat(events.describe(new GameEvent.ShardsGained(P1, 2, GainMode.THIS_TURN), P1))
+                .isEqualTo("You gain 2 Shards this turn.");
+        assertThat(events.describe(new GameEvent.ShardsGained(P2, 1, GainMode.MAX), P1))
+                .isEqualTo("Your opponent gains 1 max Shard.");
+        assertThat(events.describe(new GameEvent.ShardsGained(P1, 0, GainMode.MAX), P1))
+                .isEqualTo("Your max Shards are already at 10.");
+    }
+
+    @Test
+    void describesRecalls() {
+        GameState start = scenario().shards(P1, 4).hand(P1, "ember.rise-from-cinders")
+                .graveyard(P1, "ember.cinderling").build();
+        CardInstance cinderling = new CardInstance(InstanceId.of(2), new CardId("ember.cinderling"), P1);
+
+        assertThat(labels(ENGINE.resume(start).state())).containsExactly(
+                "Play Rise from Cinders (4 Shards) on Cinderling #2 in your graveyard", "End your turn");
+        assertThat(events.describe(new GameEvent.Recalled(cinderling), P1))
+                .isEqualTo("Cinderling #2 returns from your graveyard to your hand.");
+        assertThat(events.describe(new GameEvent.RecallFailed(cinderling), P2))
+                .isEqualTo("Your opponent's hand is full: Cinderling #2 stays in the graveyard.");
+    }
+
+    @Test
+    void describesAuras() {
+        GameState start = scenario().shards(P1, 2).hand(P1, "ember.spark-dart").relic(P2, "test.tithe")
+                .unit(P2, "root.sprout").build();
+        CardInstance sprout = new CardInstance(InstanceId.of(3), new CardId("root.sprout"), P2);
+        CardInstance font = new CardInstance(InstanceId.of(4), new CardId("tide.coral-font"), P2);
+
+        assertThat(labels(ENGINE.resume(start).state())).contains("Play Spark Dart (2 Shards) on Sprout #3");
+        assertThat(events.describe(new GameEvent.AuraApplied(sprout, font, 1, 2), P1))
+                .isEqualTo("Coral Font #4 gives Sprout #3 +1/+2.");
+        assertThat(events.describe(new GameEvent.AuraRemoved(sprout, font, 1, 2), P1))
+                .isEqualTo("Sprout #3 loses the +1/+2 of Coral Font #4.");
+    }
+
+    @Test
+    void describesModifiers() {
+        CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
+
+        assertThat(events.describe(new GameEvent.Modified(cinderling, 2, 0, Duration.END_OF_TURN), P1))
+                .isEqualTo("Cinderling #1 gets +2/+0 until end of turn.");
+        assertThat(events.describe(new GameEvent.Modified(cinderling, -2, 0, Duration.PERMANENT), P1))
+                .isEqualTo("Cinderling #1 gets -2/+0.");
+        assertThat(events.describe(new GameEvent.ModifierExpired(cinderling, -1, -2), P1))
+                .isEqualTo("The -1/-2 on Cinderling #1 ends.");
+    }
+
+    private List<String> labels(GameState state) {
+        Decision decision = state.pending().orElseThrow();
+        return decision.actions().stream().map(action -> actions.describe(action, state, decision.player())).toList();
     }
 
     private String prompt(GameState state) {

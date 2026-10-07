@@ -11,7 +11,7 @@ It serves four consumers, so its API is shaped for all of them, not just the UI 
 
 | Consumer | What it uses |
 |---|---|
-| Game server (`engine/api`) | `newGame`, `apply`, `view`, `eventsFor`, the three describers, `AttackDamage`, `Bot`, `GameJson` (see the `shardbound-game-server` skill) |
+| Game server (`engine/api`) | `newGame`, `apply`, `view`, `eventsFor`, the three describers, `CardTextRenderer`, `Costs`, `AttackDamage`, `Bot`, `GameJson` (see the `shardbound-game-server` skill) |
 | Bots | `Player.choose(PlayerView, Decision)` → one of the decision's actions |
 | Scenario service (tests, Arbiter answer keys) | `ScenarioBuilder`, `ScenarioRunner`, the unredacted events |
 | MCTS (later) | immutable states to branch from, determinization from a view |
@@ -85,15 +85,15 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 
 | Package | Contents |
 |---|---|
-| `content` | Card and deck model (sealed `CardDefinition`, `Effect`, `TargetSpec`…), `ContentLoader` (strict), `DeckValidator`, `CardCatalog`. `content.json` holds the parsers. |
+| `content` | Card and deck model (sealed `CardDefinition`, `Effect`, `TargetSpec`…), `TextTemplates` (the wording of card texts), `ContentLoader` (strict), `DeckValidator`, `CardCatalog`. `content.json` holds the parsers. |
 | `state` | `GameState`, `PlayerState`, `Unit`, `Relic`, `HandCard`, `CardInstance`, `InstanceId`, `Shards`, `GameResult` |
 | `action` / `decision` | `Action` (sealed), `TargetRef`, `Decision`, `DecisionKind` |
 | `event` | `GameEvent` (sealed, all events nested, grouped by theme), `Visibility`, `Redaction`, `EventTarget` |
 | `view` | `PlayerView`, `SelfState`, `OpponentState`, `WaitingFor`, `PlayerViews` |
 | `resolution` | The pending work stored in the state: `Step` (sealed), `QueuedTrigger`, `EffectSource`, `EffectList`, `Resolution` |
-| `rules` | `GameEngine` (the facade), `GameSetup`, `Transition`, then one sub-package per rulebook area: `game` (working copy, loop, state check), `setup`, `turn`, `play`, `combat`, `effect`, `trigger`, `board` |
+| `rules` | `GameEngine` (the facade), `GameSetup`, `Transition`, then one sub-package per rulebook area: `game` (working copy, loop, state check), `setup`, `turn`, `play`, `combat`, `effect`, `aura` (continuous abilities, 8.14), `trigger`, `board` |
 | `scenario` | `ScenarioBuilder`, `ScenarioRunner`, `ScenarioResult`, `Choices`, `Pick` |
-| `text` | `EventDescriber` (event → English sentence), `ActionDescriber` (action → button label), `DecisionDescriber` (decision → prompt; an intercept prompt reads the paused attack step) |
+| `text` | `EventDescriber` (event → English sentence), `ActionDescriber` (action → button label), `DecisionDescriber` (decision → prompt; it reads the paused step), `CardTextRenderer` (card → its rules text, line by line, each line with its kind) |
 | `bot` | `Player`; `Bot`, a player whose only memory is its generator (`rngState()`, rebuilt with `new RandomBot(state)`); `RandomBot` (later: `GreedyBot`, `Determinizer`) |
 | `json` | `GameJson`: a state, an event log, or any record made of engine types (a server's stored game) to JSON and back |
 | `random` | `SplitMix64`, the only randomness the engine uses |
@@ -104,7 +104,7 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 2. Thaw the state into a mutable working copy, `rules.game.Game`, which also collects events.
 3. Feed the action in. A `MULLIGAN` answer goes to `Mulligans`. A `MAIN` answer pushes a step (play a card, attack, end the turn). Any other answer resumes the step that asked the question.
 4. `Resolver.run` loops: run the front step, or start the next queued ability once no step is left. When nothing is left, it asks for `MAIN`. It stops as soon as a decision is pending or the game is over.
-5. After every step, `StateCheck` runs: units at 0 defense die together, the abilities raised during the step join the queue in order (9.8, 9.10), and a player at 0 HP ends the game at once (1.6).
+5. After every step, `StateCheck` runs: stat auras apply (8.14), units at 0 defense die together, the abilities raised during the step join the queue in order (9.8, 9.10), and a player at 0 HP ends the game at once (1.6).
 6. Freeze the working copy back into a `GameState`, and return it with the events.
 
 For the details — the step types, the attack phases, how a decision pauses and resumes a step, ordering, a worked trace — read `references/resolution.md`.
@@ -129,7 +129,9 @@ Defaults worth knowing: turn 3, P1 active and first player, 50 HP, 0 Shards, **e
 
 ## What is implemented
 
-The engine is built in the slices of `specs/phase-2-engine.md` §17. Cards that need an effect, trigger or keyword not implemented yet are never offered as legal actions (`rules.play.EngineSupport`). `EngineSupportTest` holds the live list of those cards. Check both before relying on a card in a test or a demo.
+The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 3 cover the rules of sections 1 to 10 and every effect of section 8 but Link, auras included; the keywords (Echo, Fracture, Anchor, Overcharge) and Link come with slice 4. Cards that need one of them are never offered as legal actions (`rules.play.EngineSupport`). `EngineSupportTest` holds the live list of those cards. Check both before relying on a card in a test or a demo.
+
+No real card has Discard, a Sacrifice effect, Return to hand, Freeze outside Fracture or a cost aura yet: `testing.TestCards` has a `test.*` card for each, and `TestCards.EFFECTS_DECK` plays them in random games.
 
 ## Further reading
 

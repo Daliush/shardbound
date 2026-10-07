@@ -2,8 +2,8 @@ package fr.daliush.shardbound.core.content;
 
 import java.util.Map;
 
-/** The game content loaded from {@code content/}: the card catalog and the decks. */
-public record Content(CardCatalog catalog, Map<DeckId, Deck> decks) {
+/** The game content loaded from {@code content/}: the card catalog, the decks and the wording of card texts. */
+public record Content(CardCatalog catalog, Map<DeckId, Deck> decks, TextTemplates textTemplates) {
 
     public Content {
         decks = Map.copyOf(decks);

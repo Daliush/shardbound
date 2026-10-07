@@ -36,6 +36,8 @@
 > **v2.9 (October 2026)** — phase 2, slice 1: the engine core plays full games (setup, turns, Shards, zones, cards, combat and intercepts, triggers, five effects) with a rule trace, player views, a scenario service, a random bot and JSON states. Cards that need a later effect or keyword are not playable yet.
 >
 > **v2.10 (October 2026)** — phase 2, slice 2: the game server (REST, WebSocket protocol, versioned sessions with an outbox, tested as two instances sharing one store) and a minimal Angular client. A human plays a bot or another human in the browser; everything the client shows comes from the engine.
+>
+> **v2.11 (October 2026)** — phase 2, slice 3: every effect of the closed list but Link (Sacrifice as a cost and an effect, Modify, Discard, Return to hand, Freeze, Gain Shards, Recall, stat and cost auras), each with its rule tests, and card text written from the card data by the engine, checked against the card format's examples. The client shows each card's text and answers a choice of cards by clicking them. Keywords come next.
 
 ---
 

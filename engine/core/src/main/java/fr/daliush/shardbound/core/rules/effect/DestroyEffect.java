@@ -20,6 +20,9 @@ final class DestroyEffect {
                         game.unit(unit.id()).ifPresent(found -> Departures.destroy(game, found, List.of("8.2")));
                 case TargetRef.RelicTarget relic ->
                         game.relic(relic.id()).ifPresent(found -> Departures.destroy(game, found));
+                case TargetRef.PlayerTarget ignored -> {
+                    // 10.3: the attack's target may be the opposing player, whom Destroy cannot take.
+                }
                 default -> throw new IllegalStateException("Destroy cannot hit " + target);
             }
         }

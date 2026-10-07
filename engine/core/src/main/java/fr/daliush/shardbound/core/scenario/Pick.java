@@ -32,6 +32,16 @@ public interface Pick {
                 .orElseThrow(() -> new IllegalStateException("No relic with card " + card));
     }
 
+    /** The oldest card with this card id in either graveyard (8.13). */
+    static Pick graveyardCard(String card) {
+        return state -> Stream.of(state.p1(), state.p2())
+                .flatMap(player -> player.graveyard().stream())
+                .filter(inGraveyard -> inGraveyard.card().equals(new CardId(card)))
+                .findFirst()
+                .<TargetRef>map(inGraveyard -> new TargetRef.GraveyardCardTarget(inGraveyard.id()))
+                .orElseThrow(() -> new IllegalStateException("No " + card + " in a graveyard"));
+    }
+
     static Pick player(PlayerId player) {
         return state -> TargetRef.player(player);
     }
