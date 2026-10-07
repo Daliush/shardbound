@@ -2,6 +2,7 @@ package fr.daliush.shardbound.core.content;
 
 import fr.daliush.shardbound.core.content.json.CardParser;
 import fr.daliush.shardbound.core.content.json.DeckParser;
+import fr.daliush.shardbound.core.content.json.TextTemplatesParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,15 +15,20 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Loads the repository's {@code content/} folder: {@code cards/<faction>/*.json} and {@code decks/*.json}. */
+/**
+ * Loads the repository's {@code content/} folder: {@code cards/<faction>/*.json}, {@code cards/text-templates.json}
+ * and {@code decks/*.json}.
+ */
 public final class ContentLoader {
 
     private static final String SCHEMA_SUFFIX = ".schema.json";
+    private static final String TEXT_TEMPLATES = "text-templates.json";
     private static final String MARKER = "content/cards/card.schema.json";
 
     private final JsonMapper mapper = JsonMapper.builder().build();
     private final CardParser cardParser = new CardParser();
     private final DeckParser deckParser = new DeckParser();
+    private final TextTemplatesParser templatesParser = new TextTemplatesParser();
 
     public static Content load(Path contentDir) {
         return new ContentLoader().read(contentDir);
@@ -50,7 +56,8 @@ public final class ContentLoader {
             }
         }
         checkReferences(catalog, decks.values());
-        return new Content(catalog, decks);
+        Path templates = contentDir.resolve("cards").resolve(TEXT_TEMPLATES);
+        return new Content(catalog, decks, templatesParser.parse(readTree(templates), templates.toString()));
     }
 
     private static void checkReferences(CardCatalog catalog, Iterable<Deck> decks) {

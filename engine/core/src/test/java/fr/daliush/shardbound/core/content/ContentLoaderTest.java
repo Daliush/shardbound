@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import fr.daliush.shardbound.core.content.json.CardParser;
+import fr.daliush.shardbound.core.content.json.TextTemplatesParser;
 import fr.daliush.shardbound.core.testing.TestContent;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -56,6 +57,26 @@ class ContentLoaderTest {
 
         assertThat(sprout.token()).isTrue();
         assertThat(sprout.cost()).isEmpty();
+    }
+
+    @Test
+    void readsTheWordingOfCardTextsByDottedKey() {
+        TextTemplates templates = TestContent.content().textTemplates();
+
+        assertThat(templates.get("layout.attack_named")).isEqualTo("{name} ({cost} {Shard|Shards}): {effects}");
+        assertThat(templates.get("effects.discard.opponent.random"))
+                .isEqualTo("Your opponent discards {amount} {card|cards} at random.");
+        assertThat(templates.keys()).noneMatch(key -> key.startsWith("$comment"));
+        assertThatThrownBy(() -> templates.get("effects.teleport")).isInstanceOf(ContentException.class)
+                .hasMessageContaining("no wording for 'effects.teleport'");
+    }
+
+    @Test
+    void rejectsWordingThatIsNotText() {
+        assertThatThrownBy(() -> new TextTemplatesParser().parse(
+                JsonMapper.builder().build().readTree("{ \"effects\": { \"damage\": 3 } }"), "text-templates.json"))
+                .isInstanceOf(ContentException.class)
+                .hasMessageContaining("'effects.damage' must be an object of wordings");
     }
 
     @Test
