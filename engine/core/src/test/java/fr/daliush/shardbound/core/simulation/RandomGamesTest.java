@@ -14,12 +14,16 @@ import fr.daliush.shardbound.core.testing.GameDriver.PlayedGame;
 import fr.daliush.shardbound.core.testing.Invariants;
 import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Full games between random bots: every game ends, and the invariants hold after every step. */
+/**
+ * Full games between random bots over the starter decks: every game ends, and the invariants hold after every step.
+ */
 class RandomGamesTest {
 
     private static final int GAMES = 1000;
+    private static final List<String> STARTER_DECKS = List.of("ember-starter", "root-starter", "tide-starter");
 
     private final Content content = TestContent.content();
     private final GameEngine engine = new GameEngine(content.catalog());
@@ -54,7 +58,7 @@ class RandomGamesTest {
     void randomGamesWithTheEffectsOfTestCardsEndAndKeepTheInvariants() {
         GameEngine withTestCards = new GameEngine(TestCards.CATALOG);
         for (int seed = 1; seed <= 300; seed++) {
-            Deck opponent = content.deck(seed % 2 == 0 ? "ember-starter" : "root-starter");
+            Deck opponent = content.deck(STARTER_DECKS.get(seed % STARTER_DECKS.size()));
             GameSetup setup = new GameSetup(TestCards.EFFECTS_DECK, opponent, seed);
             boolean checkEveryAction = seed <= 20;
             PlayedGame game = GameDriver.play(withTestCards, setup, new RandomBot(seed * 31L), new RandomBot(seed * 17L),
@@ -70,9 +74,12 @@ class RandomGamesTest {
         }
     }
 
+    /** Every pair of starter decks, each deck on both seats, in turn. */
     private GameSetup setup(int seed) {
-        Deck ember = content.deck("ember-starter");
-        Deck root = content.deck("root-starter");
-        return seed % 2 == 0 ? new GameSetup(ember, root, seed) : new GameSetup(root, ember, seed);
+        List<Deck> decks = STARTER_DECKS.stream().map(content::deck).toList();
+        Deck first = decks.get(seed % decks.size());
+        Deck second = decks.get((seed + 1) % decks.size());
+        return seed % (2 * decks.size()) < decks.size() ? new GameSetup(first, second, seed)
+                : new GameSetup(second, first, seed);
     }
 }

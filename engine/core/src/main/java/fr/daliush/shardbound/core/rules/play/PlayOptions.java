@@ -32,7 +32,8 @@ public final class PlayOptions {
         List<Action> plays = new ArrayList<>();
         for (HandCard inHand : state.hand()) {
             CardDefinition card = game.catalog().card(inHand.card().card());
-            if (!EngineSupport.supports(card) || !canMakeItsSacrifices(game, state, card)) {
+            if (!EngineSupport.supports(card) || playedThisTurn(game, inHand)
+                    || !canMakeItsSacrifices(game, state, inHand, card)) {
                 continue;
             }
             for (boolean overcharge : overchargeChoices(game, player, inHand, card)) {
@@ -57,7 +58,7 @@ public final class PlayOptions {
                                       boolean overcharge) {
         List<Action> plays = new ArrayList<>();
         List<List<InstanceId>> sacrifices = Sacrifices.options(state, game.catalog(), card.sacrificeCost());
-        for (List<TargetRef> targets : ChoiceSlots.combinations(game, state.id(), effectsChosenOnPlay(card))) {
+        for (List<TargetRef> targets : ChoiceSlots.combinations(game, state.id(), effectsChosenOnPlay(inHand, card))) {
             for (List<InstanceId> sacrificed : sacrifices) {
                 if (fitsOnBoard(game, state, card, sacrificed)) {
                     plays.add(new Action.PlayCard(inHand.id(), overcharge, targets, sacrificed));
@@ -73,15 +74,23 @@ public final class PlayOptions {
                 overcharge));
     }
 
+    /** 11.2.3: two steps of a Fracture card are never played in the same turn. */
+    private static boolean playedThisTurn(Game game, HandCard inHand) {
+        return inHand.lastFractureTurn() == game.turn();
+    }
+
     /** 8.16: the sacrifice cost and a spell's Sacrifice effects, all of them, or the card cannot be played. */
-    private static boolean canMakeItsSacrifices(Game game, PlayerState state, CardDefinition card) {
-        int asked = card instanceof SpellCard spell ? Sacrifices.askedBy(spell.effects()) : 0;
+    private static boolean canMakeItsSacrifices(Game game, PlayerState state, HandCard inHand, CardDefinition card) {
+        int asked = Sacrifices.askedBy(effectsChosenOnPlay(inHand, card));
         return Sacrifices.canMake(state, game.catalog(), card.sacrificeCost() + asked);
     }
 
-    /** Only a spell picks targets when played; units and relics pick them when their abilities resolve. */
-    private static List<Effect> effectsChosenOnPlay(CardDefinition card) {
-        return card instanceof SpellCard spell ? spell.effects() : List.of();
+    /**
+     * Only a spell applies effects when played, its own or those of its next Fracture step; units and relics pick
+     * targets when their abilities resolve.
+     */
+    private static List<Effect> effectsChosenOnPlay(HandCard inHand, CardDefinition card) {
+        return card instanceof SpellCard spell ? spell.effectsAtStep(inHand.fractureStep()) : List.of();
     }
 
     private static boolean fitsOnBoard(Game game, PlayerState state, CardDefinition card,

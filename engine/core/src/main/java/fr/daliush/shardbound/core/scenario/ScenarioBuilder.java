@@ -123,6 +123,12 @@ public final class ScenarioBuilder {
         return this;
     }
 
+    /** A Fracture card in hand whose next step is {@code nextStep}, 1-based, its last step played on an earlier turn. */
+    public ScenarioBuilder handAtStep(PlayerId player, String card, int nextStep) {
+        CardInstance instance = newCard(card, player);
+        return change(player, state -> state.addToHand(new HandCard(instance, nextStep - 1, 0)));
+    }
+
     public ScenarioBuilder graveyard(PlayerId player, String... cards) {
         for (String card : cards) {
             CardInstance instance = newCard(card, player);

@@ -15,11 +15,12 @@ public sealed interface EffectList {
 
     List<Effect> effects(CardCatalog catalog);
 
-    record SpellEffects(CardId card) implements EffectList {
+    /** {@code fractureStep}: the Fracture step played, 0-based; 0 for any other spell. */
+    record SpellEffects(CardId card, int fractureStep) implements EffectList {
 
         @Override
         public List<Effect> effects(CardCatalog catalog) {
-            return ((SpellCard) catalog.card(card)).effects();
+            return ((SpellCard) catalog.card(card)).effectsAtStep(fractureStep);
         }
     }
 

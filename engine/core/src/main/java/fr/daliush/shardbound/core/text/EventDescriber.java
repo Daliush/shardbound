@@ -8,6 +8,7 @@ import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Shards;
+import java.util.OptionalInt;
 
 /** Turns an event into an English sentence for one player: "You draw Spark Dart.", "Sprout #61 takes 3 damage." */
 public final class EventDescriber {
@@ -49,8 +50,10 @@ public final class EventDescriber {
                     + w.own(e.player()) + " turn.";
             case GameEvent.GameEnded e -> ending(e.result(), viewer);
             case GameEvent.CardPlayed e -> w.subject(e.player()) + " " + w.verb(e.player(), "play", "plays") + " "
-                    + w.name(e.card().card()) + (e.overcharged() ? ", overcharged," : "") + " ("
-                    + Wording.shards(e.cost()) + ").";
+                    + w.name(e.card().card()) + ownStep(e.player(), e.fractureStep(), viewer)
+                    + (e.overcharged() ? ", overcharged," : "") + " (" + Wording.shards(e.cost()) + ").";
+            case GameEvent.FractureAdvanced e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
+                    + " hand" + ownStep(e.card().owner(), OptionalInt.of(e.nextStep()), viewer) + ".";
             case GameEvent.ShardsLocked e -> capitalize(w.possessive(e.player())) + " next turn will have "
                     + Wording.shards(e.amount()) + " more locked (" + e.total() + " in all).";
             case GameEvent.UnitArrived e -> w.card(e.unit()) + " arrives on " + w.possessive(e.controller())
@@ -111,6 +114,11 @@ public final class EventDescriber {
                     + Wording.count(e.needed(), "unit", "units") + " (only " + e.available() + " on "
                     + w.own(e.player()) + " board): nothing more happens.";
         };
+    }
+
+    /** 11.2.5: Fracture steps are public, but only shown to the card's owner; the opponent has to remember them. */
+    private static String ownStep(PlayerId owner, OptionalInt step, PlayerId viewer) {
+        return owner == viewer && step.isPresent() ? ", step " + step.getAsInt() : "";
     }
 
     private String attack(Wording w, GameEvent.AttackDeclared e) {

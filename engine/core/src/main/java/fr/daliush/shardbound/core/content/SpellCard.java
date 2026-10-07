@@ -32,6 +32,11 @@ public record SpellCard(
         return !fracture.isEmpty();
     }
 
+    /** What playing the card applies: its effects, or those of the given Fracture step, 0-based (11.2.2). */
+    public List<Effect> effectsAtStep(int fractureStep) {
+        return isFracture() ? fracture.get(fractureStep).effects() : effects;
+    }
+
     @Override
     public Stream<Effect> allEffects() {
         return Stream.concat(effects.stream(), fracture.stream().flatMap(step -> step.effects().stream()));

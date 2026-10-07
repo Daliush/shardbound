@@ -7,6 +7,7 @@ import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -106,9 +107,27 @@ public sealed interface GameEvent {
 
     record CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged, OptionalInt fractureStep,
                       List<String> rules) implements GameEvent {
-        public CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged) {
-            this(player, card, cost, overcharged, OptionalInt.empty(),
-                    overcharged ? List.of("6.3", "11.4.1") : List.of("6.3"));
+        /** {@code fractureStep}: the Fracture step played, 1-based (11.2.2). */
+        public CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged, OptionalInt fractureStep) {
+            this(player, card, cost, overcharged, fractureStep, rules(overcharged, fractureStep));
+        }
+
+        private static List<String> rules(boolean overcharged, OptionalInt fractureStep) {
+            List<String> rules = new ArrayList<>(List.of("6.3"));
+            if (overcharged) {
+                rules.add("11.4.1");
+            }
+            if (fractureStep.isPresent()) {
+                rules.add("11.2.2");
+            }
+            return List.copyOf(rules);
+        }
+    }
+
+    /** 11.2.2: a Fracture card back in its owner's hand, for its step {@code nextStep} (1-based). */
+    record FractureAdvanced(CardInstance card, int nextStep, List<String> rules) implements GameEvent {
+        public FractureAdvanced(CardInstance card, int nextStep) {
+            this(card, nextStep, List.of("11.2.2"));
         }
     }
 
@@ -131,6 +150,7 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 6.3: the spell is in its owner's graveyard; a Fracture card after its last step (11.2.4). */
     record SpellResolved(CardInstance spell, List<String> rules) implements GameEvent {
         public SpellResolved(CardInstance spell) {
             this(spell, List.of("6.3", "3.5"));
@@ -290,7 +310,10 @@ public sealed interface GameEvent {
         }
     }
 
-    /** 8.8: a card returned to a full hand (3.3) goes to the graveyard instead. It did not die. */
+    /**
+     * 8.8: a card returned to a full hand (3.3) goes to the graveyard instead. It did not die.
+     * 11.2.7: a Fracture card that would return to a full hand after a step, too; its progress is lost.
+     */
     record SentToGraveyardHandFull(CardInstance card, List<String> rules) implements GameEvent {
         public SentToGraveyardHandFull(CardInstance card) {
             this(card, List.of("8.8", "3.3"));

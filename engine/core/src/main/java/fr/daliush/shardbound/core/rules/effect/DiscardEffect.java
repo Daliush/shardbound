@@ -50,6 +50,7 @@ final class DiscardEffect {
     /** The graveyard is public, so the card is revealed. A Fracture card loses its progress (11.2.6). */
     private static void discard(Game game, PlayerId player, HandCard card) {
         game.updatePlayer(player, state -> state.removeFromHand(card.id()).addToGraveyard(card.card()));
-        game.emit(new GameEvent.CardDiscarded(player, card.card(), GameEvent.DiscardReason.EFFECT, List.of("8.7")));
+        game.emit(new GameEvent.CardDiscarded(player, card.card(), GameEvent.DiscardReason.EFFECT,
+                card.fractureStep() > 0 ? List.of("8.7", "11.2.6") : List.of("8.7")));
     }
 }

@@ -3,6 +3,7 @@ package fr.daliush.shardbound.core.resolution;
 import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.state.CardInstance;
+import fr.daliush.shardbound.core.state.HandCard;
 import fr.daliush.shardbound.core.state.PlayerId;
 import java.util.List;
 import java.util.Optional;
@@ -42,8 +43,8 @@ public sealed interface Step {
     /** 6.3: playing a card. */
     record ResolvePlay(PlayerId player, Action.PlayCard play) implements Step {}
 
-    /** 6.3: a resolved spell goes to its owner's graveyard. */
-    record FinishSpell(CardInstance spell) implements Step {}
+    /** 6.3: a resolved spell goes to its owner's graveyard, or back to their hand between Fracture steps (11.2.2). */
+    record FinishSpell(HandCard spell) implements Step {}
 
     /** 7.4: an attack, one phase at a time. */
     record ResolveAttack(PlayerId player, CardInstance attacker, int attackIndex, Optional<TargetRef> target,
