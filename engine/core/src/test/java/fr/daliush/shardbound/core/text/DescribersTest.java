@@ -206,6 +206,16 @@ class DescribersTest {
                 .isEqualTo("Root Sentinel #5 is no longer anchored.");
     }
 
+    @Test
+    void describesOvercharge() {
+        GameState start = scenario().shards(P1, 4).hand(P1, "ember.ember-lance").build();
+
+        assertThat(labels(ENGINE.resume(start).state())).containsExactly("Play Ember Lance (4 Shards)",
+                "Play Ember Lance overcharged (2 Shards, locks 2 next turn)", "End your turn");
+        assertThat(events.describe(new GameEvent.ShardsLocked(P1, 2, 4), P1))
+                .isEqualTo("Your next turn will have 2 Shards more locked (4 in all).");
+    }
+
     private List<String> labels(GameState state) {
         Decision decision = state.pending().orElseThrow();
         return decision.actions().stream().map(action -> actions.describe(action, state, decision.player())).toList();

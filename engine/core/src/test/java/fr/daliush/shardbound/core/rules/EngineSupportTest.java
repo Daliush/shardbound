@@ -24,8 +24,7 @@ class EngineSupportTest {
                 .toList();
 
         assertThat(unsupported).containsExactly(
-                "ember.ash-warden", "ember.ashborn-drake", "ember.blaze-mastiff", "ember.ember-lance",
-
-                "neutral.binding-thread", "tide.moonpull", "tide.spring-tide");
+                "ember.ash-warden", "ember.ashborn-drake", "neutral.binding-thread", "tide.moonpull",
+                "tide.spring-tide");
     }
 }

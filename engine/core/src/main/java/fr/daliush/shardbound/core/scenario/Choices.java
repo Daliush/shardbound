@@ -75,7 +75,7 @@ public final class Choices {
     }
 
     public static PlayChoice play(String card) {
-        return new PlayChoice(card, List.of(), List.of());
+        return new PlayChoice(card, false, List.of(), List.of());
     }
 
     public static AttackChoice attack(String attacker) {
@@ -94,10 +94,11 @@ public final class Choices {
     }
 
     /**
-     * Plays the first card in hand with this card id, on the given targets, one per choice slot, sacrificing the
-     * given units to pay its sacrifice cost.
+     * Plays the first card in hand with this card id, overcharged or not, on the given targets, one per choice slot,
+     * sacrificing the given units to pay its sacrifice cost.
      */
-    public record PlayChoice(String card, List<Pick> targets, List<Pick> sacrificed) implements Choice {
+    public record PlayChoice(String card, boolean overcharge, List<Pick> targets, List<Pick> sacrificed)
+            implements Choice {
 
         public PlayChoice {
             targets = List.copyOf(targets);
@@ -105,11 +106,16 @@ public final class Choices {
         }
 
         public PlayChoice on(Pick... picks) {
-            return new PlayChoice(card, List.of(picks), sacrificed);
+            return new PlayChoice(card, overcharge, List.of(picks), sacrificed);
         }
 
         public PlayChoice sacrificing(Pick... units) {
-            return new PlayChoice(card, targets, List.of(units));
+            return new PlayChoice(card, overcharge, targets, List.of(units));
+        }
+
+        /** 11.4.1: the play for 2 Shards less, which locks 2 Shards next turn. */
+        public PlayChoice overcharged() {
+            return new PlayChoice(card, true, targets, sacrificed);
         }
 
         @Override
@@ -117,7 +123,7 @@ public final class Choices {
             List<TargetRef> wanted = targets.stream().map(pick -> pick.in(state)).toList();
             List<InstanceId> wantedSacrifices = unitIds(state, sacrificed);
             return Choice.single(decision, action -> action instanceof Action.PlayCard play
-                    && isCard(state, play, card) && play.targets().equals(wanted)
+                    && isCard(state, play, card) && play.overcharge() == overcharge && play.targets().equals(wanted)
                     && play.sacrificed().equals(wantedSacrifices), "play " + card);
         }
 

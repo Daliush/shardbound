@@ -51,6 +51,8 @@ public final class EventDescriber {
             case GameEvent.CardPlayed e -> w.subject(e.player()) + " " + w.verb(e.player(), "play", "plays") + " "
                     + w.name(e.card().card()) + (e.overcharged() ? ", overcharged," : "") + " ("
                     + Wording.shards(e.cost()) + ").";
+            case GameEvent.ShardsLocked e -> capitalize(w.possessive(e.player())) + " next turn will have "
+                    + Wording.shards(e.amount()) + " more locked (" + e.total() + " in all).";
             case GameEvent.UnitArrived e -> w.card(e.unit()) + " arrives on " + w.possessive(e.controller())
                     + " board.";
             case GameEvent.RelicArrived e -> w.card(e.relic()) + " arrives on " + w.possessive(e.controller())

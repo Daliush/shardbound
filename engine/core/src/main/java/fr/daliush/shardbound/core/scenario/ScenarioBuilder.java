@@ -87,6 +87,12 @@ public final class ScenarioBuilder {
                 Math.max(available, state.shards().max()), available, state.shards().lockedNextTurn())));
     }
 
+    /** Shards Overcharge locks on the player's next turn (11.4.2). */
+    public ScenarioBuilder lockedShards(PlayerId player, int locked) {
+        return change(player, state -> state.withShards(
+                new Shards(state.shards().max(), state.shards().available(), locked)));
+    }
+
     public ScenarioBuilder maxShards(PlayerId player, int max) {
         return change(player, state -> state.withShards(
                 new Shards(max, state.shards().available(), state.shards().lockedNextTurn())));

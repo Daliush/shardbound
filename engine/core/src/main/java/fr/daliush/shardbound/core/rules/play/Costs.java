@@ -14,6 +14,7 @@ import fr.daliush.shardbound.core.state.PlayerState;
 public final class Costs {
 
     public static final int OVERCHARGE_DISCOUNT = 2;
+    public static final int OVERCHARGE_LOCK = 2;
 
     private Costs() {
     }

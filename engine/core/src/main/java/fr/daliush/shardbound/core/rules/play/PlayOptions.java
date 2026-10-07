@@ -4,6 +4,7 @@ import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.Effect;
+import fr.daliush.shardbound.core.content.Keyword;
 import fr.daliush.shardbound.core.content.RelicCard;
 import fr.daliush.shardbound.core.content.SpellCard;
 import fr.daliush.shardbound.core.content.UnitCard;
@@ -18,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Every legal {@code PlayCard}: cards in hand order, then target combinations, then the units sacrificed to pay the
- * card, each in canonical order (spec §6.2).
+ * Every legal {@code PlayCard}: cards in hand order, then without Overcharge before with it, then target combinations,
+ * then the units sacrificed to pay the card, each in canonical order (spec §6.2).
  */
 public final class PlayOptions {
 
@@ -31,27 +32,45 @@ public final class PlayOptions {
         List<Action> plays = new ArrayList<>();
         for (HandCard inHand : state.hand()) {
             CardDefinition card = game.catalog().card(inHand.card().card());
-            if (!EngineSupport.supports(card) || !canPay(game, player, inHand)
-                    || !canMakeItsSacrifices(game, state, card)) {
+            if (!EngineSupport.supports(card) || !canMakeItsSacrifices(game, state, card)) {
                 continue;
             }
-            List<List<InstanceId>> sacrifices = Sacrifices.options(state, game.catalog(), card.sacrificeCost());
-            for (List<TargetRef> targets : ChoiceSlots.combinations(game, player, effectsChosenOnPlay(card))) {
-                for (List<InstanceId> sacrificed : sacrifices) {
-                    if (fitsOnBoard(game, state, card, sacrificed)) {
-                        plays.add(new Action.PlayCard(inHand.id(), false, targets, sacrificed));
-                    }
+            for (boolean overcharge : overchargeChoices(game, player, inHand, card)) {
+                plays.addAll(plays(game, state, inHand, card, overcharge));
+            }
+        }
+        return plays;
+    }
+
+    /** 11.4.1: a card with Overcharge may also be played overcharged; each way is offered if affordable (4.3). */
+    private static List<Boolean> overchargeChoices(Game game, PlayerId player, HandCard inHand, CardDefinition card) {
+        List<Boolean> choices = new ArrayList<>();
+        for (boolean overcharge : card.has(Keyword.OVERCHARGE) ? List.of(false, true) : List.of(false)) {
+            if (canPay(game, player, inHand, overcharge)) {
+                choices.add(overcharge);
+            }
+        }
+        return choices;
+    }
+
+    private static List<Action> plays(Game game, PlayerState state, HandCard inHand, CardDefinition card,
+                                      boolean overcharge) {
+        List<Action> plays = new ArrayList<>();
+        List<List<InstanceId>> sacrifices = Sacrifices.options(state, game.catalog(), card.sacrificeCost());
+        for (List<TargetRef> targets : ChoiceSlots.combinations(game, state.id(), effectsChosenOnPlay(card))) {
+            for (List<InstanceId> sacrificed : sacrifices) {
+                if (fitsOnBoard(game, state, card, sacrificed)) {
+                    plays.add(new Action.PlayCard(inHand.id(), overcharge, targets, sacrificed));
                 }
             }
         }
         return plays;
     }
 
-    /** 4.3: Overcharge is offered separately (11.4). */
-    private static boolean canPay(Game game, PlayerId player, HandCard inHand) {
+    private static boolean canPay(Game game, PlayerId player, HandCard inHand, boolean overcharge) {
         PlayerState state = game.player(player);
         return state.shards().canPay(Costs.toPlay(game.catalog(), state, game.player(player.opponent()), inHand,
-                false));
+                overcharge));
     }
 
     /** 8.16: the sacrifice cost and a spell's Sacrifice effects, all of them, or the card cannot be played. */

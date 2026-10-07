@@ -19,7 +19,7 @@ public final class EngineSupport {
             Effect.Freeze.class, Effect.GainShards.class, Effect.Recall.class, Effect.StatAura.class,
             Effect.CostAura.class);
 
-    private static final Set<Keyword> IMPLEMENTED_KEYWORDS = Set.of(Keyword.ANCHOR);
+    private static final Set<Keyword> IMPLEMENTED_KEYWORDS = Set.of(Keyword.ANCHOR, Keyword.OVERCHARGE);
 
     private EngineSupport() {
     }

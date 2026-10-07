@@ -145,6 +145,10 @@ public final class TestCards {
         { "id": "test.tithe", "name": "Tithe Stone", "faction": "neutral", "type": "relic", "cost": 1,
           "abilities": [{ "trigger": "continuous", "effects": [
             { "effect": "aura", "kind": "cost", "player": "opponent", "card_type": "any", "change": 1 }] }] }""",
+        // A 1-cost card with Overcharge (6.8, 11.4.1).
+        """
+        { "id": "test.flare", "name": "Flare", "faction": "neutral", "type": "spell", "cost": 1, "keywords": ["overcharge"],
+          "effects": [{ "effect": "damage", "amount": 2, "target": "opponent" }] }""",
         // A "Turn end" ability that heals units, which can save a doomed unit (11.3.5).
         """
         { "id": "test.tidepool", "name": "Tidepool", "faction": "neutral", "type": "relic", "cost": 1,

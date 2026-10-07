@@ -46,11 +46,21 @@ public final class CardPlay {
         for (InstanceId sacrificed : play.sacrificed()) {
             Departures.sacrifice(game, game.unit(sacrificed).orElseThrow(), List.of("6.3", "8.3"));
         }
+        if (play.overcharge()) {
+            lockShards(game, player);
+        }
         switch (card) {
             case UnitCard ignored -> Arrivals.unit(game, inHand.card(), player);
             case RelicCard ignored -> Arrivals.relic(game, inHand.card(), player);
             case SpellCard spell -> cast(game, player, inHand.card(), spell, chosen);
         }
+    }
+
+    /** 11.4.2, 11.4.3: each overcharged card locks 2 of its player's Shards on their next turn. */
+    private static void lockShards(Game game, PlayerId player) {
+        game.updatePlayer(player, state -> state.withShards(state.shards().withLocked(Costs.OVERCHARGE_LOCK)));
+        game.emit(new GameEvent.ShardsLocked(player, Costs.OVERCHARGE_LOCK,
+                game.player(player).shards().lockedNextTurn()));
     }
 
     /** 9.1: the spell's effects, then it goes to the graveyard. */

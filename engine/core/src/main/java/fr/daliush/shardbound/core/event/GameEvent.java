@@ -73,10 +73,12 @@ public sealed interface GameEvent {
         }
     }
 
+    /** {@code locked}: the Shards Overcharge kept from the refill (11.4.2); beyond the refill, they are lost (11.4.4). */
     record ShardsRefilled(PlayerId player, int max, int available, int locked, List<String> rules)
             implements GameEvent {
         public ShardsRefilled(PlayerId player, int max, int available, int locked) {
-            this(player, max, available, locked, List.of("4.1", "4.2"));
+            this(player, max, available, locked, locked == 0 ? List.of("4.1", "4.2")
+                    : locked > max ? List.of("4.1", "4.2", "11.4.2", "11.4.4") : List.of("4.1", "4.2", "11.4.2"));
         }
     }
 
@@ -105,7 +107,15 @@ public sealed interface GameEvent {
     record CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged, OptionalInt fractureStep,
                       List<String> rules) implements GameEvent {
         public CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged) {
-            this(player, card, cost, overcharged, OptionalInt.empty(), List.of("6.3"));
+            this(player, card, cost, overcharged, OptionalInt.empty(),
+                    overcharged ? List.of("6.3", "11.4.1") : List.of("6.3"));
+        }
+    }
+
+    /** 11.4.2, 11.4.3: {@code amount} more of the player's Shards locked on their next turn, {@code total} in all. */
+    record ShardsLocked(PlayerId player, int amount, int total, List<String> rules) implements GameEvent {
+        public ShardsLocked(PlayerId player, int amount, int total) {
+            this(player, amount, total, List.of("11.4.2", "11.4.3"));
         }
     }
 
