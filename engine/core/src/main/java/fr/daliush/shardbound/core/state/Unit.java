@@ -93,6 +93,11 @@ public record Unit(
         return change(draft -> draft.frozenThroughTurn = Math.max(frozenThroughTurn, turn));
     }
 
+    /** 8.10: the turn after its freeze, the unit is no longer frozen. */
+    public Unit thawed() {
+        return change(draft -> draft.frozenThroughTurn = 0);
+    }
+
     public Unit markHasAttacked() {
         return change(draft -> draft.hasAttackedThisTurn = true);
     }

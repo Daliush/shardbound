@@ -361,6 +361,38 @@ class EffectRulesTest {
     }
 
     @Test
+    @DisplayName("8.10 — a frozen unit cannot intercept for the rest of the turn, nor attack during the next one")
+    void freeze() {
+        ScenarioResult result = run(scenario().shards(P1, 2).hand(P1, "test.frost").unit(P1, "ember.cinderling")
+                        .unit(P2, "neutral.shardling").unit(P2, "neutral.shard-construct")
+                        .deck(P2, "neutral.shardling").build(),
+                play("test.frost").on(unit("neutral.shardling")),
+                attack("ember.cinderling").on(unit("neutral.shard-construct")),
+                endTurn());
+
+        assertThat(result.decisions()).extracting(Decision::kind)
+                .containsExactly(DecisionKind.MAIN, DecisionKind.MAIN, DecisionKind.MAIN);
+        assertThat(result.pending().orElseThrow().player()).isEqualTo(P2);
+        assertThat(result.pending().orElseThrow().actions()).noneMatch(Action.Attack.class::isInstance);
+        assertThat(result.unit("neutral.shardling").frozenThroughTurn()).isEqualTo(4);
+        assertThat(trace(result)).contains("Frozen[8.10]");
+    }
+
+    @Test
+    @DisplayName("8.10 — a frozen unit thaws at the start of the turn after the next one")
+    void thaw() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.frost").unit(P2, "neutral.shardling")
+                        .deck(P1, "neutral.shardling").deck(P2, "neutral.shardling").build(),
+                play("test.frost").on(unit("neutral.shardling")),
+                endTurn(), endTurn());
+
+        assertThat(result.state().turn()).isEqualTo(5);
+        assertThat(result.unit("neutral.shardling").frozenThroughTurn()).isZero();
+        assertThat(trace(result)).containsSubsequence("Frozen[8.10]", "TurnStarted[5.2]", "TurnStarted[5.2]",
+                "UnitThawed[8.10]", "ShardsRefilled[4.1, 4.2]");
+    }
+
+    @Test
     @DisplayName("8.9 — summon creates tokens on its controller's board")
     void summon() {
         ScenarioResult result = run(scenario().shards(P1, 3).hand(P1, "root.verdant-burst").build(),

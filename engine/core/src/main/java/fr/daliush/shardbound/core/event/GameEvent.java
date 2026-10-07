@@ -215,6 +215,19 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 8.10: the unit can neither attack nor intercept until the end of turn {@code throughTurn}. */
+    record Frozen(CardInstance unit, int throughTurn, List<String> rules) implements GameEvent {
+        public Frozen(CardInstance unit, int throughTurn) {
+            this(unit, throughTurn, List.of("8.10"));
+        }
+    }
+
+    record UnitThawed(CardInstance unit, List<String> rules) implements GameEvent {
+        public UnitThawed(CardInstance unit) {
+            this(unit, List.of("8.10"));
+        }
+    }
+
     /** 8.8: a unit or a relic back in its owner's hand, reset (6.7). It did not die. */
     record ReturnedToHand(CardInstance card, List<String> rules) implements GameEvent {
         public ReturnedToHand(CardInstance card) {

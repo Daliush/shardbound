@@ -80,6 +80,8 @@ public final class EventDescriber {
                     + (e.duration() == Duration.END_OF_TURN ? " until end of turn." : ".");
             case GameEvent.ModifierExpired e -> "The " + Wording.stats(e.attackDamage(), e.defense()) + " on "
                     + w.card(e.unit()) + " ends.";
+            case GameEvent.Frozen e -> w.card(e.unit()) + " is frozen until the end of turn " + e.throughTurn() + ".";
+            case GameEvent.UnitThawed e -> w.card(e.unit()) + " thaws.";
             case GameEvent.ReturnedToHand e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
                     + " hand.";
             case GameEvent.SentToGraveyardHandFull e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "

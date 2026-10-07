@@ -130,6 +130,15 @@ class DescribersTest {
     }
 
     @Test
+    void describesFreezes() {
+        CardInstance shardling = new CardInstance(InstanceId.of(3), new CardId("neutral.shardling"), P2);
+
+        assertThat(events.describe(new GameEvent.Frozen(shardling, 4), P1))
+                .isEqualTo("Shardling #3 is frozen until the end of turn 4.");
+        assertThat(events.describe(new GameEvent.UnitThawed(shardling), P1)).isEqualTo("Shardling #3 thaws.");
+    }
+
+    @Test
     void describesModifiers() {
         CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
 

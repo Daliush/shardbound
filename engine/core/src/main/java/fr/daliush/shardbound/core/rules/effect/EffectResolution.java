@@ -94,6 +94,7 @@ public final class EffectResolution {
             case Effect.Discard discard -> DiscardEffect.atRandom(game, discard, source, chosen);
             case Effect.ReturnToHand returnToHand -> ReturnToHandEffect.apply(game, returnToHand, source, chosen);
             case Effect.Summon summon -> SummonEffect.apply(game, summon, source);
+            case Effect.Freeze freeze -> FreezeEffect.apply(game, freeze, source, chosen);
             default -> throw new IllegalStateException("Not implemented yet: " + effect);
         }
     }
