@@ -1,0 +1,18 @@
+{
+  "id": "tide.shoal-sprite",
+  "name": "Shoal Sprite",
+  "faction": "tide",
+  "type": "unit",
+  "cost": 1,
+  "defense": 2,
+  "attacks": [
+    {
+      "name": "Ripple",
+      "cost": 1,
+      "effects": [{ "effect": "damage", "amount": 3, "target": "attack_target" }]
+    }
+  ],
+  "abilities": [
+    { "trigger": "death", "effects": [{ "effect": "draw", "amount": 1, "target": "you" }] }
+  ]
+}

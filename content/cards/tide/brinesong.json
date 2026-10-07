@@ -1,0 +1,11 @@
+{
+  "id": "tide.brinesong",
+  "name": "Brinesong",
+  "faction": "tide",
+  "type": "spell",
+  "cost": 2,
+  "effects": [
+    { "effect": "discard", "amount": 1, "target": "opponent", "choice": "player" },
+    { "effect": "draw", "amount": 1, "target": "you" }
+  ]
+}

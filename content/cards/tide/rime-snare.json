@@ -1,0 +1,11 @@
+{
+  "id": "tide.rime-snare",
+  "name": "Rime Snare",
+  "faction": "tide",
+  "type": "spell",
+  "cost": 2,
+  "effects": [
+    { "effect": "freeze", "target": "enemy_unit" },
+    { "effect": "draw", "amount": 1, "target": "you" }
+  ]
+}

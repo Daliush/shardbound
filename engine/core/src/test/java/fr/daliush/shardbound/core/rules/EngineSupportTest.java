@@ -27,6 +27,6 @@ class EngineSupportTest {
                 "ember.ash-warden", "ember.ashborn-drake", "ember.blaze-mastiff", "ember.ember-lance",
 
                 "neutral.binding-thread", "root.oakheart-guardian", "root.root-sentinel",
-                "tide.moonpull");
+                "tide.moonpull", "tide.spring-tide");
     }
 }
