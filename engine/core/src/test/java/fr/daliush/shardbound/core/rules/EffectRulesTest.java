@@ -2,23 +2,34 @@ package fr.daliush.shardbound.core.rules;
 
 import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
+import static fr.daliush.shardbound.core.scenario.Choices.sacrifice;
 import static fr.daliush.shardbound.core.scenario.Pick.player;
 import static fr.daliush.shardbound.core.scenario.Pick.relic;
 import static fr.daliush.shardbound.core.scenario.Pick.unit;
 import static fr.daliush.shardbound.core.state.PlayerId.P1;
 import static fr.daliush.shardbound.core.state.PlayerId.P2;
+import static fr.daliush.shardbound.core.testing.RuleTesting.ENGINE;
 import static fr.daliush.shardbound.core.testing.RuleTesting.run;
 import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
 import static fr.daliush.shardbound.core.testing.RuleTesting.trace;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.daliush.shardbound.core.action.Action;
+import fr.daliush.shardbound.core.action.TargetRef;
+import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.decision.Decision;
+import fr.daliush.shardbound.core.decision.DecisionKind;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
+import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.Unit;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** Rulebook section 8, the effects of this slice: Damage, Destroy, Heal, Draw, Summon. */
+/** Rulebook section 8: the effects. */
 class EffectRulesTest {
 
     @Test
@@ -60,6 +71,78 @@ class EffectRulesTest {
     }
 
     @Test
+    @DisplayName("8.3 — a Sacrifice effect: its controller chooses which of their units die")
+    void sacrificeEffect() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.ritual")
+                        .unit(P1, "ember.cinderling").unit(P1, "neutral.shardling")
+                        .deck(P1, "neutral.shardling", "neutral.shardling").build(),
+                play("test.ritual"), sacrifice(unit("neutral.shardling")));
+
+        assertThat(result.decisions()).extracting(Decision::kind)
+                .containsExactly(DecisionKind.MAIN, DecisionKind.CHOOSE_CARDS);
+        assertThat(result.player(P1).units()).extracting(Unit::card).containsExactly(new CardId("ember.cinderling"));
+        assertThat(result.player(P1).hand()).hasSize(2);
+        assertThat(trace(result)).containsSubsequence("CardPlayed[6.3]", "UnitSacrificed[8.3]", "CardDrawn[8.6]",
+                "CardDrawn[8.6]", "SpellResolved[6.3, 3.5]");
+    }
+
+    @Test
+    @DisplayName("8.16 — with exactly the units a Sacrifice effect asks for, they are sacrificed without a choice")
+    void sacrificeWithoutAChoice() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.ritual").unit(P1, "ember.cinderling")
+                        .deck(P1, "neutral.shardling", "neutral.shardling").build(),
+                play("test.ritual"));
+
+        assertThat(result.pending().orElseThrow().kind()).isEqualTo(DecisionKind.MAIN);
+        assertThat(result.player(P1).units()).isEmpty();
+        assertThat(trace(result)).containsSubsequence("UnitSacrificed[8.3]", "SpellResolved[6.3, 3.5]",
+                "AbilityTriggered[9.3]", "PlayerDamaged[8.1]");
+    }
+
+    @Test
+    @DisplayName("8.16 — a card or an attack whose sacrifices cannot all be made cannot be played or used")
+    void sacrificesAreNeverPartial() {
+        GameState noUnit = scenario().shards(P1, 5)
+                .hand(P1, "ember.pyre-offering", "ember.flamebound-zealot", "test.ritual")
+                .unit(P2, "neutral.shardling").build();
+        GameState knightAlone = scenario().shards(P1, 1).unit(P1, "test.blood-knight")
+                .unit(P2, "neutral.shardling").build();
+        GameState knightAndAnotherUnit = scenario().shards(P1, 1).unit(P1, "test.blood-knight")
+                .unit(P1, "neutral.shardling").unit(P2, "neutral.shardling").build();
+
+        assertThat(actions(noUnit)).containsExactly(new Action.EndTurn());
+        assertThat(actions(knightAlone)).containsExactly(new Action.EndTurn());
+        assertThat(actions(knightAndAnotherUnit)).contains(
+                new Action.Attack(InstanceId.of(1), 0, Optional.of(TargetRef.unit(InstanceId.of(3)))));
+    }
+
+    @Test
+    @DisplayName("8.22 — a triggered ability whose sacrifices cannot all be made does nothing at all")
+    void abilityWithoutItsSacrifices() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.altar").build(), play("test.altar"));
+
+        assertThat(trace(result)).containsSubsequence("UnitArrived[6.3, 6.5]", "AbilityTriggered[9.2]",
+                "SacrificeFailed[8.22]");
+        assertThat(result.events(GameEvent.UnitSacrificed.class)).isEmpty();
+        assertThat(result.unit("test.altar").defense()).isEqualTo(3);
+        assertThat(result.player(P2).hp()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("8.22 — a sacrifice that can no longer be made stops its effects; those already applied stay")
+    void sacrificeNoLongerPossible() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.cataclysm")
+                        .unit(P1, "neutral.shardling").unit(P2, "neutral.shardling")
+                        .deck(P1, "neutral.shardling", "neutral.shardling").build(),
+                play("test.cataclysm"));
+
+        assertThat(trace(result)).containsSubsequence("UnitDamaged[8.1]", "UnitDamaged[8.1]", "UnitDestroyed[6.6]",
+                "UnitDestroyed[6.6]", "SacrificeFailed[8.22]", "SpellResolved[6.3, 3.5]");
+        assertThat(result.events(GameEvent.CardDrawn.class)).isEmpty();
+        assertThat(result.player(P1).deck()).hasSize(2);
+    }
+
+    @Test
     @DisplayName("8.4 — heal restores defense up to the max, and HP up to 50")
     void heal() {
         ScenarioResult onUnits = run(scenario().shards(P1, 1)
@@ -96,5 +179,9 @@ class EffectRulesTest {
         assertThat(result.player(P1).units()).hasSize(3).allMatch(Unit::token)
                 .allMatch(unit -> unit.arrivedTurn() == result.state().turn());
         assertThat(result.events(GameEvent.TokenSummoned.class)).hasSize(3);
+    }
+
+    private static List<Action> actions(GameState start) {
+        return ENGINE.resume(start).state().pending().orElseThrow().actions();
     }
 }

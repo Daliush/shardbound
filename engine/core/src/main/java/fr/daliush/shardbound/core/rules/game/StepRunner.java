@@ -36,12 +36,12 @@ public final class StepRunner {
         switch (paused) {
             case Step.ResolveAttack attack -> AttackSequence.resume(game, attack, answer);
             case Step.ChooseTargets choose -> AbilityTargets.resume(game, choose, answer);
+            case Step.ResolveEffects effects -> EffectResolution.resume(game, effects, answer);
             case Step.StartTurn ignored -> throw neverPauses(paused);
             case Step.TriggerTurnEnd ignored -> throw neverPauses(paused);
             case Step.FinishTurn ignored -> throw neverPauses(paused);
             case Step.ResolvePlay ignored -> throw neverPauses(paused);
             case Step.FinishSpell ignored -> throw neverPauses(paused);
-            case Step.ResolveEffects ignored -> throw neverPauses(paused);
         }
     }
 

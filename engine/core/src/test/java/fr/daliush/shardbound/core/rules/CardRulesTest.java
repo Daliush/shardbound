@@ -9,13 +9,16 @@ import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
 import static fr.daliush.shardbound.core.testing.RuleTesting.trace;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
+import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Unit;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +49,26 @@ class CardRulesTest {
         assertThat(result.player(P1).graveyard()).extracting(CardInstance::card)
                 .containsExactly(new CardId("ember.spark-dart"));
         assertThat(result.player(P1).hand()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("6.3 — a sacrifice cost is paid when the card is played; the abilities it triggers wait for the card")
+    void sacrificeCost() {
+        GameState start = scenario().shards(P1, 1).hand(P1, "ember.pyre-offering")
+                .unit(P1, "ember.cinderling").unit(P1, "neutral.shardling").unit(P2, "neutral.shard-construct").build();
+
+        ScenarioResult result = run(start,
+                play("ember.pyre-offering").on(unit("neutral.shard-construct")).sacrificing(unit("ember.cinderling")));
+
+        assertThat(result.decisions().getFirst().actions()).filteredOn(Action.PlayCard.class::isInstance)
+                .extracting(action -> ((Action.PlayCard) action).sacrificed())
+                .containsExactly(List.of(InstanceId.of(2)), List.of(InstanceId.of(3)));
+        assertThat(trace(result)).containsSubsequence("CardPlayed[6.3]", "UnitSacrificed[6.3, 8.3]",
+                "UnitDamaged[8.1]", "SpellResolved[6.3, 3.5]", "AbilityTriggered[9.3]", "PlayerDamaged[8.1]");
+        assertThat(result.player(P1).units()).extracting(Unit::card).containsExactly(new CardId("neutral.shardling"));
+        assertThat(result.player(P1).graveyard()).extracting(CardInstance::card)
+                .containsExactly(new CardId("ember.cinderling"), new CardId("ember.pyre-offering"));
+        assertThat(result.player(P2).hp()).isEqualTo(48);
     }
 
     @Test

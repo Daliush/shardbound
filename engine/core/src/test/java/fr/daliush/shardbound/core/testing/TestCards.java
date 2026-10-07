@@ -57,7 +57,27 @@ public final class TestCards {
         """
         { "id": "test.reckless", "name": "Reckless Imp", "faction": "neutral", "type": "unit", "cost": 1, "defense": 3,
           "attacks": [{ "name": "Lunge", "cost": 1, "effects": [{ "effect": "damage", "amount": 5, "target": "attack_target" }] }],
-          "abilities": [{ "trigger": "attack", "effects": [{ "effect": "destroy", "target": "self" }] }] }"""
+          "abilities": [{ "trigger": "attack", "effects": [{ "effect": "destroy", "target": "self" }] }] }""",
+        // A Sacrifice effect on a spell (8.3, 8.16).
+        """
+        { "id": "test.ritual", "name": "Blood Ritual", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "sacrifice", "count": 1 }, { "effect": "draw", "amount": 2, "target": "you" }] }""",
+        // A sacrifice that its own first effect can make impossible (8.22).
+        """
+        { "id": "test.cataclysm", "name": "Cataclysm", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "damage", "amount": 9, "target": "all_units" }, { "effect": "sacrifice" },
+                      { "effect": "draw", "amount": 2, "target": "you" }] }""",
+        // An Arrival ability that asks for two sacrifices (8.22).
+        """
+        { "id": "test.altar", "name": "Bone Altar", "faction": "neutral", "type": "unit", "cost": 1, "defense": 3,
+          "attacks": [{ "name": "Jab", "cost": 1, "effects": [{ "effect": "damage", "amount": 1, "target": "attack_target" }] }],
+          "abilities": [{ "trigger": "arrival", "effects": [{ "effect": "sacrifice", "count": 2 },
+                                                             { "effect": "damage", "amount": 5, "target": "opponent" }] }] }""",
+        // An attack ability that asks for two sacrifices (8.16).
+        """
+        { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,
+          "attacks": [{ "name": "Blood Strike", "cost": 1, "effects": [{ "effect": "sacrifice", "count": 2 },
+                        { "effect": "damage", "amount": 8, "target": "attack_target" }] }] }"""
     };
 
     public static final CardCatalog CATALOG = build();

@@ -62,7 +62,12 @@ final class Wording {
     }
 
     static String shards(int amount) {
-        return amount + (amount == 1 ? " Shard" : " Shards");
+        return count(amount, "Shard", "Shards");
+    }
+
+    /** "1 unit", "2 units". */
+    static String count(int amount, String one, String many) {
+        return amount + " " + (amount == 1 ? one : many);
     }
 
     static String trigger(Trigger trigger) {

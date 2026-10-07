@@ -86,6 +86,26 @@ class DescribersTest {
         assertThat(prompt(arrived.state())).isEqualTo("Choose a target for the Arrival ability of Watcher #1.");
     }
 
+    @Test
+    void describesSacrifices() {
+        GameState start = scenario().shards(P1, 2).hand(P1, "ember.pyre-offering", "test.ritual")
+                .unit(P1, "ember.cinderling").unit(P1, "neutral.shardling").unit(P2, "neutral.shard-construct")
+                .build();
+        GameState main = ENGINE.resume(start).state();
+        ScenarioResult ritual = run(start, play("test.ritual"));
+
+        assertThat(labels(main)).contains("Play Pyre Offering (1 Shard) on Shard Construct #5, sacrificing Cinderling #3");
+        assertThat(prompt(ritual.state())).isEqualTo("Choose 1 unit to sacrifice for Blood Ritual #2.");
+        assertThat(labels(ritual.state())).containsExactly("Sacrifice Cinderling #3", "Sacrifice Shardling #4");
+        assertThat(events.describe(new GameEvent.SacrificeFailed(P2, 2, 1), P1))
+                .isEqualTo("Your opponent cannot sacrifice 2 units (only 1 on their board): nothing more happens.");
+    }
+
+    private List<String> labels(GameState state) {
+        Decision decision = state.pending().orElseThrow();
+        return decision.actions().stream().map(action -> actions.describe(action, state, decision.player())).toList();
+    }
+
     private String prompt(GameState state) {
         return decisions.describe(state.pending().orElseThrow(), state);
     }

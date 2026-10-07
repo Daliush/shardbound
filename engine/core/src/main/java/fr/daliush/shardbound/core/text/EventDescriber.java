@@ -71,6 +71,10 @@ public final class EventDescriber {
             case GameEvent.UnitDestroyed e -> w.card(e.unit()) + " is destroyed.";
             case GameEvent.RelicDestroyed e -> w.card(e.relic()) + " is destroyed.";
             case GameEvent.TokenVanished e -> w.card(e.unit()) + " vanishes.";
+            case GameEvent.UnitSacrificed e -> w.card(e.unit()) + " is sacrificed.";
+            case GameEvent.SacrificeFailed e -> w.subject(e.player()) + " cannot sacrifice "
+                    + Wording.count(e.needed(), "unit", "units") + " (only " + e.available() + " on "
+                    + w.own(e.player()) + " board): nothing more happens.";
         };
     }
 

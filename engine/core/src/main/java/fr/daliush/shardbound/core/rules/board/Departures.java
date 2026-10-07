@@ -15,15 +15,12 @@ public final class Departures {
     }
 
     public static void destroy(Game game, Unit unit, List<String> rules) {
-        game.updatePlayer(unit.controller(), player -> player.removeUnit(unit.id()));
-        game.emit(new GameEvent.UnitDestroyed(unit.asCard(), unit.controller(), rules));
-        if (unit.token()) {
-            game.emit(new GameEvent.TokenVanished(unit.asCard()));
-        } else {
-            game.updatePlayer(unit.owner(), player -> player.addToGraveyard(unit.asCard()));
-        }
-        Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEATH);
-        Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEPARTURE);
+        die(game, unit, new GameEvent.UnitDestroyed(unit.asCard(), unit.controller(), rules));
+    }
+
+    /** 8.3: a sacrificed unit dies, like a destroyed one. */
+    public static void sacrifice(Game game, Unit unit, List<String> rules) {
+        die(game, unit, new GameEvent.UnitSacrificed(unit.asCard(), unit.controller(), rules));
     }
 
     public static void destroy(Game game, Relic relic) {
@@ -32,5 +29,17 @@ public final class Departures {
         game.updatePlayer(relic.owner(), player -> player.addToGraveyard(relic.asCard()));
         Triggers.raise(game, relic.asCard(), relic.controller(), relic.arrivalSeq(), Trigger.DEATH);
         Triggers.raise(game, relic.asCard(), relic.controller(), relic.arrivalSeq(), Trigger.DEPARTURE);
+    }
+
+    private static void die(Game game, Unit unit, GameEvent death) {
+        game.updatePlayer(unit.controller(), player -> player.removeUnit(unit.id()));
+        game.emit(death);
+        if (unit.token()) {
+            game.emit(new GameEvent.TokenVanished(unit.asCard()));
+        } else {
+            game.updatePlayer(unit.owner(), player -> player.addToGraveyard(unit.asCard()));
+        }
+        Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEATH);
+        Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEPARTURE);
     }
 }

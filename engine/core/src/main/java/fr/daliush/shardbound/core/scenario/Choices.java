@@ -6,6 +6,7 @@ import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.HandCard;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
 import java.util.Optional;
@@ -48,34 +49,59 @@ public final class Choices {
         };
     }
 
+    /** The units to sacrifice for a Sacrifice effect (8.3), when its controller has more than it asks for. */
+    public static Choice sacrifice(Pick... units) {
+        return (state, decision) -> {
+            Action wanted = new Action.ChooseCards(unitIds(state, List.of(units)));
+            return Choice.single(decision, wanted::equals, wanted.toString());
+        };
+    }
+
     public static PlayChoice play(String card) {
-        return new PlayChoice(card, List.of());
+        return new PlayChoice(card, List.of(), List.of());
     }
 
     public static AttackChoice attack(String attacker) {
         return new AttackChoice(attacker, 0, Optional.empty());
     }
 
+    private static List<InstanceId> unitIds(GameState state, List<Pick> units) {
+        return units.stream().map(pick -> switch (pick.in(state)) {
+            case TargetRef.UnitTarget unit -> unit.id();
+            case TargetRef other -> throw new IllegalArgumentException(other + " is not a unit");
+        }).toList();
+    }
+
     private static Choice exactly(Action wanted) {
         return (state, decision) -> Choice.single(decision, wanted::equals, wanted.toString());
     }
 
-    /** Plays the first card in hand with this card id, on the given targets, one per choice slot. */
-    public record PlayChoice(String card, List<Pick> targets) implements Choice {
+    /**
+     * Plays the first card in hand with this card id, on the given targets, one per choice slot, sacrificing the
+     * given units to pay its sacrifice cost.
+     */
+    public record PlayChoice(String card, List<Pick> targets, List<Pick> sacrificed) implements Choice {
 
         public PlayChoice {
             targets = List.copyOf(targets);
+            sacrificed = List.copyOf(sacrificed);
         }
 
         public PlayChoice on(Pick... picks) {
-            return new PlayChoice(card, List.of(picks));
+            return new PlayChoice(card, List.of(picks), sacrificed);
+        }
+
+        public PlayChoice sacrificing(Pick... units) {
+            return new PlayChoice(card, targets, List.of(units));
         }
 
         @Override
         public Action pick(GameState state, Decision decision) {
             List<TargetRef> wanted = targets.stream().map(pick -> pick.in(state)).toList();
+            List<InstanceId> wantedSacrifices = unitIds(state, sacrificed);
             return Choice.single(decision, action -> action instanceof Action.PlayCard play
-                    && isCard(state, play, card) && play.targets().equals(wanted), "play " + card);
+                    && isCard(state, play, card) && play.targets().equals(wanted)
+                    && play.sacrificed().equals(wantedSacrifices), "play " + card);
         }
 
         private static boolean isCard(GameState state, Action.PlayCard play, String card) {

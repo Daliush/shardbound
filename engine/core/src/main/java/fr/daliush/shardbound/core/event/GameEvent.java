@@ -200,6 +200,16 @@ public sealed interface GameEvent {
         }
     }
 
+    /** {@code rules} say whether the unit paid a sacrifice cost (6.3, 8.3) or a Sacrifice effect (8.3). */
+    record UnitSacrificed(CardInstance unit, PlayerId controller, List<String> rules) implements GameEvent {}
+
+    /** 8.22: {@code player} had {@code available} sacrifices to make out of {@code needed}, so nothing more applies. */
+    record SacrificeFailed(PlayerId player, int needed, int available, List<String> rules) implements GameEvent {
+        public SacrificeFailed(PlayerId player, int needed, int available) {
+            this(player, needed, available, List.of("8.22"));
+        }
+    }
+
     enum HpLossReason {
         FATIGUE
     }

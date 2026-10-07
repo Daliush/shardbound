@@ -15,14 +15,14 @@ import java.util.Set;
 public final class EngineSupport {
 
     private static final Set<Class<? extends Effect>> IMPLEMENTED_EFFECTS = Set.of(
-            Effect.Damage.class, Effect.Destroy.class, Effect.Heal.class, Effect.Draw.class, Effect.Summon.class);
+            Effect.Damage.class, Effect.Destroy.class, Effect.Sacrifice.class, Effect.Heal.class, Effect.Draw.class,
+            Effect.Summon.class);
 
     private EngineSupport() {
     }
 
     public static boolean supports(CardDefinition card) {
         return card.keywords().isEmpty()
-                && card.sacrificeCost() == 0
                 && !(card instanceof SpellCard spell && spell.isFracture())
                 && !(card instanceof UnitCard unit && unit.attacks().stream().anyMatch(a -> a.echo().isPresent()))
                 && Triggers.abilitiesOf(card).stream().noneMatch(ability -> ability.trigger() == Trigger.CONTINUOUS)
