@@ -56,12 +56,14 @@ public final class DecisionDescriber {
                 + ". Intercept with another unit?";
     }
 
-    /** "Choose 1 unit to sacrifice for Blood Ritual #4." */
+    /** "Choose 1 unit to sacrifice for Blood Ritual #4.", "Choose 2 cards to discard for your opponent's Mind Rot #7." */
     private String chooseCards(Wording w, Step.ResolveEffects step, PlayerId decider) {
         String source = source(w, step.source(), decider);
         return switch (step.source().effects().effects(catalog).get(step.nextEffect())) {
             case Effect.Sacrifice sacrifice -> "Choose " + Wording.count(sacrifice.count(), "unit", "units")
                     + " to sacrifice for " + source + ".";
+            case Effect.Discard discard -> "Choose " + Wording.count(discard.amount(), "card", "cards")
+                    + " to discard for " + source + ".";
             case Effect effect -> throw new IllegalStateException(effect + " never asks for cards");
         };
     }

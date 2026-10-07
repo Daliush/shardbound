@@ -2,6 +2,7 @@ package fr.daliush.shardbound.core.rules.effect;
 
 import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.action.TargetRef;
+import fr.daliush.shardbound.core.content.DiscardChoice;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.decision.DecisionKind;
 import fr.daliush.shardbound.core.resolution.EffectSource;
@@ -23,6 +24,7 @@ public final class EffectResolution {
     public static void resolveNext(Game game, Step.ResolveEffects step) {
         switch (effectAt(game, step)) {
             case Effect.Sacrifice sacrifice -> sacrifice(game, step, sacrifice);
+            case Effect.Discard discard when discard.choice() == DiscardChoice.PLAYER -> discard(game, step, discard);
             case Effect effect -> {
                 continueAfter(game, step);
                 apply(game, effect, step.source(), step.chosen().get(step.nextEffect()));
@@ -50,6 +52,18 @@ public final class EffectResolution {
         pickCards(game, step, controller, options);
     }
 
+    /** 8.7: the discarding player picks the cards, even during the other player's turn (5.5.2). */
+    private static void discard(Game game, Step.ResolveEffects step, Effect.Discard discard) {
+        List<PlayerId> discarders = DiscardEffect.discarders(game, discard, step.source(),
+                step.chosen().get(step.nextEffect()));
+        if (discarders.isEmpty()) {
+            continueAfter(game, step);
+            return;
+        }
+        PlayerId discarder = discarders.getFirst();
+        pickCards(game, step, discarder, DiscardEffect.options(game.player(discarder), discard.amount()));
+    }
+
     /** The only option is taken at once; with two or more, the player chooses (CHOOSE_CARDS). */
     private static void pickCards(Game game, Step.ResolveEffects step, PlayerId player,
                                   List<List<InstanceId>> options) {
@@ -65,6 +79,7 @@ public final class EffectResolution {
     private static void applyToCards(Game game, Effect effect, List<InstanceId> cards) {
         switch (effect) {
             case Effect.Sacrifice ignored -> SacrificeEffect.apply(game, cards);
+            case Effect.Discard ignored -> DiscardEffect.apply(game, cards);
             default -> throw new IllegalStateException(effect + " never asks for cards");
         }
     }
@@ -76,6 +91,7 @@ public final class EffectResolution {
             case Effect.Heal heal -> HealEffect.apply(game, heal, source, chosen);
             case Effect.Modify modify -> ModifyEffect.apply(game, modify, source, chosen);
             case Effect.Draw draw -> DrawEffect.apply(game, draw, source, chosen);
+            case Effect.Discard discard -> DiscardEffect.atRandom(game, discard, source, chosen);
             case Effect.Summon summon -> SummonEffect.apply(game, summon, source);
             default -> throw new IllegalStateException("Not implemented yet: " + effect);
         }

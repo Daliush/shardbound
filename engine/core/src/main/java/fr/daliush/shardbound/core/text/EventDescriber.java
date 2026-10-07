@@ -37,8 +37,12 @@ public final class EventDescriber {
             case GameEvent.HpLost e -> w.subject(e.player()) + " " + w.verb(e.player(), "draw", "draws")
                     + " from an empty deck and " + w.verb(e.player(), "lose", "loses") + " " + e.amount()
                     + " HP (fatigue).";
-            case GameEvent.CardDiscarded e -> capitalize(w.possessive(e.player())) + " hand is full: "
-                    + w.name(e.card().card()) + " goes to the graveyard.";
+            case GameEvent.CardDiscarded e -> switch (e.reason()) {
+                case OVERDRAW -> capitalize(w.possessive(e.player())) + " hand is full: " + w.name(e.card().card())
+                        + " goes to the graveyard.";
+                case EFFECT -> w.subject(e.player()) + " " + w.verb(e.player(), "discard", "discards") + " "
+                        + w.name(e.card().card()) + ".";
+            };
             case GameEvent.TurnEnded e -> w.subject(e.player()) + " " + w.verb(e.player(), "end", "ends") + " "
                     + w.own(e.player()) + " turn.";
             case GameEvent.GameEnded e -> ending(e.result(), viewer);

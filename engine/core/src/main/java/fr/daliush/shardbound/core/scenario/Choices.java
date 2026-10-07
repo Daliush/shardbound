@@ -5,8 +5,10 @@ import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.state.HandCard;
 import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.Unit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,6 +55,22 @@ public final class Choices {
         return (state, decision) -> {
             Action wanted = new Action.ChooseCards(unitIds(state, List.of(units)));
             return Choice.single(decision, wanted::equals, wanted.toString());
+        };
+    }
+
+    /** The cards to discard (8.7) from the deciding player's hand: the first copies of these card ids. */
+    public static Choice discard(String... cards) {
+        return (state, decision) -> {
+            List<HandCard> hand = new ArrayList<>(state.player(decision.player()).hand());
+            List<InstanceId> wanted = new ArrayList<>();
+            for (String card : cards) {
+                HandCard copy = hand.stream().filter(inHand -> inHand.card().card().equals(new CardId(card)))
+                        .findFirst().orElseThrow(() -> new IllegalStateException("No " + card + " in hand"));
+                hand.remove(copy);
+                wanted.add(copy.id());
+            }
+            Action action = new Action.ChooseCards(wanted);
+            return Choice.single(decision, action::equals, action.toString());
         };
     }
 

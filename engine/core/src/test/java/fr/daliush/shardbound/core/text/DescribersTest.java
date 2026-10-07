@@ -106,6 +106,20 @@ class DescribersTest {
     }
 
     @Test
+    void describesDiscards() {
+        ScenarioResult mindRot = run(scenario().shards(P1, 1).hand(P1, "test.mind-rot")
+                        .hand(P2, "ember.spark-dart", "neutral.shardling", "neutral.tempest").build(),
+                play("test.mind-rot"));
+        CardInstance dart = new CardInstance(InstanceId.of(2), new CardId("ember.spark-dart"), P2);
+
+        assertThat(prompt(mindRot.state())).isEqualTo("Choose 2 cards to discard for your opponent's Mind Rot #1.");
+        assertThat(labels(mindRot.state())).containsExactly("Discard Spark Dart #2, Shardling #3",
+                "Discard Spark Dart #2, Tempest #4", "Discard Shardling #3, Tempest #4");
+        assertThat(events.describe(new GameEvent.CardDiscarded(P2, dart, GameEvent.DiscardReason.EFFECT,
+                List.of("8.7")), P1)).isEqualTo("Your opponent discards Spark Dart.");
+    }
+
+    @Test
     void describesModifiers() {
         CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
 

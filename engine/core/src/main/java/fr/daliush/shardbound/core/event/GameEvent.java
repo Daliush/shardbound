@@ -229,7 +229,8 @@ public sealed interface GameEvent {
         FATIGUE
     }
 
+    /** A card drawn into a full hand (3.3), or a Discard effect (8.7). */
     enum DiscardReason {
-        OVERDRAW
+        OVERDRAW, EFFECT
     }
 }

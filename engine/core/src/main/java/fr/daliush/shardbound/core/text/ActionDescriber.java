@@ -58,6 +58,7 @@ public final class ActionDescriber {
     private String chooseCards(Wording w, Action.ChooseCards choose, GameState state) {
         String verb = switch (PausedStep.effect(state, catalog)) {
             case Effect.Sacrifice ignored -> "Sacrifice ";
+            case Effect.Discard ignored -> "Discard ";
             case Effect effect -> throw new IllegalStateException(effect + " never asks for cards");
         };
         return verb + cards(w, choose.cards(), state);

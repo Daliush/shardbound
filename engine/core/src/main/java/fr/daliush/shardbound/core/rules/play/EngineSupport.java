@@ -16,7 +16,7 @@ public final class EngineSupport {
 
     private static final Set<Class<? extends Effect>> IMPLEMENTED_EFFECTS = Set.of(
             Effect.Damage.class, Effect.Destroy.class, Effect.Sacrifice.class, Effect.Heal.class, Effect.Modify.class,
-            Effect.Draw.class, Effect.Summon.class);
+            Effect.Draw.class, Effect.Discard.class, Effect.Summon.class);
 
     private EngineSupport() {
     }

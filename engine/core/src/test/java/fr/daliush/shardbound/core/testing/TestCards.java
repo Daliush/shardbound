@@ -91,6 +91,14 @@ public final class TestCards {
           "attacks": [{ "name": "Jab", "cost": 1, "effects": [{ "effect": "damage", "amount": 1, "target": "attack_target" }] }],
           "abilities": [{ "trigger": "death", "effects": [
             { "effect": "modify", "attack_damage": 1, "defense": 2, "duration": "end_of_turn", "target": "all_ally_units" }] }] }""",
+        // The opponent discards two cards of their choice (8.7).
+        """
+        { "id": "test.mind-rot", "name": "Mind Rot", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "discard", "amount": 2, "target": "opponent", "choice": "player" }] }""",
+        // The opponent discards a card at random (8.7).
+        """
+        { "id": "test.purge", "name": "Purge", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "discard", "amount": 1, "target": "opponent", "choice": "random" }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,

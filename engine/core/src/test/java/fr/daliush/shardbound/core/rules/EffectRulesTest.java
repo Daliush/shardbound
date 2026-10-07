@@ -2,6 +2,7 @@ package fr.daliush.shardbound.core.rules;
 
 import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.declineIntercept;
+import static fr.daliush.shardbound.core.scenario.Choices.discard;
 import static fr.daliush.shardbound.core.scenario.Choices.endTurn;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
 import static fr.daliush.shardbound.core.scenario.Choices.sacrifice;
@@ -25,6 +26,7 @@ import fr.daliush.shardbound.core.decision.DecisionKind;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.Pick;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
+import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.Unit;
@@ -266,6 +268,52 @@ class EffectRulesTest {
         assertThat(trace(result)).containsSubsequence("CardDrawn[8.6]", "HpLost[8.6, 1.4]");
         assertThat(result.player(P1).hand()).hasSize(1);
         assertThat(result.player(P1).hp()).isEqualTo(49);
+    }
+
+    @Test
+    @DisplayName("8.7 — a player discards the cards they choose, even during the other player's turn")
+    void discardChosen() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.mind-rot")
+                        .hand(P2, "ember.spark-dart", "neutral.shardling", "neutral.tempest").build(),
+                play("test.mind-rot"), discard("ember.spark-dart", "neutral.tempest"));
+
+        Decision choice = result.decisions().get(1);
+        assertThat(choice.player()).isEqualTo(P2);
+        assertThat(choice.kind()).isEqualTo(DecisionKind.CHOOSE_CARDS);
+        assertThat(choice.actions()).hasSize(3);
+        assertThat(result.player(P2).hand()).extracting(inHand -> inHand.card().card())
+                .containsExactly(new CardId("neutral.shardling"));
+        assertThat(result.player(P2).graveyard()).extracting(CardInstance::card)
+                .containsExactly(new CardId("ember.spark-dart"), new CardId("neutral.tempest"));
+        assertThat(trace(result)).containsSubsequence("CardDiscarded[8.7]", "CardDiscarded[8.7]",
+                "SpellResolved[6.3, 3.5]");
+    }
+
+    @Test
+    @DisplayName("8.7 — a hand with no more cards than asked is discarded whole, without a choice")
+    void discardWholeHand() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.mind-rot")
+                        .hand(P2, "ember.spark-dart").build(),
+                play("test.mind-rot"));
+
+        assertThat(result.pending().orElseThrow().kind()).isEqualTo(DecisionKind.MAIN);
+        assertThat(result.player(P2).hand()).isEmpty();
+        assertThat(result.player(P2).graveyard()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("8.7 — a random discard is drawn with the game's generator")
+    void discardAtRandom() {
+        GameState start = scenario().shards(P1, 1).hand(P1, "test.purge")
+                .hand(P2, "ember.spark-dart", "neutral.shardling", "neutral.tempest").build();
+
+        ScenarioResult result = run(start, play("test.purge"));
+        ScenarioResult again = run(start, play("test.purge"));
+
+        assertThat(result.decisions()).hasSize(1);
+        assertThat(result.player(P2).hand()).hasSize(2);
+        assertThat(result.events(GameEvent.CardDiscarded.class)).hasSize(1)
+                .isEqualTo(again.events(GameEvent.CardDiscarded.class));
     }
 
     @Test
