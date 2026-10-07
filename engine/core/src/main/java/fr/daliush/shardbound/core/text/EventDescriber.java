@@ -51,8 +51,8 @@ public final class EventDescriber {
                     + w.own(e.player()) + " turn.";
             case GameEvent.GameEnded e -> ending(e.result(), viewer);
             case GameEvent.CardPlayed e -> w.subject(e.player()) + " " + w.verb(e.player(), "play", "plays") + " "
-                    + w.name(e.card().card()) + ownStep(e.player(), e.fractureStep(), viewer)
-                    + (e.overcharged() ? ", overcharged," : "") + " (" + Wording.shards(e.cost()) + ").";
+                    + w.name(e.card().card()) + (e.overcharged() ? " overcharged" : "")
+                    + ownStep(e.player(), e.fractureStep(), viewer) + " (" + Wording.shards(e.cost()) + ").";
             case GameEvent.FractureAdvanced e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
                     + " hand" + ownStep(e.card().owner(), OptionalInt.of(e.nextStep()), viewer) + ".";
             case GameEvent.ShardsLocked e -> capitalize(w.possessive(e.player())) + " next turn will have "

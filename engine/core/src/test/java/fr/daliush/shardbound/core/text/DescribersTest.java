@@ -26,6 +26,7 @@ import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 
 class DescribersTest {
@@ -215,6 +216,9 @@ class DescribersTest {
                 "Play Ember Lance overcharged (2 Shards, locks 2 next turn)", "End your turn");
         assertThat(events.describe(new GameEvent.ShardsLocked(P1, 2, 4), P1))
                 .isEqualTo("Your next turn will have 2 Shards more locked (4 in all).");
+        CardInstance lance = new CardInstance(InstanceId.of(19), new CardId("ember.ember-lance"), P1);
+        assertThat(events.describe(new GameEvent.CardPlayed(P1, lance, 2, true, OptionalInt.empty()), P2))
+                .isEqualTo("Your opponent plays Ember Lance overcharged (2 Shards).");
     }
 
     @Test
