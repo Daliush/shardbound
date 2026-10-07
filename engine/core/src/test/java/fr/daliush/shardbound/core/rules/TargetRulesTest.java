@@ -1,7 +1,9 @@
 package fr.daliush.shardbound.core.rules;
 
+import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.chooseTarget;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
+import static fr.daliush.shardbound.core.scenario.Pick.player;
 import static fr.daliush.shardbound.core.scenario.Pick.unit;
 import static fr.daliush.shardbound.core.state.PlayerId.P1;
 import static fr.daliush.shardbound.core.state.PlayerId.P2;
@@ -31,6 +33,16 @@ class TargetRulesTest {
         assertThat(choice.kind()).isEqualTo(DecisionKind.CHOOSE_TARGET);
         assertThat(choice.player()).isEqualTo(P1);
         assertThat(choice.actions()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("10.3 — an attack on the opposing player: its effects that only take units do nothing to them")
+    void unitEffectsOnAnAttackedPlayer() {
+        ScenarioResult result = run(scenario().shards(P1, 1).unit(P1, "tide.brine-adept").build(),
+                attack("tide.brine-adept").on(player(P2)));
+
+        assertThat(result.player(P2).hp()).isEqualTo(48);
+        assertThat(result.events(GameEvent.Modified.class)).isEmpty();
     }
 
     @Test

@@ -20,6 +20,9 @@ final class ReturnToHandEffect {
                         game.unit(unit.id()).ifPresent(found -> Departures.returnToHand(game, found));
                 case TargetRef.RelicTarget relic ->
                         game.relic(relic.id()).ifPresent(found -> Departures.returnToHand(game, found));
+                case TargetRef.PlayerTarget ignored -> {
+                    // 10.3: the attack's target may be the opposing player, whom Return to hand cannot take.
+                }
                 default -> throw new IllegalStateException("Return to hand cannot take " + target);
             }
         }

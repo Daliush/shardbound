@@ -15,13 +15,10 @@ final class FreezeEffect {
     }
 
     static void apply(Game game, Effect.Freeze freeze, EffectSource source, List<TargetRef> chosen) {
-        for (TargetRef target : Targets.resolve(game, freeze.target(), source, chosen)) {
-            TargetRef.UnitTarget unitTarget = (TargetRef.UnitTarget) target;
-            game.unit(unitTarget.id()).ifPresent(unit -> {
-                Unit frozen = unit.frozenThrough(game.turn() + 1);
-                game.updateUnit(frozen);
-                game.emit(new GameEvent.Frozen(unit.asCard(), frozen.frozenThroughTurn()));
-            });
+        for (Unit unit : Targets.units(game, freeze.target(), source, chosen)) {
+            Unit frozen = unit.frozenThrough(game.turn() + 1);
+            game.updateUnit(frozen);
+            game.emit(new GameEvent.Frozen(unit.asCard(), frozen.frozenThroughTurn()));
         }
     }
 }
