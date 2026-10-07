@@ -11,13 +11,18 @@ import static fr.daliush.shardbound.core.testing.RuleTesting.run;
 import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
 import static fr.daliush.shardbound.core.testing.RuleTesting.trace;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import fr.daliush.shardbound.core.content.CardDefinition;
+import fr.daliush.shardbound.core.content.ContentException;
+import fr.daliush.shardbound.core.content.json.CardParser;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.decision.DecisionKind;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Rulebook section 10: targets. */
 class TargetRulesTest {
@@ -86,5 +91,22 @@ class TargetRulesTest {
                 play("test.watcher"));
         assertThat(single.unit("neutral.shard-construct").defense()).isEqualTo(6);
         assertThat(single.pending().orElseThrow().kind()).isEqualTo(DecisionKind.MAIN);
+    }
+
+    @Test
+    @DisplayName("10.4 — only Destroy and Return to hand target a relic: a card with another effect on one is refused")
+    void relicTargets() {
+        assertThat(parse("destroy", "")).isNotNull();
+        assertThat(parse("return_to_hand", "")).isNotNull();
+        assertThatThrownBy(() -> parse("damage", ", \"amount\": 3"))
+                .isInstanceOf(ContentException.class)
+                .hasMessageContaining("only Destroy and Return to hand can target a relic (10.4)");
+    }
+
+    private static CardDefinition parse(String effect, String amount) {
+        String json = """
+                { "id": "neutral.x", "name": "X", "faction": "neutral", "type": "spell", "cost": 1,
+                  "effects": [{ "effect": "%s", "target": "enemy_relic"%s }] }""".formatted(effect, amount);
+        return new CardParser().parse(JsonMapper.builder().build().readTree(json), "test");
     }
 }

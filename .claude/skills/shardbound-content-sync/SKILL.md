@@ -61,7 +61,7 @@ The Python linter (`test_card_rules.py`) also checks these:
 
 These are rules for writing cards. The engine does not need them to run a game, so it does not repeat them. If one starts to matter at runtime, for example cards created by players, port it to the engine and add it to this list's Java side.
 
-The engine, for its part, checks only what it needs to run safely: strict structure (unknown fields, wrong types, missing fields), `attack_target` only inside attacks, and that cross-references exist (deck cards, summoned tokens).
+The engine, for its part, checks only what it needs to run safely: strict structure (unknown fields, wrong types, missing fields), `attack_target` only inside attacks, relic targets only on Destroy and Return to hand (10.4), and that cross-references exist (deck cards, summoned tokens).
 
 ## How to make the change
 
