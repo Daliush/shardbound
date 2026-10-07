@@ -59,6 +59,54 @@ describe('DecisionGroups', () => {
     expect(sacrifice.buttons(null).map((a) => a.index)).toEqual([0, 1]);
   });
 
+  it('offers a card that can be overcharged twice, both as buttons', () => {
+    const lance = new DecisionGroups([
+      { index: 0, type: 'play', label: 'Play Ember Lance (4 Shards)', card: 19, overcharge: false, targets: [] },
+      {
+        index: 1,
+        type: 'play',
+        label: 'Play Ember Lance overcharged (2 Shards, locks 2 next turn)',
+        card: 19,
+        overcharge: true,
+        targets: [],
+      },
+      { index: 2, type: 'end_turn', label: 'End your turn' },
+    ]);
+
+    expect(lance.buttons('card:19').map((a) => a.index)).toEqual([0, 1, 2]);
+  });
+
+  it('lights up every unit of a Link pair, then offers the pairs of the clicked unit', () => {
+    const link = new DecisionGroups(
+      [
+        [1, 61],
+        [1, 36],
+        [61, 36],
+      ].map((pair, index) => ({
+        index,
+        type: 'play' as const,
+        label: `Play Binding Thread (1 Shard) on #${pair[0]}, #${pair[1]}`,
+        card: 7,
+        overcharge: false,
+        targets: pair.map((id) => ({ kind: 'unit' as const, id })),
+      })),
+    );
+
+    expect([...link.targets('card:7')]).toEqual(['unit:1', 'unit:61', 'unit:36']);
+    expect(link.pick('card:7', 'unit:61').map((a) => a.index)).toEqual([0, 2]);
+  });
+
+  it('shows the order of two echoes as buttons', () => {
+    const order = new DecisionGroups([
+      { index: 0, type: 'choose_order', label: 'Replay Fang first, then Frost Breath', order: [0, 1] },
+      { index: 1, type: 'choose_order', label: 'Replay Frost Breath first, then Fang', order: [1, 0] },
+    ]);
+
+    expect(order.sources().size).toBe(0);
+    expect(order.targets(null).size).toBe(0);
+    expect(order.buttons(null).map((a) => a.index)).toEqual([0, 1]);
+  });
+
   it('finds a card of the hand or a unit of either board from its id', () => {
     const locate = locateIn(aView(1));
 
