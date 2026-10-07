@@ -57,3 +57,22 @@ hr {
   border-left: 1px solid var(--line);
   padding-left: 12px;
 }
+
+/* Narrow screens: the log goes under the board instead of taking the whole width beside it. */
+@media (max-width: 900px) {
+  .game {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .board {
+    overflow-y: visible;
+  }
+
+  .log {
+    max-height: 20rem;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 8px 0 0;
+  }
+}
