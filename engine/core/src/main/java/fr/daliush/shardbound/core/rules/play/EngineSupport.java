@@ -3,7 +3,6 @@ package fr.daliush.shardbound.core.rules.play;
 import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.content.Keyword;
-import fr.daliush.shardbound.core.content.UnitCard;
 import java.util.Set;
 
 /**
@@ -25,7 +24,6 @@ public final class EngineSupport {
 
     public static boolean supports(CardDefinition card) {
         return IMPLEMENTED_KEYWORDS.containsAll(card.keywords())
-                && !(card instanceof UnitCard unit && unit.attacks().stream().anyMatch(a -> a.echo().isPresent()))
                 && card.allEffects().allMatch(effect -> IMPLEMENTED_EFFECTS.contains(effect.getClass()));
     }
 }

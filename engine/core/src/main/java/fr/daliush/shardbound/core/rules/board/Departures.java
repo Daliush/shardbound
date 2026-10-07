@@ -3,6 +3,7 @@ package fr.daliush.shardbound.core.rules.board;
 import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.game.Game;
+import fr.daliush.shardbound.core.rules.trigger.Echoes;
 import fr.daliush.shardbound.core.rules.trigger.Triggers;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.HandCard;
@@ -87,6 +88,7 @@ public final class Departures {
         } else {
             game.updatePlayer(unit.owner(), player -> player.addToGraveyard(unit.asCard()));
         }
+        Echoes.raise(game, unit);
         Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEATH);
         Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEPARTURE);
     }

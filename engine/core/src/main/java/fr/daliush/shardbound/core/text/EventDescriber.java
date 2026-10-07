@@ -5,6 +5,7 @@ import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.event.EventTarget;
 import fr.daliush.shardbound.core.event.GameEvent;
+import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Shards;
@@ -68,6 +69,8 @@ public final class EventDescriber {
                     + w.name(e.token()) + " is summoned.";
             case GameEvent.AbilityTriggered e -> w.card(e.source()) + " triggers its " + Wording.trigger(e.trigger())
                     + " ability.";
+            case GameEvent.EchoTriggered e -> w.card(e.unit()) + " died: " + attackName(e.unit(), e.attackIndex())
+                    + " echoes at " + e.percent() + "%.";
             case GameEvent.AttackDeclared e -> attack(w, e);
             case GameEvent.AttackIntercepted e -> w.card(e.interceptor()) + " intercepts the attack aimed at "
                     + w.card(e.originalTarget()) + ".";
@@ -127,6 +130,10 @@ public final class EventDescriber {
         return e.target()
                 .map(target -> w.card(e.attacker()) + " attacks " + target(w, target) + " with " + name + ".")
                 .orElse(w.card(e.attacker()) + " uses " + name + ".");
+    }
+
+    private String attackName(CardInstance unit, int attackIndex) {
+        return catalog.unit(unit.card()).attacks().get(attackIndex).name().orElse("its attack");
     }
 
     private static String shardsGained(Wording w, GameEvent.ShardsGained e) {

@@ -12,7 +12,13 @@ import java.util.Optional;
 public record EffectSource(EffectList effects, InstanceId instance, PlayerId controller,
                            Optional<TargetRef> attackTarget) {
 
+    /** An echo is not an attack (11.1.4). */
     public boolean isAttack() {
         return effects instanceof EffectList.AttackEffects;
+    }
+
+    /** 11.1.3: the new target an echo's owner chose. */
+    public EffectSource withAttackTarget(TargetRef target) {
+        return new EffectSource(effects, instance, controller, Optional.of(target));
     }
 }

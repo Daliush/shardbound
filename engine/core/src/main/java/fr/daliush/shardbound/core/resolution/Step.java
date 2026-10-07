@@ -59,7 +59,15 @@ public sealed interface Step {
         }
     }
 
-    /** 10.6: a triggered ability picks all of its targets before its first effect. */
+    /** 11.1.1: the echoes of a unit that died; with two, its owner chooses their order first (11.1.8). */
+    record StartEchoes(CardInstance unit, PlayerId controller, List<Integer> attacks) implements Step {
+
+        public StartEchoes {
+            attacks = List.copyOf(attacks);
+        }
+    }
+
+    /** 10.6: a triggered ability or an echo picks all of its targets before its first effect. */
     record ChooseTargets(EffectSource source, List<List<TargetRef>> chosen) implements Step {
 
         public ChooseTargets {

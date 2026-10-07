@@ -16,6 +16,7 @@ import fr.daliush.shardbound.core.content.GainMode;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameSetup;
+import fr.daliush.shardbound.core.scenario.Choices;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
@@ -214,6 +215,21 @@ class DescribersTest {
                 "Play Ember Lance overcharged (2 Shards, locks 2 next turn)", "End your turn");
         assertThat(events.describe(new GameEvent.ShardsLocked(P1, 2, 4), P1))
                 .isEqualTo("Your next turn will have 2 Shards more locked (4 in all).");
+    }
+
+    @Test
+    void describesEchoes() {
+        GameState start = scenario().shards(P1, 5).hand(P1, "neutral.crystal-rupture").unit(P1, "neutral.shardling")
+                .unit(P1, "neutral.shard-construct").unit(P2, "test.twin-wyrm").build();
+        ScenarioResult died = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")));
+        ScenarioResult ordered = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")),
+                Choices.echoOrder(1, 0));
+
+        assertThat(prompt(died.state())).isEqualTo("Choose the order in which the echoes of Twin Wyrm #4 replay.");
+        assertThat(labels(died.state())).containsExactly("Replay Fang first, then Frost Breath",
+                "Replay Frost Breath first, then Fang");
+        assertThat(describe(ordered, P1)).contains("Twin Wyrm #4 died: Frost Breath echoes at 50%.");
+        assertThat(prompt(ordered.state())).isEqualTo("Choose a target for the echo of Frost Breath of Twin Wyrm #4.");
     }
 
     private List<String> labels(GameState state) {

@@ -32,6 +32,15 @@ public sealed interface EffectList {
         }
     }
 
+    /** 11.1.2: an attack ability as its echo replays it. */
+    record EchoEffects(CardId card, int attackIndex) implements EffectList {
+
+        @Override
+        public List<Effect> effects(CardCatalog catalog) {
+            return catalog.unit(card).attacks().get(attackIndex).echoEffects();
+        }
+    }
+
     record AbilityEffects(CardId card, int abilityIndex) implements EffectList {
 
         @Override

@@ -8,6 +8,7 @@ import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.event.EventTarget;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.resolution.EffectList;
+import fr.daliush.shardbound.core.resolution.QueuedTrigger;
 import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.GameState;
@@ -25,8 +26,8 @@ import tools.jackson.databind.jsontype.NamedType;
 public final class GameJson {
 
     private static final List<Class<?>> SEALED_ROOTS = List.of(
-            GameResult.class, Step.class, EffectList.class, Action.class, TargetRef.class, GameEvent.class,
-            EventTarget.class);
+            GameResult.class, Step.class, EffectList.class, QueuedTrigger.class, Action.class, TargetRef.class,
+            GameEvent.class, EventTarget.class);
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     private interface Typed {

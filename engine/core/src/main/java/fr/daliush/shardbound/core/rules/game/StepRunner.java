@@ -6,6 +6,7 @@ import fr.daliush.shardbound.core.rules.combat.AttackSequence;
 import fr.daliush.shardbound.core.rules.effect.EffectResolution;
 import fr.daliush.shardbound.core.rules.play.CardPlay;
 import fr.daliush.shardbound.core.rules.trigger.AbilityTargets;
+import fr.daliush.shardbound.core.rules.trigger.Echoes;
 import fr.daliush.shardbound.core.rules.turn.TurnEnd;
 import fr.daliush.shardbound.core.rules.turn.TurnStart;
 
@@ -24,6 +25,7 @@ public final class StepRunner {
             case Step.ResolvePlay play -> CardPlay.resolve(game, play);
             case Step.FinishSpell finish -> CardPlay.finishSpell(game, finish.spell());
             case Step.ResolveAttack attack -> AttackSequence.run(game, attack);
+            case Step.StartEchoes echoes -> Echoes.start(game, echoes);
             case Step.ChooseTargets choose -> AbilityTargets.choose(game, choose);
             case Step.ResolveEffects effects -> EffectResolution.resolveNext(game, effects);
         }
@@ -36,6 +38,7 @@ public final class StepRunner {
     public static void resume(Game game, Step paused, Action answer) {
         switch (paused) {
             case Step.ResolveAttack attack -> AttackSequence.resume(game, attack, answer);
+            case Step.StartEchoes echoes -> Echoes.resume(game, echoes, answer);
             case Step.ChooseTargets choose -> AbilityTargets.resume(game, choose, answer);
             case Step.ResolveEffects effects -> EffectResolution.resume(game, effects, answer);
             case Step.StartTurn ignored -> throw neverPauses(paused);

@@ -171,6 +171,13 @@ public sealed interface GameEvent {
 
     record AbilityTriggered(CardInstance source, Trigger trigger, List<String> rules) implements GameEvent {}
 
+    /** 11.1.1, 11.1.2: the dead unit's attack ability {@code attackIndex} is replayed at {@code percent}%. */
+    record EchoTriggered(CardInstance unit, int attackIndex, int percent, List<String> rules) implements GameEvent {
+        public EchoTriggered(CardInstance unit, int attackIndex, int percent) {
+            this(unit, attackIndex, percent, List.of("11.1.1", "11.1.2"));
+        }
+    }
+
     // Combat
 
     record AttackDeclared(CardInstance attacker, int attackIndex, Optional<EventTarget> target, List<String> rules)

@@ -12,14 +12,19 @@ import fr.daliush.shardbound.core.state.PlayerId;
 import java.util.List;
 import java.util.Optional;
 
-/** Starts triggered abilities: from the queue, or right away for "Attack" abilities (9.9). */
+/** Starts triggered abilities and echoes: from the queue, or right away for "Attack" abilities (9.9). */
 public final class Abilities {
 
     private Abilities() {
     }
 
     public static void start(Game game, QueuedTrigger trigger) {
-        game.push(begin(game, trigger.source(), trigger.controller(), trigger.trigger(), trigger.abilityIndex()));
+        switch (trigger) {
+            case QueuedTrigger.TriggeredAbility ability -> game.push(begin(game, ability.source(),
+                    ability.controller(), ability.trigger(), ability.abilityIndex()));
+            case QueuedTrigger.Echoes echoes -> game.push(new Step.StartEchoes(echoes.source(), echoes.controller(),
+                    echoes.attackIndexes()));
+        }
     }
 
     /** Emits the trigger and returns the first step of the ability: picking its targets (10.6). */

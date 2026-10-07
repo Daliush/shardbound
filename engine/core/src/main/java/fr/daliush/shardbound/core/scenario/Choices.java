@@ -30,6 +30,11 @@ public final class Choices {
         return exactly(new Action.EndTurn());
     }
 
+    /** 11.1.8: the order in which a dead unit's echoes replay, by attack index. */
+    public static Choice echoOrder(Integer... attackIndexes) {
+        return exactly(new Action.ChooseOrder(List.of(attackIndexes)));
+    }
+
     public static Choice declineIntercept() {
         return exactly(new Action.DeclineIntercept());
     }

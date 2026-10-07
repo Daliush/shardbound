@@ -24,6 +24,6 @@ class EngineSupportTest {
                 .toList();
 
         assertThat(unsupported).containsExactly(
-                "ember.ash-warden", "ember.ashborn-drake", "neutral.binding-thread");
+                "neutral.binding-thread");
     }
 }
