@@ -30,6 +30,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 
 - Content tests (card and deck schemas, card and deck rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
 - Engine build and tests, from `engine/`: `./mvnw verify` (`mvnw.cmd verify` on Windows). Run it after any change to `engine/` or `content/`, since the engine loads the content. CI runs it too (`.github/workflows/engine.yml`).
+- Whole game, from the root: `docker compose up --build` (client on http://localhost:4200, server on http://localhost:8080).
 - Game server, from `engine/`: `./mvnw -pl api -am spring-boot:run` (http://localhost:8080).
 - Test client, from `frontend/`: `npm start` (http://localhost:4200, proxies `/api` and `/ws` to the server), `npm test` (unit tests, once), `npm run build`. Run the tests and the build after any change to `frontend/`. CI runs them (`.github/workflows/frontend.yml`).
 

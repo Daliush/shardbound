@@ -45,7 +45,7 @@
 
 **Out of scope (do not build)**
 
-MCTS, gRPC and Python clients, any database or `repository` module, user accounts and authentication, timers for human vs human games, replay endpoint, Docker and deployment, polished UI, animations, deck builder, collection, boosters, MCP server, anything AI.
+MCTS, gRPC and Python clients, any database or `repository` module, user accounts and authentication, timers for human vs human games, replay endpoint, deployment (a local `docker compose up` runs the game), polished UI, animations, deck builder, collection, boosters, MCP server, anything AI.
 
 ---
 
@@ -122,6 +122,7 @@ cd engine && ./mvnw verify                      # build and test everything
 cd engine && ./mvnw -pl api -am spring-boot:run # run the server on http://localhost:8080 (builds core in the reactor)
 cd frontend && npm start                        # run the client on http://localhost:4200 (proxies /api and /ws)
 cd frontend && npm test                         # client unit tests
+docker compose up --build                       # both, from the root: client on http://localhost:4200
 ```
 
 ### 3.3 Locating the content
