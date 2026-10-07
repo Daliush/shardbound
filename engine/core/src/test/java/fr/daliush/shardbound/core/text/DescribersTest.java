@@ -223,7 +223,7 @@ class DescribersTest {
                 .unit(P1, "neutral.shard-construct").unit(P2, "test.twin-wyrm").build();
         ScenarioResult died = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")));
         ScenarioResult ordered = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")),
-                Choices.echoOrder(1, 0));
+                Choices.chooseOrder(1, 0));
 
         assertThat(prompt(died.state())).isEqualTo("Choose the order in which the echoes of Twin Wyrm #4 replay.");
         assertThat(labels(died.state())).containsExactly("Replay Fang first, then Frost Breath",

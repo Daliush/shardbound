@@ -2,7 +2,7 @@ package fr.daliush.shardbound.core.rules;
 
 import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.chooseTarget;
-import static fr.daliush.shardbound.core.scenario.Choices.echoOrder;
+import static fr.daliush.shardbound.core.scenario.Choices.chooseOrder;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
 import static fr.daliush.shardbound.core.scenario.Pick.unit;
 import static fr.daliush.shardbound.core.state.PlayerId.P1;
@@ -158,7 +158,7 @@ class EchoRulesTest {
                 .unit(P1, "neutral.shard-construct").unit(P2, "test.twin-wyrm").build();
 
         ScenarioResult asked = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")));
-        ScenarioResult result = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")), echoOrder(1, 0));
+        ScenarioResult result = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")), chooseOrder(1, 0));
 
         Decision order = asked.pending().orElseThrow();
         assertThat(order.player()).isEqualTo(P2);
@@ -196,6 +196,25 @@ class EchoRulesTest {
                 .matches(modified -> modified.attackDamage() == -1 && modified.defense() == -1, "-3/-3 at 50%");
         assertThat(result.events(GameEvent.UnitHealed.class)).as("the shade is dead").isEmpty();
         assertThat(result.player(P2).hand()).as("2 cards at 50%, for the shade's owner").hasSize(1);
+    }
+
+    @Test
+    @DisplayName("11.1.11 — an echo keeps a Sacrifice's count; an amount scaled to 0 does nothing, damage excepted")
+    void sacrificeCountKept() {
+        ScenarioResult kept = run(scenario().shards(P1, 5).hand(P1, "neutral.crystal-rupture")
+                        .unit(P1, "neutral.shard-construct").unit(P2, "test.bloodfang").unit(P2, "root.sprout").build(),
+                play("neutral.crystal-rupture").on(unit("test.bloodfang")));
+        ScenarioResult faint = run(scenario().shards(P1, 5).hand(P1, "neutral.crystal-rupture")
+                        .unit(P1, "neutral.shard-construct").unit(P2, "test.murmur").deck(P2, "neutral.shardling").build(),
+                play("neutral.crystal-rupture").on(unit("test.murmur")));
+
+        assertThat(trace(kept)).containsSubsequence("EchoTriggered[11.1.1, 11.1.2]", "UnitSacrificed[8.3]",
+                "UnitDamaged[8.1]");
+        assertThat(kept.player(P2).units()).as("1 sacrifice, not 1 at 50%").isEmpty();
+        assertThat(kept.unit("neutral.shard-construct").defense()).as("4 at 50%").isEqualTo(7);
+        assertThat(faint.events(GameEvent.UnitDamaged.class)).singleElement()
+                .matches(damaged -> damaged.amount() == 0, "4 at 10%: a hit of 0 (8.15)");
+        assertThat(faint.player(P2).hand()).as("1 card at 10%: no draw").isEmpty();
     }
 
     @Test

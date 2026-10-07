@@ -17,8 +17,8 @@ public record AttackAbility(Optional<String> name, int cost, List<Effect> effect
     }
 
     /**
-     * 11.1.2: what its echo replays, the printed effects with every number at X%, rounded toward 0 (11.1.10);
-     * effects without a number apply in full.
+     * 11.1.2: what its echo replays, the printed effects with every amount at X%, rounded toward 0 (11.1.10);
+     * effects without an amount apply in full, and a Sacrifice keeps its count (11.1.11).
      */
     public List<Effect> echoEffects() {
         int percent = echo.orElseThrow(() -> new IllegalStateException("This attack ability has no Echo"));
@@ -28,7 +28,6 @@ public record AttackAbility(Optional<String> name, int cost, List<Effect> effect
     private static Effect scaled(Effect effect, int percent) {
         return switch (effect) {
             case Effect.Damage damage -> new Effect.Damage(scaled(damage.amount(), percent), damage.target());
-            case Effect.Sacrifice sacrifice -> new Effect.Sacrifice(scaled(sacrifice.count(), percent));
             case Effect.Heal heal -> new Effect.Heal(scaled(heal.amount(), percent), heal.target());
             case Effect.Modify modify -> new Effect.Modify(scaled(modify.attackDamage(), percent),
                     scaled(modify.defense(), percent), modify.duration(), modify.target());

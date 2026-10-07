@@ -169,11 +169,21 @@ public final class TestCards {
           "attacks": [{ "name": "Howl", "cost": 1, "echo": 100,
                         "effects": [{ "effect": "damage", "amount": 2, "target": "attack_target" }] }],
           "abilities": [{ "trigger": "attack", "effects": [{ "effect": "damage", "amount": 1, "target": "opponent" }] }] }""",
-        // An Echo attack that asks for a sacrifice (8.22).
+        // An Echo attack that asks for a sacrifice, whose count Echo keeps (8.22, 11.1.11).
         """
         { "id": "test.bloodfang", "name": "Bloodfang", "faction": "neutral", "type": "unit", "cost": 1, "defense": 2,
-          "attacks": [{ "name": "Blood Fang", "cost": 1, "echo": 100, "effects": [{ "effect": "sacrifice" },
+          "attacks": [{ "name": "Blood Fang", "cost": 1, "echo": 50, "effects": [{ "effect": "sacrifice" },
                         { "effect": "damage", "amount": 4, "target": "attack_target" }] }] }""",
+        // An Echo so small that it scales its amounts down to 0 (11.1.11).
+        """
+        { "id": "test.murmur", "name": "Murmuring Shell", "faction": "neutral", "type": "unit", "cost": 1, "defense": 2,
+          "attacks": [{ "name": "Murmur", "cost": 1, "echo": 10, "effects": [
+            { "effect": "damage", "amount": 4, "target": "attack_target" }, { "effect": "draw", "amount": 1, "target": "you" }] }] }""",
+        // A Fracture card with a sacrifice cost (11.2.8).
+        """
+        { "id": "test.blood-tide", "name": "Blood Tide", "faction": "neutral", "type": "spell", "sacrifice_cost": 1,
+          "fracture": [{ "cost": 1, "effects": [{ "effect": "draw", "amount": 1, "target": "you" }] },
+                       { "cost": 1, "effects": [{ "effect": "draw", "amount": 2, "target": "you" }] }] }""",
         // A 1-cost card with Overcharge (6.8, 11.4.1).
         """
         { "id": "test.flare", "name": "Flare", "faction": "neutral", "type": "spell", "cost": 1, "keywords": ["overcharge"],
