@@ -65,6 +65,16 @@ final class Wording {
         return count(amount, "Shard", "Shards");
     }
 
+    /** "+2/+0": a Modify or an aura (8.5, 8.14). */
+    static String stats(int attackDamage, int defense) {
+        return signed(attackDamage) + "/" + signed(defense);
+    }
+
+    /** "+2", "-1", "+0". */
+    static String signed(int value) {
+        return (value < 0 ? "-" : "+") + Math.abs(value);
+    }
+
     /** "1 unit", "2 units". */
     static String count(int amount, String one, String many) {
         return amount + " " + (amount == 1 ? one : many);

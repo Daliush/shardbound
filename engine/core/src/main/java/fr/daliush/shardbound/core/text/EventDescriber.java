@@ -2,6 +2,7 @@ package fr.daliush.shardbound.core.text;
 
 import fr.daliush.shardbound.core.content.AttackAbility;
 import fr.daliush.shardbound.core.content.CardCatalog;
+import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.event.EventTarget;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.state.GameResult;
@@ -71,6 +72,10 @@ public final class EventDescriber {
             case GameEvent.UnitDestroyed e -> w.card(e.unit()) + " is destroyed.";
             case GameEvent.RelicDestroyed e -> w.card(e.relic()) + " is destroyed.";
             case GameEvent.TokenVanished e -> w.card(e.unit()) + " vanishes.";
+            case GameEvent.Modified e -> w.card(e.unit()) + " gets " + Wording.stats(e.attackDamage(), e.defense())
+                    + (e.duration() == Duration.END_OF_TURN ? " until end of turn." : ".");
+            case GameEvent.ModifierExpired e -> "The " + Wording.stats(e.attackDamage(), e.defense()) + " on "
+                    + w.card(e.unit()) + " ends.";
             case GameEvent.UnitSacrificed e -> w.card(e.unit()) + " is sacrificed.";
             case GameEvent.SacrificeFailed e -> w.subject(e.player()) + " cannot sacrifice "
                     + Wording.count(e.needed(), "unit", "units") + " (only " + e.available() + " on "

@@ -73,6 +73,24 @@ public final class TestCards {
           "attacks": [{ "name": "Jab", "cost": 1, "effects": [{ "effect": "damage", "amount": 1, "target": "attack_target" }] }],
           "abilities": [{ "trigger": "arrival", "effects": [{ "effect": "sacrifice", "count": 2 },
                                                              { "effect": "damage", "amount": 5, "target": "opponent" }] }] }""",
+        // A permanent defense bonus (8.5).
+        """
+        { "id": "test.bulwark", "name": "Bulwark", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 3, "duration": "permanent", "target": "ally_unit" }] }""",
+        // A temporary defense bonus on any unit (8.5).
+        """
+        { "id": "test.ward", "name": "Ward", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 2, "duration": "end_of_turn", "target": "any_unit" }] }""",
+        // A temporary malus (8.5, 8.17).
+        """
+        { "id": "test.hex", "name": "Hex", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": -1, "defense": -2, "duration": "end_of_turn", "target": "enemy_unit" }] }""",
+        // A "Death" ability that buffs its controller's units until end of turn, whoever's turn it is (8.19).
+        """
+        { "id": "test.martyr", "name": "Martyr", "faction": "neutral", "type": "unit", "cost": 1, "defense": 1,
+          "attacks": [{ "name": "Jab", "cost": 1, "effects": [{ "effect": "damage", "amount": 1, "target": "attack_target" }] }],
+          "abilities": [{ "trigger": "death", "effects": [
+            { "effect": "modify", "attack_damage": 1, "defense": 2, "duration": "end_of_turn", "target": "all_ally_units" }] }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,

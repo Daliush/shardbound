@@ -1,6 +1,7 @@
 package fr.daliush.shardbound.core.event;
 
 import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameResult;
@@ -197,6 +198,20 @@ public sealed interface GameEvent {
     record TokenVanished(CardInstance unit, List<String> rules) implements GameEvent {
         public TokenVanished(CardInstance unit) {
             this(unit, List.of("3.6"));
+        }
+    }
+
+    record Modified(CardInstance unit, int attackDamage, int defense, Duration duration, List<String> rules)
+            implements GameEvent {
+        public Modified(CardInstance unit, int attackDamage, int defense, Duration duration) {
+            this(unit, attackDamage, defense, duration, List.of("8.5"));
+        }
+    }
+
+    /** 5.4.2: an "until end of turn" modifier ends; a malus gives back what it took (8.17). */
+    record ModifierExpired(CardInstance unit, int attackDamage, int defense, List<String> rules) implements GameEvent {
+        public ModifierExpired(CardInstance unit, int attackDamage, int defense) {
+            this(unit, attackDamage, defense, List.of("5.4.2", defense < 0 ? "8.17" : "8.5"));
         }
     }
 

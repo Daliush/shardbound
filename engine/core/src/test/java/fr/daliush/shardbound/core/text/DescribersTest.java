@@ -10,11 +10,15 @@ import static fr.daliush.shardbound.core.testing.RuleTesting.run;
 import static fr.daliush.shardbound.core.testing.RuleTesting.scenario;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameSetup;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
+import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
@@ -99,6 +103,18 @@ class DescribersTest {
         assertThat(labels(ritual.state())).containsExactly("Sacrifice Cinderling #3", "Sacrifice Shardling #4");
         assertThat(events.describe(new GameEvent.SacrificeFailed(P2, 2, 1), P1))
                 .isEqualTo("Your opponent cannot sacrifice 2 units (only 1 on their board): nothing more happens.");
+    }
+
+    @Test
+    void describesModifiers() {
+        CardInstance cinderling = new CardInstance(InstanceId.of(1), new CardId("ember.cinderling"), P2);
+
+        assertThat(events.describe(new GameEvent.Modified(cinderling, 2, 0, Duration.END_OF_TURN), P1))
+                .isEqualTo("Cinderling #1 gets +2/+0 until end of turn.");
+        assertThat(events.describe(new GameEvent.Modified(cinderling, -2, 0, Duration.PERMANENT), P1))
+                .isEqualTo("Cinderling #1 gets -2/+0.");
+        assertThat(events.describe(new GameEvent.ModifierExpired(cinderling, -1, -2), P1))
+                .isEqualTo("The -1/-2 on Cinderling #1 ends.");
     }
 
     private List<String> labels(GameState state) {

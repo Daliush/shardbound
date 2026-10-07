@@ -1,12 +1,15 @@
 package fr.daliush.shardbound.core.rules.turn;
 
+import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.rules.trigger.Triggers;
 import fr.daliush.shardbound.core.state.GameResult;
+import fr.daliush.shardbound.core.state.Modifier;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
 
 /** 5.4: the end of a turn, then the next player's turn; or a draw after each player's 50th turn (1.5). */
@@ -24,12 +27,28 @@ public final class TurnEnd {
     }
 
     public static void finish(Game game, PlayerId player) {
+        endTemporaryModifiers(game);
         game.updatePlayer(player, state -> state.withShards(state.shards().emptied()));
         game.emit(new GameEvent.TurnEnded(player));
         if (game.turn() >= LAST_TURN) {
             game.end(new GameResult.Draw(GameResult.EndReason.TURN_LIMIT), List.of("1.5"));
         } else {
             game.push(new Step.StartTurn(player.opponent()));
+        }
+    }
+
+    /** 5.4.2: every "until end of turn" modifier ends now, whoever's turn it is and whoever's unit it is (8.19). */
+    private static void endTemporaryModifiers(Game game) {
+        for (Unit unit : game.unitsByArrival()) {
+            Unit changed = unit;
+            for (Modifier modifier : unit.modifiers()) {
+                if (modifier.duration() == Duration.END_OF_TURN) {
+                    changed = changed.withModifierEnded(modifier);
+                    game.emit(new GameEvent.ModifierExpired(unit.asCard(), modifier.attackDamage(),
+                            modifier.defense()));
+                }
+            }
+            game.updateUnit(changed);
         }
     }
 }

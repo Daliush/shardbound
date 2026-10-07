@@ -5,7 +5,6 @@ import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.state.GameState;
-import fr.daliush.shardbound.core.state.HandCard;
 import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
@@ -105,9 +104,10 @@ public final class Choices {
         }
 
         private static boolean isCard(GameState state, Action.PlayCard play, String card) {
-            return state.player(state.active()).handCard(play.card())
-                    .map(HandCard::card)
-                    .map(instance -> instance.card().equals(new CardId(card)))
+            return state.player(state.active()).hand().stream()
+                    .filter(inHand -> inHand.card().card().equals(new CardId(card)))
+                    .findFirst()
+                    .map(inHand -> inHand.id().equals(play.card()))
                     .orElse(false);
         }
     }

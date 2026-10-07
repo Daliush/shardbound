@@ -74,6 +74,7 @@ public final class EffectResolution {
             case Effect.Damage damage -> DamageEffect.apply(game, damage, source, chosen);
             case Effect.Destroy destroy -> DestroyEffect.apply(game, destroy, source, chosen);
             case Effect.Heal heal -> HealEffect.apply(game, heal, source, chosen);
+            case Effect.Modify modify -> ModifyEffect.apply(game, modify, source, chosen);
             case Effect.Draw draw -> DrawEffect.apply(game, draw, source, chosen);
             case Effect.Summon summon -> SummonEffect.apply(game, summon, source);
             default -> throw new IllegalStateException("Not implemented yet: " + effect);
