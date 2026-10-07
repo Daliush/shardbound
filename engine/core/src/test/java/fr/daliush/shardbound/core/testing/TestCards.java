@@ -115,6 +115,10 @@ public final class TestCards {
         """
         { "id": "test.frost", "name": "Frost", "faction": "neutral", "type": "spell", "cost": 1,
           "effects": [{ "effect": "freeze", "target": "enemy_unit" }] }""",
+        // Shards for this turn only (8.12).
+        """
+        { "id": "test.surge", "name": "Surge", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "gain_shards", "mode": "this_turn", "amount": 2 }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,

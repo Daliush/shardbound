@@ -30,6 +30,7 @@ import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.HandCard;
 import fr.daliush.shardbound.core.state.InstanceId;
+import fr.daliush.shardbound.core.state.Shards;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
 import java.util.Optional;
@@ -390,6 +391,32 @@ class EffectRulesTest {
         assertThat(result.unit("neutral.shardling").frozenThroughTurn()).isZero();
         assertThat(trace(result)).containsSubsequence("Frozen[8.10]", "TurnStarted[5.2]", "TurnStarted[5.2]",
                 "UnitThawed[8.10]", "ShardsRefilled[4.1, 4.2]");
+    }
+
+    @Test
+    @DisplayName("8.12 — Shards gained for this turn can go above the max, and are lost at the end of the turn")
+    void gainShardsThisTurn() {
+        ScenarioResult played = run(scenario().shards(P1, 1).maxShards(P1, 1).hand(P1, "test.surge").build(),
+                play("test.surge"));
+        ScenarioResult ended = run(played.state(), endTurn());
+
+        assertThat(played.player(P1).shards()).isEqualTo(new Shards(1, 2, 0));
+        assertThat(trace(played)).contains("ShardsGained[8.12]");
+        assertThat(ended.player(P1).shards().available()).isZero();
+    }
+
+    @Test
+    @DisplayName("8.12 — Gain Shards can give one more max Shard, up to 10")
+    void gainMaxShard() {
+        ScenarioResult below = run(scenario().shards(P1, 3).maxShards(P1, 5).hand(P1, "root.deepening-roots").build(),
+                play("root.deepening-roots"));
+        ScenarioResult atCap = run(scenario().shards(P1, 10).hand(P1, "root.deepening-roots").build(),
+                play("root.deepening-roots"));
+
+        assertThat(below.player(P1).shards()).isEqualTo(new Shards(6, 1, 0));
+        assertThat(atCap.player(P1).shards()).isEqualTo(new Shards(10, 8, 0));
+        assertThat(atCap.events(GameEvent.ShardsGained.class)).extracting(GameEvent.ShardsGained::amount)
+                .containsExactly(0);
     }
 
     @Test

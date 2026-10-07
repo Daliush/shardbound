@@ -95,6 +95,7 @@ public final class EffectResolution {
             case Effect.ReturnToHand returnToHand -> ReturnToHandEffect.apply(game, returnToHand, source, chosen);
             case Effect.Summon summon -> SummonEffect.apply(game, summon, source);
             case Effect.Freeze freeze -> FreezeEffect.apply(game, freeze, source, chosen);
+            case Effect.GainShards gain -> GainShardsEffect.apply(game, gain, source);
             default -> throw new IllegalStateException("Not implemented yet: " + effect);
         }
     }

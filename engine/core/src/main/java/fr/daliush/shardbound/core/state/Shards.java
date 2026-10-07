@@ -22,6 +22,16 @@ public record Shards(int max, int available, int lockedNextTurn) {
         return new Shards(max, available - cost, lockedNextTurn);
     }
 
+    /** 8.12: Shards for this turn only, which can go above the max. */
+    public Shards gained(int amount) {
+        return new Shards(max, available + amount, lockedNextTurn);
+    }
+
+    /** 8.12: one more max Shard, up to 10; the Shards of this turn do not change. */
+    public Shards withMaxRaised() {
+        return new Shards(Math.min(CAP, max + 1), available, lockedNextTurn);
+    }
+
     /** End of turn: unspent Shards are lost (4.4). */
     public Shards emptied() {
         return new Shards(max, 0, lockedNextTurn);

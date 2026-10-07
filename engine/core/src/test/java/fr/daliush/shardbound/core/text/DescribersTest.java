@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.content.Duration;
+import fr.daliush.shardbound.core.content.GainMode;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameSetup;
@@ -136,6 +137,16 @@ class DescribersTest {
         assertThat(events.describe(new GameEvent.Frozen(shardling, 4), P1))
                 .isEqualTo("Shardling #3 is frozen until the end of turn 4.");
         assertThat(events.describe(new GameEvent.UnitThawed(shardling), P1)).isEqualTo("Shardling #3 thaws.");
+    }
+
+    @Test
+    void describesShardsGained() {
+        assertThat(events.describe(new GameEvent.ShardsGained(P1, 2, GainMode.THIS_TURN), P1))
+                .isEqualTo("You gain 2 Shards this turn.");
+        assertThat(events.describe(new GameEvent.ShardsGained(P2, 1, GainMode.MAX), P1))
+                .isEqualTo("Your opponent gains 1 max Shard.");
+        assertThat(events.describe(new GameEvent.ShardsGained(P1, 0, GainMode.MAX), P1))
+                .isEqualTo("Your max Shards are already at 10.");
     }
 
     @Test

@@ -7,6 +7,7 @@ import fr.daliush.shardbound.core.event.EventTarget;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.core.state.Shards;
 
 /** Turns an event into an English sentence for one player: "You draw Spark Dart.", "Sprout #61 takes 3 damage." */
 public final class EventDescriber {
@@ -80,6 +81,7 @@ public final class EventDescriber {
                     + (e.duration() == Duration.END_OF_TURN ? " until end of turn." : ".");
             case GameEvent.ModifierExpired e -> "The " + Wording.stats(e.attackDamage(), e.defense()) + " on "
                     + w.card(e.unit()) + " ends.";
+            case GameEvent.ShardsGained e -> shardsGained(w, e);
             case GameEvent.Frozen e -> w.card(e.unit()) + " is frozen until the end of turn " + e.throughTurn() + ".";
             case GameEvent.UnitThawed e -> w.card(e.unit()) + " thaws.";
             case GameEvent.ReturnedToHand e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
@@ -99,6 +101,15 @@ public final class EventDescriber {
         return e.target()
                 .map(target -> w.card(e.attacker()) + " attacks " + target(w, target) + " with " + name + ".")
                 .orElse(w.card(e.attacker()) + " uses " + name + ".");
+    }
+
+    private static String shardsGained(Wording w, GameEvent.ShardsGained e) {
+        String gain = w.subject(e.player()) + " " + w.verb(e.player(), "gain", "gains") + " ";
+        return switch (e.mode()) {
+            case THIS_TURN -> gain + Wording.shards(e.amount()) + " this turn.";
+            case MAX -> e.amount() > 0 ? gain + "1 max Shard."
+                    : capitalize(w.possessive(e.player())) + " max Shards are already at " + Shards.CAP + ".";
+        };
     }
 
     private static String target(Wording w, EventTarget target) {

@@ -2,6 +2,7 @@ package fr.daliush.shardbound.core.event;
 
 import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.content.Duration;
+import fr.daliush.shardbound.core.content.GainMode;
 import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameResult;
@@ -212,6 +213,13 @@ public sealed interface GameEvent {
     record ModifierExpired(CardInstance unit, int attackDamage, int defense, List<String> rules) implements GameEvent {
         public ModifierExpired(CardInstance unit, int attackDamage, int defense) {
             this(unit, attackDamage, defense, List.of("5.4.2", defense < 0 ? "8.17" : "8.5"));
+        }
+    }
+
+    /** 8.12: {@code amount} is what the player got: 0 for a max Shard above the cap of 10. */
+    record ShardsGained(PlayerId player, int amount, GainMode mode, List<String> rules) implements GameEvent {
+        public ShardsGained(PlayerId player, int amount, GainMode mode) {
+            this(player, amount, mode, List.of("8.12"));
         }
     }
 
