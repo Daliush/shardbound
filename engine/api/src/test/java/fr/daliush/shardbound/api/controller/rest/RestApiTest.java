@@ -35,7 +35,7 @@ class RestApiTest {
     private MockMvc mvc;
 
     @Test
-    void listsTheCardsWithOptionalFieldsLeftOut() throws Exception {
+    void listsTheCardsWithTheirTextAndOptionalFieldsLeftOut() throws Exception {
         mvc.perform(get("/api/cards"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id == 'ember.ash-warden')].cost").value(3))
@@ -45,7 +45,12 @@ class RestApiTest {
                 .andExpect(jsonPath("$[?(@.id == 'root.sprout')].cost").isEmpty())
                 .andExpect(jsonPath("$[?(@.id == 'tide.moonpull')].fracture[*].cost").value(
                         contains(1, 2, 3)))
-                .andExpect(jsonPath("$[0].text").doesNotExist());
+                .andExpect(jsonPath("$[?(@.id == 'ember.ash-warden')].text[*].text").value(contains(
+                        "Cinder Bite (2 Shards): Deal 4 damage to the target. Echo 50.",
+                        "Kindle (1 Shard): Give all your units +2/+0 until end of turn.")))
+                .andExpect(jsonPath("$[?(@.id == 'ember.ash-warden')].text[*].kind").value(contains("attack", "attack")))
+                .andExpect(jsonPath("$[?(@.id == 'ember.cinderling')].text[1].kind").value("ability"))
+                .andExpect(jsonPath("$[?(@.id == 'tide.moonpull')].text[0].text").value("Fracture 3."));
     }
 
     @Test

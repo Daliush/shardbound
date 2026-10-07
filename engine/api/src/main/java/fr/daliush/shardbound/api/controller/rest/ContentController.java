@@ -31,7 +31,7 @@ public class ContentController {
 
     @GetMapping("/cards")
     public List<CardResponse> cards() {
-        return content.cards().stream().map(cards::toResponse).toList();
+        return content.cards().stream().map(card -> cards.toResponse(card, content.text(card))).toList();
     }
 
     @GetMapping("/decks")
