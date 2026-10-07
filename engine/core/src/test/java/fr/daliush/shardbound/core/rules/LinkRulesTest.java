@@ -111,6 +111,21 @@ class LinkRulesTest {
     }
 
     @Test
+    @DisplayName("11.5.3 — Tempest on an anchored unit linked to another: the design doc's Arbiter example")
+    void arbiterExample() {
+        ScenarioResult result = run(scenario().turn(4).active(P2).shards(P2, 7).hand(P2, "neutral.tempest")
+                        .unit(P1, "root.root-sentinel", unit -> unit.anchorProtected()).unit(P1, "root.bramble-warden")
+                        .link("root.root-sentinel", "root.bramble-warden").build(),
+                play("neutral.tempest"));
+
+        assertThat(trace(result)).containsSubsequence("AnchorPrevented[11.3.2, 11.3.3]", "UnitDestroyed[8.2]",
+                "LinkBroken[11.5.4]");
+        assertThat(result.player(P1).units()).extracting(Unit::card).extracting(Object::toString)
+                .containsExactly("root.root-sentinel");
+        assertThat(result.unit("root.root-sentinel").linkedTo()).isEmpty();
+    }
+
+    @Test
     @DisplayName("11.5.4 — the link breaks when either unit leaves the board, by dying or by returning to hand")
     void linkBreaks() {
         GameState start = scenario().shards(P1, 3).hand(P1, "tide.receding-wave").unit(P1, "neutral.shardling")

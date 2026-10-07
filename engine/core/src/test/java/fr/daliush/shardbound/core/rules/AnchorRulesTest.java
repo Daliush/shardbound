@@ -139,7 +139,7 @@ class AnchorRulesTest {
     }
 
     @Test
-    @DisplayName("6.9 — maluses can take a doomed unit's max defense below 0; its defense stays at 0")
+    @DisplayName("6.10 — maluses can take a doomed unit's max defense below 0; one that ends gives back what it took")
     void maxDefenseBelowZero() {
         GameState start = scenario().shards(P1, 3).hand(P1, "test.hex", "test.hex", "test.hex")
                 .deck(P2, "neutral.shardling")
@@ -156,6 +156,29 @@ class AnchorRulesTest {
         // 8.17: each malus that ends gives back what it took, on both defenses.
         assertThat(expired.unit("root.root-sentinel").defense()).isEqualTo(5);
         assertThat(trace(expired)).containsSubsequence("ModifierExpired[5.4.2, 8.17]", "DoomLifted[11.3.4]");
+    }
+
+    @Test
+    @DisplayName("6.10 — a unit whose max defense is below 0 cannot be healed above 0: it stays doomed")
+    void noHealAboveAMaxBelowZero() {
+        GameState start = scenario().shards(P1, 4).handAtStep(P1, "tide.moonpull", 2)
+                .handAtStep(P1, "tide.moonpull", 2).deck(P2, "neutral.shardling")
+                .unit(P2, "root.root-sentinel", unit -> unit.anchorProtected().doomed()).unit(P2, "root.mossmender")
+                .build();
+
+        ScenarioResult healed = run(start, play("tide.moonpull").on(unit("root.root-sentinel")),
+                play("tide.moonpull").on(unit("root.root-sentinel")), endTurn(),
+                attack("root.mossmender").withAttack(1));
+        ScenarioResult endOfTurn = run(start, play("tide.moonpull").on(unit("root.root-sentinel")),
+                play("tide.moonpull").on(unit("root.root-sentinel")), endTurn(),
+                attack("root.mossmender").withAttack(1), endTurn());
+
+        Unit sentinel = healed.unit("root.root-sentinel");
+        assertThat(sentinel.maxDefense()).isEqualTo(-1);
+        assertThat(sentinel.defense()).isZero();
+        assertThat(sentinel.doomed()).isTrue();
+        assertThat(trace(healed)).contains("UnitHealed[8.4]").doesNotContain("DoomLifted[11.3.4]");
+        assertThat(trace(endOfTurn)).contains("UnitDestroyed[5.4.3, 11.3.5]");
     }
 
     @Test

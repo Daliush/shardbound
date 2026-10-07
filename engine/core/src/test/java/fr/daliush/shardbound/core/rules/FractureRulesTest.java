@@ -116,6 +116,23 @@ class FractureRulesTest {
     }
 
     @Test
+    @DisplayName("11.2.8 — a Fracture card with a sacrifice cost pays it at each step")
+    void sacrificeAtEachStep() {
+        GameState start = scenario().shards(P1, 1).hand(P1, "test.blood-tide")
+                .unit(P1, "neutral.shardling").unit(P1, "neutral.shardling")
+                .deck(P1, "neutral.shardling", "neutral.shardling", "neutral.shardling", "neutral.shardling")
+                .deck(P2, "neutral.shardling").build();
+
+        ScenarioResult result = run(start, play("test.blood-tide").sacrificing(unit("neutral.shardling")), endTurn(),
+                endTurn(), play("test.blood-tide").sacrificing(unit("neutral.shardling")));
+
+        assertThat(result.events(GameEvent.UnitSacrificed.class)).hasSize(2);
+        assertThat(trace(result)).containsSubsequence("CardPlayed[6.3, 11.2.2]", "UnitSacrificed[6.3, 8.3]",
+                "FractureAdvanced[11.2.2]", "CardPlayed[6.3, 11.2.2]", "UnitSacrificed[6.3, 8.3]",
+                "SpellResolved[6.3, 3.5, 11.2.4]");
+    }
+
+    @Test
     @DisplayName("11.2.6 — a Fracture card discarded between two steps loses its progress")
     void discardLosesProgress() {
         ScenarioResult result = run(scenario().shards(P1, 2).hand(P1, "tide.brinesong").deck(P1, "neutral.shardling")
