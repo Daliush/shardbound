@@ -4,6 +4,7 @@ import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.resolution.Step;
+import fr.daliush.shardbound.core.rules.board.Departures;
 import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.rules.trigger.Triggers;
 import fr.daliush.shardbound.core.state.GameResult;
@@ -26,14 +27,33 @@ public final class TurnEnd {
         game.push(new Step.FinishTurn(player));
     }
 
+    /** 5.4.2 and 5.4.3. The rest waits until the abilities they trigger have resolved. */
     public static void finish(Game game, PlayerId player) {
         endTemporaryModifiers(game);
+        destroyDoomedUnits(game, player);
+        game.push(new Step.PassTurn(player));
+    }
+
+    /** 5.4.4, then the opponent's turn, or a draw after each player's 50th turn (1.5). */
+    public static void pass(Game game, PlayerId player) {
         game.updatePlayer(player, state -> state.withShards(state.shards().emptied()));
         game.emit(new GameEvent.TurnEnded(player));
         if (game.turn() >= LAST_TURN) {
             game.end(new GameResult.Draw(GameResult.EndReason.TURN_LIMIT), List.of("1.5"));
         } else {
             game.push(new Step.StartTurn(player.opponent()));
+        }
+    }
+
+    /**
+     * 5.4.3, 11.3.5: the active player's doomed units still at 0 defense are destroyed, once their protection has
+     * ended. One doomed during its arrival turn is still protected, so it gets through that turn.
+     */
+    private static void destroyDoomedUnits(Game game, PlayerId player) {
+        for (Unit unit : game.player(player).units()) {
+            if (unit.doomed() && !unit.anchorProtected() && unit.defense() == 0) {
+                Departures.destroy(game, unit, List.of("5.4.3", "11.3.5"));
+            }
         }
     }
 

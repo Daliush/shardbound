@@ -7,7 +7,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * A unit on the board. {@code defense} and {@code maxDefense} already include modifiers and auras.
+ * A unit on the board. {@code defense} and {@code maxDefense} already include modifiers and auras; maluses can take the
+ * max below 0 on a doomed unit (11.3.4), and its defense then stays at 0 (6.9).
  * {@code frozenThroughTurn} is 0 when not frozen; the unit is frozen while the turn is at most that number (8.10).
  */
 public record Unit(
@@ -64,8 +65,9 @@ public record Unit(
         return change(draft -> draft.defense = Math.max(0, defense - amount));
     }
 
+    /** Up to the max defense (8.4); a heal never lowers defense. */
     public Unit healed(int amount) {
-        return change(draft -> draft.defense = Math.min(maxDefense, defense + amount));
+        return change(draft -> draft.defense = Math.max(defense, Math.min(maxDefense, defense + amount)));
     }
 
     public Unit withDefense(int value) {
@@ -122,6 +124,26 @@ public record Unit(
         return change(draft -> draft.hasInterceptedThisTurn = true);
     }
 
+    /** 11.3.1: an anchored unit is protected from its arrival. */
+    public Unit withAnchorProtection() {
+        return change(draft -> draft.anchorProtected = true);
+    }
+
+    /** 5.2.1: the protection ends at the start of its controller's next turn. */
+    public Unit withAnchorProtectionEnded() {
+        return change(draft -> draft.anchorProtected = false);
+    }
+
+    /** 11.3.4: at 0 defense, an anchored unit stays on the board, doomed. */
+    public Unit markDoomed() {
+        return change(draft -> draft.doomed = true);
+    }
+
+    /** 11.3.4: back above 0 defense, it is no longer doomed. */
+    public Unit withDoomLifted() {
+        return change(draft -> draft.doomed = false);
+    }
+
     /** "This turn" in 7.2 and 7.5 starts over at every turn, the opponent's included. */
     public Unit withTurnFlagsCleared() {
         return change(draft -> {
@@ -164,16 +186,21 @@ public record Unit(
             linkedTo = unit.linkedTo;
         }
 
-        /** Both defenses move; the current one never below 0 (6.9). */
+        /** Both defenses move. */
         void startDefenseChange(int change) {
             maxDefense += change;
-            defense = Math.max(0, defense + change);
+            defense = bounded(defense + change);
         }
 
         /** A bonus ending lowers the max and caps the current defense (8.5); a malus ending gives both back (8.17). */
         void endDefenseChange(int change) {
             maxDefense -= change;
-            defense = change > 0 ? Math.min(defense, maxDefense) : Math.min(maxDefense, defense - change);
+            defense = bounded(change > 0 ? defense : defense - change);
+        }
+
+        /** Never below 0 (6.9), never above the max. */
+        private int bounded(int value) {
+            return Math.max(0, Math.min(value, maxDefense));
         }
 
         Unit toUnit() {

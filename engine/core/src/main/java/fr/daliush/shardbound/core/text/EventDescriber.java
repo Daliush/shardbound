@@ -35,6 +35,7 @@ public final class EventDescriber {
             case GameEvent.ShardsRefilled e -> w.subject(e.player()) + " " + w.verb(e.player(), "have", "has") + " "
                     + Wording.shards(e.available()) + " (max " + e.max()
                     + (e.locked() > 0 ? ", " + e.locked() + " locked" : "") + ").";
+            case GameEvent.AnchorProtectionEnded e -> w.card(e.unit()) + " is no longer anchored.";
             case GameEvent.HpLost e -> w.subject(e.player()) + " " + w.verb(e.player(), "draw", "draws")
                     + " from an empty deck and " + w.verb(e.player(), "lose", "loses") + " " + e.amount()
                     + " HP (fatigue).";
@@ -97,6 +98,13 @@ public final class EventDescriber {
             case GameEvent.SentToGraveyardHandFull e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
                     + w.card(e.card()) + " goes to the graveyard.";
             case GameEvent.UnitSacrificed e -> w.card(e.unit()) + " is sacrificed.";
+            case GameEvent.AnchorPrevented e -> w.card(e.unit()) + " is anchored: " + switch (e.attempt()) {
+                case DESTROY -> "it is not destroyed.";
+                case RETURN_TO_HAND -> "it does not return to hand.";
+                case SACRIFICE -> "it stays on the board, and the sacrifice counts as paid.";
+            };
+            case GameEvent.UnitDoomed e -> w.card(e.unit()) + " is at 0 defense but anchored: it is doomed.";
+            case GameEvent.DoomLifted e -> w.card(e.unit()) + " is no longer doomed.";
             case GameEvent.SacrificeFailed e -> w.subject(e.player()) + " cannot sacrifice "
                     + Wording.count(e.needed(), "unit", "units") + " (only " + e.available() + " on "
                     + w.own(e.player()) + " board): nothing more happens.";

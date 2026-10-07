@@ -21,8 +21,17 @@ public sealed interface Step {
     /** 5.4.1: the active player's "Turn end" abilities trigger. */
     record TriggerTurnEnd(PlayerId player) implements Step {}
 
-    /** 5.4.2 to 5.4.4 and 1.5, once the "Turn end" abilities have resolved. */
+    /** 5.4.2 and 5.4.3, once the "Turn end" abilities have resolved. */
     record FinishTurn(PlayerId player) implements Step {
+
+        @Override
+        public boolean waitsForTriggers() {
+            return true;
+        }
+    }
+
+    /** 5.4.4, then the next turn or a draw (1.5), once the abilities triggered by 5.4.3 have resolved. */
+    record PassTurn(PlayerId player) implements Step {
 
         @Override
         public boolean waitsForTriggers() {

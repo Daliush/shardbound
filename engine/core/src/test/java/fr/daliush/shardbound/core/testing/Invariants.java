@@ -35,7 +35,10 @@ public final class Invariants {
                     .isLessThanOrEqualTo(PlayerState.MAX_UNIT_PLACES);
             assertThat(player.relics()).as("relics of %s", id).hasSizeLessThanOrEqualTo(PlayerState.MAX_RELICS);
             assertThat(player.shards().available()).as("Shards of %s", id).isNotNegative();
-            assertThat(player.units()).allSatisfy(unit -> assertThat(unit.defense()).isBetween(0, unit.maxDefense()));
+            assertThat(player.units()).allSatisfy(unit ->
+                    assertThat(unit.defense()).isBetween(0, Math.max(0, unit.maxDefense())));
+            assertThat(player.units()).as("doomed units of %s are at 0 defense (11.3.4)", id)
+                    .allMatch(unit -> !unit.doomed() || unit.defense() == 0);
         }
         checkEveryCardIsInOneZone(state);
         checkDecision(state, decision);

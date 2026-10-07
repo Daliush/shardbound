@@ -144,6 +144,12 @@ public final class ScenarioBuilder {
         if (setup.hasIntercepted) {
             unit = unit.markHasIntercepted();
         }
+        if (setup.anchorProtected) {
+            unit = unit.withAnchorProtection();
+        }
+        if (setup.doomed) {
+            unit = unit.markDoomed();
+        }
         Unit placed = unit;
         return change(player, state -> state.addUnit(placed));
     }

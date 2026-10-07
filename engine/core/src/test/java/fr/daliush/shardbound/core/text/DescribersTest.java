@@ -190,6 +190,22 @@ class DescribersTest {
                 .isEqualTo("The -1/-2 on Cinderling #1 ends.");
     }
 
+    @Test
+    void describesAnchor() {
+        CardInstance sentinel = new CardInstance(InstanceId.of(5), new CardId("root.root-sentinel"), P2);
+
+        assertThat(events.describe(new GameEvent.AnchorPrevented(sentinel, GameEvent.Removal.DESTROY), P1))
+                .isEqualTo("Root Sentinel #5 is anchored: it is not destroyed.");
+        assertThat(events.describe(new GameEvent.AnchorPrevented(sentinel, GameEvent.Removal.SACRIFICE), P2))
+                .isEqualTo("Root Sentinel #5 is anchored: it stays on the board, and the sacrifice counts as paid.");
+        assertThat(events.describe(new GameEvent.UnitDoomed(sentinel), P1))
+                .isEqualTo("Root Sentinel #5 is at 0 defense but anchored: it is doomed.");
+        assertThat(events.describe(new GameEvent.DoomLifted(sentinel), P1))
+                .isEqualTo("Root Sentinel #5 is no longer doomed.");
+        assertThat(events.describe(new GameEvent.AnchorProtectionEnded(sentinel), P1))
+                .isEqualTo("Root Sentinel #5 is no longer anchored.");
+    }
+
     private List<String> labels(GameState state) {
         Decision decision = state.pending().orElseThrow();
         return decision.actions().stream().map(action -> actions.describe(action, state, decision.player())).toList();

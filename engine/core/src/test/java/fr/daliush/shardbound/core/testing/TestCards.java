@@ -145,6 +145,10 @@ public final class TestCards {
         { "id": "test.tithe", "name": "Tithe Stone", "faction": "neutral", "type": "relic", "cost": 1,
           "abilities": [{ "trigger": "continuous", "effects": [
             { "effect": "aura", "kind": "cost", "player": "opponent", "card_type": "any", "change": 1 }] }] }""",
+        // A "Turn end" ability that heals units, which can save a doomed unit (11.3.5).
+        """
+        { "id": "test.tidepool", "name": "Tidepool", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "turn_end", "effects": [{ "effect": "heal", "amount": 2, "target": "all_ally_units" }] }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,

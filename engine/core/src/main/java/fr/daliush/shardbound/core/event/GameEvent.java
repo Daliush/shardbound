@@ -80,6 +80,13 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 5.2.1: the unit can leave the board again (11.3.6). */
+    record AnchorProtectionEnded(CardInstance unit, List<String> rules) implements GameEvent {
+        public AnchorProtectionEnded(CardInstance unit) {
+            this(unit, List.of("5.2.1", "11.3.1"));
+        }
+    }
+
     record HpLost(PlayerId player, int amount, HpLossReason reason, List<String> rules) implements GameEvent {}
 
     record CardDiscarded(PlayerId player, CardInstance card, DiscardReason reason, List<String> rules)
@@ -283,6 +290,27 @@ public sealed interface GameEvent {
     /** {@code rules} say whether the unit paid a sacrifice cost (6.3, 8.3) or a Sacrifice effect (8.3). */
     record UnitSacrificed(CardInstance unit, PlayerId controller, List<String> rules) implements GameEvent {}
 
+    /** 11.3.2, 11.3.3: the anchored unit stays on the board; a sacrifice still counts as paid. */
+    record AnchorPrevented(CardInstance unit, Removal attempt, List<String> rules) implements GameEvent {
+        public AnchorPrevented(CardInstance unit, Removal attempt) {
+            this(unit, attempt, List.of("11.3.2", "11.3.3"));
+        }
+    }
+
+    /** 11.3.4: an anchored unit at 0 defense stays on the board. */
+    record UnitDoomed(CardInstance unit, List<String> rules) implements GameEvent {
+        public UnitDoomed(CardInstance unit) {
+            this(unit, List.of("11.3.4"));
+        }
+    }
+
+    /** 11.3.4: its defense went back above 0. */
+    record DoomLifted(CardInstance unit, List<String> rules) implements GameEvent {
+        public DoomLifted(CardInstance unit) {
+            this(unit, List.of("11.3.4"));
+        }
+    }
+
     /** 8.22: {@code player} had {@code available} sacrifices to make out of {@code needed}, so nothing more applies. */
     record SacrificeFailed(PlayerId player, int needed, int available, List<String> rules) implements GameEvent {
         public SacrificeFailed(PlayerId player, int needed, int available) {
@@ -292,6 +320,11 @@ public sealed interface GameEvent {
 
     enum HpLossReason {
         FATIGUE
+    }
+
+    /** What tried to make an anchored unit leave the board (11.3.2). */
+    enum Removal {
+        DESTROY, RETURN_TO_HAND, SACRIFICE
     }
 
     /** A card drawn into a full hand (3.3), or a Discard effect (8.7). */

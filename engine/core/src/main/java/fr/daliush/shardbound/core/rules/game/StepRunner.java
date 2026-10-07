@@ -20,6 +20,7 @@ public final class StepRunner {
             case Step.StartTurn start -> TurnStart.run(game, start.player());
             case Step.TriggerTurnEnd end -> TurnEnd.triggerAbilities(game, end.player());
             case Step.FinishTurn finish -> TurnEnd.finish(game, finish.player());
+            case Step.PassTurn pass -> TurnEnd.pass(game, pass.player());
             case Step.ResolvePlay play -> CardPlay.resolve(game, play);
             case Step.FinishSpell finish -> CardPlay.finishSpell(game, finish.spell());
             case Step.ResolveAttack attack -> AttackSequence.run(game, attack);
@@ -40,6 +41,7 @@ public final class StepRunner {
             case Step.StartTurn ignored -> throw neverPauses(paused);
             case Step.TriggerTurnEnd ignored -> throw neverPauses(paused);
             case Step.FinishTurn ignored -> throw neverPauses(paused);
+            case Step.PassTurn ignored -> throw neverPauses(paused);
             case Step.ResolvePlay ignored -> throw neverPauses(paused);
             case Step.FinishSpell ignored -> throw neverPauses(paused);
         }

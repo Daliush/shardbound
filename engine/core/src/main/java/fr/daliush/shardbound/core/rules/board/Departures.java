@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Cards leaving the board: by dying (9.3, 9.4), or back to their owner's hand (8.8). A token vanishes instead of
- * going anywhere (3.6).
+ * going anywhere (3.6). Nothing makes an anchored unit leave (11.3.2).
  */
 public final class Departures {
 
@@ -20,12 +20,16 @@ public final class Departures {
     }
 
     public static void destroy(Game game, Unit unit, List<String> rules) {
-        die(game, unit, new GameEvent.UnitDestroyed(unit.asCard(), unit.controller(), rules));
+        if (!staysAnchored(game, unit, GameEvent.Removal.DESTROY)) {
+            die(game, unit, new GameEvent.UnitDestroyed(unit.asCard(), unit.controller(), rules));
+        }
     }
 
-    /** 8.3: a sacrificed unit dies, like a destroyed one. */
+    /** 8.3: a sacrificed unit dies, like a destroyed one. An anchored one counts as sacrificed but stays (11.3.3). */
     public static void sacrifice(Game game, Unit unit, List<String> rules) {
-        die(game, unit, new GameEvent.UnitSacrificed(unit.asCard(), unit.controller(), rules));
+        if (!staysAnchored(game, unit, GameEvent.Removal.SACRIFICE)) {
+            die(game, unit, new GameEvent.UnitSacrificed(unit.asCard(), unit.controller(), rules));
+        }
     }
 
     public static void destroy(Game game, Relic relic) {
@@ -38,6 +42,9 @@ public final class Departures {
 
     /** 8.8: the unit does not die, so only its "Departure" abilities trigger. */
     public static void returnToHand(Game game, Unit unit) {
+        if (staysAnchored(game, unit, GameEvent.Removal.RETURN_TO_HAND)) {
+            return;
+        }
         game.updatePlayer(unit.controller(), player -> player.removeUnit(unit.id()));
         if (unit.token()) {
             game.emit(new GameEvent.TokenVanished(unit.asCard(), List.of("8.8", "3.6")));
@@ -51,6 +58,14 @@ public final class Departures {
         game.updatePlayer(relic.controller(), player -> player.removeRelic(relic.id()));
         toOwnersHand(game, relic.asCard());
         Triggers.raise(game, relic.asCard(), relic.controller(), relic.arrivalSeq(), Trigger.DEPARTURE);
+    }
+
+    /** 11.3.2, 11.3.3: only the part that would make the unit leave is ignored. */
+    private static boolean staysAnchored(Game game, Unit unit, GameEvent.Removal attempt) {
+        if (unit.anchorProtected()) {
+            game.emit(new GameEvent.AnchorPrevented(unit.asCard(), attempt));
+        }
+        return unit.anchorProtected();
     }
 
     /** 6.7: the same instance, reset; into a full hand (3.3), the graveyard instead. */
