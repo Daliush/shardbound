@@ -232,6 +232,23 @@ class DescribersTest {
         assertThat(prompt(ordered.state())).isEqualTo("Choose a target for the echo of Frost Breath of Twin Wyrm #4.");
     }
 
+    @Test
+    void describesLinks() {
+        GameState start = scenario().shards(P1, 1).hand(P1, "neutral.binding-thread").unit(P1, "neutral.shardling")
+                .unit(P2, "root.sprout").build();
+        CardInstance shardling = new CardInstance(InstanceId.of(2), new CardId("neutral.shardling"), P1);
+        CardInstance sprout = new CardInstance(InstanceId.of(3), new CardId("root.sprout"), P2);
+
+        assertThat(labels(ENGINE.resume(start).state()))
+                .contains("Play Binding Thread (1 Shard) on Shardling #2, Sprout #3");
+        assertThat(events.describe(new GameEvent.Linked(shardling, sprout), P1))
+                .isEqualTo("Shardling #2 and Sprout #3 are linked.");
+        assertThat(events.describe(new GameEvent.DamageShared(sprout, shardling, 1), P1))
+                .isEqualTo("Shardling #2 takes 1 damage through its link with Sprout #3.");
+        assertThat(events.describe(new GameEvent.LinkBroken(sprout, shardling), P1))
+                .isEqualTo("Sprout #3 left the board: its link with Shardling #2 breaks.");
+    }
+
     private List<String> labels(GameState state) {
         Decision decision = state.pending().orElseThrow();
         return decision.actions().stream().map(action -> actions.describe(action, state, decision.player())).toList();

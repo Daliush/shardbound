@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Cards leaving the board: by dying (9.3, 9.4), or back to their owner's hand (8.8). A token vanishes instead of
- * going anywhere (3.6). Nothing makes an anchored unit leave (11.3.2).
+ * going anywhere (3.6). Nothing makes an anchored unit leave (11.3.2); a unit that leaves breaks its link (11.5.4).
  */
 public final class Departures {
 
@@ -52,6 +52,7 @@ public final class Departures {
         } else {
             toOwnersHand(game, unit.asCard());
         }
+        breakLink(game, unit);
         Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEPARTURE);
     }
 
@@ -59,6 +60,14 @@ public final class Departures {
         game.updatePlayer(relic.controller(), player -> player.removeRelic(relic.id()));
         toOwnersHand(game, relic.asCard());
         Triggers.raise(game, relic.asCard(), relic.controller(), relic.arrivalSeq(), Trigger.DEPARTURE);
+    }
+
+    /** 11.5.4: when either unit leaves the board, the link breaks. */
+    private static void breakLink(Game game, Unit unit) {
+        unit.linkedTo().flatMap(game::unit).ifPresent(partner -> {
+            game.updateUnit(partner.withLinkBroken());
+            game.emit(new GameEvent.LinkBroken(unit.asCard(), partner.asCard()));
+        });
     }
 
     /** 11.3.2, 11.3.3: only the part that would make the unit leave is ignored. */
@@ -88,6 +97,7 @@ public final class Departures {
         } else {
             game.updatePlayer(unit.owner(), player -> player.addToGraveyard(unit.asCard()));
         }
+        breakLink(game, unit);
         Echoes.raise(game, unit);
         Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEATH);
         Triggers.raise(game, unit.asCard(), unit.controller(), unit.arrivalSeq(), Trigger.DEPARTURE);

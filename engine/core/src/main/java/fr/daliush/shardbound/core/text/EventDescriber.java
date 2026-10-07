@@ -78,6 +78,8 @@ public final class EventDescriber {
                     + " not intercept.";
             case GameEvent.AttackCancelled e -> w.card(e.attacker()) + " left the board: its attack does not happen.";
             case GameEvent.UnitDamaged e -> w.card(e.unit()) + " takes " + e.amount() + " damage.";
+            case GameEvent.DamageShared e -> w.card(e.to()) + " takes " + e.amount() + " damage through its link with "
+                    + w.card(e.from()) + ".";
             case GameEvent.PlayerDamaged e -> w.subject(e.player()) + " " + w.verb(e.player(), "take", "takes") + " "
                     + e.amount() + " damage.";
             case GameEvent.UnitHealed e -> w.card(e.unit()) + " heals " + e.amount() + " defense.";
@@ -99,6 +101,9 @@ public final class EventDescriber {
                     + " graveyard to " + w.possessive(e.card().owner()) + " hand.";
             case GameEvent.RecallFailed e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
                     + w.card(e.card()) + " stays in the graveyard.";
+            case GameEvent.Linked e -> w.card(e.first()) + " and " + w.card(e.second()) + " are linked.";
+            case GameEvent.LinkBroken e -> w.card(e.left()) + " left the board: its link with " + w.card(e.partner())
+                    + " breaks.";
             case GameEvent.Frozen e -> w.card(e.unit()) + " is frozen until the end of turn " + e.throughTurn() + ".";
             case GameEvent.UnitThawed e -> w.card(e.unit()) + " thaws.";
             case GameEvent.ReturnedToHand e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())

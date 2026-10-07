@@ -144,6 +144,16 @@ public record Unit(
         return change(draft -> draft.doomed = false);
     }
 
+    /** 8.11: linked to another unit; a unit has one link at most (11.5.1). */
+    public Unit linkedWith(InstanceId partner) {
+        return change(draft -> draft.linkedTo = Optional.of(partner));
+    }
+
+    /** 11.5.4: its partner left the board. */
+    public Unit withLinkBroken() {
+        return change(draft -> draft.linkedTo = Optional.empty());
+    }
+
     /** "This turn" in 7.2 and 7.5 starts over at every turn, the opponent's included. */
     public Unit withTurnFlagsCleared() {
         return change(draft -> {

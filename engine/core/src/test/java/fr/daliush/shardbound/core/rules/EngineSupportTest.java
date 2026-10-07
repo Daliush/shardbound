@@ -23,7 +23,6 @@ class EngineSupportTest {
                 .sorted()
                 .toList();
 
-        assertThat(unsupported).containsExactly(
-                "neutral.binding-thread");
+        assertThat(unsupported).isEmpty();
     }
 }

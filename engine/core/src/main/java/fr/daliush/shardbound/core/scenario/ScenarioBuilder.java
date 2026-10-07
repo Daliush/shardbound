@@ -18,6 +18,7 @@ import fr.daliush.shardbound.core.state.Relic;
 import fr.daliush.shardbound.core.state.Shards;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -166,6 +167,23 @@ public final class ScenarioBuilder {
         return change(player, state -> state.addUnit(placed));
     }
 
+    /** Links the first unit with card {@code card} to the first other unit with card {@code other} (11.5.1). */
+    public ScenarioBuilder link(String card, String other) {
+        List<Unit> units = players.values().stream().flatMap(state -> state.units().stream())
+                .sorted(Comparator.comparingInt(Unit::arrivalSeq)).toList();
+        Unit first = firstWithCard(units, card, Optional.empty());
+        Unit second = firstWithCard(units, other, Optional.of(first.id()));
+        change(first.controller(), state -> state.replaceUnit(first.linkedWith(second.id())));
+        return change(second.controller(), state -> state.replaceUnit(second.linkedWith(first.id())));
+    }
+
+    private static Unit firstWithCard(List<Unit> units, String card, Optional<InstanceId> except) {
+        return units.stream()
+                .filter(unit -> unit.card().equals(new CardId(card)) && except.filter(unit.id()::equals).isEmpty())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No unit " + card + " to link"));
+    }
+
     public ScenarioBuilder relic(PlayerId player, String card) {
         CardInstance instance = newCard(card, player);
         Relic relic = new Relic(instance.id(), instance.card(), player, player, nextArrivalSeq++);
@@ -194,6 +212,17 @@ public final class ScenarioBuilder {
                 || state.hand().size() > PlayerState.MAX_HAND) {
             throw new IllegalStateException("The scenario breaks the zone limits of " + state.id() + " (3.3, 3.4)");
         }
+        for (Unit unit : state.units()) {
+            unit.linkedTo().ifPresent(partner -> {
+                if (!partnerOf(partner).flatMap(Unit::linkedTo).equals(Optional.of(unit.id()))) {
+                    throw new IllegalStateException("The link of " + unit.id() + " is not mutual (11.5.1)");
+                }
+            });
+        }
+    }
+
+    private Optional<Unit> partnerOf(InstanceId id) {
+        return players.values().stream().flatMap(state -> state.unit(id).stream()).findFirst();
     }
 
     private CardInstance newCard(String card, PlayerId owner) {

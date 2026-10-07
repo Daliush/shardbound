@@ -15,7 +15,7 @@ public final class EngineSupport {
             Effect.Damage.class, Effect.Destroy.class, Effect.Sacrifice.class, Effect.Heal.class, Effect.Modify.class,
             Effect.Draw.class, Effect.Discard.class, Effect.ReturnToHand.class, Effect.Summon.class,
             Effect.Freeze.class, Effect.GainShards.class, Effect.Recall.class, Effect.StatAura.class,
-            Effect.CostAura.class);
+            Effect.CostAura.class, Effect.Link.class);
 
     private static final Set<Keyword> IMPLEMENTED_KEYWORDS = Set.of(Keyword.ANCHOR, Keyword.OVERCHARGE);
 

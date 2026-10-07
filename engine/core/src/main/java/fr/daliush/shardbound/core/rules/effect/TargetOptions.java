@@ -8,6 +8,7 @@ import fr.daliush.shardbound.core.rules.game.Game;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Relic;
 import fr.daliush.shardbound.core.state.Unit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -29,6 +30,21 @@ public final class TargetOptions {
                     forSpec(game, decider, targeted.target());
             default -> List.of();
         };
+    }
+
+    /**
+     * 8.11, 11.5.1: every pair of different units without a link, on either side, each listed once with the earlier
+     * arrival first (spec §6.2); none with fewer than two such units.
+     */
+    public static List<List<TargetRef>> linkPairs(Game game) {
+        List<Unit> unlinked = game.unitsByArrival().stream().filter(unit -> unit.linkedTo().isEmpty()).toList();
+        List<List<TargetRef>> pairs = new ArrayList<>();
+        for (int first = 0; first < unlinked.size(); first++) {
+            for (int second = first + 1; second < unlinked.size(); second++) {
+                pairs.add(List.of(TargetRef.unit(unlinked.get(first).id()), TargetRef.unit(unlinked.get(second).id())));
+            }
+        }
+        return pairs;
     }
 
     /** 8.13: the unit cards in the decider's own graveyard. Tokens never get there (3.6). */

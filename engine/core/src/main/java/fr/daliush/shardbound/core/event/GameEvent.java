@@ -214,6 +214,13 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 11.5.2: the part of a hit on {@code from} that its linked partner {@code to} takes. */
+    record DamageShared(CardInstance from, CardInstance to, int amount, List<String> rules) implements GameEvent {
+        public DamageShared(CardInstance from, CardInstance to, int amount) {
+            this(from, to, amount, List.of("8.1", "11.5.2"));
+        }
+    }
+
     record PlayerDamaged(PlayerId player, int amount, List<String> rules) implements GameEvent {
         public PlayerDamaged(PlayerId player, int amount) {
             this(player, amount, List.of("8.1"));
@@ -294,6 +301,20 @@ public sealed interface GameEvent {
     record RecallFailed(CardInstance card, List<String> rules) implements GameEvent {
         public RecallFailed(CardInstance card) {
             this(card, List.of("8.13", "8.20"));
+        }
+    }
+
+    /** 8.11: the two units are linked to each other (11.5.1). */
+    record Linked(CardInstance first, CardInstance second, List<String> rules) implements GameEvent {
+        public Linked(CardInstance first, CardInstance second) {
+            this(first, second, List.of("8.11", "11.5.1"));
+        }
+    }
+
+    /** 11.5.4: {@code left} left the board, so {@code partner} is no longer linked. */
+    record LinkBroken(CardInstance left, CardInstance partner, List<String> rules) implements GameEvent {
+        public LinkBroken(CardInstance left, CardInstance partner) {
+            this(left, partner, List.of("11.5.4"));
         }
     }
 

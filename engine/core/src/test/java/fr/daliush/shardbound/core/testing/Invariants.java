@@ -41,6 +41,7 @@ public final class Invariants {
                     .allMatch(unit -> !unit.doomed() || unit.defense() == 0);
         }
         checkEveryCardIsInOneZone(state);
+        checkLinksAreMutual(state);
         checkDecision(state, decision);
     }
 
@@ -68,6 +69,14 @@ public final class Invariants {
         }
         for (int id = 1; id <= deckCards; id++) {
             assertThat(unique).as("card #%s is somewhere", id).contains(InstanceId.of(id));
+        }
+    }
+
+    /** 11.5.1, 11.5.4: a link joins two units on the board, each linked to the other. */
+    private static void checkLinksAreMutual(GameState state) {
+        for (Unit unit : state.unitsByArrival()) {
+            unit.linkedTo().ifPresent(partner -> assertThat(state.unit(partner).flatMap(Unit::linkedTo))
+                    .as("the partner of %s", unit.id()).contains(unit.id()));
         }
     }
 
