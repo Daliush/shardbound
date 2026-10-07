@@ -223,6 +223,22 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 8.14: a stat aura of {@code source} now gives the unit its bonus or malus. */
+    record AuraApplied(CardInstance unit, CardInstance source, int attackDamage, int defense, List<String> rules)
+            implements GameEvent {
+        public AuraApplied(CardInstance unit, CardInstance source, int attackDamage, int defense) {
+            this(unit, source, attackDamage, defense, List.of("8.14"));
+        }
+    }
+
+    /** 8.14: it stops applying; a defense malus gives back what it took (8.21). */
+    record AuraRemoved(CardInstance unit, CardInstance source, int attackDamage, int defense, List<String> rules)
+            implements GameEvent {
+        public AuraRemoved(CardInstance unit, CardInstance source, int attackDamage, int defense) {
+            this(unit, source, attackDamage, defense, defense < 0 ? List.of("8.14", "8.21") : List.of("8.14"));
+        }
+    }
+
     /** 8.13: a unit card back from its controller's graveyard to their hand. */
     record Recalled(CardInstance card, List<String> rules) implements GameEvent {
         public Recalled(CardInstance card) {

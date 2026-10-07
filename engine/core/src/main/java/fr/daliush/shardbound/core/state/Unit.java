@@ -88,6 +88,22 @@ public record Unit(
         });
     }
 
+    /** 8.14: a stat aura's bonus starts like a Modify, so a unit arriving under it gets it in full (6.5). */
+    public Unit withAura(AuraBonus bonus) {
+        return change(draft -> {
+            draft.auras.add(bonus);
+            draft.startDefenseChange(bonus.defense());
+        });
+    }
+
+    /** 8.14, 8.21: a stat aura that stops applying ends like an expiring modifier. */
+    public Unit withAuraEnded(AuraBonus bonus) {
+        return change(draft -> {
+            draft.auras.remove(bonus);
+            draft.endDefenseChange(bonus.defense());
+        });
+    }
+
     /** Frozen until the end of {@code turn} (8.10). */
     public Unit frozenThrough(int turn) {
         return change(draft -> draft.frozenThroughTurn = Math.max(frozenThroughTurn, turn));

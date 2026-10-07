@@ -37,7 +37,7 @@ class OutboxTest {
     }
 
     private static SeatUpdate update(int version, PlayerId seat) {
-        return new SeatUpdate(version, seat, new SeatSnapshot(null, Optional.empty()), List.of());
+        return new SeatUpdate(version, seat, new SeatSnapshot(null, List.of(), Optional.empty()), List.of());
     }
 
     private static Optional<List<Integer>> versions(Optional<List<SeatUpdate>> updates) {

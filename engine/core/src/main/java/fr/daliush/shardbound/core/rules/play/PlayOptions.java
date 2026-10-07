@@ -31,7 +31,7 @@ public final class PlayOptions {
         List<Action> plays = new ArrayList<>();
         for (HandCard inHand : state.hand()) {
             CardDefinition card = game.catalog().card(inHand.card().card());
-            if (!EngineSupport.supports(card) || !state.shards().canPay(Costs.toPlay(card, inHand, false))
+            if (!EngineSupport.supports(card) || !canPay(game, player, inHand)
                     || !canMakeItsSacrifices(game, state, card)) {
                 continue;
             }
@@ -45,6 +45,13 @@ public final class PlayOptions {
             }
         }
         return plays;
+    }
+
+    /** 4.3: Overcharge is offered separately (11.4). */
+    private static boolean canPay(Game game, PlayerId player, HandCard inHand) {
+        PlayerState state = game.player(player);
+        return state.shards().canPay(Costs.toPlay(game.catalog(), state, game.player(player.opponent()), inHand,
+                false));
     }
 
     /** 8.16: the sacrifice cost and a spell's Sacrifice effects, all of them, or the card cannot be played. */

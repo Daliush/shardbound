@@ -3,8 +3,10 @@ package fr.daliush.shardbound.api.domain.mappers.view;
 import fr.daliush.shardbound.api.domain.bo.game.SeatSnapshot;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.rules.GameEngine;
+import fr.daliush.shardbound.core.rules.play.Costs;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.core.state.PlayerState;
 import fr.daliush.shardbound.core.text.ActionDescriber;
 import fr.daliush.shardbound.core.text.DecisionDescriber;
 import fr.daliush.shardbound.core.view.PlayerView;
@@ -12,8 +14,8 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
- * A state as one seat may see it: the engine's view, plus the prompt and labels of the seat's own decision,
- * written now because the describers read the full state.
+ * A state as one seat may see it: the engine's view, plus what its hand costs and the prompt and labels of its own
+ * decision, written now because cost auras and the describers read the full state.
  */
 @Component
 public class SeatSnapshotMapper {
@@ -30,7 +32,15 @@ public class SeatSnapshotMapper {
 
     public SeatSnapshot toSnapshot(GameState state, PlayerId seat) {
         PlayerView view = engine.view(state, seat, List.of());
-        return new SeatSnapshot(view, view.decision().map(decision -> text(decision, state)));
+        return new SeatSnapshot(view, handCosts(state, seat), view.decision().map(decision -> text(decision, state)));
+    }
+
+    /** 6.8: with the cost auras of both boards, without Overcharge. */
+    private List<Integer> handCosts(GameState state, PlayerId seat) {
+        PlayerState player = state.player(seat);
+        return player.hand().stream()
+                .map(inHand -> Costs.toPlay(engine.catalog(), player, state.player(seat.opponent()), inHand, false))
+                .toList();
     }
 
     private SeatSnapshot.DecisionText text(Decision decision, GameState state) {

@@ -4,6 +4,7 @@ import static fr.daliush.shardbound.core.scenario.Choices.attack;
 import static fr.daliush.shardbound.core.scenario.Choices.declineIntercept;
 import static fr.daliush.shardbound.core.scenario.Choices.discard;
 import static fr.daliush.shardbound.core.scenario.Choices.endTurn;
+import static fr.daliush.shardbound.core.scenario.Choices.interceptWith;
 import static fr.daliush.shardbound.core.scenario.Choices.play;
 import static fr.daliush.shardbound.core.scenario.Choices.sacrifice;
 import static fr.daliush.shardbound.core.scenario.Pick.graveyardCard;
@@ -327,7 +328,8 @@ class EffectRulesTest {
                 play("test.recede").on(unit("test.guard")));
 
         assertThat(result.player(P2).units()).isEmpty();
-        assertThat(result.player(P2).hand()).extracting(HandCard::id).containsExactly(InstanceId.of(2), InstanceId.of(3));
+        assertThat(result.player(P2).hand()).extracting(HandCard::id)
+                .containsExactly(InstanceId.of(2), InstanceId.of(3));
         assertThat(trace(result)).containsSubsequence("ReturnedToHand[8.8, 6.7]", "SpellResolved[6.3, 3.5]",
                 "AbilityTriggered[9.4]", "CardDrawn[8.6]");
         assertThat(result.events(GameEvent.UnitDestroyed.class)).isEmpty();
@@ -453,6 +455,76 @@ class EffectRulesTest {
         assertThat(result.player(P1).graveyard()).extracting(CardInstance::card)
                 .containsExactly(new CardId("ember.cinderling"), new CardId("test.second-wind"));
         assertThat(trace(result)).containsSubsequence("CardDrawn[8.6]", "RecallFailed[8.13, 8.20]");
+    }
+
+    @Test
+    @DisplayName("8.14 — a stat aura gives its bonus to every unit of its group while its card is on the board")
+    void statAura() {
+        ScenarioResult result = run(scenario().shards(P1, 1).relic(P1, "tide.coral-font")
+                        .unit(P1, "neutral.shardling").unit(P2, "root.sprout").unit(P2, "neutral.shard-construct")
+                        .build(),
+                attack("neutral.shardling").on(unit("neutral.shard-construct")),
+                interceptWith("root.sprout"));
+
+        Unit mine = result.unit("neutral.shardling");
+        assertThat(mine.defense()).isEqualTo(5);
+        assertThat(mine.maxDefense()).isEqualTo(5);
+        assertThat(result.events(GameEvent.UnitDamaged.class)).extracting(GameEvent.UnitDamaged::amount)
+                .containsExactly(4);
+        assertThat(result.unit("neutral.shard-construct").maxDefense()).isEqualTo(9);
+        assertThat(trace(result)).containsSubsequence("AuraApplied[8.14]", "UnitDamaged[8.1]", "UnitDestroyed[6.6]");
+    }
+
+    @Test
+    @DisplayName("8.14 — when a stat aura stops applying, its defense bonus ends like an expiring bonus")
+    void statAuraEnds() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.shatter").relic(P2, "tide.coral-font")
+                        .unit(P2, "neutral.shardling").unit(P2, "neutral.shardling", unit -> unit.defense(2)).build(),
+                play("test.shatter").on(relic("tide.coral-font")));
+
+        // 3/3 and 2/3 under +1/+2: 5/5 and 4/5, then back to a max of 3: 3/3 and 3/3.
+        assertThat(result.player(P2).units()).extracting(Unit::defense, Unit::maxDefense, Unit::attackBonus)
+                .containsExactly(tuple(3, 3, 0), tuple(3, 3, 0));
+        assertThat(trace(result)).containsSubsequence("RelicDestroyed[8.2]", "AuraRemoved[8.14]", "AuraRemoved[8.14]");
+    }
+
+    @Test
+    @DisplayName("8.14 — a stat aura's defense malus can destroy a unit, even one that just arrived")
+    void statAuraMalusKills() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "ember.cinderling").relic(P2, "test.blight")
+                        .build(),
+                play("ember.cinderling"));
+
+        assertThat(result.player(P1).units()).isEmpty();
+        assertThat(trace(result)).containsSubsequence("UnitArrived[6.3, 6.5]", "AuraApplied[8.14]",
+                "UnitDestroyed[6.6]", "AbilityTriggered[9.3]", "PlayerDamaged[8.1]");
+    }
+
+    @Test
+    @DisplayName("8.21 — when a stat aura's defense malus stops applying, the unit gets back what it lost")
+    void statAuraMalusEnds() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "test.shatter")
+                        .unit(P1, "neutral.shard-construct", unit -> unit.defense(5)).relic(P2, "test.blight").build(),
+                play("test.shatter").on(relic("test.blight")));
+
+        // 5/9 under -1/-2: 3/7; the malus ends and gives its 2 back: 5/9.
+        Unit construct = result.unit("neutral.shard-construct");
+        assertThat(construct.defense()).isEqualTo(5);
+        assertThat(construct.maxDefense()).isEqualTo(9);
+        assertThat(trace(result)).containsSubsequence("AuraApplied[8.14]", "AuraRemoved[8.14, 8.21]");
+    }
+
+    @Test
+    @DisplayName("8.14 — a cost aura changes what cards of its type cost for the player it names")
+    void costAura() {
+        GameState start = scenario().shards(P1, 1).hand(P1, "ember.spark-dart", "neutral.shardling")
+                .relic(P1, "test.forge").relic(P2, "test.tithe").unit(P2, "root.sprout").build();
+
+        // Spark Dart: 1 + 1 from the opponent's Tithe Stone. Shardling: 1 - 1 + 1.
+        assertThat(actions(start)).filteredOn(Action.PlayCard.class::isInstance)
+                .extracting(action -> ((Action.PlayCard) action).card()).containsExactly(InstanceId.of(2));
+        ScenarioResult result = run(start, play("neutral.shardling"));
+        assertThat(result.events(GameEvent.CardPlayed.class).getFirst().cost()).isEqualTo(1);
     }
 
     @Test

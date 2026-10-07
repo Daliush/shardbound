@@ -45,7 +45,8 @@ public final class ActionDescriber {
     private String play(Wording w, Action.PlayCard play, GameState state, PlayerId decider) {
         HandCard inHand = state.player(decider).handCard(play.card()).orElseThrow();
         CardDefinition card = catalog.card(inHand.card().card());
-        int cost = Costs.toPlay(card, inHand, play.overcharge());
+        int cost = Costs.toPlay(catalog, state.player(decider), state.player(decider.opponent()), inHand,
+                play.overcharge());
         String label = "Play " + card.name() + (play.overcharge() ? " overcharged" : "") + " ("
                 + Wording.shards(cost) + (play.overcharge() ? ", locks 2 next turn" : "") + ")";
         if (!play.targets().isEmpty()) {

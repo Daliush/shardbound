@@ -123,6 +123,21 @@ public final class TestCards {
         """
         { "id": "test.second-wind", "name": "Second Wind", "faction": "ember", "type": "spell", "cost": 1,
           "effects": [{ "effect": "draw", "amount": 1, "target": "you" }, { "effect": "recall" }] }""",
+        // A stat aura with a defense malus for enemy units (8.14, 8.21).
+        """
+        { "id": "test.blight", "name": "Blight Totem", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "continuous", "effects": [
+            { "effect": "aura", "kind": "stats", "target": "all_enemy_units", "attack_damage": -1, "defense": -2 }] }] }""",
+        // A cost aura that makes its controller's units cheaper (6.8, 8.14).
+        """
+        { "id": "test.forge", "name": "Forge", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "continuous", "effects": [
+            { "effect": "aura", "kind": "cost", "player": "you", "card_type": "unit", "change": -1 }] }] }""",
+        // A cost aura that makes every card of the opponent dearer (6.8, 8.14).
+        """
+        { "id": "test.tithe", "name": "Tithe Stone", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "continuous", "effects": [
+            { "effect": "aura", "kind": "cost", "player": "opponent", "card_type": "any", "change": 1 }] }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,

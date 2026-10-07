@@ -25,7 +25,8 @@ public final class TargetOptions {
     public static List<TargetRef> forEffect(Game game, PlayerId decider, Effect effect) {
         return switch (effect) {
             case Effect.Recall ignored -> unitCardsInGraveyard(game, decider);
-            case Effect.Targeted targeted when targeted.target().isChosen() -> forSpec(game, decider, targeted.target());
+            case Effect.Targeted targeted when targeted.target().isChosen() ->
+                    forSpec(game, decider, targeted.target());
             default -> List.of();
         };
     }

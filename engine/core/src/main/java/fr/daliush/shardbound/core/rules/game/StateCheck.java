@@ -1,5 +1,6 @@
 package fr.daliush.shardbound.core.rules.game;
 
+import fr.daliush.shardbound.core.rules.aura.StatAuras;
 import fr.daliush.shardbound.core.rules.board.Departures;
 import fr.daliush.shardbound.core.rules.trigger.TriggerOrder;
 import fr.daliush.shardbound.core.state.GameResult;
@@ -8,8 +9,8 @@ import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
 
 /**
- * Runs after every step: units at 0 defense die together (6.6), the abilities raised by the step join the
- * queue in order (9.8, 9.10), and a player at 0 HP ends the game (1.2, 1.3, 1.6).
+ * Runs after every step: stat auras apply (8.14), units at 0 defense die together (6.6), the abilities raised by the
+ * step join the queue in order (9.8, 9.10), and a player at 0 HP ends the game (1.2, 1.3, 1.6).
  */
 public final class StateCheck {
 
@@ -20,9 +21,12 @@ public final class StateCheck {
         if (game.isOver()) {
             return;
         }
+        StatAuras.reconcile(game);
         List<Unit> dying = unitsAtZero(game);
         while (!dying.isEmpty()) {
             dying.forEach(unit -> Departures.destroy(game, unit, List.of("6.6")));
+            // A dead aura card stops applying: its malus may give defense back, never take more.
+            StatAuras.reconcile(game);
             dying = unitsAtZero(game);
         }
         game.enqueue(TriggerOrder.sorted(game.takeRaised(), game.active()));

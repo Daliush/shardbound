@@ -99,7 +99,8 @@ class DescribersTest {
         GameState main = ENGINE.resume(start).state();
         ScenarioResult ritual = run(start, play("test.ritual"));
 
-        assertThat(labels(main)).contains("Play Pyre Offering (1 Shard) on Shard Construct #5, sacrificing Cinderling #3");
+        assertThat(labels(main))
+                .contains("Play Pyre Offering (1 Shard) on Shard Construct #5, sacrificing Cinderling #3");
         assertThat(prompt(ritual.state())).isEqualTo("Choose 1 unit to sacrifice for Blood Ritual #2.");
         assertThat(labels(ritual.state())).containsExactly("Sacrifice Cinderling #3", "Sacrifice Shardling #4");
         assertThat(events.describe(new GameEvent.SacrificeFailed(P2, 2, 1), P1))
@@ -161,6 +162,20 @@ class DescribersTest {
                 .isEqualTo("Cinderling #2 returns from your graveyard to your hand.");
         assertThat(events.describe(new GameEvent.RecallFailed(cinderling), P2))
                 .isEqualTo("Your opponent's hand is full: Cinderling #2 stays in the graveyard.");
+    }
+
+    @Test
+    void describesAuras() {
+        GameState start = scenario().shards(P1, 2).hand(P1, "ember.spark-dart").relic(P2, "test.tithe")
+                .unit(P2, "root.sprout").build();
+        CardInstance sprout = new CardInstance(InstanceId.of(3), new CardId("root.sprout"), P2);
+        CardInstance font = new CardInstance(InstanceId.of(4), new CardId("tide.coral-font"), P2);
+
+        assertThat(labels(ENGINE.resume(start).state())).contains("Play Spark Dart (2 Shards) on Sprout #3");
+        assertThat(events.describe(new GameEvent.AuraApplied(sprout, font, 1, 2), P1))
+                .isEqualTo("Coral Font #4 gives Sprout #3 +1/+2.");
+        assertThat(events.describe(new GameEvent.AuraRemoved(sprout, font, 1, 2), P1))
+                .isEqualTo("Sprout #3 loses the +1/+2 of Coral Font #4.");
     }
 
     @Test

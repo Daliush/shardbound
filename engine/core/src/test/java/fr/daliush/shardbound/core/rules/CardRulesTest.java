@@ -52,7 +52,7 @@ class CardRulesTest {
     }
 
     @Test
-    @DisplayName("6.3 — a sacrifice cost is paid when the card is played; the abilities it triggers wait for the card")
+    @DisplayName("6.3 — a sacrifice cost is paid on play; the abilities it triggers wait for the card")
     void sacrificeCost() {
         GameState start = scenario().shards(P1, 1).hand(P1, "ember.pyre-offering")
                 .unit(P1, "ember.cinderling").unit(P1, "neutral.shardling").unit(P2, "neutral.shard-construct").build();
@@ -80,6 +80,19 @@ class CardRulesTest {
         Unit construct = result.unit("neutral.shard-construct");
         assertThat(construct.defense()).isEqualTo(9);
         assertThat(construct.maxDefense()).isEqualTo(9);
+    }
+
+    @Test
+    @DisplayName("6.5 — a unit arriving under a stat aura arrives with its bonus, current defense equal to max")
+    void arrivesUnderAnAura() {
+        ScenarioResult result = run(scenario().shards(P1, 1).hand(P1, "neutral.shardling")
+                        .relic(P1, "tide.coral-font").build(),
+                play("neutral.shardling"));
+
+        Unit shardling = result.unit("neutral.shardling");
+        assertThat(shardling.defense()).isEqualTo(5);
+        assertThat(shardling.maxDefense()).isEqualTo(5);
+        assertThat(trace(result)).containsSubsequence("UnitArrived[6.3, 6.5]", "AuraApplied[8.14]");
     }
 
     @Test
@@ -119,6 +132,17 @@ class CardRulesTest {
 
         assertThat(result.events(GameEvent.CardPlayed.class).getFirst().cost()).isEqualTo(7);
         assertThat(result.player(P1).shards().available()).isZero();
+    }
+
+    @Test
+    @DisplayName("6.8 — a card's cost adds up its printed cost and every cost aura, then is floored at 0 once")
+    void costsAddUpThenFloor() {
+        ScenarioResult result = run(scenario().hand(P1, "ember.cinderling")
+                        .relic(P1, "test.forge").relic(P1, "test.forge").relic(P2, "test.tithe").build(),
+                play("ember.cinderling"));
+
+        // 1 - 1 - 1 + 1 = 0. Flooring each step would give 1 - 1 = 0, 0 - 1 floored to 0, then 0 + 1 = 1.
+        assertThat(result.events(GameEvent.CardPlayed.class).getFirst().cost()).isZero();
     }
 
     @Test

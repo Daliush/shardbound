@@ -82,6 +82,10 @@ public final class EventDescriber {
             case GameEvent.ModifierExpired e -> "The " + Wording.stats(e.attackDamage(), e.defense()) + " on "
                     + w.card(e.unit()) + " ends.";
             case GameEvent.ShardsGained e -> shardsGained(w, e);
+            case GameEvent.AuraApplied e -> w.card(e.source()) + " gives " + w.card(e.unit()) + " "
+                    + Wording.stats(e.attackDamage(), e.defense()) + ".";
+            case GameEvent.AuraRemoved e -> w.card(e.unit()) + " loses the "
+                    + Wording.stats(e.attackDamage(), e.defense()) + " of " + w.card(e.source()) + ".";
             case GameEvent.Recalled e -> w.card(e.card()) + " returns from " + w.possessive(e.card().owner())
                     + " graveyard to " + w.possessive(e.card().owner()) + " hand.";
             case GameEvent.RecallFailed e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
