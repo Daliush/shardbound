@@ -21,8 +21,8 @@ public final class PlayerViews {
         Optional<WaitingFor> waitingFor = pending.filter(d -> d.player() != viewer)
                 .map(d -> new WaitingFor(d.player(), d.kind()));
         return new PlayerView(viewer, state.turn(), state.active(), state.active() == viewer && state.turn() > 0,
-                selfState(self), opponentState(state.player(viewer.opponent())), decision, waitingFor,
-                state.result(), self.decklist(), history);
+                selfState(self), opponentState(state.player(viewer.opponent())), state.resolution(), decision,
+                waitingFor, state.result(), self.decklist(), history);
     }
 
     private static SelfState selfState(PlayerState player) {
