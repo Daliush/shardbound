@@ -1,6 +1,7 @@
-package fr.daliush.shardbound.core.bot;
+package fr.daliush.shardbound.core.bot.random;
 
 import fr.daliush.shardbound.core.action.Action;
+import fr.daliush.shardbound.core.bot.Bot;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.random.SplitMix64;
 import fr.daliush.shardbound.core.view.PlayerView;

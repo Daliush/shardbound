@@ -1,4 +1,4 @@
-package fr.daliush.shardbound.core.bot;
+package fr.daliush.shardbound.core.bot.random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

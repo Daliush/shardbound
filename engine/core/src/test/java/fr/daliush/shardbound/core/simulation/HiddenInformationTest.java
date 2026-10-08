@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.bot.Player;
-import fr.daliush.shardbound.core.bot.RandomBot;
+import fr.daliush.shardbound.core.bot.random.RandomBot;
 import fr.daliush.shardbound.core.content.Content;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;

@@ -2,7 +2,7 @@ package fr.daliush.shardbound.core.simulation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import fr.daliush.shardbound.core.bot.RandomBot;
+import fr.daliush.shardbound.core.bot.random.RandomBot;
 import fr.daliush.shardbound.core.content.Content;
 import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.core.rules.GameSetup;

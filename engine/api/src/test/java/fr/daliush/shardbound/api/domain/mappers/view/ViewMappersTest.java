@@ -10,7 +10,7 @@ import fr.daliush.shardbound.api.domain.bo.game.GameId;
 import fr.daliush.shardbound.api.domain.bo.view.EventView;
 import fr.daliush.shardbound.api.domain.bo.view.GameView;
 import fr.daliush.shardbound.api.domain.bo.view.HandCardView;
-import fr.daliush.shardbound.core.bot.RandomBot;
+import fr.daliush.shardbound.core.bot.random.RandomBot;
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.json.CardParser;

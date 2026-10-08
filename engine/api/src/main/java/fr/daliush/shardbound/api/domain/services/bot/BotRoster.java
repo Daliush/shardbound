@@ -2,7 +2,7 @@ package fr.daliush.shardbound.api.domain.services.bot;
 
 import fr.daliush.shardbound.api.domain.bo.game.Seat;
 import fr.daliush.shardbound.core.bot.Bot;
-import fr.daliush.shardbound.core.bot.RandomBot;
+import fr.daliush.shardbound.core.bot.random.RandomBot;
 import fr.daliush.shardbound.core.random.SplitMix64;
 import java.util.LinkedHashMap;
 import java.util.List;
