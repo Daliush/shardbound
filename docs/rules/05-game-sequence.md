@@ -24,7 +24,7 @@
 
 1. **5.4.1** The active player's "Turn end" abilities trigger.
 2. **5.4.2** "Until end of turn" effects end.
-3. **5.4.3** The active player's doomed units (11.3.4) whose defense is still 0 are destroyed.
+3. **5.4.3** The active player's doomed units (11.3.4) whose defense is still 0 are destroyed. The abilities this triggers, such as their "Death" abilities, resolve before 5.4.4.
 4. **5.4.4** Unspent Shards are lost.
 
 ## 5.5 During the opponent's turn
