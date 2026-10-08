@@ -115,3 +115,8 @@ Game design decisions belong to the maintainer. They like to go point by point a
 - A temporary malus expiring on a damaged unit: it gets back what it lost (8.17), unlike an expiring bonus (8.5).
 - Freeze cast during your turn on an enemy unit: no intercept for the rest of your turn, no attack on their next turn, thawed at the start of your following turn (8.10).
 - An attack whose target died to an "Attack" ability still happens (7.9); an attack whose attacker left the board does not (7.10).
+- An opponent's temporary malus on a doomed unit: when it ends at 5.4.2, it gives back what it took (8.17), which can lift the doom before 5.4.3 (6.10). Settled on purpose: 8.17 stays literal.
+- Maluses take a doomed unit's max defense below 0: no heal raises it above 0, it stays doomed (6.10).
+- A doomed unit destroyed at 5.4.3 with a "Death" ability: the ability resolves before 5.4.4, within the turn (5.4.3).
+- Echo 50 on "sacrifice 1, deal 8": the echo still asks for 1 sacrifice, then deals 4 (11.1.11); with no unit to sacrifice, it does nothing at all (8.22).
+- The design doc's Arbiter example (§5.2), Tempest on an anchored Root Sentinel linked to a Bramble Warden: only the Warden dies, and the link breaks (11.3.2, 11.3.3, 11.5.3, 11.5.4). `LinkRulesTest` plays it.

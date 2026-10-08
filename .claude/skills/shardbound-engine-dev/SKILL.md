@@ -96,6 +96,8 @@ engine.eventsFor(game.events(), PlayerId.P1).forEach(e -> System.out.println(e.r
 
 Put it in a throwaway test, read the log, then delete the test. When a random-game test fails, find its seed (add it to the assertion's description if needed), then replay that game with the same bot seeds: it replays exactly.
 
+The same trick finds a seed for a demo or a play-test: loop over seeds, call `engine.newGame(new GameSetup(deckA, deckB, seed))`, and print the seeds whose `state.firstPlayer()`, `p1().hand()` and the top of `p1().deck()` suit you. P1's draws depend only on the seed; the bot's choices then depend on the bot's own generator.
+
 ## Before you commit
 
 - [ ] Rule tests named by rule ID; `./mvnw verify` green from `engine/`.

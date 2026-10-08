@@ -99,6 +99,14 @@ cd frontend && npm start                          # http://localhost:4200, proxi
 - A `rejected` you did not expect: the reason says which check failed (point 3 above).
 - `BotTurnService.MAX_BOT_MOVES` (10,000 in a row) fails loudly if a bot loop never gives the decision back.
 
+### Play-testing in the browser pane
+
+To check a change in the real client, run `docker compose up --build` from the root (it replaces a stack already running) and open http://localhost:4200 in the browser pane.
+
+- **A seeded game**: from the page, `fetch('/api/games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deck, opponent: { type: 'bot', bot, deck: botDeck }, seed }) })`, store `playerToken` under `shardbound.game.<gameId>.token` in `localStorage`, then go to `/games/<gameId>`. The creator is P1, and P1's draws depend only on the seed: to pick a seed with a good opening, print P1's hand and the top of its deck after `newGame` for a range of seeds in a throwaway core test.
+- **The page**: the board's cards and units are `button.tile`, with the class `selectable` (a source to click), `selected` or `targetable`; each player's panel is a `button.panel`, `targetable` when an attack or effect can hit that player; the decision's actions are plain buttons labelled by the engine (`End your turn`, `Play … overcharged (…)`, `Don't intercept`…), and `button.cancel` drops a selection. `get_page_text` reads the board, the prompt and the log, whose lines start with their rule IDs.
+- **Clicking**: while the pane is hidden, mouse clicks do not land; click through the DOM (`element.click()`) with `javascript_tool`. Updates arrive one every 400 ms, so wait a second or more after each action, longer for a bot's turn. A `javascript_tool` call times out after 45 s: drive long sequences in several calls.
+
 ## Docs to keep in sync
 
 A protocol or session change updates spec §12–§14 and, when payloads move, `specs/phase-2-examples.md`. The end of a slice updates the `docs/design.md` changelog, `CLAUDE.md` and the `shardbound-project` skill. This skill changes with the server.
