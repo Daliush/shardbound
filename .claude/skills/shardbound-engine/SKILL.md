@@ -129,7 +129,7 @@ Defaults worth knowing: turn 3, P1 active and first player, 50 HP, 0 Shards, **e
 
 ## What is implemented
 
-The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 4 cover the whole rulebook, sections 1 to 11: every effect of section 8, auras and Link included, and the five keywords. Every card of the catalog is playable (`PlayableCardsTest`), and `RulebookCoverageTest` fails when a rule has no test. Three rules are still *(proposed)* (6.10, 11.1.11, 11.2.8, listed in `docs/rules/12-open-points.md`): the engine follows them until the maintainer decides. Slice 5 brings determinization, the greedy bot and the scenario service as a public API.
+The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 4 cover the whole rulebook, sections 1 to 11: every effect of section 8, auras and Link included, and the five keywords. Every card of the catalog is playable (`PlayableCardsTest`), and `RulebookCoverageTest` fails when a rule has no test. Slice 5 brings determinization, the greedy bot and the scenario service as a public API.
 
 Where each keyword lives:
 

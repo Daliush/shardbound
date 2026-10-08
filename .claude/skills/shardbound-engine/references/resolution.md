@@ -98,7 +98,7 @@ An `EffectSource` tells an effect where it comes from: an `EffectList` address (
 
 1. Stat auras are reconciled (`aura.StatAuras`, 8.14): each unit gets exactly what the aura cards on the board give it; a bonus that starts moves both defenses, one that stops ends like an expiring modifier.
 2. A doomed unit back above 0 defense is no longer doomed (`DoomLifted`, 11.3.4), however it got there.
-3. Every unit at 0 defense is destroyed, unless Anchor protects it: then it is doomed and stays (`UnitDoomed`, 11.3.4), and a doomed unit waits for 5.4.3. The others are destroyed together (6.6), the auras are reconciled again (a dead aura card stops applying), and the check repeats until no unit is left to destroy. A unit's defense never goes below 0 (6.9), even when maluses take its max below 0 (6.10, proposed).
+3. Every unit at 0 defense is destroyed, unless Anchor protects it: then it is doomed and stays (`UnitDoomed`, 11.3.4), and a doomed unit waits for 5.4.3. The others are destroyed together (6.6), the auras are reconciled again (a dead aura card stops applying), and the check repeats until no unit is left to destroy. A unit's defense never goes below 0 (6.9), even when maluses take its max below 0 (6.10).
 4. The raised abilities are sorted and queued (section 5).
 5. A player at 0 HP or less ends the game: `Win` for the other player (1.2), `Draw(DOUBLE_KO)` if both are down (1.3). `Game.end` drops every step, queued ability and pending decision (1.6) and emits `GameEnded`.
 
