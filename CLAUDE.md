@@ -68,4 +68,5 @@ Phase 2 of the roadmap in `docs/design.md` §11, built in the five slices of `sp
 - Slice 1 (engine foundation) is done: `engine/core` plays full games with the rules of setup, turns, Shards, zones, cards, combat with intercepts, triggers and the effects Damage, Destroy, Heal, Draw and Summon. Cards needing a later effect or keyword are not playable yet.
 - Slice 2 (game server and test frontend) is done: `engine/api` serves REST and the WebSocket protocol, human vs bot and human vs human, on sessions built for several instances (in-memory adapters until deployment); `frontend/` plays a game in the browser.
 - Slice 3 (effects and card text) is done: every effect of rulebook section 8 but Link (Sacrifice as a cost and an effect, Modify, Discard, Return to hand, Freeze, Gain Shards, Recall, stat and cost auras); `CardTextRenderer` writes each card's text from its data, `GET /api/cards` returns it and the client shows it.
-- Next: slice 4, the keywords (Echo, Fracture, Anchor, Overcharge, Link) and the rulebook coverage test.
+- Slice 4 (keywords) is done: Echo, Fracture, Anchor with doom, Overcharge and Link, so every card of the catalog is playable; `RulebookCoverageTest` fails when a rule of sections 1 to 11 has no test. A Tide starter deck joins Ember's and Root's.
+- Next: slice 5, determinization, the greedy bot and the scenario service as a public API.

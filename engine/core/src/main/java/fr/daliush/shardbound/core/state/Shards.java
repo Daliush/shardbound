@@ -22,6 +22,11 @@ public record Shards(int max, int available, int lockedNextTurn) {
         return new Shards(max, available - cost, lockedNextTurn);
     }
 
+    /** 11.4.2, 11.4.3: more Shards locked for the next refill; they add up. */
+    public Shards withLocked(int amount) {
+        return new Shards(max, available, lockedNextTurn + amount);
+    }
+
     /** 8.12: Shards for this turn only, which can go above the max. */
     public Shards gained(int amount) {
         return new Shards(max, available + amount, lockedNextTurn);

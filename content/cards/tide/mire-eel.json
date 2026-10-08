@@ -1,0 +1,18 @@
+{
+  "id": "tide.mire-eel",
+  "name": "Mire Eel",
+  "faction": "tide",
+  "type": "unit",
+  "cost": 2,
+  "defense": 4,
+  "attacks": [
+    {
+      "name": "Numbing Bite",
+      "cost": 2,
+      "effects": [
+        { "effect": "damage", "amount": 2, "target": "attack_target" },
+        { "effect": "freeze", "target": "attack_target" }
+      ]
+    }
+  ]
+}

@@ -13,4 +13,9 @@ public record HandCard(CardInstance card, int fractureStep, int lastFractureTurn
     public InstanceId id() {
         return card.id();
     }
+
+    /** 11.2.2, 11.2.3: back in hand for its next step, which must wait for another turn. */
+    public HandCard advancedOn(int turn) {
+        return new HandCard(card, fractureStep + 1, turn);
+    }
 }

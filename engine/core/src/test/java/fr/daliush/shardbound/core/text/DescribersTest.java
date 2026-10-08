@@ -16,6 +16,7 @@ import fr.daliush.shardbound.core.content.GainMode;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameSetup;
+import fr.daliush.shardbound.core.scenario.Choices;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
@@ -25,6 +26,7 @@ import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 
 class DescribersTest {
@@ -188,6 +190,67 @@ class DescribersTest {
                 .isEqualTo("Cinderling #1 gets -2/+0.");
         assertThat(events.describe(new GameEvent.ModifierExpired(cinderling, -1, -2), P1))
                 .isEqualTo("The -1/-2 on Cinderling #1 ends.");
+    }
+
+    @Test
+    void describesAnchor() {
+        CardInstance sentinel = new CardInstance(InstanceId.of(5), new CardId("root.root-sentinel"), P2);
+
+        assertThat(events.describe(new GameEvent.AnchorPrevented(sentinel, GameEvent.Removal.DESTROY), P1))
+                .isEqualTo("Root Sentinel #5 is anchored: it is not destroyed.");
+        assertThat(events.describe(new GameEvent.AnchorPrevented(sentinel, GameEvent.Removal.SACRIFICE), P2))
+                .isEqualTo("Root Sentinel #5 is anchored: it stays on the board, and the sacrifice counts as paid.");
+        assertThat(events.describe(new GameEvent.UnitDoomed(sentinel), P1))
+                .isEqualTo("Root Sentinel #5 is at 0 defense but anchored: it is doomed.");
+        assertThat(events.describe(new GameEvent.DoomLifted(sentinel), P1))
+                .isEqualTo("Root Sentinel #5 is no longer doomed.");
+        assertThat(events.describe(new GameEvent.AnchorProtectionEnded(sentinel), P1))
+                .isEqualTo("Root Sentinel #5 is no longer anchored.");
+    }
+
+    @Test
+    void describesOvercharge() {
+        GameState start = scenario().shards(P1, 4).hand(P1, "ember.ember-lance").build();
+
+        assertThat(labels(ENGINE.resume(start).state())).containsExactly("Play Ember Lance (4 Shards)",
+                "Play Ember Lance overcharged (2 Shards, locks 2 next turn)", "End your turn");
+        assertThat(events.describe(new GameEvent.ShardsLocked(P1, 2, 4), P1))
+                .isEqualTo("Your next turn will have 2 Shards more locked (4 in all).");
+        CardInstance lance = new CardInstance(InstanceId.of(19), new CardId("ember.ember-lance"), P1);
+        assertThat(events.describe(new GameEvent.CardPlayed(P1, lance, 2, true, OptionalInt.empty()), P2))
+                .isEqualTo("Your opponent plays Ember Lance overcharged (2 Shards).");
+    }
+
+    @Test
+    void describesEchoes() {
+        GameState start = scenario().shards(P1, 5).hand(P1, "neutral.crystal-rupture").unit(P1, "neutral.shardling")
+                .unit(P1, "neutral.shard-construct").unit(P2, "test.twin-wyrm").build();
+        ScenarioResult died = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")));
+        ScenarioResult ordered = run(start, play("neutral.crystal-rupture").on(unit("test.twin-wyrm")),
+                Choices.chooseOrder(1, 0));
+
+        assertThat(prompt(died.state())).isEqualTo("Choose the order in which the echoes of Twin Wyrm #4 replay.");
+        assertThat(labels(died.state())).containsExactly("Replay Fang first, then Frost Breath",
+                "Replay Frost Breath first, then Fang");
+        assertThat(describe(ordered, P1)).contains("Twin Wyrm #4 died: Frost Breath echoes at 50%.");
+        assertThat(prompt(ordered.state())).isEqualTo("Choose a target for the echo of Frost Breath of Twin Wyrm #4.");
+    }
+
+    @Test
+    void describesLinks() {
+        GameState start = scenario().shards(P1, 1).hand(P1, "neutral.binding-thread").unit(P1, "neutral.shardling")
+                .unit(P2, "root.sprout").build();
+        CardInstance shardling = new CardInstance(InstanceId.of(2), new CardId("neutral.shardling"), P1);
+        CardInstance sprout = new CardInstance(InstanceId.of(3), new CardId("root.sprout"), P2);
+
+        assertThat(labels(ENGINE.resume(start).state()))
+                .contains("Play Binding Thread (1 Shard) on Shardling #2, Sprout #3");
+        assertThat(events.describe(new GameEvent.Linked(shardling, sprout), P1))
+                .isEqualTo("Shardling #2 and Sprout #3 are linked.");
+        assertThat(events.describe(new GameEvent.DamageShared(sprout, shardling, 1), P1))
+                .isEqualTo("Shardling #2 takes 1 damage through its link with Sprout #3.");
+        assertThat(events.describe(new GameEvent.LinkBroken(sprout, shardling), P1))
+                .isEqualTo("Sprout #3 left the board: its link with Shardling #2 breaks.");
     }
 
     private List<String> labels(GameState state) {

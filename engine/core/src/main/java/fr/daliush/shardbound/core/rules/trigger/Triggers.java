@@ -27,7 +27,7 @@ public final class Triggers {
         List<Ability> abilities = abilitiesOf(game.catalog().card(source.card()));
         for (int index = 0; index < abilities.size(); index++) {
             if (abilities.get(index).trigger() == trigger) {
-                game.raise(new QueuedTrigger(source, controller, trigger, index, arrivalSeq));
+                game.raise(new QueuedTrigger.TriggeredAbility(source, controller, trigger, index, arrivalSeq));
             }
         }
     }

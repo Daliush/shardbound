@@ -36,7 +36,8 @@ public final class DecisionDescriber {
             case CHOOSE_TARGET -> "Choose a target for "
                     + source(w, PausedStep.of(state, Step.ChooseTargets.class).source(), decision.player()) + ".";
             case CHOOSE_CARDS -> chooseCards(w, PausedStep.of(state, Step.ResolveEffects.class), decision.player());
-            case CHOOSE_ORDER -> "Choose the order.";
+            case CHOOSE_ORDER -> "Choose the order in which the echoes of "
+                    + w.card(PausedStep.of(state, Step.StartEchoes.class).unit()) + " replay.";
         };
     }
 
@@ -79,6 +80,8 @@ public final class DecisionDescriber {
             case EffectList.SpellEffects ignored -> card;
             case EffectList.AttackEffects attack -> catalog.unit(attack.card()).attacks().get(attack.attackIndex())
                     .name().orElse("the attack") + " of " + card;
+            case EffectList.EchoEffects echo -> "the echo of " + catalog.unit(echo.card()).attacks()
+                    .get(echo.attackIndex()).name().orElse("the attack") + " of " + card;
             case EffectList.AbilityEffects ability -> "the " + Wording.trigger(Triggers.abilitiesOf(
                     catalog.card(ability.card())).get(ability.abilityIndex()).trigger()) + " ability of " + card;
         };

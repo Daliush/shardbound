@@ -1,0 +1,9 @@
+{
+  "id": "tide.receding-wave",
+  "name": "Receding Wave",
+  "faction": "tide",
+  "type": "spell",
+  "cost": 3,
+  "effects": [{ "effect": "return_to_hand", "target": "enemy_unit" }],
+  "flavor": "What the sea gives, the sea takes back."
+}

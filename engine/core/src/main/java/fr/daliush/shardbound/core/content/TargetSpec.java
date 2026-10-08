@@ -20,4 +20,8 @@ public enum TargetSpec {
     public boolean isGroup() {
         return this == ALL_ALLY_UNITS || this == ALL_ENEMY_UNITS || this == ALL_UNITS;
     }
+
+    public boolean isRelic() {
+        return this == ALLY_RELIC || this == ENEMY_RELIC || this == ANY_RELIC;
+    }
 }

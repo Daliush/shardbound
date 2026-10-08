@@ -16,3 +16,4 @@
 
   > *Example*: a 1-cost card, under an opposing aura that makes it cost 1 more, overcharged: 1 + 1 − 2 = 0 Shards. It still locks 2 Shards (11.4.2).
 - **6.9** A unit's current defense never goes below 0: damage beyond what it has left is lost. A player's HP, however, can drop below 0 (1.2).
+- **6.10** Maluses can bring a unit's max defense to 0 or below. Its current defense then stays at 0 (6.9), and no heal can raise it above its max: the unit is destroyed (6.6), unless it is anchored and stays doomed (11.3.4) until a malus ends and gives back what it took (8.17, 8.21).

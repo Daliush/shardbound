@@ -1,0 +1,22 @@
+{
+  "id": "tide.reefkeeper",
+  "name": "Reefkeeper",
+  "faction": "tide",
+  "type": "unit",
+  "cost": 3,
+  "defense": 6,
+  "attacks": [
+    {
+      "name": "Spine Lash",
+      "cost": 2,
+      "effects": [{ "effect": "damage", "amount": 4, "target": "attack_target" }]
+    },
+    {
+      "name": "Swell",
+      "cost": 2,
+      "effects": [
+        { "effect": "modify", "attack_damage": 1, "defense": 1, "duration": "permanent", "target": "all_ally_units" }
+      ]
+    }
+  ]
+}

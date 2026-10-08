@@ -97,10 +97,15 @@ public final class EffectResolution {
             case Effect.Freeze freeze -> FreezeEffect.apply(game, freeze, source, chosen);
             case Effect.GainShards gain -> GainShardsEffect.apply(game, gain, source);
             case Effect.Recall recall -> RecallEffect.apply(game, recall, source, chosen);
+            case Effect.Link ignored -> LinkEffect.apply(game, chosen);
+            case Effect.Sacrifice ignored -> throw asksForCards(effect);
             case Effect.StatAura ignored -> throw continuous(effect);
             case Effect.CostAura ignored -> throw continuous(effect);
-            default -> throw new IllegalStateException("Not implemented yet: " + effect);
         }
+    }
+
+    private static IllegalStateException asksForCards(Effect effect) {
+        return new IllegalStateException(effect + " asks for cards: it resolves through pickCards");
     }
 
     /** 9.7: an aura applies while its card is on the board (rules.aura); it never resolves. */

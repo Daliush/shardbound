@@ -103,26 +103,24 @@ engine.view(state, P1, history);        // PlayerView: P2's hand is only a count
 
 ### 1.5 A rule test with the scenario service
 
-The intended style of the tests (spec §11, §16). Names and helpers may still change.
+The style of the rule tests (spec §11, §16), with the scenario service as built; slice 5 polishes it into a public API. This test is in `AnchorRulesTest`'s spirit: build the board, play, assert the state and the trace.
 
 ```java
 @Test
 @DisplayName("11.3.4 — an anchored unit dropped to 0 defense is doomed, not destroyed")
 void anchoredUnitAtZeroIsDoomed() {
-    GameState start = ScenarioBuilder.of(catalog)
-            .turn(5).active(P1)
-            .player(P1, p -> p.shards(3).hand("ember.spark-dart"))
-            .player(P2, p -> p.unit("root.root-sentinel", u -> u.defense(3).anchorProtected()))
+    GameState start = ScenarioBuilder.of(catalog).turn(5).active(P1)
+            .shards(P1, 3).hand(P1, "ember.spark-dart")
+            .unit(P2, "root.root-sentinel", unit -> unit.defense(3).anchorProtected())
             .build();
 
-    ScenarioResult result = ScenarioRunner.run(start,
-            play("ember.spark-dart").targeting(unit("root.root-sentinel")));
+    ScenarioResult result = new ScenarioRunner(engine).run(start,
+            play("ember.spark-dart").on(unit("root.root-sentinel")));
 
     Unit sentinel = result.unit("root.root-sentinel");
     assertThat(sentinel.defense()).isZero();
     assertThat(sentinel.doomed()).isTrue();
-    assertThat(result.events()).anySatisfy(e ->
-            assertThat(e).isInstanceOf(UnitDoomed.class).extracting(GameEvent::rules).isEqualTo(List.of("11.3.4")));
+    assertThat(trace(result)).containsSubsequence("UnitDamaged[8.1]", "UnitDoomed[11.3.4]");
 }
 ```
 

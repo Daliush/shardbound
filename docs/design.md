@@ -38,6 +38,8 @@
 > **v2.10 (October 2026)** — phase 2, slice 2: the game server (REST, WebSocket protocol, versioned sessions with an outbox, tested as two instances sharing one store) and a minimal Angular client. A human plays a bot or another human in the browser; everything the client shows comes from the engine.
 >
 > **v2.11 (October 2026)** — phase 2, slice 3: every effect of the closed list but Link (Sacrifice as a cost and an effect, Modify, Discard, Return to hand, Freeze, Gain Shards, Recall, stat and cost auras), each with its rule tests, and card text written from the card data by the engine, checked against the card format's examples. The client shows each card's text and answers a choice of cards by clicking them. Keywords come next.
+>
+> **v2.12 (October 2026)** — phase 2, slice 4: the five keywords in the engine (Echo with its order and target choices, Fracture step by step, Anchor with doom, Overcharge and its Shard lock, Link and its damage sharing), so every card is playable. A coverage test now fails when a rule of sections 1 to 11 has no test. Nine Tide cards and a Tide starter deck (39 cards + 1 token, three starter decks). Four rules settled with the maintainer along the way: 6.10 (a max defense below 0), 11.1.11 (an echo keeps a Sacrifice's count), 11.2.8 (a Fracture card pays its sacrifice cost at each step), and 5.4.3 reworded (the abilities it triggers resolve within the turn).
 
 ---
 

@@ -18,6 +18,7 @@ import fr.daliush.shardbound.core.state.Relic;
 import fr.daliush.shardbound.core.state.Shards;
 import fr.daliush.shardbound.core.state.Unit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,12 @@ public final class ScenarioBuilder {
                 Math.max(available, state.shards().max()), available, state.shards().lockedNextTurn())));
     }
 
+    /** Shards Overcharge locks on the player's next turn (11.4.2). */
+    public ScenarioBuilder lockedShards(PlayerId player, int locked) {
+        return change(player, state -> state.withShards(
+                new Shards(state.shards().max(), state.shards().available(), locked)));
+    }
+
     public ScenarioBuilder maxShards(PlayerId player, int max) {
         return change(player, state -> state.withShards(
                 new Shards(max, state.shards().available(), state.shards().lockedNextTurn())));
@@ -117,6 +124,12 @@ public final class ScenarioBuilder {
         return this;
     }
 
+    /** A Fracture card in hand whose next step is {@code nextStep}, 1-based, its last step played on an earlier turn. */
+    public ScenarioBuilder handAtStep(PlayerId player, String card, int nextStep) {
+        CardInstance instance = newCard(card, player);
+        return change(player, state -> state.addToHand(new HandCard(instance, nextStep - 1, 0)));
+    }
+
     public ScenarioBuilder graveyard(PlayerId player, String... cards) {
         for (String card : cards) {
             CardInstance instance = newCard(card, player);
@@ -144,8 +157,31 @@ public final class ScenarioBuilder {
         if (setup.hasIntercepted) {
             unit = unit.markHasIntercepted();
         }
+        if (setup.anchorProtected) {
+            unit = unit.withAnchorProtection();
+        }
+        if (setup.doomed) {
+            unit = unit.markDoomed();
+        }
         Unit placed = unit;
         return change(player, state -> state.addUnit(placed));
+    }
+
+    /** Links the first unit with card {@code card} to the first other unit with card {@code other} (11.5.1). */
+    public ScenarioBuilder link(String card, String other) {
+        List<Unit> units = players.values().stream().flatMap(state -> state.units().stream())
+                .sorted(Comparator.comparingInt(Unit::arrivalSeq)).toList();
+        Unit first = firstWithCard(units, card, Optional.empty());
+        Unit second = firstWithCard(units, other, Optional.of(first.id()));
+        change(first.controller(), state -> state.replaceUnit(first.linkedWith(second.id())));
+        return change(second.controller(), state -> state.replaceUnit(second.linkedWith(first.id())));
+    }
+
+    private static Unit firstWithCard(List<Unit> units, String card, Optional<InstanceId> except) {
+        return units.stream()
+                .filter(unit -> unit.card().equals(new CardId(card)) && except.filter(unit.id()::equals).isEmpty())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No unit " + card + " to link"));
     }
 
     public ScenarioBuilder relic(PlayerId player, String card) {
@@ -176,6 +212,17 @@ public final class ScenarioBuilder {
                 || state.hand().size() > PlayerState.MAX_HAND) {
             throw new IllegalStateException("The scenario breaks the zone limits of " + state.id() + " (3.3, 3.4)");
         }
+        for (Unit unit : state.units()) {
+            unit.linkedTo().ifPresent(partner -> {
+                if (!partnerOf(partner).flatMap(Unit::linkedTo).equals(Optional.of(unit.id()))) {
+                    throw new IllegalStateException("The link of " + unit.id() + " is not mutual (11.5.1)");
+                }
+            });
+        }
+    }
+
+    private Optional<Unit> partnerOf(InstanceId id) {
+        return players.values().stream().flatMap(state -> state.unit(id).stream()).findFirst();
     }
 
     private CardInstance newCard(String card, PlayerId owner) {

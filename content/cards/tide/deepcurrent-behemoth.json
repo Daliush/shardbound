@@ -1,0 +1,20 @@
+{
+  "id": "tide.deepcurrent-behemoth",
+  "name": "Deepcurrent Behemoth",
+  "faction": "tide",
+  "type": "unit",
+  "cost": 7,
+  "defense": 14,
+  "attacks": [
+    {
+      "name": "Crushing Depths",
+      "cost": 3,
+      "effects": [{ "effect": "damage", "amount": 7, "target": "attack_target" }]
+    },
+    {
+      "name": "Engulf",
+      "cost": 2,
+      "effects": [{ "effect": "return_to_hand", "target": "attack_target" }]
+    }
+  ]
+}

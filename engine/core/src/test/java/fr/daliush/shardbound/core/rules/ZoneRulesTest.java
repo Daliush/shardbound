@@ -13,11 +13,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.daliush.shardbound.core.action.Action;
 import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.Content;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
+import fr.daliush.shardbound.core.json.GameJson;
 import fr.daliush.shardbound.core.state.InstanceId;
+import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.core.testing.TestContent;
 import fr.daliush.shardbound.core.view.PlayerView;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -144,6 +148,27 @@ class ZoneRulesTest {
         assertThat(seenByP1.card()).isEmpty();
         PlayerView p2View = ENGINE.view(result.state(), P2, result.events());
         assertThat(p2View.history()).contains(result.events(GameEvent.CardDrawn.class).getFirst());
+    }
+
+    @Test
+    @DisplayName("3.2 — no view shows the order of a deck, not even its owner's: only how many cards it holds")
+    void deckOrderHidden() {
+        Content content = TestContent.content();
+        Transition started = ENGINE.newGame(new GameSetup(content.deck("ember-starter"), content.deck("root-starter"),
+                7));
+        GameState state = started.state();
+        GameJson json = new GameJson();
+
+        for (PlayerId viewer : PlayerId.values()) {
+            PlayerView view = ENGINE.view(state, viewer, started.events());
+            String seen = json.writeValue(view);
+            assertThat(view.self().deckCount()).isEqualTo(state.player(viewer).deck().size());
+            assertThat(view.opponent().deckCount()).isEqualTo(state.player(viewer.opponent()).deck().size());
+            for (PlayerId owner : PlayerId.values()) {
+                assertThat(state.player(owner).deck()).as("%s's deck, seen by %s", owner, viewer)
+                        .noneMatch(card -> seen.contains(json.writeValue(card)));
+            }
+        }
     }
 
     private static List<Action> mainActions(GameState start) {

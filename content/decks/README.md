@@ -35,6 +35,7 @@ From the rulebook ([section 2](../../docs/rules/02-deck-building.md)):
 |---|---|---|
 | [`ember-starter`](ember-starter.json) | Ember | Front-loaded aggression: cheap attackers and burn early, sacrifice and Echo in the mid game, Cinderfall against swarms. |
 | [`root-starter`](root-starter.json) | Root | Slow and sturdy: a wall of Sprouts protects the player while healing and Anchor units grind the opponent down. |
+| [`tide-starter`](tide-starter.json) | Tide | Tempo and attrition: freeze and bounce the threats, draw past them, then buff a lasting board with Swell, Coral Font and Fracture payoffs. |
 
 ## Tests
 

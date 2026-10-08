@@ -19,16 +19,22 @@ public final class TriggerOrder {
         Comparator<QueuedTrigger> order = Comparator
                 .comparingInt((QueuedTrigger trigger) -> trigger.controller() == active ? 0 : 1)
                 .thenComparingInt(QueuedTrigger::arrivalSeq)
-                .thenComparingInt(trigger -> rank(trigger.trigger()))
-                .thenComparingInt(QueuedTrigger::abilityIndex);
+                .thenComparingInt(TriggerOrder::rank)
+                .thenComparingInt(TriggerOrder::printedOrder);
         return raised.stream().sorted(order).toList();
     }
 
-    private static int rank(Trigger trigger) {
+    private static int rank(QueuedTrigger trigger) {
         return switch (trigger) {
-            case DEATH -> 1;
-            case DEPARTURE -> 2;
-            default -> 3;
+            case QueuedTrigger.Echoes ignored -> 0;
+            case QueuedTrigger.TriggeredAbility ability when ability.trigger() == Trigger.DEATH -> 1;
+            case QueuedTrigger.TriggeredAbility ability when ability.trigger() == Trigger.DEPARTURE -> 2;
+            case QueuedTrigger.TriggeredAbility ignored -> 3;
         };
+    }
+
+    /** A unit's echoes are one entry, ordered by its owner (11.1.8). */
+    private static int printedOrder(QueuedTrigger trigger) {
+        return trigger instanceof QueuedTrigger.TriggeredAbility ability ? ability.abilityIndex() : 0;
     }
 }

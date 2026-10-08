@@ -19,6 +19,7 @@ public final class TurnStart {
         game.startTurnOf(player);
         game.emit(new GameEvent.TurnStarted(player, game.turn()));
         thaw(game);
+        endAnchorProtection(game, player);
         clearTurnFlags(game);
         refillShards(game, player);
         boolean firstTurnOfTheGame = player == game.firstPlayer() && game.player(player).turnsTaken() == 0;
@@ -35,6 +36,16 @@ public final class TurnStart {
             if (unit.frozenThroughTurn() > 0 && !unit.isFrozen(game.turn())) {
                 game.updateUnit(unit.thawed());
                 game.emit(new GameEvent.UnitThawed(unit.asCard()));
+            }
+        }
+    }
+
+    /** 5.2.1: the active player's units lose their Anchor protection (11.3.1). */
+    private static void endAnchorProtection(Game game, PlayerId player) {
+        for (Unit unit : game.player(player).units()) {
+            if (unit.anchorProtected()) {
+                game.updateUnit(unit.withAnchorProtectionEnded());
+                game.emit(new GameEvent.AnchorProtectionEnded(unit.asCard()));
             }
         }
     }

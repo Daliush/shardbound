@@ -35,8 +35,15 @@ final class EffectParser {
             case "aura" -> aura(json);
             default -> throw json.error("unknown effect '" + name + "'");
         };
+        if (targetsARelic(effect) && !(effect instanceof Effect.Destroy || effect instanceof Effect.ReturnToHand)) {
+            throw json.error("only Destroy and Return to hand can target a relic (10.4)");
+        }
         json.finish();
         return effect;
+    }
+
+    private static boolean targetsARelic(Effect effect) {
+        return effect instanceof Effect.Targeted targeted && targeted.target().isRelic();
     }
 
     private Effect gainShards(JsonObjectReader json) {

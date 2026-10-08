@@ -16,6 +16,7 @@ import fr.daliush.shardbound.api.domain.bo.game.GameStatus;
 import fr.daliush.shardbound.api.testing.FakeWebSocketSession;
 import fr.daliush.shardbound.api.testing.TestInstance;
 import fr.daliush.shardbound.core.action.Action;
+import fr.daliush.shardbound.core.action.TargetRef;
 import fr.daliush.shardbound.core.decision.Decision;
 import fr.daliush.shardbound.core.decision.DecisionKind;
 import fr.daliush.shardbound.core.random.SplitMix64;
@@ -25,7 +26,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /** Two instances of the server sharing one game DAO and one notification DAO, as on Cloud Run (spec §13.4). */
@@ -124,14 +127,33 @@ class TwoInstancesTest {
         assertThat(second.types()).contains("update");
     }
 
-    /** Players who attack whenever they can, so that defenders get intercept decisions whatever the cards. */
+    /**
+     * Players who look for intercepts whatever the cards: they attack a unit when the defender has another one that may
+     * intercept, otherwise play a card rather than attack or end their turn, so that boards fill up.
+     */
     private static int attackingWhenPossible(Decision decision, SplitMix64 random) {
-        List<Integer> attacks = IntStream.range(0, decision.actions().size())
-                .filter(index -> decision.actions().get(index) instanceof Action.Attack)
+        List<Integer> interceptable = indexesOf(decision, action -> action instanceof Action.Attack attack
+                && attack.target().filter(TargetRef.UnitTarget.class::isInstance).isPresent()
+                && unitTargets(decision) > 1);
+        List<Integer> plays = indexesOf(decision, Action.PlayCard.class::isInstance);
+        List<Integer> preferred = interceptable.isEmpty() ? plays : interceptable;
+        return preferred.isEmpty() ? TestInstance.anyIndex(decision, random)
+                : preferred.get(random.nextInt(preferred.size()));
+    }
+
+    private static long unitTargets(Decision decision) {
+        return decision.actions().stream()
+                .flatMap(action -> action instanceof Action.Attack attack ? attack.target().stream() : Stream.empty())
+                .filter(TargetRef.UnitTarget.class::isInstance)
+                .distinct()
+                .count();
+    }
+
+    private static List<Integer> indexesOf(Decision decision, Predicate<Action> matches) {
+        return IntStream.range(0, decision.actions().size())
+                .filter(index -> matches.test(decision.actions().get(index)))
                 .boxed()
                 .toList();
-        return attacks.isEmpty() ? TestInstance.anyIndex(decision, random)
-                : attacks.get(random.nextInt(attacks.size()));
     }
 
     private static void await(CountDownLatch latch) {

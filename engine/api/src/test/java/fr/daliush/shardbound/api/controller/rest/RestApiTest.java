@@ -57,7 +57,7 @@ class RestApiTest {
     void listsTheDecksAndTheBots() throws Exception {
         mvc.perform(get("/api/decks"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id").value(contains("ember-starter", "root-starter")))
+                .andExpect(jsonPath("$[*].id").value(contains("ember-starter", "root-starter", "tide-starter")))
                 .andExpect(jsonPath("$[0].faction").value("ember"))
                 .andExpect(jsonPath("$[0].cards", hasSize(15)));
         mvc.perform(get("/api/bots"))

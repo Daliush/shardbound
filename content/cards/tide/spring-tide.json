@@ -1,0 +1,23 @@
+{
+  "id": "tide.spring-tide",
+  "name": "Spring Tide",
+  "faction": "tide",
+  "type": "spell",
+  "fracture": [
+    {
+      "cost": 0,
+      "effects": [{ "effect": "draw", "amount": 1, "target": "opponent" }]
+    },
+    {
+      "cost": 1,
+      "effects": [{ "effect": "draw", "amount": 1, "target": "you" }]
+    },
+    {
+      "cost": 4,
+      "effects": [
+        { "effect": "modify", "attack_damage": 2, "defense": 2, "duration": "permanent", "target": "all_ally_units" }
+      ]
+    }
+  ],
+  "flavor": "The sea pulls back before it rises."
+}

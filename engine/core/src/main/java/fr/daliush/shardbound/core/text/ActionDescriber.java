@@ -6,6 +6,7 @@ import fr.daliush.shardbound.core.content.AttackAbility;
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.Effect;
+import fr.daliush.shardbound.core.resolution.Step;
 import fr.daliush.shardbound.core.rules.play.Costs;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameState;
@@ -37,7 +38,7 @@ public final class ActionDescriber {
             case Action.DeclineIntercept ignored -> "Don't intercept";
             case Action.ChooseTarget choose -> "Choose " + target(w, choose.target(), state);
             case Action.ChooseCards choose -> chooseCards(w, choose, state);
-            case Action.ChooseOrder order -> "Resolve in the order " + order.order();
+            case Action.ChooseOrder order -> echoOrder(order, state);
             case Action.EndTurn ignored -> "End your turn";
         };
     }
@@ -53,6 +54,14 @@ public final class ActionDescriber {
             label += " on " + targets(w, play.targets(), state);
         }
         return play.sacrificed().isEmpty() ? label : label + ", sacrificing " + cards(w, play.sacrificed(), state);
+    }
+
+    /** 11.1.8: "Replay Fang first, then Frost Breath". */
+    private String echoOrder(Action.ChooseOrder order, GameState state) {
+        List<AttackAbility> attacks = catalog.unit(PausedStep.of(state, Step.StartEchoes.class).unit().card()).attacks();
+        return "Replay " + order.order().stream()
+                .map(index -> attacks.get(index).name().orElse("attack " + (index + 1)))
+                .collect(Collectors.joining(" first, then "));
     }
 
     /** "Sacrifice Cinderling #1": the verb comes from the effect that asks. */

@@ -10,6 +10,8 @@ public final class UnitSetup {
     boolean hasAttacked;
     boolean hasIntercepted;
     int frozenThroughTurn;
+    boolean anchorProtected;
+    boolean doomed;
 
     public UnitSetup defense(int value) {
         defense = OptionalInt.of(value);
@@ -33,6 +35,19 @@ public final class UnitSetup {
 
     public UnitSetup frozenThroughTurn(int turn) {
         frozenThroughTurn = turn;
+        return this;
+    }
+
+    /** Still protected by Anchor (11.3.1), whether or not the card has the keyword. */
+    public UnitSetup anchorProtected() {
+        anchorProtected = true;
+        return this;
+    }
+
+    /** At 0 defense and doomed (11.3.4). */
+    public UnitSetup doomed() {
+        doomed = true;
+        defense = OptionalInt.of(0);
         return this;
     }
 }

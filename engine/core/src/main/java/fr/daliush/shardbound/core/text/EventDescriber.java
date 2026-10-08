@@ -5,9 +5,11 @@ import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.Duration;
 import fr.daliush.shardbound.core.event.EventTarget;
 import fr.daliush.shardbound.core.event.GameEvent;
+import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
 import fr.daliush.shardbound.core.state.Shards;
+import java.util.OptionalInt;
 
 /** Turns an event into an English sentence for one player: "You draw Spark Dart.", "Sprout #61 takes 3 damage." */
 public final class EventDescriber {
@@ -35,6 +37,7 @@ public final class EventDescriber {
             case GameEvent.ShardsRefilled e -> w.subject(e.player()) + " " + w.verb(e.player(), "have", "has") + " "
                     + Wording.shards(e.available()) + " (max " + e.max()
                     + (e.locked() > 0 ? ", " + e.locked() + " locked" : "") + ").";
+            case GameEvent.AnchorProtectionEnded e -> w.card(e.unit()) + " is no longer anchored.";
             case GameEvent.HpLost e -> w.subject(e.player()) + " " + w.verb(e.player(), "draw", "draws")
                     + " from an empty deck and " + w.verb(e.player(), "lose", "loses") + " " + e.amount()
                     + " HP (fatigue).";
@@ -48,8 +51,12 @@ public final class EventDescriber {
                     + w.own(e.player()) + " turn.";
             case GameEvent.GameEnded e -> ending(e.result(), viewer);
             case GameEvent.CardPlayed e -> w.subject(e.player()) + " " + w.verb(e.player(), "play", "plays") + " "
-                    + w.name(e.card().card()) + (e.overcharged() ? ", overcharged," : "") + " ("
-                    + Wording.shards(e.cost()) + ").";
+                    + w.name(e.card().card()) + (e.overcharged() ? " overcharged" : "")
+                    + ownStep(e.player(), e.fractureStep(), viewer) + " (" + Wording.shards(e.cost()) + ").";
+            case GameEvent.FractureAdvanced e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
+                    + " hand" + ownStep(e.card().owner(), OptionalInt.of(e.nextStep()), viewer) + ".";
+            case GameEvent.ShardsLocked e -> capitalize(w.possessive(e.player())) + " next turn will have "
+                    + Wording.shards(e.amount()) + " more locked (" + e.total() + " in all).";
             case GameEvent.UnitArrived e -> w.card(e.unit()) + " arrives on " + w.possessive(e.controller())
                     + " board.";
             case GameEvent.RelicArrived e -> w.card(e.relic()) + " arrives on " + w.possessive(e.controller())
@@ -62,6 +69,8 @@ public final class EventDescriber {
                     + w.name(e.token()) + " is summoned.";
             case GameEvent.AbilityTriggered e -> w.card(e.source()) + " triggers its " + Wording.trigger(e.trigger())
                     + " ability.";
+            case GameEvent.EchoTriggered e -> w.card(e.unit()) + " died: " + attackName(e.unit(), e.attackIndex())
+                    + " echoes at " + e.percent() + "%.";
             case GameEvent.AttackDeclared e -> attack(w, e);
             case GameEvent.AttackIntercepted e -> w.card(e.interceptor()) + " intercepts the attack aimed at "
                     + w.card(e.originalTarget()) + ".";
@@ -69,6 +78,8 @@ public final class EventDescriber {
                     + " not intercept.";
             case GameEvent.AttackCancelled e -> w.card(e.attacker()) + " left the board: its attack does not happen.";
             case GameEvent.UnitDamaged e -> w.card(e.unit()) + " takes " + e.amount() + " damage.";
+            case GameEvent.DamageShared e -> w.card(e.to()) + " takes " + e.amount() + " damage through its link with "
+                    + w.card(e.from()) + ".";
             case GameEvent.PlayerDamaged e -> w.subject(e.player()) + " " + w.verb(e.player(), "take", "takes") + " "
                     + e.amount() + " damage.";
             case GameEvent.UnitHealed e -> w.card(e.unit()) + " heals " + e.amount() + " defense.";
@@ -90,6 +101,9 @@ public final class EventDescriber {
                     + " graveyard to " + w.possessive(e.card().owner()) + " hand.";
             case GameEvent.RecallFailed e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
                     + w.card(e.card()) + " stays in the graveyard.";
+            case GameEvent.Linked e -> w.card(e.first()) + " and " + w.card(e.second()) + " are linked.";
+            case GameEvent.LinkBroken e -> w.card(e.left()) + " left the board: its link with " + w.card(e.partner())
+                    + " breaks.";
             case GameEvent.Frozen e -> w.card(e.unit()) + " is frozen until the end of turn " + e.throughTurn() + ".";
             case GameEvent.UnitThawed e -> w.card(e.unit()) + " thaws.";
             case GameEvent.ReturnedToHand e -> w.card(e.card()) + " returns to " + w.possessive(e.card().owner())
@@ -97,10 +111,22 @@ public final class EventDescriber {
             case GameEvent.SentToGraveyardHandFull e -> capitalize(w.possessive(e.card().owner())) + " hand is full: "
                     + w.card(e.card()) + " goes to the graveyard.";
             case GameEvent.UnitSacrificed e -> w.card(e.unit()) + " is sacrificed.";
+            case GameEvent.AnchorPrevented e -> w.card(e.unit()) + " is anchored: " + switch (e.attempt()) {
+                case DESTROY -> "it is not destroyed.";
+                case RETURN_TO_HAND -> "it does not return to hand.";
+                case SACRIFICE -> "it stays on the board, and the sacrifice counts as paid.";
+            };
+            case GameEvent.UnitDoomed e -> w.card(e.unit()) + " is at 0 defense but anchored: it is doomed.";
+            case GameEvent.DoomLifted e -> w.card(e.unit()) + " is no longer doomed.";
             case GameEvent.SacrificeFailed e -> w.subject(e.player()) + " cannot sacrifice "
                     + Wording.count(e.needed(), "unit", "units") + " (only " + e.available() + " on "
                     + w.own(e.player()) + " board): nothing more happens.";
         };
+    }
+
+    /** 11.2.5: Fracture steps are public, but only shown to the card's owner; the opponent has to remember them. */
+    private static String ownStep(PlayerId owner, OptionalInt step, PlayerId viewer) {
+        return owner == viewer && step.isPresent() ? ", step " + step.getAsInt() : "";
     }
 
     private String attack(Wording w, GameEvent.AttackDeclared e) {
@@ -109,6 +135,10 @@ public final class EventDescriber {
         return e.target()
                 .map(target -> w.card(e.attacker()) + " attacks " + target(w, target) + " with " + name + ".")
                 .orElse(w.card(e.attacker()) + " uses " + name + ".");
+    }
+
+    private String attackName(CardInstance unit, int attackIndex) {
+        return catalog.unit(unit.card()).attacks().get(attackIndex).name().orElse("its attack");
     }
 
     private static String shardsGained(Wording w, GameEvent.ShardsGained e) {

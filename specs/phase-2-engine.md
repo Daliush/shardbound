@@ -377,10 +377,11 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `HandKept(player)`, `MulliganTaken(player)` | 5.1.3 | public |
 | `TurnStarted(player, turn)` | 5.2 | public |
 | `AnchorProtectionEnded(unit)` | 5.2.1, 11.3.1 | public |
-| `ShardsRefilled(player, max, available, locked)` | 4.1, 4.2, 11.4.2 | public |
+| `ShardsRefilled(player, max, available, locked)` | 4.1, 4.2; 11.4.2 when Shards are locked, 11.4.4 when the lock exceeds the refill | public |
+| `ShardsLocked(player, amount, total)` | 11.4.2, 11.4.3 | public |
 | `HpLost(player, amount, reason)` | 1.4 (fatigue) | public |
-| `CardDiscarded(player, card, reason)` (reason `OVERDRAW` or `EFFECT`) | 3.3 (overdraw), 8.7, 11.2.6 | public (the graveyard is public) |
-| `CardPlayed(player, card, cost, overcharged, fractureStep)` | 6.3, 11.4.1, 11.2.2 | public |
+| `CardDiscarded(player, card, reason)` (reason `OVERDRAW` or `EFFECT`) | 3.3 (overdraw), 8.7; 8.7, 11.2.6 for a Fracture card in progress | public (the graveyard is public) |
+| `CardPlayed(player, card, cost, overcharged, fractureStep)` (`fractureStep` 1-based) | 6.3; 11.4.1 when overcharged; 11.2.2 for a Fracture step | public; the log names the step to its owner only (11.2.5) |
 | `UnitSacrificed(unit, controller)` | 6.3 and 8.3 for a sacrifice cost, 8.3 for an effect | public |
 | `SacrificeFailed(player, needed, available)` | 8.22 | public |
 | `UnitArrived(unit)`, `RelicArrived(relic)` | 6.3, 6.5 | public |
@@ -393,18 +394,18 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `Modified(unit, attackDamage, defense, duration)` | 8.5 | public |
 | `ModifierExpired(unit, attackDamage, defense)` | 5.4.2, then 8.5 for a bonus or 8.17 for a malus | public |
 | `Frozen(unit, throughTurn)`, `UnitThawed(unit)` | 8.10 | public |
-| `Linked(a, b)`, `LinkBroken(a, b)` | 8.11, 11.5.4 | public |
+| `Linked(first, second)`, `LinkBroken(left, partner)` | 8.11, 11.5.1; 11.5.4 | public |
 | `ShardsGained(player, amount, mode)` | 8.12 | public |
 | `ReturnedToHand(card)` | 8.8, 6.7 | public |
-| `SentToGraveyardHandFull(card)` | 8.8, 3.3 | public |
+| `SentToGraveyardHandFull(card)` | 8.8, 3.3; 11.2.7, 3.3 for a Fracture card between steps | public |
 | `Recalled(card)`, `RecallFailed(card)` | 8.13; 8.13, 8.20 | public |
-| `UnitDestroyed(unit, cause)`, `RelicDestroyed(relic)` | 6.6, 8.2, 5.4.3 | public |
+| `UnitDestroyed(unit, controller)`, `RelicDestroyed(relic)` | 6.6, 8.2, or 5.4.3 and 11.3.5 | public |
 | `TokenVanished(unit)` | 3.6 (8.8, 3.6 when returned to hand) | public |
-| `AnchorPrevented(unit, what)` | 11.3.2, 11.3.3 | public |
+| `AnchorPrevented(unit, attempt)` (attempt `DESTROY`, `RETURN_TO_HAND` or `SACRIFICE`) | 11.3.2, 11.3.3 | public |
 | `UnitDoomed(unit)`, `DoomLifted(unit)` | 11.3.4 | public |
 | `AbilityTriggered(source, trigger)` | 9.x | public |
 | `EchoTriggered(unit, attackIndex, percent)` | 11.1.1, 11.1.2 | public |
-| `FractureAdvanced(card, nextStep)`, `SpellResolved(card)` | 11.2.2, 11.2.4 | public |
+| `FractureAdvanced(card, nextStep)` (`nextStep` 1-based), `SpellResolved(card)` | 11.2.2; 6.3, 3.5, and 11.2.4 after a last step | public; the log names the step to its owner only (11.2.5) |
 | `AuraApplied(unit, source, attackDamage, defense)`, `AuraRemoved(unit, source, attackDamage, defense)` | 8.14 (8.14, 8.21 when a defense malus ends) | public |
 | `TurnEnded(player)` | 5.4 | public |
 | `GameEnded(result)` | 1.2, 1.3, 1.5 | public |
@@ -419,6 +420,8 @@ Events name the cards they involve (`CardInstance`: instance id, card id, owner)
 
 ```java
 record Resolution(List<Step> steps, List<QueuedTrigger> triggerQueue) {}
+sealed interface QueuedTrigger {}   // TriggeredAbility(source, controller, trigger, abilityIndex, arrivalSeq)
+                                    // Echoes(source, controller, attackIndexes, arrivalSeq): a dead unit's Echo attacks
 ```
 
 - **Steps** are the remaining work of what is currently resolving: an action, a turn transition, or one triggered ability. They run front first, and a step can push sub-steps to the front.
@@ -470,9 +473,9 @@ stateCheck():
 3. for the same card: Echo, then Death, then Departure;
 4. printed order on the card.
 
-If one card has two Echo attacks, the owner chooses their order (`CHOOSE_ORDER`, 11.1.8). Abilities triggered while the queue is being processed go to the back (9.8).
+A unit that dies queues one `Echoes` entry for all its Echo attacks. When it starts, a `StartEchoes` step asks the owner their order if there are two (`CHOOSE_ORDER`, 11.1.8, printed order first), then starts each echo, one after the other. Abilities triggered while the queue is being processed go to the back (9.8).
 
-**Turn transitions are steps.** Some steps must wait for the trigger queue to be empty (for example, after the "Turn end" abilities have triggered, 5.4.2 must wait until they have resolved). Give steps a way to say "drain the trigger queue before running me".
+**Turn transitions are steps.** Some steps must wait for the trigger queue to be empty (for example, after the "Turn end" abilities have triggered, 5.4.2 must wait until they have resolved). Give steps a way to say "drain the trigger queue before running me". *Built as `TriggerTurnEnd` (5.4.1), `FinishTurn` (5.4.2, 5.4.3) and `PassTurn` (5.4.4, 1.5, the next turn), the last two waiting for the queue: the Death abilities of the units 5.4.3 destroys resolve before the turn passes, as "Turn end" abilities resolve before 5.4.2.*
 
 **Randomness**: SplitMix64 stored in `GameState.rng`; every random draw advances it. Used for: who starts (5.1.1), shuffles (Fisher–Yates: P1's deck, then P2's; mulligans), random targets, random discards. Bots have **their own** RNG and never touch the game's. Same seed + same decks + same actions ⇒ identical states and events (tested).
 
@@ -498,7 +501,7 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - **3.3** Drawing with 10 cards in hand: the drawn card goes to the graveyard (`CardDiscarded(reason OVERDRAW)`, public).
 - **3.4** A unit cannot be played with 6 own units on the board, nor a relic with 3 relics (not a legal action). Summon with a full board: nothing (`SummonFailed`).
 - **Board places**: count them through a single function, summing each unit's size. `UnitCard.size()` is always 1 for now (not in the card format yet): the maintainer plans a `size` field, so keep board-limit and sacrifice counting in one place each.
-- **3.8** Exception: a unit with a sacrifice cost is playable on a full board when at least one of the units in `PlayCard.sacrificed` is not Anchor-protected (it really leaves). The triggers of the sacrifice wait (9.11), so the freed place is still free when the unit arrives. *Built in slice 3 as "the places of the sacrificed units are free again" (`BoardSpace.hasRoomFor`); the anchored exception comes with Anchor in slice 4.*
+- **3.8** Exception: a unit with a sacrifice cost is playable on a full board when at least one of the units in `PlayCard.sacrificed` is not Anchor-protected (it really leaves). The triggers of the sacrifice wait (9.11), so the freed place is still free when the unit arrives. *Built in `BoardSpace.hasRoomFor`: the places of the sacrificed units that are not anchored are free again.*
 - **Sacrifices are counted in one place** (`rules.effect.Sacrifices`), through unit sizes like board places: a unit counts as many sacrifices as the places it takes, one for now.
 - **3.5** The graveyard keeps insertion order. Dead cards, discarded cards and resolved spells go there. Tokens never do.
 - **3.6** A token leaving the board vanishes: when it dies, its Death abilities still trigger, then `TokenVanished`. When returned to hand: `TokenVanished` instead of going to the hand.
@@ -517,7 +520,7 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - **5.1.3** `MULLIGAN` decision for the first player, then the second. `Mulligan`: the whole hand goes back into the deck, shuffle, draw 4. Once both have decided, turn 1 starts for the first player.
 - **5.2** Start of turn, in order: first, units whose freeze has ended thaw (`UnitThawed`, 8.10); **5.2.1** end of Anchor protection for the active player's units; **5.2.2** Shards (4.1, 4.2); **5.2.3** draw 1 (except the first player's very first turn); **5.2.4** "Turn start" abilities of the active player's units and relics (by arrival order) go to the queue. At the same moment, reset `hasAttackedThisTurn` and `hasInterceptedThisTurn` on every unit: "this turn" in 7.2 and 7.5 means each turn, the opponent's included. When everything has resolved: `MAIN` decision.
 - **5.3** `MAIN` lists every legal `PlayCard`, `Attack` and `EndTurn`. It is always asked, even when `EndTurn` is the only option.
-- **5.4** `EndTurn`: **5.4.1** "Turn end" abilities of the active player's cards to the queue, then drain it; **5.4.2** remove `END_OF_TURN` modifiers (8.5 for defense); **5.4.3** destroy the active player's doomed units that are no longer protected and still have 0 defense (11.3.5); **5.4.4** `shards = 0`; then 1.5; then start the opponent's turn (`turn += 1`).
+- **5.4** `EndTurn`: **5.4.1** "Turn end" abilities of the active player's cards to the queue, then drain it; **5.4.2** remove `END_OF_TURN` modifiers (8.5 for defense); **5.4.3** destroy the active player's doomed units that are no longer protected and still have 0 defense (11.3.5), then drain the queue again: the abilities this triggers resolve before 5.4.4; **5.4.4** `shards = 0`; then 1.5; then start the opponent's turn (`turn += 1`).
 - **5.5** The non-active player never gets `MAIN` or `PlayCard`: only `INTERCEPT` and the `CHOOSE_*` decisions that rules give them (5.5.2).
 
 ### Section 6 — Cards
@@ -561,7 +564,7 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - An effect that makes a player pick cards (a Sacrifice effect, a player's Discard) pauses its `ResolveEffects` step on a `CHOOSE_CARDS` decision; the answer resumes the step. The decision's actions are every combination, in canonical order (units by arrival, cards in hand order). A spell paused this way is held by its resolution, between hand and graveyard.
 
 **Effects:**
-- **8.1 Damage**: the amount (printed + bonuses) is floored at 0 (8.15). On a unit: Link first (11.5.2), then `defense = max(0, defense - amount)` (6.9); on a player: `hp -= amount` (HP can go below 0). A 0 amount still hits: `DamageDealt(target, 0)` is emitted and nothing changes (with Link, both shares are emitted, 0 and 0).
+- **8.1 Damage**: the amount (printed + bonuses) is floored at 0 (8.15). On a unit: Link first (11.5.2), then `defense = max(0, defense - amount)` (6.9); on a player: `hp -= amount` (HP can go below 0). A 0 amount still hits: `UnitDamaged(unit, 0)` or `PlayerDamaged(player, 0)` is emitted and nothing changes (with Link, both shares are emitted, 0 and 0).
 - **8.2 Destroy**: a unit dies, unless Anchor-protected (`AnchorPrevented`). A relic goes to the graveyard (`RelicDestroyed`); its Death and Departure abilities trigger.
 - **8.3 Sacrifice** (as an effect): never partial (8.16). C chooses `count` of their own units (`CHOOSE_CARDS` when C has more units than `count`; automatic when exactly `count`). No sacrifice, no ability (8.22): when a triggered ability or an echo starts resolving, if its controller cannot make all of its Sacrifice effects, the whole ability does nothing (`SacrificeFailed`); if a Sacrifice effect can no longer be made when it is reached, it and the effects after it are skipped (`SacrificeFailed`). They die (Death triggers). An Anchor-protected unit counts but stays (11.3.3).
   - Legality (8.16): a `PlayCard` is legal only if the controller has at least sacrifice cost + Σ `count` of the spell's Sacrifice effects units on the board; an `Attack` only if they have at least Σ `count` of the Sacrifice effects of that attack ability and of the unit's "Attack" abilities (the attacker counts as one of their units).
@@ -572,7 +575,7 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 - **8.8 Return to hand**: a unit or relic goes to its owner's hand, reset (6.7), keeping its instance id. A token vanishes (3.6). With a full hand: graveyard (`SentToGraveyardHandFull`); it does not die, so no Death and no Echo, but Departure triggers. Anchor-protected: prevented.
 - **8.9 Summon**: create `count` token units for C, until the board is full (3.4): arrival sequence, `arrivedTurn = turn`, Anchor protection if the token has Anchor; their Arrival abilities trigger.
 - **8.10 Freeze**: `frozenThroughTurn = max(frozenThroughTurn, turn + 1)`: frozen for the rest of this turn and the whole next turn, whoever's turns they are. At the start of turn `frozenThroughTurn + 1` it thaws (`UnitThawed`). A frozen unit cannot attack or intercept.
-- **8.11 Link**: two different units, any side, neither already linked (11.5.1). Fewer than two eligible units → nothing.
+- **8.11 Link**: two different units, any side, neither already linked (11.5.1). Fewer than two eligible units → nothing. *Built as two choice slots filled at once (`ChoiceSlots`, `TargetOptions.linkPairs`); a pair no longer valid when the spell resolves does nothing (10.5). Link only exists on spells (8.11), so abilities never choose a pair.*
 - **8.12 Gain Shards**: `THIS_TURN`: `shards += amount`, which can exceed `maxShards` for this turn. `MAX`: `maxShards = min(10, maxShards + 1)` (current Shards unchanged). `ShardsGained.amount` is what the player got: 0 for a max Shard at the cap.
 - **8.13 Recall**: a unit card from C's graveyard (chosen: a `PlayCard` slot for spells, `CHOOSE_TARGET` for abilities) goes to C's hand. With a full hand, nothing happens and the card stays in the graveyard (8.20, `RecallFailed`).
 - **8.14 Auras** (continuous abilities of units and relics on the board):
@@ -597,10 +600,10 @@ Section 8, "Resolving targets".
 
 ### Section 11 — Keywords
 
-- **11.1 Echo**: when a unit **dies** (destroyed or sacrificed; not returned to hand), each of its attacks with `echo` triggers an echo: its **printed** effects (11.1.9) with every numeric value multiplied by X% and rounded toward 0 (11.1.2, 11.1.10) (damage, heal and draw amounts, Modify values, Summon count, Gain Shards amount); non-numeric effects apply fully. If the attack has a target, the owner chooses a new one with the 7.3 rules (`CHOOSE_TARGET`, automatic if only one option). `SELF` effects do nothing (the unit is dead), `YOU` is the owner. An echo costs nothing, cannot be intercepted, does not trigger "Attack" abilities and does not count as an attack (11.1.4). Order: 9.10; two echoes on one card: `CHOOSE_ORDER` (11.1.8). Chains are natural: echo deaths queue new echoes (11.1.6).
-- **11.2 Fracture**: `HandCard.fractureStep` is the next step. A Fracture card is playable only if `lastFractureTurn != turn` (11.2.3); it costs the step's cost. After a step that is not the last, it returns to its owner's hand with `fractureStep + 1` and `lastFractureTurn = turn` (`FractureAdvanced`); with a full hand, it goes to the graveyard and the progress is lost (11.2.7). After the last step: graveyard (`SpellResolved`). `CardPlayed` shows the step publicly; the opponent's view never shows steps.
-- **11.3 Anchor**: on arrival, `anchorProtected = true`; it ends at 5.2.1 of its controller's next turn. While protected: destroy, return to hand and sacrifice have no effect on it (`AnchorPrevented`; a sacrifice still counts as paid); damage and debuffs apply; at 0 defense it becomes `doomed` instead of being destroyed. A doomed unit can still attack and intercept; healed above 0 → `DoomLifted`; back to 0 while still protected → doomed again. At 5.4.3 of the turn during which its protection ended, a doomed unit still at 0 is destroyed; "Turn end" abilities resolve before that (11.3.5). After the protection: normal rules, so a unit reaching 0 is destroyed immediately (11.3.6). A unit doomed during its own arrival turn is **not** destroyed at the end of that turn: its protection has not ended yet.
-- **11.4 Overcharge**: for cards with the keyword, both `PlayCard(overcharge = false)` and `PlayCard(overcharge = true)` are offered when affordable. Cost: 6.8. Lock: +2 per overcharged card, stacking; refill per 4.2; any excess is lost (11.4.4).
+- **11.1 Echo**: when a unit **dies** (destroyed or sacrificed; not returned to hand), each of its attacks with `echo` triggers an echo: its **printed** effects (11.1.9) with every amount multiplied by X% and rounded toward 0 (11.1.2, 11.1.10) (damage, heal, draw and discard amounts, Modify values, Summon count, Gain Shards amount for this turn); non-numeric effects apply fully, and a Sacrifice keeps its count (11.1.11). An amount scaled to 0 does nothing, but damage of 0 still hits (8.15). *Built as `AttackAbility.echoEffects()`, read through the `EchoEffects` address of an `EffectSource`, which is not an attack, so no attack bonus applies (8.18).* If the attack has a target, the owner chooses a new one with the 7.3 rules (`CHOOSE_TARGET`, automatic if only one option). `SELF` effects do nothing (the unit is dead), `YOU` is the owner. An echo costs nothing, cannot be intercepted, does not trigger "Attack" abilities and does not count as an attack (11.1.4). Order: 9.10; two echoes on one card: `CHOOSE_ORDER` (11.1.8). Chains are natural: echo deaths queue new echoes (11.1.6).
+- **11.2 Fracture**: `HandCard.fractureStep` is the next step (0-based in the state, 1-based in events and views). A Fracture card is playable only if `lastFractureTurn != turn` (11.2.3); it costs the step's cost. After a step that is not the last, it returns to its owner's hand with `fractureStep + 1` and `lastFractureTurn = turn` (`FractureAdvanced`); with a full hand, it goes to the graveyard and the progress is lost (11.2.7). After the last step: graveyard (`SpellResolved`). `CardPlayed` shows the step publicly; the opponent's view never shows steps, and the log names them to the card's owner only. A sacrifice cost is paid at each step (11.2.8). *Built with `SpellCard.effectsAtStep`: a spell's `EffectList` address carries the step played, and `FinishSpell` carries the hand card, which returns one step further.*
+- **11.3 Anchor**: on arrival, `anchorProtected = true`; it ends at 5.2.1 of its controller's next turn. While protected: destroy, return to hand and sacrifice have no effect on it (`AnchorPrevented`; a sacrifice still counts as paid); damage and debuffs apply; at 0 defense it becomes `doomed` instead of being destroyed. A doomed unit can still attack and intercept; healed above 0 → `DoomLifted`; back to 0 while still protected → doomed again. At 5.4.3 of the turn during which its protection ended, a doomed unit still at 0 is destroyed; "Turn end" abilities resolve before that (11.3.5). After the protection: normal rules, so a unit reaching 0 is destroyed immediately (11.3.6). A unit doomed during its own arrival turn is **not** destroyed at the end of that turn: its protection has not ended yet. Maluses can take a doomed unit's max defense to 0 or below: its defense stays at 0, a heal cannot raise it, and only an ending malus gives defense back (6.10). *Built as: the prevention in `Departures` (one check for destroy, return to hand and sacrifice), doom and its lifting in `StateCheck` (any way back above 0 lifts it), 5.2.1 in `TurnStart`, 5.4.3 in `TurnEnd.finish`.*
+- **11.4 Overcharge**: for cards with the keyword, both `PlayCard(overcharge = false)` and `PlayCard(overcharge = true)` are offered, each when its own cost is affordable: the overcharged play can be the only one. Playing it emits `ShardsLocked`. Cost: 6.8. Lock: +2 per overcharged card, stacking; refill per 4.2; any excess is lost (11.4.4).
 - **11.5 Link**: `linkedTo` on both units. Damage `n` to a linked unit: it takes `ceil(n / 2)`, its partner `floor(n / 2)`; the transferred part is not shared again (11.5.2). Only damage is shared (11.5.3). When either unit leaves the board, both links are cleared (`LinkBroken`, 11.5.4).
 
 ---
@@ -845,14 +848,24 @@ These gaps were found while writing this spec, then settled with the maintainer 
 | Q18 | Attacker leaving the board before its attack | The attack does not take place; the cost stays paid. | 7.10 |
 | — | Stat aura malus ending | Gives back what it took, like 8.17. | 8.21 |
 
+Found while building slice 4, written as *(proposed)* rules, then settled with the maintainer on 2026-10-08:
+
+| # | Question | Decision | Rule |
+|---|---|---|---|
+| Q19 | Which numbers does an echo scale? | Every amount the echo applies, Discard included; a Sacrifice count is the price of the effects after it (8.22) and is kept. An amount scaled to 0 does nothing; damage of 0 still hits (8.15). | 11.1.11 |
+| Q20 | A doomed unit whose max defense drops to 0 or below | Max defense is not floored; defense stays at 0 and no heal raises it; the unit stays doomed until a malus ends and gives back what it took (8.17), which can happen at 5.4.2, before 5.4.3. | 6.10 |
+| Q21 | A Fracture card with a sacrifice cost | Paid at each step, like its Shard cost: each step is a play of the card (11.2.2). | 11.2.8 |
+| Q22 | Death abilities of the units 5.4.3 destroys | They resolve before 5.4.4, within the turn, as "Turn end" abilities resolve before 5.4.2. Rule 5.4.3 reworded. | 5.4.3 |
+
 ## 16. Testing strategy
 
 **Core**
 
 - **Rule tests**, built with `ScenarioBuilder` and `ScenarioRunner`. The display name starts with the rule ID: `@DisplayName("11.3.2 — an anchored unit cannot be destroyed by Tempest")`. Assert on the final state **and** on the events, including their rule IDs.
-- **Rulebook coverage test** (slice 4): reads every rule ID (`**N.N**` or `**N.N.N**`) from `docs/rules/*.md` and every test display name. It fails if a rule from sections 1–11 has no test, except rules in an explicit allowlist with a reason (purely descriptive rules such as 6.1).
+- **Rulebook coverage test** (slice 4): reads every rule ID (`**N.N**` or `**N.N.N**`) from `docs/rules/*.md` and every test display name. It fails if a rule from sections 1–11 has no test, except rules in an explicit allowlist with a reason (purely descriptive rules such as 6.1). *Built as `RulebookCoverageTest`, which reads the `@DisplayName`s of the core test sources; the allowlist holds 3.1, 6.1, 6.2 and 10.1, a tested rule must leave it, and a display name citing a rule or section that does not exist fails too. Engine CI also runs when `docs/rules/` changes.*
+- **Playable cards**: every card of the catalog is offered as a play, and every attack ability as an attack, on a board that gives each what it needs (`PlayableCardsTest`).
 - **Content tests**: the loader loads every card and deck; the deck validator agrees with the Python content tests; the text renderer golden tests (section 9).
-- **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over both starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
+- **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over every pair of starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
 - **Determinism**: same seed, decks and bot seeds → identical event lists and final state.
 - **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card.
 - Performance smoke test: 1,000 random games run within a minute on a laptop (report the number).
@@ -874,7 +887,7 @@ These gaps were found while writing this spec, then settled with the maintainer 
 
 One branch and one pull request per slice; move to the next slice only once CI is green and the maintainer agrees. PR description: what, why, how it was tested, rule IDs covered, open questions.
 
-Until slice 4 is done, cards using an effect, trigger or keyword that is not implemented yet are **not playable** (they never appear in legal actions), so fuzz games still run. A test lists the unsupported cards; it must be empty at the end of slice 4.
+Until slice 4 is done, cards using an effect, trigger or keyword that is not implemented yet are **not playable** (they never appear in legal actions), so fuzz games still run. A test lists the unsupported cards; it must be empty at the end of slice 4. *Done: slice 4 made every card playable, and `EngineSupport`, the gate, was removed; `PlayableCardsTest` replaces its test.*
 
 ### Slice 1 — Engine foundation (`feat/engine-foundation`)
 

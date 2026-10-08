@@ -7,6 +7,7 @@ import fr.daliush.shardbound.core.content.Trigger;
 import fr.daliush.shardbound.core.state.CardInstance;
 import fr.daliush.shardbound.core.state.GameResult;
 import fr.daliush.shardbound.core.state.PlayerId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -73,10 +74,19 @@ public sealed interface GameEvent {
         }
     }
 
+    /** {@code locked}: the Shards Overcharge kept from the refill (11.4.2); beyond the refill, they are lost (11.4.4). */
     record ShardsRefilled(PlayerId player, int max, int available, int locked, List<String> rules)
             implements GameEvent {
         public ShardsRefilled(PlayerId player, int max, int available, int locked) {
-            this(player, max, available, locked, List.of("4.1", "4.2"));
+            this(player, max, available, locked, locked == 0 ? List.of("4.1", "4.2")
+                    : locked > max ? List.of("4.1", "4.2", "11.4.2", "11.4.4") : List.of("4.1", "4.2", "11.4.2"));
+        }
+    }
+
+    /** 5.2.1: the unit can leave the board again (11.3.6). */
+    record AnchorProtectionEnded(CardInstance unit, List<String> rules) implements GameEvent {
+        public AnchorProtectionEnded(CardInstance unit) {
+            this(unit, List.of("5.2.1", "11.3.1"));
         }
     }
 
@@ -97,8 +107,34 @@ public sealed interface GameEvent {
 
     record CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged, OptionalInt fractureStep,
                       List<String> rules) implements GameEvent {
-        public CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged) {
-            this(player, card, cost, overcharged, OptionalInt.empty(), List.of("6.3"));
+        /** {@code fractureStep}: the Fracture step played, 1-based (11.2.2). */
+        public CardPlayed(PlayerId player, CardInstance card, int cost, boolean overcharged, OptionalInt fractureStep) {
+            this(player, card, cost, overcharged, fractureStep, rules(overcharged, fractureStep));
+        }
+
+        private static List<String> rules(boolean overcharged, OptionalInt fractureStep) {
+            List<String> rules = new ArrayList<>(List.of("6.3"));
+            if (overcharged) {
+                rules.add("11.4.1");
+            }
+            if (fractureStep.isPresent()) {
+                rules.add("11.2.2");
+            }
+            return List.copyOf(rules);
+        }
+    }
+
+    /** 11.2.2: a Fracture card back in its owner's hand, for its step {@code nextStep} (1-based). */
+    record FractureAdvanced(CardInstance card, int nextStep, List<String> rules) implements GameEvent {
+        public FractureAdvanced(CardInstance card, int nextStep) {
+            this(card, nextStep, List.of("11.2.2"));
+        }
+    }
+
+    /** 11.4.2, 11.4.3: {@code amount} more of the player's Shards locked on their next turn, {@code total} in all. */
+    record ShardsLocked(PlayerId player, int amount, int total, List<String> rules) implements GameEvent {
+        public ShardsLocked(PlayerId player, int amount, int total) {
+            this(player, amount, total, List.of("11.4.2", "11.4.3"));
         }
     }
 
@@ -114,6 +150,7 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 6.3: the spell is in its owner's graveyard; a Fracture card after its last step (11.2.4). */
     record SpellResolved(CardInstance spell, List<String> rules) implements GameEvent {
         public SpellResolved(CardInstance spell) {
             this(spell, List.of("6.3", "3.5"));
@@ -133,6 +170,13 @@ public sealed interface GameEvent {
     }
 
     record AbilityTriggered(CardInstance source, Trigger trigger, List<String> rules) implements GameEvent {}
+
+    /** 11.1.1, 11.1.2: the dead unit's attack ability {@code attackIndex} is replayed at {@code percent}%. */
+    record EchoTriggered(CardInstance unit, int attackIndex, int percent, List<String> rules) implements GameEvent {
+        public EchoTriggered(CardInstance unit, int attackIndex, int percent) {
+            this(unit, attackIndex, percent, List.of("11.1.1", "11.1.2"));
+        }
+    }
 
     // Combat
 
@@ -167,6 +211,13 @@ public sealed interface GameEvent {
     record UnitDamaged(CardInstance unit, int amount, List<String> rules) implements GameEvent {
         public UnitDamaged(CardInstance unit, int amount) {
             this(unit, amount, List.of("8.1"));
+        }
+    }
+
+    /** 11.5.2: the part of a hit on {@code from} that its linked partner {@code to} takes. */
+    record DamageShared(CardInstance from, CardInstance to, int amount, List<String> rules) implements GameEvent {
+        public DamageShared(CardInstance from, CardInstance to, int amount) {
+            this(from, to, amount, List.of("8.1", "11.5.2"));
         }
     }
 
@@ -253,6 +304,20 @@ public sealed interface GameEvent {
         }
     }
 
+    /** 8.11: the two units are linked to each other (11.5.1). */
+    record Linked(CardInstance first, CardInstance second, List<String> rules) implements GameEvent {
+        public Linked(CardInstance first, CardInstance second) {
+            this(first, second, List.of("8.11", "11.5.1"));
+        }
+    }
+
+    /** 11.5.4: {@code left} left the board, so {@code partner} is no longer linked. */
+    record LinkBroken(CardInstance left, CardInstance partner, List<String> rules) implements GameEvent {
+        public LinkBroken(CardInstance left, CardInstance partner) {
+            this(left, partner, List.of("11.5.4"));
+        }
+    }
+
     /** 8.10: the unit can neither attack nor intercept until the end of turn {@code throughTurn}. */
     record Frozen(CardInstance unit, int throughTurn, List<String> rules) implements GameEvent {
         public Frozen(CardInstance unit, int throughTurn) {
@@ -273,7 +338,10 @@ public sealed interface GameEvent {
         }
     }
 
-    /** 8.8: a card returned to a full hand (3.3) goes to the graveyard instead. It did not die. */
+    /**
+     * 8.8: a card returned to a full hand (3.3) goes to the graveyard instead. It did not die.
+     * 11.2.7: a Fracture card that would return to a full hand after a step, too; its progress is lost.
+     */
     record SentToGraveyardHandFull(CardInstance card, List<String> rules) implements GameEvent {
         public SentToGraveyardHandFull(CardInstance card) {
             this(card, List.of("8.8", "3.3"));
@@ -282,6 +350,27 @@ public sealed interface GameEvent {
 
     /** {@code rules} say whether the unit paid a sacrifice cost (6.3, 8.3) or a Sacrifice effect (8.3). */
     record UnitSacrificed(CardInstance unit, PlayerId controller, List<String> rules) implements GameEvent {}
+
+    /** 11.3.2, 11.3.3: the anchored unit stays on the board; a sacrifice still counts as paid. */
+    record AnchorPrevented(CardInstance unit, Removal attempt, List<String> rules) implements GameEvent {
+        public AnchorPrevented(CardInstance unit, Removal attempt) {
+            this(unit, attempt, List.of("11.3.2", "11.3.3"));
+        }
+    }
+
+    /** 11.3.4: an anchored unit at 0 defense stays on the board. */
+    record UnitDoomed(CardInstance unit, List<String> rules) implements GameEvent {
+        public UnitDoomed(CardInstance unit) {
+            this(unit, List.of("11.3.4"));
+        }
+    }
+
+    /** 11.3.4: its defense went back above 0. */
+    record DoomLifted(CardInstance unit, List<String> rules) implements GameEvent {
+        public DoomLifted(CardInstance unit) {
+            this(unit, List.of("11.3.4"));
+        }
+    }
 
     /** 8.22: {@code player} had {@code available} sacrifices to make out of {@code needed}, so nothing more applies. */
     record SacrificeFailed(PlayerId player, int needed, int available, List<String> rules) implements GameEvent {
@@ -292,6 +381,11 @@ public sealed interface GameEvent {
 
     enum HpLossReason {
         FATIGUE
+    }
+
+    /** What tried to make an anchored unit leave the board (11.3.2). */
+    enum Removal {
+        DESTROY, RETURN_TO_HAND, SACRIFICE
     }
 
     /** A card drawn into a full hand (3.3), or a Discard effect (8.7). */

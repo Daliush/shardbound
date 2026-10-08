@@ -10,8 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A spell's choice slots: the effects whose target its player picks when playing it (10.5).
- * A slot with no valid option is skipped: the card stays playable and that effect does nothing.
+ * A spell's choice slots: the effects whose target its player picks when playing it (10.5), one slot each, two for
+ * Link (8.11). A slot with no valid option is skipped: the card stays playable and that effect does nothing.
  */
 public final class ChoiceSlots {
 
@@ -22,7 +22,7 @@ public final class ChoiceSlots {
     public static List<List<TargetRef>> combinations(Game game, PlayerId player, List<Effect> effects) {
         List<List<TargetRef>> combinations = List.of(List.of());
         for (Effect effect : effects) {
-            List<TargetRef> options = TargetOptions.forEffect(game, player, effect);
+            List<List<TargetRef>> options = options(game, player, effect);
             if (!options.isEmpty()) {
                 combinations = extend(combinations, options);
             }
@@ -36,18 +36,34 @@ public final class ChoiceSlots {
         Iterator<TargetRef> next = targets.iterator();
         List<List<TargetRef>> perEffect = new ArrayList<>();
         for (Effect effect : effects) {
-            boolean filledSlot = !TargetOptions.forEffect(game, player, effect).isEmpty();
-            perEffect.add(filledSlot ? List.of(next.next()) : List.of());
+            List<TargetRef> filled = new ArrayList<>();
+            if (!options(game, player, effect).isEmpty()) {
+                for (int slot = 0; slot < slots(effect); slot++) {
+                    filled.add(next.next());
+                }
+            }
+            perEffect.add(List.copyOf(filled));
         }
         return perEffect;
     }
 
-    private static List<List<TargetRef>> extend(List<List<TargetRef>> combinations, List<TargetRef> options) {
+    /** The ways to fill one effect's slots: one target, or a pair of units for Link. */
+    private static List<List<TargetRef>> options(Game game, PlayerId player, Effect effect) {
+        return effect instanceof Effect.Link
+                ? TargetOptions.linkPairs(game)
+                : TargetOptions.forEffect(game, player, effect).stream().map(List::of).toList();
+    }
+
+    private static int slots(Effect effect) {
+        return effect instanceof Effect.Link ? 2 : 1;
+    }
+
+    private static List<List<TargetRef>> extend(List<List<TargetRef>> combinations, List<List<TargetRef>> options) {
         List<List<TargetRef>> extended = new ArrayList<>();
         for (List<TargetRef> combination : combinations) {
-            for (TargetRef option : options) {
+            for (List<TargetRef> option : options) {
                 List<TargetRef> longer = new ArrayList<>(combination);
-                longer.add(option);
+                longer.addAll(option);
                 extended.add(List.copyOf(longer));
             }
         }

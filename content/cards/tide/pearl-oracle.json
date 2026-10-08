@@ -1,0 +1,18 @@
+{
+  "id": "tide.pearl-oracle",
+  "name": "Pearl Oracle",
+  "faction": "tide",
+  "type": "unit",
+  "cost": 4,
+  "defense": 7,
+  "attacks": [
+    {
+      "name": "Glimmer",
+      "cost": 2,
+      "effects": [{ "effect": "damage", "amount": 4, "target": "attack_target" }]
+    }
+  ],
+  "abilities": [
+    { "trigger": "arrival", "effects": [{ "effect": "draw", "amount": 2, "target": "you" }] }
+  ]
+}

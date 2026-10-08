@@ -19,6 +19,7 @@ import fr.daliush.shardbound.core.state.InstanceId;
 import fr.daliush.shardbound.core.state.PlayerId;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * 6.3: paying a card's cost and its sacrifice cost, then the unit or relic arrives, or the spell applies its effects.
@@ -35,34 +36,71 @@ public final class CardPlay {
         CardDefinition card = game.catalog().card(inHand.card().card());
         // Targets were chosen on the board as it was when the card was played (10.5).
         List<List<TargetRef>> chosen = card instanceof SpellCard spell
-                ? ChoiceSlots.perEffect(game, player, spell.effects(), play.targets())
+                ? ChoiceSlots.perEffect(game, player, spell.effectsAtStep(inHand.fractureStep()), play.targets())
                 : List.of();
 
         int cost = Costs.toPlay(game.catalog(), game.player(player), game.player(player.opponent()), inHand,
                 play.overcharge());
         game.updatePlayer(player, state -> state.withShards(state.shards().pay(cost)).removeFromHand(play.card()));
-        game.emit(new GameEvent.CardPlayed(player, inHand.card(), cost, play.overcharge()));
+        game.emit(new GameEvent.CardPlayed(player, inHand.card(), cost, play.overcharge(), stepPlayed(card, inHand)));
         // 6.3, 8.3: the units paid die together; their abilities wait until the card has resolved (9.11).
         for (InstanceId sacrificed : play.sacrificed()) {
             Departures.sacrifice(game, game.unit(sacrificed).orElseThrow(), List.of("6.3", "8.3"));
         }
+        if (play.overcharge()) {
+            lockShards(game, player);
+        }
         switch (card) {
             case UnitCard ignored -> Arrivals.unit(game, inHand.card(), player);
             case RelicCard ignored -> Arrivals.relic(game, inHand.card(), player);
-            case SpellCard spell -> cast(game, player, inHand.card(), spell, chosen);
+            case SpellCard spell -> cast(game, player, inHand, spell, chosen);
         }
     }
 
-    /** 9.1: the spell's effects, then it goes to the graveyard. */
-    private static void cast(Game game, PlayerId player, CardInstance card, SpellCard spell,
-                             List<List<TargetRef>> chosen) {
-        EffectSource source = new EffectSource(new EffectList.SpellEffects(spell.id()), card.id(), player,
-                Optional.empty());
-        game.push(new Step.ResolveEffects(source, 0, chosen), new Step.FinishSpell(card));
+    /** 11.2.5: the step played, 1-based, is public. */
+    private static OptionalInt stepPlayed(CardDefinition card, HandCard inHand) {
+        return card instanceof SpellCard spell && spell.isFracture()
+                ? OptionalInt.of(inHand.fractureStep() + 1)
+                : OptionalInt.empty();
     }
 
-    public static void finishSpell(Game game, CardInstance spell) {
-        game.updatePlayer(spell.owner(), state -> state.addToGraveyard(spell));
-        game.emit(new GameEvent.SpellResolved(spell));
+    /** 11.4.2, 11.4.3: each overcharged card locks 2 of its player's Shards on their next turn. */
+    private static void lockShards(Game game, PlayerId player) {
+        game.updatePlayer(player, state -> state.withShards(state.shards().withLocked(Costs.OVERCHARGE_LOCK)));
+        game.emit(new GameEvent.ShardsLocked(player, Costs.OVERCHARGE_LOCK,
+                game.player(player).shards().lockedNextTurn()));
+    }
+
+    /** 9.1: the spell's effects, or those of its next Fracture step (11.2.2), then it goes to the graveyard. */
+    private static void cast(Game game, PlayerId player, HandCard spell, SpellCard card,
+                             List<List<TargetRef>> chosen) {
+        EffectSource source = new EffectSource(new EffectList.SpellEffects(card.id(), spell.fractureStep()),
+                spell.id(), player, Optional.empty());
+        game.push(new Step.ResolveEffects(source, 0, chosen), new Step.FinishSpell(spell));
+    }
+
+    /** 6.3: a resolved spell goes to its owner's graveyard; a Fracture card only after its last step (11.2.4). */
+    public static void finishSpell(Game game, HandCard spell) {
+        SpellCard card = (SpellCard) game.catalog().card(spell.card().card());
+        if (card.isFracture() && spell.fractureStep() + 1 < card.fracture().size()) {
+            returnForNextStep(game, spell);
+            return;
+        }
+        game.updatePlayer(spell.card().owner(), state -> state.addToGraveyard(spell.card()));
+        game.emit(new GameEvent.SpellResolved(spell.card(),
+                card.isFracture() ? List.of("6.3", "3.5", "11.2.4") : List.of("6.3", "3.5")));
+    }
+
+    /** 11.2.2: back to its owner's hand for the next step; into a full hand, the graveyard, progress lost (11.2.7). */
+    private static void returnForNextStep(Game game, HandCard spell) {
+        CardInstance card = spell.card();
+        if (game.player(card.owner()).handIsFull()) {
+            game.updatePlayer(card.owner(), state -> state.addToGraveyard(card));
+            game.emit(new GameEvent.SentToGraveyardHandFull(card, List.of("11.2.7", "3.3")));
+            return;
+        }
+        HandCard advanced = spell.advancedOn(game.turn());
+        game.updatePlayer(card.owner(), state -> state.addToHand(advanced));
+        game.emit(new GameEvent.FractureAdvanced(card, advanced.fractureStep() + 1));
     }
 }

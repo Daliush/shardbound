@@ -88,6 +88,10 @@ public final class TestCards {
         """
         { "id": "test.ward", "name": "Ward", "faction": "neutral", "type": "spell", "cost": 1,
           "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 2, "duration": "end_of_turn", "target": "any_unit" }] }""",
+        // A permanent attack malus bigger than most attacks (8.15).
+        """
+        { "id": "test.sap", "name": "Sap Strength", "faction": "neutral", "type": "spell", "cost": 1,
+          "effects": [{ "effect": "modify", "attack_damage": -5, "defense": 0, "duration": "permanent", "target": "enemy_unit" }] }""",
         // A temporary malus (8.5, 8.17).
         """
         { "id": "test.hex", "name": "Hex", "faction": "neutral", "type": "spell", "cost": 1,
@@ -145,6 +149,53 @@ public final class TestCards {
         { "id": "test.tithe", "name": "Tithe Stone", "faction": "neutral", "type": "relic", "cost": 1,
           "abilities": [{ "trigger": "continuous", "effects": [
             { "effect": "aura", "kind": "cost", "player": "opponent", "card_type": "any", "change": 1 }] }] }""",
+        // Two attack abilities with Echo, each with its own X; one also freezes (11.1.2, 11.1.8).
+        """
+        { "id": "test.twin-wyrm", "name": "Twin Wyrm", "faction": "neutral", "type": "unit", "cost": 2, "defense": 3,
+          "attacks": [
+            { "name": "Fang", "cost": 1, "effects": [{ "effect": "damage", "amount": 4, "target": "attack_target" }], "echo": 100 },
+            { "name": "Frost Breath", "cost": 1, "effects": [{ "effect": "freeze", "target": "attack_target" },
+                { "effect": "damage", "amount": 10, "target": "attack_target" }], "echo": 50 }] }""",
+        // An Echo attack with a malus, a heal on itself and a draw for its owner; Departure printed before Death
+        // (9.10, 11.1.10).
+        """
+        { "id": "test.shade", "name": "Withering Shade", "faction": "neutral", "type": "unit", "cost": 1, "defense": 2,
+          "attacks": [{ "name": "Wither", "cost": 1, "echo": 50, "effects": [
+            { "effect": "modify", "attack_damage": -3, "defense": -3, "duration": "permanent", "target": "attack_target" },
+            { "effect": "heal", "amount": 2, "target": "self" },
+            { "effect": "draw", "amount": 2, "target": "you" }] }],
+          "abilities": [
+            { "trigger": "departure", "effects": [{ "effect": "heal", "amount": 1, "target": "you" }] },
+            { "trigger": "death", "effects": [{ "effect": "damage", "amount": 1, "target": "opponent" }] }] }""",
+        // An Echo attack on a unit with an "Attack" ability (11.1.4).
+        """
+        { "id": "test.howler", "name": "Howler", "faction": "neutral", "type": "unit", "cost": 1, "defense": 2,
+          "attacks": [{ "name": "Howl", "cost": 1, "echo": 100,
+                        "effects": [{ "effect": "damage", "amount": 2, "target": "attack_target" }] }],
+          "abilities": [{ "trigger": "attack", "effects": [{ "effect": "damage", "amount": 1, "target": "opponent" }] }] }""",
+        // An Echo attack that asks for a sacrifice, whose count Echo keeps (8.22, 11.1.11).
+        """
+        { "id": "test.bloodfang", "name": "Bloodfang", "faction": "neutral", "type": "unit", "cost": 1, "defense": 2,
+          "attacks": [{ "name": "Blood Fang", "cost": 1, "echo": 50, "effects": [{ "effect": "sacrifice" },
+                        { "effect": "damage", "amount": 4, "target": "attack_target" }] }] }""",
+        // An Echo so small that it scales its amounts down to 0 (11.1.11).
+        """
+        { "id": "test.murmur", "name": "Murmuring Shell", "faction": "neutral", "type": "unit", "cost": 1, "defense": 2,
+          "attacks": [{ "name": "Murmur", "cost": 1, "echo": 10, "effects": [
+            { "effect": "damage", "amount": 4, "target": "attack_target" }, { "effect": "draw", "amount": 1, "target": "you" }] }] }""",
+        // A Fracture card with a sacrifice cost (11.2.8).
+        """
+        { "id": "test.blood-tide", "name": "Blood Tide", "faction": "neutral", "type": "spell", "sacrifice_cost": 1,
+          "fracture": [{ "cost": 1, "effects": [{ "effect": "draw", "amount": 1, "target": "you" }] },
+                       { "cost": 1, "effects": [{ "effect": "draw", "amount": 2, "target": "you" }] }] }""",
+        // A 1-cost card with Overcharge (6.8, 11.4.1).
+        """
+        { "id": "test.flare", "name": "Flare", "faction": "neutral", "type": "spell", "cost": 1, "keywords": ["overcharge"],
+          "effects": [{ "effect": "damage", "amount": 2, "target": "opponent" }] }""",
+        // A "Turn end" ability that heals units, which can save a doomed unit (11.3.5).
+        """
+        { "id": "test.tidepool", "name": "Tidepool", "faction": "neutral", "type": "relic", "cost": 1,
+          "abilities": [{ "trigger": "turn_end", "effects": [{ "effect": "heal", "amount": 2, "target": "all_ally_units" }] }] }""",
         // An attack ability that asks for two sacrifices (8.16).
         """
         { "id": "test.blood-knight", "name": "Blood Knight", "faction": "neutral", "type": "unit", "cost": 2, "defense": 5,
@@ -155,12 +206,12 @@ public final class TestCards {
     public static final CardCatalog CATALOG = build();
 
     /**
-     * A legal deck that plays the effects no real card has yet (Discard, a Sacrifice effect, Return to hand, Freeze,
-     * stat and cost auras), so random games exercise them.
+     * A legal deck that plays what no real card has yet (a Sacrifice effect, a stat malus aura, cost auras, two
+     * Echo attacks on one unit, an Echo malus), plus Discard, Return to hand and Freeze, so random games exercise them.
      */
     public static final Deck EFFECTS_DECK = new Deck(new DeckId("test-effects"), "Test effects", Optional.empty(),
             Faction.TIDE, Stream.of("tide.brine-adept", "tide.coral-font", "neutral.shardling",
-                            "neutral.shard-construct", "neutral.crystal-rupture", "test.ritual", "test.altar",
+                            "test.twin-wyrm", "test.shade", "test.ritual", "test.altar",
                             "test.blood-knight", "test.hex", "test.mind-rot", "test.purge", "test.recede", "test.frost",
                             "test.blight", "test.tithe")
                     .map(card -> new DeckEntry(new CardId(card), 2))

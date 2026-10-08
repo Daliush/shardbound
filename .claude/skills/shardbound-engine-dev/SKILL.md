@@ -18,7 +18,7 @@ Read the `shardbound-engine` skill first (and its `references/resolution.md`): t
 
 1. **Write the failing rule test first**, in the test class of the rulebook section (`CombatRulesTest` for section 7, `EffectRulesTest` for 8…). Its display name starts with the rule ID: `@DisplayName("8.10 — a frozen unit cannot intercept")`. Assert on the final state **and** on the trace (`trace(result)`), rule IDs included. Use real cards when one exercises the rule, and a `test.*` card in `testing.TestCards` otherwise.
 2. **Implement it where the rule lives** (see the package map below). Most changes touch one small class, plus a `case` in a dispatching `switch`.
-3. **Unlock the cards** that the change makes playable, in `rules.play.EngineSupport`, and update the expected list in `EngineSupportTest`. Then 1,000 random games exercise your code.
+3. **Put it in random games.** If no starter deck plays what you built, add a `test.*` card to `TestCards.EFFECTS_DECK`, so 1,000 random games exercise your code. `PlayableCardsTest` checks that every card of the catalog stays playable.
 4. **Run `./mvnw verify`** from `engine/`. The random games check the invariants after every step, and the determinism, hidden-information and JSON tests catch most side effects of a change.
 5. **Keep the docs in sync**, and **commit** following `CLAUDE.md` (see the checklist at the end).
 
@@ -29,11 +29,11 @@ Read the `shardbound-engine` skill first (and its `references/resolution.md`): t
 | `rules.game` | the loop, the state check (1.2, 1.3, 1.6, 6.6, 9.8) | `Game`, `Resolver`, `StepRunner`, `StateCheck` |
 | `rules.setup` | 5.1 | `GameFactory`, `Mulligans` |
 | `rules.turn` | 4, 5.2–5.4, draws (1.4, 3.3) | `TurnStart`, `TurnEnd`, `MainPhase`, `CardDraws` |
-| `rules.play` | 6.3, costs (6.8), legal plays | `CardPlay`, `Costs`, `PlayOptions`, `ChoiceSlots`, `EngineSupport` |
+| `rules.play` | 6.3, costs (6.8), legal plays | `CardPlay`, `Costs`, `PlayOptions`, `ChoiceSlots` |
 | `rules.combat` | 7 | `AttackSequence`, `AttackOptions`, `Interceptors` |
 | `rules.effect` | 8, 10 | one `XxxEffect` per effect that resolves, `EffectResolution`, `Targets`, `TargetOptions`, `Sacrifices` (8.16, counted through unit sizes) |
 | `rules.aura` | 8.14, 9.7 | `StatAuras` (reconciled by the state check), `CostAuras` (summed by `Costs`) |
-| `rules.trigger` | 9 | `Triggers`, `TriggerOrder`, `Abilities`, `AbilityTargets` |
+| `rules.trigger` | 9, Echo (11.1) | `Triggers`, `TriggerOrder`, `Abilities`, `AbilityTargets`, `Echoes` |
 | `rules.board` | arriving on and leaving the board (3.4, 3.6, 6.5) | `Arrivals`, `Departures`, `BoardSpace` |
 
 A keyword (section 11) usually touches several of these. Put each part where its rule lives, and name the keyword in the comment: "11.3.4: a protected unit at 0 defense is doomed".
@@ -77,13 +77,14 @@ Read `references/recipes.md` for the step-by-step version of each:
 
 ## Testing conventions
 
-- **Display names start with the rule ID.** The rulebook coverage test (slice 4) reads them, and fails when a rule of sections 1 to 11 has no test.
+- **Display names start with the rule ID.** `RulebookCoverageTest` reads them, and fails when a rule of sections 1 to 11 has no test, or when a test cites a rule that does not exist. A new rule needs its test in the same change; only a purely descriptive rule goes in its allowlist, with the reason.
 - **Assert state and trace.** `trace(result)` gives `"UnitDamaged[8.1]"` lines. Prefer `containsSubsequence` to check order without listing every event.
 - **Mind the scenario defaults.** The builder starts at turn 3, with P1 active and first player, 0 Shards and empty decks, and units placed as if they arrived last turn.
   - An empty deck means fatigue at the next draw: give the next player a `deck(...)` when a turn passes.
   - "0 actions match" in an error usually means too few Shards, or a unit that cannot attack.
 - **Name ids by card.** Instance ids and arrival order follow the builder's call order, so a test can rely on them, but `Pick.unit(card)` reads better than raw ids.
-- **Full-game tests guard everything else**: `RandomGamesTest` (invariants, every action applicable; the starter decks, plus `TestCards.EFFECTS_DECK` for the effects no real card has), `DeterminismTest`, `HiddenInformationTest`, `GameJsonTest`. If one fails after your change, print a described log of that seed (see below) before touching the test.
+- **Full-game tests guard everything else**: `RandomGamesTest` (invariants, every action applicable; every pair of the three starter decks, plus `TestCards.EFFECTS_DECK` for what no real card has), `DeterminismTest`, `HiddenInformationTest`, `GameJsonTest`. If one fails after your change, print a described log of that seed (see below) before touching the test.
+- **A test that needs something to happen in a seeded game breaks when the legal actions change.** Make its players produce it instead of hoping the seed does, as `TwoInstancesTest`'s players look for intercepts.
 
 ## Debugging
 
@@ -98,7 +99,7 @@ Put it in a throwaway test, read the log, then delete the test. When a random-ga
 ## Before you commit
 
 - [ ] Rule tests named by rule ID; `./mvnw verify` green from `engine/`.
-- [ ] `EngineSupport` and `EngineSupportTest` updated if cards became playable.
+- [ ] `RulebookCoverageTest` green: every new rule has its test.
 - [ ] `specs/phase-2-engine.md` matches what you built (§8 notes, §6.4 event table, §13 if the protocol moved).
 - [ ] Rulebook untouched, unless the maintainer decided a rule. In that case: new IDs at the end of the section, `12-open-points.md` updated, and the change committed as `docs(rules)`.
 - [ ] End of a slice: the `docs/design.md` changelog, `CLAUDE.md` status and commands, the `shardbound-project` skill status, and this skill or `shardbound-engine` if a convention or the model changed.

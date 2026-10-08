@@ -21,11 +21,12 @@ public final class BoardSpace {
         return hasRoomFor(card, player, catalog, List.of());
     }
 
-    /** 3.8: the places of the units sacrificed to play the card are free again when it arrives. */
+    /** 3.8: the places of the units sacrificed to play the card are free again, unless an anchored one stays. */
     public static boolean hasRoomFor(UnitCard card, PlayerState player, CardCatalog catalog,
                                      List<InstanceId> sacrificed) {
         int freed = sacrificed.stream()
                 .flatMap(id -> player.unit(id).stream())
+                .filter(unit -> !unit.anchorProtected())
                 .mapToInt(unit -> places(unit, catalog))
                 .sum();
         return unitPlacesUsed(player, catalog) - freed + card.size() <= PlayerState.MAX_UNIT_PLACES;
