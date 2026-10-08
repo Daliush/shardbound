@@ -14,6 +14,12 @@
     <name>Shardbound core</name>
     <description>The rules engine: content, game state, rules, player views, bots and scenarios. No Spring.</description>
 
+    <properties>
+        <!-- Measures that take minutes run on demand: ./mvnw -pl core test -Preports -->
+        <tests.groups/>
+        <tests.excludedGroups>report</tests.excludedGroups>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>tools.jackson.core</groupId>
@@ -45,6 +51,14 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <groups>${tests.groups}</groups>
+                    <excludedGroups>${tests.excludedGroups}</excludedGroups>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
                     <execution>
@@ -67,4 +81,14 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>reports</id>
+            <properties>
+                <tests.groups>report</tests.groups>
+                <tests.excludedGroups/>
+            </properties>
+        </profile>
+    </profiles>
 </project>
