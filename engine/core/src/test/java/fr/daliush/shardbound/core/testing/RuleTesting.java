@@ -1,6 +1,5 @@
 package fr.daliush.shardbound.core.testing;
 
-import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.core.scenario.Choice;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
@@ -27,10 +26,6 @@ public final class RuleTesting {
 
     /** The trace as "EventType[rule, rule]" lines, to check order and rule IDs together. */
     public static List<String> trace(ScenarioResult result) {
-        return result.events().stream().map(RuleTesting::line).toList();
-    }
-
-    private static String line(GameEvent event) {
-        return event.getClass().getSimpleName() + event.rules();
+        return result.trace();
     }
 }

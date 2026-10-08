@@ -13,26 +13,31 @@ public final class UnitSetup {
     boolean anchorProtected;
     boolean doomed;
 
+    /** The current defense, at most its max; 0 is only legal for a doomed unit ({@link #doomed}). */
     public UnitSetup defense(int value) {
         defense = OptionalInt.of(value);
         return this;
     }
 
+    /** It arrived this turn, so it cannot attack yet (7.2). */
     public UnitSetup arrivedThisTurn() {
         arrivedThisTurn = true;
         return this;
     }
 
+    /** It has already attacked this turn (7.2). */
     public UnitSetup hasAttacked() {
         hasAttacked = true;
         return this;
     }
 
+    /** It has already intercepted this turn (7.5). */
     public UnitSetup hasIntercepted() {
         hasIntercepted = true;
         return this;
     }
 
+    /** Frozen until the end of this turn (8.10). */
     public UnitSetup frozenThroughTurn(int turn) {
         frozenThroughTurn = turn;
         return this;

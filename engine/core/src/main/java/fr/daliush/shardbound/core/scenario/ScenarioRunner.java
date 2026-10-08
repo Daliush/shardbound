@@ -9,7 +9,11 @@ import fr.daliush.shardbound.core.state.GameState;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Plays choices from a state and returns the exact outcome with its rule trace (design doc §3.4). */
+/**
+ * Plays choices from a state and returns the exact outcome with its rule trace (design doc §3.4). The start is first
+ * run to its first decision ({@link GameEngine#resume}); then each choice answers the decision pending at its turn,
+ * whoever it belongs to: a main decision, an intercept, a target, an order.
+ */
 public final class ScenarioRunner {
 
     private final GameEngine engine;
@@ -18,6 +22,7 @@ public final class ScenarioRunner {
         this.engine = engine;
     }
 
+    /** @throws IllegalStateException if a choice matches no action or several, or the game ends before the choices do */
     public ScenarioResult run(GameState start, Choice... choices) {
         List<GameEvent> events = new ArrayList<>();
         List<Decision> decisions = new ArrayList<>();
