@@ -25,15 +25,18 @@ import fr.daliush.shardbound.core.state.PlayerId;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class GamePlayServiceTest {
 
     private final RecordingNotificationDao notifications = new RecordingNotificationDao();
     private final TestInstance server = new TestInstance(new GameDaoInMemory(), notifications, "a");
 
-    @Test
-    void aGameAgainstABotIsPlayedToTheEndWithOneSaveAndOneNotificationPerAction() {
-        GameId id = server.creation.create(TestInstance.botGame(7)).game();
+    @ParameterizedTest
+    @ValueSource(strings = {"random", "greedy"})
+    void aGameAgainstABotIsPlayedToTheEndWithOneSaveAndOneNotificationPerAction(String bot) {
+        GameId id = server.creation.create(TestInstance.botGame(7, bot)).game();
         SplitMix64 human = new SplitMix64(3);
 
         for (Optional<Decision> decision = server.decision(id); decision.isPresent(); decision = server.decision(id)) {

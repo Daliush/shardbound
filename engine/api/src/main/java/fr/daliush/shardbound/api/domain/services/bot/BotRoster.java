@@ -2,15 +2,20 @@ package fr.daliush.shardbound.api.domain.services.bot;
 
 import fr.daliush.shardbound.api.domain.bo.game.Seat;
 import fr.daliush.shardbound.core.bot.Bot;
-import fr.daliush.shardbound.core.bot.RandomBot;
+import fr.daliush.shardbound.core.bot.greedy.GreedyBot;
+import fr.daliush.shardbound.core.bot.random.RandomBot;
 import fr.daliush.shardbound.core.random.SplitMix64;
+import fr.daliush.shardbound.core.rules.GameEngine;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.LongFunction;
 import org.springframework.stereotype.Component;
 
-/** The bots a game can be played against, by name, and how to rebuild one from its seat. */
+/**
+ * The bots a game can be played against, by name, and how to rebuild one from its seat. The first one is the
+ * client's default: the easy bot, so a new player meets it first.
+ */
 @Component
 public class BotRoster {
 
@@ -19,8 +24,10 @@ public class BotRoster {
 
     private final Map<String, LongFunction<Bot>> bots = new LinkedHashMap<>();
 
-    public BotRoster() {
+    /** A bot that looks ahead applies its options with {@code engine}, to a game it determinized itself. */
+    public BotRoster(GameEngine engine) {
         bots.put("random", RandomBot::new);
+        bots.put("greedy", rngState -> new GreedyBot(engine, rngState));
     }
 
     public List<String> names() {

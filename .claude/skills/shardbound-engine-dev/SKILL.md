@@ -83,7 +83,9 @@ Read `references/recipes.md` for the step-by-step version of each:
   - An empty deck means fatigue at the next draw: give the next player a `deck(...)` when a turn passes.
   - "0 actions match" in an error usually means too few Shards, or a unit that cannot attack.
 - **Name ids by card.** Instance ids and arrival order follow the builder's call order, so a test can rely on them, but `Pick.unit(card)` reads better than raw ids.
-- **Full-game tests guard everything else**: `RandomGamesTest` (invariants, every action applicable; every pair of the three starter decks, plus `TestCards.EFFECTS_DECK` for what no real card has), `DeterminismTest`, `HiddenInformationTest`, `GameJsonTest`. If one fails after your change, print a described log of that seed (see below) before touching the test.
+- **Full-game tests guard everything else**: `RandomGamesTest` (invariants, every action applicable; every pair of the three starter decks, plus `TestCards.EFFECTS_DECK` for what no real card has), `DeterminismTest`, `HiddenInformationTest` (a view is the same whatever the cards its player may not see, `testing.HiddenCards`), `GameJsonTest`, `DeterminizerTest` (a determinized game shows its player exactly the view it came from), `GreedyBotTest` and `GreedyVersusRandomTest`. If one fails after your change, print a described log of that seed (see below) before touching the test.
+- **Long measures run on demand.** A test that takes minutes is tagged `report` (`@Tag("report")`): the default build skips it, and `./mvnw -pl core test -Preports` runs only those. `testing.BotMatches` plays seeded games between two bots with the decks and seats rotated; `testing.WinRate` gives a win rate with its 95% Wilson interval.
+- **A test of a rule's check can be proven to bite.** Break the rule on purpose (a copy of the class aside), run its test, and restore: the Determinizer's tests were checked this way.
 - **A test that needs something to happen in a seeded game breaks when the legal actions change.** Make its players produce it instead of hoping the seed does, as `TwoInstancesTest`'s players look for intercepts.
 
 ## Debugging
@@ -95,6 +97,8 @@ engine.eventsFor(game.events(), PlayerId.P1).forEach(e -> System.out.println(e.r
 ```
 
 Put it in a throwaway test, read the log, then delete the test. When a random-game test fails, find its seed (add it to the assertion's description if needed), then replay that game with the same bot seeds: it replays exactly.
+
+The same trick finds a seed for a demo or a play-test: loop over seeds, call `engine.newGame(new GameSetup(deckA, deckB, seed))`, and print the seeds whose `state.firstPlayer()`, `p1().hand()` and the top of `p1().deck()` suit you. P1's draws depend only on the seed; the bot's choices then depend on the bot's own generator.
 
 ## Before you commit
 

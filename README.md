@@ -8,7 +8,7 @@ An invented 1v1 card game, built as a testbed for AI engineering: a rules Arbite
 docker compose up --build
 ```
 
-Then open http://localhost:4200 and play against the bot, or create a game against a human and send the invite link.
+Then open http://localhost:4200 and play against a bot (`random`, or `greedy` for a real opponent), or create a game against a human and send the invite link.
 
 Without Docker (Java 21, Node 24):
 
@@ -17,7 +17,7 @@ cd engine && ./mvnw -pl api -am spring-boot:run   # game server, http://localhos
 cd frontend && npm install && npm start           # client, http://localhost:4200
 ```
 
-Tests: `cd engine && ./mvnw verify`, `cd frontend && npm test`.
+Tests: `cd engine && ./mvnw verify`, `cd frontend && npm test`. Bot reports, on demand: `cd engine && ./mvnw -pl core test -Preports`.
 
 ## Repository
 
@@ -25,7 +25,7 @@ Tests: `cd engine && ./mvnw verify`, `cd frontend && npm test`.
 |---|---|
 | `docs/` | Design document and rulebook ([`docs/rules/`](docs/rules/README.md)) |
 | `content/` | Cards and decks as JSON, with their schemas and tests |
-| `engine/core` | The rules engine: Java 21, no framework |
+| `engine/core` | The rules engine: Java 21, no framework ([entry points and scenario service](engine/core/README.md)) |
 | `engine/api` | The game server: Spring Boot, REST and WebSocket |
 | `frontend/` | The test client: Angular |
 
@@ -47,4 +47,4 @@ The domain knows neither persistence nor transport. No server instance keeps a g
 
 ## Status
 
-Rules, 39 cards and three decks, the engine with every rule, effect and keyword, the game server and the client are done; the AI work comes next ([roadmap](docs/design.md)).
+Rules, 39 cards and three decks, the engine with every rule, effect and keyword, a random and a greedy bot that never see hidden cards (they determinize a game from their own view), the scenario service, the game server and the client are done: phase 2 is over, and the AI work comes next ([roadmap](docs/design.md)).

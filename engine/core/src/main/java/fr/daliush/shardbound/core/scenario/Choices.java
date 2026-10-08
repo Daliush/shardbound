@@ -35,10 +35,12 @@ public final class Choices {
         return exactly(new Action.ChooseOrder(List.of(attackIndexes)));
     }
 
+    /** 7.5: the defender lets the attack through. */
     public static Choice declineIntercept() {
         return exactly(new Action.DeclineIntercept());
     }
 
+    /** 7.5: the defender redirects the attack to their first unit with this card id. */
     public static Choice interceptWith(String card) {
         return (state, decision) -> {
             Unit interceptor = Pick.nthUnit(state, card, 1);
@@ -47,6 +49,7 @@ public final class Choices {
         };
     }
 
+    /** A target asked when an ability or an echo starts resolving (10.6). */
     public static Choice chooseTarget(Pick target) {
         return (state, decision) -> {
             TargetRef wanted = target.in(state);
@@ -79,10 +82,12 @@ public final class Choices {
         };
     }
 
+    /** Plays the first card in hand with this id, not overcharged, with no target and no sacrifice yet. */
     public static PlayChoice play(String card) {
         return new PlayChoice(card, false, List.of(), List.of());
     }
 
+    /** Attacks with the first unit with this card id, with its first attack ability and no target yet. */
     public static AttackChoice attack(String attacker) {
         return new AttackChoice(attacker, 0, Optional.empty());
     }

@@ -1,6 +1,6 @@
 # Phase 2 — Engine, game server and test frontend
 
-> **Status**: approved design, ready for implementation (2026-10-06).
+> **Status**: implemented; the five slices of section 17 are done (2026-10-08).
 > **Audience**: the Claude Code session that implements phase 2. Everything decided with the maintainer is written here; you should not need the conversation that produced it.
 > **Scope**: `engine/core` (the rules engine), `engine/api` (REST + WebSocket game server), `frontend/` (minimal Angular client), the `random` and `greedy` bots, determinization and the scenario service.
 
@@ -347,6 +347,7 @@ The order must be deterministic: bots are seeded, and clients answer with an ind
 record PlayerView(
     PlayerId viewer, int turn, PlayerId active, boolean yourTurn,
     SelfState self, OpponentState opponent,
+    Resolution resolution,                          // the work in progress (section 7): public
     Optional<Decision> decision,                    // present only when the viewer must decide
     Optional<PendingSummary> waitingFor,            // when the opponent must decide: who and which kind (no actions)
     Optional<GameResult> result,
@@ -356,6 +357,7 @@ record PlayerView(
 
 - `SelfState`: faction, hp, max hp, shards, max shards, locked next turn, fatigue, deck count, hand (cards with their Fracture step), units, relics, graveyard, mulligan decided.
 - `OpponentState`: faction, hp, max hp, shards, max shards, locked next turn, fatigue, deck count, **hand count only**, units, relics, graveyard. The opponent's Fracture steps are not shown (11.2.5); they can be deduced from `history`.
+- `resolution` *(decided 2026-10-08)*: the steps and queued abilities of the resolution in progress, exactly as in the state. It is public: everyone saw the action, the attack or the ability that started it, and the spell a `FinishSpell` step holds, in neither hand nor graveyard, was announced by `CardPlayed`. A bot needs it to rebuild a game paused in the middle of a resolution, on an intercept or a target (section 10), and MCTS will too. A redaction test proves that a view shows nothing private.
 - Deck order is never in a view. The **seed is never exposed** while a game is running: it would reveal every deck order.
 
 ### 6.4 Events
@@ -626,18 +628,28 @@ Renders a card's rules text from its data and `content/cards/text-templates.json
 
 ```java
 interface Player { Action choose(PlayerView view, Decision decision); }
+interface Bot extends Player { long rngState(); }   // a bot's only memory: the server rebuilds it at every move (13.4)
 ```
 
-- **RandomBot(seed)**: uniform among `decision.actions()`, with its own RNG.
-- **Determinizer** (`core/bot`): from a `PlayerView` (including `ownDeck` and `history`), builds a complete, plausible `GameState` with a given RNG:
-  - public information is copied as is;
-  - the viewer's own deck = their decklist minus their cards seen elsewhere (hand, board, graveyard), shuffled;
-  - the opponent's hand: known cards stay fixed. Known cards are cards that went back to their hand publicly: Fracture steps, returns to hand, recalls; follow them through `history`. The other cards, and the opponent's deck, are drawn from their faction's cards plus neutral cards, without tokens, respecting 2 copies per card counting every copy already seen.
-  - Never read the real hidden state: this is what keeps bots honest (design doc §6.5).
-- **GreedyBot(seed)**: for each legal action, determinize once (one sample per decision, from the bot's RNG), apply the action, and score the resulting state with `Evaluator` from the bot's point of view; pick the best, ties broken by lowest index.
-  - Evaluator (tunable, documented in code): `(myHp − oppHp) + Σ my units (defense + 2 × best attack damage) − Σ enemy units (same) + 3 × (my unit count − enemy unit count) + 0.5 × my hand size`; a win scores +∞, a loss −∞.
+The answers marked *(decided 2026-10-08)* were settled with the maintainer before slice 5 started.
+
+- **RandomBot(rngState)**: uniform among `decision.actions()`, with its own RNG.
+- **Determinizer** (`core/determinization`, *decided 2026-10-08*: its own package, since every bot uses it and MCTS will too): from a `PlayerView` alone (including `ownDeck`, `resolution` and `history`), builds a complete, plausible `GameState` with a given RNG. It never reads the real hidden state: this is what keeps bots honest (design doc §6.5).
+  - Public information is copied as is: the turn, the active player, both sides' HP, Shards, fatigue, units, relics and graveyards, the resolution in progress (6.3), the viewer's decision and the result.
+  - The viewer's own deck = their decklist minus their cards seen elsewhere (hand, board, graveyard, a spell the resolution holds), shuffled.
+  - The opponent's hand: known cards stay fixed, exactly as they are. Known cards are cards that went back to their hand publicly: Fracture steps (`FractureAdvanced`, with the step and the turn it was played), returns to hand (`ReturnedToHand`), recalls (`Recalled`). They are followed through `history`: `CardPlayed` and `CardDiscarded` take one out, `MulliganTaken` sends the whole hand back, and `SentToGraveyardHandFull` puts a card in the graveyard instead of the hand.
+  - The other cards of their hand, and their deck, are **drawn uniformly among the remaining copies** *(decided 2026-10-08)*: 2 copies of each card of their faction and of each neutral card, no tokens, minus every copy seen (board, graveyard, known hand, a spell the resolution holds). A card with 2 copies left is twice as likely as one with 1.
+  - **The fields a view does not carry are derived** *(decided 2026-10-08)*: the first player from `GameStarted` in the history; the turns each player has taken from the turn number (the first player has played ⌈turn/2⌉, the other ⌊turn/2⌋); the next instance id and the next arrival sequence beyond every one that exists (the next instance id is only the number the next token gets); the decision sequence from the decision's id. The determinized state gets a fresh generator drawn from the bot's, never anything about the real one.
+  - **Instance ids** *(decided 2026-10-08)*: the sampled cards get the opponent's unseen ids in ascending order, and the viewer's deck their own unseen ids. The Determinizer reads nothing into ids. `GameFactory` numbers each deck in decklist order before the shuffle, so revealed ids hint at the opponent's decklist; no engine change for now, and the point is open in `docs/rules/12-open-points.md`.
+- **GreedyBot(engine, rngState)** (`core/bot/greedy`; each bot has its own package, `RandomBot` is in `core/bot/random`) *(decided 2026-10-08)*: it receives its view and the decision's options like any player, and needs the engine for one thing: to `apply` each option to the state it determinized itself, never the real state, and score the result. One determinization per decision, from the bot's own generator; apply each legal action; score the result with the `Evaluator` from the bot's point of view; the best score wins, ties go to the lowest index. Every decision is played this way, the ones in the middle of a resolution included, since the view carries the resolution (6.3). The game server's `BotRoster` gets the `GameEngine` and builds each bot from the seat's generator state.
+  - **An action is scored once it has resolved** *(decided 2026-10-08)*. `apply` stops at the next decision, which can be a choice inside the same resolution: the defender's intercept, or a target for an ability the action triggered. Scored there, an attack would be worth nothing yet. So every choice asked before the next `MAIN` decision (or the end of the game) is answered first: the bot's own greedily, by the same score, and the opponent's with their first option (no intercept, the first target). This stays one determinization per decision, with no look past the action.
   - Mulligan if the hand has no card costing 2 or less.
-- Target for slice 5: GreedyBot beats RandomBot in at least 60% of 200 seeded games (100 per side). If it does not, tune the evaluator and report the numbers to the maintainer.
+  - Evaluator: `(myHp − oppHp) + Σ my units (defense + 2 × best attack damage) − Σ enemy units (same) + 3 × (my unit count − enemy unit count) + 0.5 × my hand size`; a win scores +∞, a loss −∞, a draw 0 *(decided 2026-10-08)*. A doomed unit counts its 0 defense; a unit's best attack damage is the highest `AttackDamage.toTarget` of its attacks, bonuses included. *(Decided 2026-10-08: start from this formula exactly; add keyword terms, such as locked Shards, links or doom, only if the target is missed, and report each change with its numbers.)*
+  - A decision with a single option is answered without a determinization: there is nothing to weigh.
+- **Target**: GreedyBot wins at least 60% of its games against RandomBot, or the maintainer accepts the reported numbers. **The measure** *(decided 2026-10-08)*: as many games as it takes for the measure to be accurate, rotating the three starter decks so that each bot plays every deck and each seat half the time. The win rate (draws count as games not won, and are reported apart) is reported with its 95% confidence interval, overall and per deck. The test `./mvnw verify` runs plays enough games for a clear verdict within the time budget; an on-demand run plays many more.
+- **Deck balance** *(decided 2026-10-08)*: measured with the best bot available, today GreedyBot against GreedyBot over every pairing of the three starter decks. The report takes the bot as a parameter, so switching to MCTS in phase 6 is one line. It runs on demand (a test the default build skips), and its numbers go in the PR. No card changes without the maintainer.
+- **Time budget** *(decided 2026-10-08)*: a game's duration is measured, and the games `./mvnw verify` plays stay under two minutes on a laptop. No time limit inside the bot yet.
+- **The client** *(decided 2026-10-08)*: `random` stays the first bot of `GET /api/bots` (the order of `BotRoster`), so a new player meets the easy bot; `greedy` is one click away.
 
 ---
 
@@ -647,6 +659,7 @@ The engine's third consumer (design doc §3.4): build a board, apply actions, ge
 
 - `ScenarioBuilder`: a fluent API to build any legal `GameState` without playing a game: turn, active player, each player's HP, Shards, locked Shards, fatigue, hand (with Fracture steps), deck (ordered), units (card, defense, modifiers, flags: protected, doomed, frozen, attacked, link), relics, graveyard, RNG seed. It assigns instance ids and arrival sequences, and validates what it builds (board limits, a link must be mutual…).
 - `ScenarioRunner.run(GameState start, List<Action or chooser>)` → every intermediate decision, the final state and the **unredacted** events (with rule IDs). Actions can be given directly or chosen by a small matcher (for example "the PlayCard of Spark Dart targeting unit 12"), so tests do not depend on action indexes.
+- **A public API** *(decided 2026-10-08)*: a scenario is a game created at any moment instead of from the start, then played with choices whose outcome is read with the rules applied. It is usable outside the tests and documented: a README in `engine/core` (build a board, play choices, read the outcome and its trace, with the defaults and the pitfalls) and Javadoc on its public types. The helper that writes events as `UnitDamaged[8.1]` lines moves from the test code to the scenario service, since the phase 3 dataset generator needs it. No new format, and no renaming without asking the maintainer.
 - A JSON scenario format for the Python dataset generator comes later (phase 3). Do not build it now.
 
 ---
@@ -867,8 +880,10 @@ Found while building slice 4, written as *(proposed)* rules, then settled with t
 - **Content tests**: the loader loads every card and deck; the deck validator agrees with the Python content tests; the text renderer golden tests (section 9).
 - **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over every pair of starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
 - **Determinism**: same seed, decks and bot seeds → identical event lists and final state.
-- **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card.
+- **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card. *Built (slice 5) in its strongest form: at every step of random games, two states that differ only in what a player may not see (the opponent's hand and deck, the player's deck order, the game's generator) give that player the same view, resolution in progress included.*
 - Performance smoke test: 1,000 random games run within a minute on a laptop (report the number).
+- **Determinization** (slice 5): at every decision of random games, the determinized game shows its player exactly the view it came from, keeps the invariants, takes every listed action, keeps the opponent's known cards exactly, and is the same whatever the real hidden cards are; the opponent's guessed cards make a legal deck, and a card with 2 copies left is drawn twice as often as one with 1.
+- **Bots** (slice 5): GreedyBot plays only legal actions, replays the same game from the same seeds, plays the same when rebuilt from its generator at every move, and picks the same whatever the cards it may not see; the evaluator's formula and the scoring of an action once resolved have unit tests. The 60% target runs in `./mvnw verify` (180 games, the lower bound of the 95% Wilson interval); the long measures run on demand, tagged `report`: `./mvnw -pl core test -Preports` (1,800 games against random, and the decks' balance with greedy against greedy).
 
 **API**
 
@@ -920,4 +935,5 @@ Until slice 4 is done, cards using an effect, trigger or keyword that is not imp
 
 - Determinizer, Evaluator, GreedyBot; `greedy` in `GET /api/bots` and selectable in the frontend.
 - `ScenarioBuilder` and `ScenarioRunner` polished as a public API, documented in a short README in `engine/core`.
-- Done when: GreedyBot wins at least 60% of 200 seeded games against RandomBot (or the maintainer accepts the reported numbers); a test proves the Determinizer never copies the real hidden cards (it must work from a view alone).
+- Done when: GreedyBot wins at least 60% of its games against RandomBot, measured as section 10 says (or the maintainer accepts the reported numbers), and the PR gives the win rate with its confidence interval, overall and per deck, and the greedy-vs-greedy balance report of the three starter decks; a test proves the Determinizer never copies the real hidden cards (it must work from a view alone).
+- *Built: `PlayerView` carries the resolution in progress (6.3); `core/determinization` holds the `Determinizer`, its only public class, with one class per rule of section 10; each bot has its own package, `core/bot/random` and `core/bot/greedy` (`GreedyBot`, `ActionOutcome`, `Evaluator`, `OpeningHand`); `ScenarioResult.trace()` writes the rule trace, and `engine/core/README.md` documents the scenario service.*

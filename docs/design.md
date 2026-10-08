@@ -39,6 +39,8 @@
 >
 > **v2.11 (October 2026)** — phase 2, slice 3: every effect of the closed list but Link (Sacrifice as a cost and an effect, Modify, Discard, Return to hand, Freeze, Gain Shards, Recall, stat and cost auras), each with its rule tests, and card text written from the card data by the engine, checked against the card format's examples. The client shows each card's text and answers a choice of cards by clicking them. Keywords come next.
 >
+> **v2.13 (October 2026)** — phase 2, slice 5, and phase 2 is done: player views carry the resolution in progress, a `Determinizer` builds a whole game from one player's view alone (known cards kept, the rest drawn among the copies left), and `GreedyBot` plays one action ahead on that game, never on the real one; it beats the random bot in about 95% of games and is offered in the client. Measured with greedy against greedy, the decks are not balanced yet (Ember loses most of its games), reported for the maintainer. The scenario service is a documented public API for the phase 3 dataset generator.
+>
 > **v2.12 (October 2026)** — phase 2, slice 4: the five keywords in the engine (Echo with its order and target choices, Fracture step by step, Anchor with doom, Overcharge and its Shard lock, Link and its damage sharing), so every card is playable. A coverage test now fails when a rule of sections 1 to 11 has no test. Nine Tide cards and a Tide starter deck (39 cards + 1 token, three starter decks). Four rules settled with the maintainer along the way: 6.10 (a max defense below 0), 11.1.11 (an echo keeps a Sacrifice's count), 11.2.8 (a Fracture card pays its sacrifice cost at each step), and 5.4.3 reworded (the abilities it triggers resolve within the turn).
 
 ---

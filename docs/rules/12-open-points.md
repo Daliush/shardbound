@@ -6,6 +6,7 @@
 
 - **"After attack" trigger.** The maintainer expects attack abilities to get "before attack" and "after attack" triggers (for example "after attack: sacrifice a unit": the unit attacks, then dies). Today's "Attack" trigger (9.9) is the "before attack" one, and 7.10 already settles a unit that leaves the board before its attack. When to add "after attack" is still open.
 - **Unit size.** Idea from the maintainer: a `size` for units (1 by default) so that a unit could take 2 places on the board and count as 2 sacrifices. Not in the card format yet; the engine already counts board places and sacrifices through unit sizes, all equal to 1 for now.
+- **Instance ids and decklists.** The engine numbers each deck in decklist order before shuffling it, so once cards are revealed, their ids hint at the opponent's decklist: after "Root Sentinel #36", #37 is a second Root Sentinel. Ids never reveal a hand or the next draw, and with the starter decks they say nothing a player does not already know. No engine change for now (2026-10-08): the bots' determinization reads nothing into ids. To settle before players build their own decks (phase 7).
 
 The number scale for unit defense and damage is a card design guideline rather than a rule; it lives in [`content/cards/README.md`](../../content/cards/README.md).
 

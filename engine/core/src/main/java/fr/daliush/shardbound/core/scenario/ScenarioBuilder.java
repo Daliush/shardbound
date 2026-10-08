@@ -26,8 +26,16 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
- * Builds any legal game state without playing a game (design doc §3.4): a board, hands, decks and counters.
- * Instance ids and arrival order follow the order of the calls.
+ * Builds any legal game state without playing a game (design doc §3.4): a board, hands, decks and counters. Cards are
+ * named by id, such as {@code "ember.cinderling"}.
+ * <p>
+ * Defaults: turn 3, P1 active and first player, both players at 50 HP with 0 Shards, empty hands, decks and
+ * graveyards, mulligans decided, seed 1. Units arrived on an earlier turn, so they can attack. Instance ids and
+ * arrival order follow the order of the calls. An empty deck means fatigue at the next draw (1.4): give a player a
+ * {@link #deck} when a turn passes.
+ * <p>
+ * {@link #build()} checks the zone limits and the links, and leaves no decision pending: {@link ScenarioRunner} runs
+ * the state to its first decision.
  */
 public final class ScenarioBuilder {
 
@@ -49,6 +57,7 @@ public final class ScenarioBuilder {
         }
     }
 
+    /** A builder over the cards of {@code catalog}; every card named must be in it. */
     public static ScenarioBuilder of(CardCatalog catalog) {
         return new ScenarioBuilder(catalog);
     }
@@ -59,25 +68,30 @@ public final class ScenarioBuilder {
         return this;
     }
 
+    /** Whose turn it is. */
     public ScenarioBuilder active(PlayerId player) {
         active = player;
         return this;
     }
 
+    /** Who played the first turn (5.1.1): it sets how many turns each player has taken. */
     public ScenarioBuilder firstPlayer(PlayerId player) {
         firstPlayer = player;
         return this;
     }
 
+    /** The game's generator: random targets and random discards depend on it. */
     public ScenarioBuilder seed(long value) {
         seed = value;
         return this;
     }
 
+    /** HP, at most 50; at 0 or less the game ends as soon as the state is checked (1.2). */
     public ScenarioBuilder hp(PlayerId player, int hp) {
         return change(player, state -> state.withHp(hp));
     }
 
+    /** How many times the player has drawn from an empty deck: the next one costs one more HP (1.4). */
     public ScenarioBuilder fatigue(PlayerId player, int fatigue) {
         return change(player, state -> state.withFatigue(fatigue));
     }
@@ -99,6 +113,7 @@ public final class ScenarioBuilder {
                 new Shards(max, state.shards().available(), state.shards().lockedNextTurn())));
     }
 
+    /** The registered decklist, which the player sees in their view; it does not fill the draw pile. */
     public ScenarioBuilder decklist(PlayerId player, Deck deck) {
         PlayerState state = players.get(player);
         players.put(player, new PlayerState(player, deck.faction(), deck, state.hp(), state.fatigue(),
@@ -116,6 +131,7 @@ public final class ScenarioBuilder {
         return change(player, state -> state.withDeck(deck));
     }
 
+    /** Cards in hand, in order, fresh: a Fracture card waits for its first step ({@link #handAtStep} for another). */
     public ScenarioBuilder hand(PlayerId player, String... cards) {
         for (String card : cards) {
             CardInstance instance = newCard(card, player);
@@ -130,6 +146,7 @@ public final class ScenarioBuilder {
         return change(player, state -> state.addToHand(new HandCard(instance, nextStep - 1, 0)));
     }
 
+    /** Cards in the graveyard, oldest first. */
     public ScenarioBuilder graveyard(PlayerId player, String... cards) {
         for (String card : cards) {
             CardInstance instance = newCard(card, player);
@@ -138,10 +155,12 @@ public final class ScenarioBuilder {
         return this;
     }
 
+    /** A unit at full defense that arrived on an earlier turn. */
     public ScenarioBuilder unit(PlayerId player, String card) {
         return unit(player, card, setup -> setup);
     }
 
+    /** A unit set up otherwise: {@code unit(P1, "ember.cinderling", unit -> unit.defense(1).hasAttacked())}. */
     public ScenarioBuilder unit(PlayerId player, String card, UnaryOperator<UnitSetup> customize) {
         UnitSetup setup = customize.apply(new UnitSetup());
         UnitCard definition = catalog.unit(new CardId(card));
@@ -184,6 +203,7 @@ public final class ScenarioBuilder {
                 .orElseThrow(() -> new IllegalStateException("No unit " + card + " to link"));
     }
 
+    /** A relic on the player's board. */
     public ScenarioBuilder relic(PlayerId player, String card) {
         CardInstance instance = newCard(card, player);
         Relic relic = new Relic(instance.id(), instance.card(), player, player, nextArrivalSeq++);

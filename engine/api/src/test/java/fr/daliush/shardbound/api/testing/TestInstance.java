@@ -67,7 +67,7 @@ public final class TestInstance {
         SeatSnapshotMapper snapshots = new SeatSnapshotMapper(ENGINE);
         GameSaver saver = new GameSaver(ENGINE, sessions, notificationPort, snapshots, clock, settings);
         GameLocks locks = new GameLocks();
-        BotRoster roster = new BotRoster();
+        BotRoster roster = new BotRoster(ENGINE);
         SeatTokens tokens = new SeatTokens();
         BotTurnService botTurns = new BotTurnService(ENGINE, sessions, saver, roster, locks, settings);
         play = new GamePlayService(ENGINE, sessions, saver, locks, botTurns);
@@ -84,7 +84,11 @@ public final class TestInstance {
     }
 
     public static NewGame botGame(long seed) {
-        return new NewGame("ember-starter", new NewGame.Opponent.Bot("random", "root-starter"), OptionalLong.of(seed));
+        return botGame(seed, "random");
+    }
+
+    public static NewGame botGame(long seed, String bot) {
+        return new NewGame("ember-starter", new NewGame.Opponent.Bot(bot, "root-starter"), OptionalLong.of(seed));
     }
 
     public static NewGame humanGame(long seed) {

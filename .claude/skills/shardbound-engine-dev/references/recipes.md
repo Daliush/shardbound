@@ -117,4 +117,4 @@ Tests should read like the rules. When a test needs something the builder cannot
 - **A choice**: a factory in `scenario/Choices` that matches actions by value equality through `Choice.single`, so that "zero" and "several" matches keep their explicit error.
 - **A target**: a factory in `scenario/Pick`.
 
-The scenario service becomes a polished public API in slice 5, documented in `engine/core`'s README. Keep its names stable.
+The scenario service is a public API, documented in `engine/core/README.md`, which the phase 3 dataset generator relies on. Keep its names stable (renaming needs the maintainer), and update the README and the Javadoc when you add an option.

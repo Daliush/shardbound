@@ -12,9 +12,9 @@ It serves four consumers, so its API is shaped for all of them, not just the UI 
 | Consumer | What it uses |
 |---|---|
 | Game server (`engine/api`) | `newGame`, `apply`, `view`, `eventsFor`, the three describers, `CardTextRenderer`, `Costs`, `AttackDamage`, `Bot`, `GameJson` (see the `shardbound-game-server` skill) |
-| Bots | `Player.choose(PlayerView, Decision)` → one of the decision's actions |
-| Scenario service (tests, Arbiter answer keys) | `ScenarioBuilder`, `ScenarioRunner`, the unredacted events |
-| MCTS (later) | immutable states to branch from, determinization from a view |
+| Bots | `Player.choose(PlayerView, Decision)` → one of the decision's actions; a bot that looks ahead applies options to a game the `Determinizer` built from its view |
+| Scenario service (tests, Arbiter answer keys) | `ScenarioBuilder`, `ScenarioRunner`, the unredacted events and `ScenarioResult.trace()` |
+| MCTS (phase 6) | immutable states to branch from, the `Determinizer` |
 
 ## Vocabulary: one word, one thing
 
@@ -89,12 +89,13 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 | `state` | `GameState`, `PlayerState`, `Unit`, `Relic`, `HandCard`, `CardInstance`, `InstanceId`, `Shards`, `GameResult` |
 | `action` / `decision` | `Action` (sealed), `TargetRef`, `Decision`, `DecisionKind` |
 | `event` | `GameEvent` (sealed, all events nested, grouped by theme), `Visibility`, `Redaction`, `EventTarget` |
-| `view` | `PlayerView`, `SelfState`, `OpponentState`, `WaitingFor`, `PlayerViews` |
+| `view` | `PlayerView` (with the resolution in progress, which is public), `SelfState`, `OpponentState`, `WaitingFor`, `PlayerViews` |
 | `resolution` | The pending work stored in the state: `Step` (sealed), `QueuedTrigger`, `EffectSource`, `EffectList`, `Resolution` |
 | `rules` | `GameEngine` (the facade), `GameSetup`, `Transition`, then one sub-package per rulebook area: `game` (working copy, loop, state check), `setup`, `turn`, `play`, `combat`, `effect`, `aura` (continuous abilities, 8.14), `trigger`, `board` |
-| `scenario` | `ScenarioBuilder`, `ScenarioRunner`, `ScenarioResult`, `Choices`, `Pick` |
+| `scenario` | `ScenarioBuilder`, `ScenarioRunner`, `ScenarioResult` (with `trace()`), `Choices`, `Pick`; documented in `engine/core/README.md` |
+| `determinization` | `Determinizer`, the only public class: a whole game from one player's view; one package-private class per rule (`KnownHand`, `SeenCards`, `InstanceIds`, `OwnDeck`, `RemainingCopies`, `DerivedFields`, `Sides`) |
 | `text` | `EventDescriber` (event → English sentence), `ActionDescriber` (action → button label), `DecisionDescriber` (decision → prompt; it reads the paused step), `CardTextRenderer` (card → its rules text, line by line, each line with its kind) |
-| `bot` | `Player`; `Bot`, a player whose only memory is its generator (`rngState()`, rebuilt with `new RandomBot(state)`); `RandomBot` (later: `GreedyBot`, `Determinizer`) |
+| `bot` | `Player`; `Bot`, a player whose only memory is its generator (`rngState()`); one sub-package per bot, its entry point the only public class: `random.RandomBot`, `greedy.GreedyBot` (with `ActionOutcome`, `Evaluator`, `OpeningHand`) |
 | `json` | `GameJson`: a state, an event log, or any record made of engine types (a server's stored game) to JSON and back |
 | `random` | `SplitMix64`, the only randomness the engine uses |
 
@@ -125,11 +126,19 @@ ScenarioResult result = new ScenarioRunner(engine).run(start,
 result.state(); result.events(); result.decisions(); result.pending(); result.findUnit("ember.cinderling");
 ```
 
-Defaults worth knowing: turn 3, P1 active and first player, 50 HP, 0 Shards, **empty decks**, so a draw costs fatigue HP. Units have arrived on an earlier turn, so they can attack. Instance ids and arrival order follow the order of the calls. A `Choice` that matches zero or several actions throws, and the message lists the decision's actions. More examples: `references/cookbook.md`.
+Defaults worth knowing: turn 3, P1 active and first player, 50 HP, 0 Shards, **empty decks**, so a draw costs fatigue HP. Units have arrived on an earlier turn, so they can attack. Instance ids and arrival order follow the order of the calls. A `Choice` that matches zero or several actions throws, and the message lists the decision's actions. `result.trace()` gives the events as `"UnitDamaged[8.1]"` lines. More examples: `references/cookbook.md`; the public guide, with the pitfalls: `engine/core/README.md`.
+
+## Bots and determinization
+
+A bot answers `choose(view, decision)` with one of the decision's actions. It never gets a `GameState`.
+
+- **`Determinizer.determinize(view, seed)`** builds a whole game from a view alone, paused on the viewer's decision. What the view shows is copied (the resolution in progress included, which is why the view carries it); the viewer's deck is their decklist minus their cards seen elsewhere, shuffled; the opponent's cards that went back to their hand in public (`FractureAdvanced`, `ReturnedToHand`, `Recalled`, followed through the history) stay as they are; their other cards are drawn uniformly among the copies left (2 per card of their faction and per neutral card, minus every copy seen). The fields a view lacks are derived: the first player from `GameStarted`, turns taken from the turn number, the decision sequence from the decision's id. It requires a view whose player decides, with the history from the start.
+- **`GreedyBot(engine, rngState)`**: one determinization per decision from its own generator, then each option is applied to it and scored once resolved (`ActionOutcome`): until the next `MAIN` decision, the bot answers its own choices greedily and the opponent takes their first option (no intercept). The `Evaluator` is spec §10's formula (win +∞, loss −∞, draw 0); ties go to the lowest index; a single option is taken without simulating; a mulligan follows `OpeningHand` (keep a hand with a card costing 2 or less).
+- **Measures**: `simulation.GreedyVersusRandomTest` checks the 60% target in `./mvnw verify`; `simulation.BotReportsTest`, tagged `report`, runs on demand with `./mvnw -pl core test -Preports` (greedy against random, and the decks' balance with any bot against itself). `testing.BotMatches` rotates the decks and seats, `testing.WinRate` gives the Wilson interval.
 
 ## What is implemented
 
-The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 4 cover the whole rulebook, sections 1 to 11: every effect of section 8, auras and Link included, and the five keywords. Every card of the catalog is playable (`PlayableCardsTest`), and `RulebookCoverageTest` fails when a rule has no test. Slice 5 brings determinization, the greedy bot and the scenario service as a public API.
+The engine is built in the slices of `specs/phase-2-engine.md` §17. Slices 1 to 4 cover the whole rulebook, sections 1 to 11: every effect of section 8, auras and Link included, and the five keywords. Every card of the catalog is playable (`PlayableCardsTest`), and `RulebookCoverageTest` fails when a rule has no test. Slice 5 added determinization, the greedy bot and the scenario service as a public API: phase 2 is done.
 
 Where each keyword lives:
 
