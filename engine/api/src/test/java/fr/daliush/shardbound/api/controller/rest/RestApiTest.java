@@ -62,7 +62,7 @@ class RestApiTest {
                 .andExpect(jsonPath("$[0].cards", hasSize(15)));
         mvc.perform(get("/api/bots"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[\"random\"]"));
+                .andExpect(jsonPath("$").value(contains("random", "greedy")));
     }
 
     @Test
