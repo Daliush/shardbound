@@ -42,8 +42,8 @@ Step-by-step changes. Server paths are relative to `engine/api/src/main/java/fr/
 
 ## 5. Add a bot
 
-1. The bot in core's `bot` package, implementing `Bot` (its only memory is its generator: `rngState()` and a constructor taking it back). A bot that looks ahead also needs what to simulate with, such as the `GameEngine`: it is passed to the constructor, never stored with the seat.
-2. `domain/services/bot/BotRoster`: register its name, with a factory from the seat's generator state (a bot that needs the engine gets it from the roster, which Spring gives it). `GET /api/bots` lists it, and the home page offers it.
+1. The bot in a package of its own under core's `bot` (`bot.random`, `bot.greedy`), implementing `Bot` (its only memory is its generator: `rngState()` and a constructor taking it back). A bot that looks ahead also needs what to simulate with, the `GameEngine`: it is passed to the constructor, never stored with the seat, and the bot simulates on a game the `Determinizer` builds from its view, as `GreedyBot(engine, rngState)` does.
+2. `domain/services/bot/BotRoster`: register its name, with a factory from the seat's generator state; the roster gets the engine from Spring and hands it to the bots that need it. `GET /api/bots` lists the names in the roster's order, and the home page offers the first one by default: keep the easy bot first.
 3. A test that a bot game plays to the end through `GamePlayService` (`GamePlayServiceTest` style).
 
 ## 6. Add a DAO implementation (the shared store)

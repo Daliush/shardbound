@@ -62,7 +62,7 @@ public final class FirstOptionBot implements Player {
 
 - A bot sees only its `PlayerView`: its own hand, public zones, the opponent's hand count, and the redacted history. Never hand it a `GameState`. That would be cheating, and the evaluation depends on bots playing fair (design doc §6.5).
 - If a bot needs randomness, give it its own `SplitMix64(seed)`, as `RandomBot` does. The game's RNG is part of the state and must not move because of a bot.
-- To look ahead, a bot applies actions to a state built from its view (determinization, slice 5), never to the real state.
+- To look ahead, a bot applies actions to a game built from its view, never to the real state: `new Determinizer(engine.catalog()).determinize(view, rng.nextLong())`, as `GreedyBot` does. Each bot gets its own package under `bot` (`bot.random`, `bot.greedy`), with its entry point the only public class.
 
 ## 4. What a game server sends to each seat
 
@@ -117,7 +117,7 @@ void intercept() {
 }
 ```
 
-These come from static imports of `testing.RuleTesting` (`scenario()`, `run(…)`, `trace(…)`, `ENGINE`), `scenario.Choices` and `scenario.Pick`. `trace` turns the events into `"Type[rule, rule]"` lines, so one assertion checks both the order and the rule IDs.
+These come from static imports of `testing.RuleTesting` (`scenario()`, `run(…)`, `trace(…)`, which calls `ScenarioResult.trace()`, and `ENGINE`), `scenario.Choices` and `scenario.Pick`. `trace` turns the events into `"Type[rule, rule]"` lines, so one assertion checks both the order and the rule IDs.
 
 Builder reference:
 

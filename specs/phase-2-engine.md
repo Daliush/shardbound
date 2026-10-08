@@ -1,6 +1,6 @@
 # Phase 2 — Engine, game server and test frontend
 
-> **Status**: approved design, ready for implementation (2026-10-06).
+> **Status**: implemented; the five slices of section 17 are done (2026-10-08).
 > **Audience**: the Claude Code session that implements phase 2. Everything decided with the maintainer is written here; you should not need the conversation that produced it.
 > **Scope**: `engine/core` (the rules engine), `engine/api` (REST + WebSocket game server), `frontend/` (minimal Angular client), the `random` and `greedy` bots, determinization and the scenario service.
 
@@ -880,8 +880,10 @@ Found while building slice 4, written as *(proposed)* rules, then settled with t
 - **Content tests**: the loader loads every card and deck; the deck validator agrees with the Python content tests; the text renderer golden tests (section 9).
 - **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over every pair of starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
 - **Determinism**: same seed, decks and bot seeds → identical event lists and final state.
-- **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card.
+- **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card. *Built (slice 5) in its strongest form: at every step of random games, two states that differ only in what a player may not see (the opponent's hand and deck, the player's deck order, the game's generator) give that player the same view, resolution in progress included.*
 - Performance smoke test: 1,000 random games run within a minute on a laptop (report the number).
+- **Determinization** (slice 5): at every decision of random games, the determinized game shows its player exactly the view it came from, keeps the invariants, takes every listed action, keeps the opponent's known cards exactly, and is the same whatever the real hidden cards are; the opponent's guessed cards make a legal deck, and a card with 2 copies left is drawn twice as often as one with 1.
+- **Bots** (slice 5): GreedyBot plays only legal actions, replays the same game from the same seeds, plays the same when rebuilt from its generator at every move, and picks the same whatever the cards it may not see; the evaluator's formula and the scoring of an action once resolved have unit tests. The 60% target runs in `./mvnw verify` (180 games, the lower bound of the 95% Wilson interval); the long measures run on demand, tagged `report`: `./mvnw -pl core test -Preports` (1,800 games against random, and the decks' balance with greedy against greedy).
 
 **API**
 
@@ -934,3 +936,4 @@ Until slice 4 is done, cards using an effect, trigger or keyword that is not imp
 - Determinizer, Evaluator, GreedyBot; `greedy` in `GET /api/bots` and selectable in the frontend.
 - `ScenarioBuilder` and `ScenarioRunner` polished as a public API, documented in a short README in `engine/core`.
 - Done when: GreedyBot wins at least 60% of its games against RandomBot, measured as section 10 says (or the maintainer accepts the reported numbers), and the PR gives the win rate with its confidence interval, overall and per deck, and the greedy-vs-greedy balance report of the three starter decks; a test proves the Determinizer never copies the real hidden cards (it must work from a view alone).
+- *Built: `PlayerView` carries the resolution in progress (6.3); `core/determinization` holds the `Determinizer`, its only public class, with one class per rule of section 10; each bot has its own package, `core/bot/random` and `core/bot/greedy` (`GreedyBot`, `ActionOutcome`, `Evaluator`, `OpeningHand`); `ScenarioResult.trace()` writes the rule trace, and `engine/core/README.md` documents the scenario service.*

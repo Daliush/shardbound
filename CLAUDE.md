@@ -14,7 +14,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - `content/cards/`: one JSON file per card, plus the card schema and text templates (`content/cards/README.md`).
 - `content/decks/`: one JSON file per deck, plus the deck schema (`content/decks/README.md`).
 - `content/tests/`: tests for all the content above.
-- `engine/`: the Java engine, a Maven multi-module build. `engine/core` is the rules engine (no Spring: content, state, rules, views, events, bots, scenarios); `engine/api` is the Spring Boot game server (REST, WebSocket protocol, game sessions).
+- `engine/`: the Java engine, a Maven multi-module build. `engine/core` is the rules engine (no Spring: content, state, rules, views, events, determinization, bots, scenarios; its README lists the entry points and documents the scenario service); `engine/api` is the Spring Boot game server (REST, WebSocket protocol, game sessions).
 - `frontend/`: the Angular test client (`frontend/README.md`).
 - `specs/`: implementation specs. `specs/phase-2-engine.md` covers the engine, the game server and the test frontend; `specs/phase-2-examples.md` shows its payloads on a real situation.
 - `.claude/skills/`: project knowledge for Claude Code.
@@ -30,6 +30,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 
 - Content tests (card and deck schemas, card and deck rules, text templates), from `content/`: `uv run pytest`. Run them after any change to `content/`. CI runs the same command (`.github/workflows/content.yml`).
 - Engine build and tests, from `engine/`: `./mvnw verify` (`mvnw.cmd verify` on Windows). Run it after any change to `engine/` or `content/`, since the engine loads the content. CI runs it too (`.github/workflows/engine.yml`).
+- Bot reports, from `engine/`, on demand: `./mvnw -pl core test -Preports` (a few minutes; greedy against random and the decks' balance, printed and written to `core/target/reports/`). The default build skips them.
 - Whole game, from the root: `docker compose up --build` (client on http://localhost:4200, server on http://localhost:8080).
 - Game server, from `engine/`: `./mvnw -pl api -am spring-boot:run` (http://localhost:8080).
 - Test client, from `frontend/`: `npm start` (http://localhost:4200, proxies `/api` and `/ws` to the server), `npm test` (unit tests, once), `npm run build`. Run the tests and the build after any change to `frontend/`. CI runs them (`.github/workflows/frontend.yml`).
@@ -63,10 +64,11 @@ bad card can't reach the engine or the RAG index.
 
 ## Status
 
-Phase 2 of the roadmap in `docs/design.md` §11, built in the five slices of `specs/phase-2-engine.md` §17.
+Phase 2 of the roadmap in `docs/design.md` §11 is done, built in the five slices of `specs/phase-2-engine.md` §17.
 
 - Slice 1 (engine foundation) is done: `engine/core` plays full games with the rules of setup, turns, Shards, zones, cards, combat with intercepts, triggers and the effects Damage, Destroy, Heal, Draw and Summon. Cards needing a later effect or keyword are not playable yet.
 - Slice 2 (game server and test frontend) is done: `engine/api` serves REST and the WebSocket protocol, human vs bot and human vs human, on sessions built for several instances (in-memory adapters until deployment); `frontend/` plays a game in the browser.
 - Slice 3 (effects and card text) is done: every effect of rulebook section 8 but Link (Sacrifice as a cost and an effect, Modify, Discard, Return to hand, Freeze, Gain Shards, Recall, stat and cost auras); `CardTextRenderer` writes each card's text from its data, `GET /api/cards` returns it and the client shows it.
 - Slice 4 (keywords) is done: Echo, Fracture, Anchor with doom, Overcharge and Link, so every card of the catalog is playable; `RulebookCoverageTest` fails when a rule of sections 1 to 11 has no test. A Tide starter deck joins Ember's and Root's.
-- Next: slice 5, determinization, the greedy bot and the scenario service as a public API.
+- Slice 5 (bots) is done: views carry the resolution in progress; the `Determinizer` builds a whole game from one player's view alone; `GreedyBot` plays the best board one action ahead and beats `RandomBot` in about 95% of games; `greedy` is offered by the server and the client; the scenario service is a documented public API (`engine/core/README.md`).
+- Next: phase 3, the RAG Arbiter (`docs/design.md` §11).
