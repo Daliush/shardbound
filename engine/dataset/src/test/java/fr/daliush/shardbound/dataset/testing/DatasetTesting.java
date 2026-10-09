@@ -27,4 +27,9 @@ public final class DatasetTesting {
     public static List<DatasetEntry> entries(Recipe... recipes) {
         return new DatasetBuilder(ENGINE, CATALOG, RULEBOOK).entries(List.of(recipes));
     }
+
+    public static DatasetEntry entry(List<DatasetEntry> entries, String id) {
+        return entries.stream().filter(entry -> entry.id().equals(id)).findFirst()
+                .orElseThrow(() -> new AssertionError("No scenario " + id));
+    }
 }

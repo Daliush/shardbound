@@ -6,11 +6,10 @@ import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.scenario.ScenarioRunner;
 import fr.daliush.shardbound.core.text.EventDescriber;
-import fr.daliush.shardbound.dataset.recipe.Recipe;
 import fr.daliush.shardbound.dataset.recipe.Scenario;
 import java.util.List;
 
-/** Plays a scenario with the engine and keeps the events its recipe selects. */
+/** Plays a scenario with the engine and keeps the events that answer its question. */
 public final class AnswerKeys {
 
     private final ScenarioRunner runner;
@@ -21,10 +20,10 @@ public final class AnswerKeys {
         this.describer = EventDescriber.withoutInstanceIds(catalog);
     }
 
-    /** @throws IllegalStateException if no event of the outcome answers the question: the recipe is wrong */
-    public AnswerKey of(Recipe recipe, Scenario scenario) {
+    /** @throws IllegalStateException if no event of the outcome answers the question: its recipe is wrong */
+    public AnswerKey of(Scenario scenario) {
         ScenarioResult result = runner.run(scenario.start(), scenario.choicesToPlay());
-        List<GameEvent> keyEvents = result.events().stream().filter(recipe::isKey).toList();
+        List<GameEvent> keyEvents = result.events().stream().filter(scenario.answers()).toList();
         if (keyEvents.isEmpty()) {
             throw new IllegalStateException(scenario.id() + ": no event answers the question in " + result.trace());
         }

@@ -37,33 +37,33 @@ class DatasetBuilderTest {
     @Test
     void rejectsAQuestionThatNamesACardItsAskerCannotSee() {
         GameState start = spark().hand(P2, "neutral.tempest").build();
-        Recipe recipe = recipe(List.of(scenario("test/hidden", start,
-                "My opponent holds Tempest. If I cast Spark Dart on Sprout, what happens?", List.of())), event -> true);
+        Recipe recipe = recipe(scenario("test/hidden", start,
+                "My opponent holds Tempest. If I cast Spark Dart on Sprout, what happens?", event -> true, List.of()));
 
         assertThatThrownBy(() -> entries(recipe)).hasMessageContaining("names Tempest");
     }
 
     @Test
     void rejectsAScenarioWhoseOutcomeAnswersNothing() {
-        Recipe recipe = recipe(List.of(scenario("test/nothing", spark().build(), "What happens?", List.of())),
-                event -> event instanceof GameEvent.AnchorPrevented);
+        Recipe recipe = recipe(scenario("test/nothing", spark().build(), "What happens?",
+                event -> event instanceof GameEvent.AnchorPrevented, List.of()));
 
         assertThatThrownBy(() -> entries(recipe)).hasMessageContaining("no event answers the question");
     }
 
     @Test
     void rejectsAContextRuleThatIsNotInTheRulebook() {
-        Recipe recipe = recipe(List.of(scenario("test/typo", spark().build(), "What happens?", List.of("8.99"))),
-                event -> true);
+        Recipe recipe = recipe(scenario("test/typo", spark().build(), "What happens?", event -> true,
+                List.of("8.99")));
 
         assertThatThrownBy(() -> entries(recipe)).hasMessageContaining("rule 8.99 is not in the rulebook");
     }
 
     @Test
     void rejectsTwoScenariosWithTheSameId() {
-        Scenario scenario = scenario("test/twice", spark().build(), "What happens?", List.of());
+        Scenario scenario = scenario("test/twice", spark().build(), "What happens?", event -> true, List.of());
 
-        assertThatThrownBy(() -> entries(recipe(List.of(scenario, scenario), event -> true)))
+        assertThatThrownBy(() -> entries(recipe(scenario, scenario)))
                 .hasMessageContaining("Two scenarios have the id test/twice");
     }
 
@@ -71,12 +71,13 @@ class DatasetBuilderTest {
         return ScenarioBuilder.of(CATALOG).shards(P1, 1).hand(P1, "ember.spark-dart").unit(P2, "root.sprout");
     }
 
-    private static Scenario scenario(String id, GameState start, String question, List<String> contextRules) {
+    private static Scenario scenario(String id, GameState start, String question, Predicate<GameEvent> answers,
+            List<String> contextRules) {
         return new Scenario(id, start, List.of(play("ember.spark-dart").on(unit("root.sprout"))), P1, question,
-                contextRules);
+                answers, contextRules);
     }
 
-    private static Recipe recipe(List<Scenario> scenarios, Predicate<GameEvent> isKey) {
+    private static Recipe recipe(Scenario... scenarios) {
         return new Recipe() {
             @Override
             public String interaction() {
@@ -90,12 +91,7 @@ class DatasetBuilderTest {
 
             @Override
             public List<Scenario> scenarios(CardCatalog catalog) {
-                return scenarios;
-            }
-
-            @Override
-            public boolean isKey(GameEvent event) {
-                return isKey.test(event);
+                return List.of(scenarios);
             }
         };
     }

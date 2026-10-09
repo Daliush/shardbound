@@ -38,7 +38,7 @@ public final class DatasetBuilder {
                 }
                 checkContextRules(scenario);
                 checkQuestion(scenario);
-                entries.add(entry(recipe, scenario, answerKeys.of(recipe, scenario)));
+                entries.add(entry(recipe, scenario, answerKeys.of(scenario)));
             }
         }
         return entries;
@@ -61,8 +61,11 @@ public final class DatasetBuilder {
         }
     }
 
+    /** The context rules a key event already carries are left out: they are in {@code rules}. */
     private static DatasetEntry entry(Recipe recipe, Scenario scenario, AnswerKey key) {
+        List<String> contextRules = scenario.contextRules().stream().filter(rule -> !key.rules().contains(rule))
+                .toList();
         return new DatasetEntry(scenario.id(), recipe.category().label(), recipe.interaction(), scenario.question(),
-                ScenarioCards.all(scenario.start()), key.keyFacts(), key.rules(), scenario.contextRules(), key.trace());
+                ScenarioCards.all(scenario.start()), key.keyFacts(), key.rules(), contextRules, key.trace());
     }
 }

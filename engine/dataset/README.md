@@ -9,7 +9,7 @@ The Arbiter's interaction questions and their answer keys, computed by the engin
 
 ## How it works
 
-A **recipe** covers one interaction, such as an Anchored unit hit by Destroy. It finds the cards that fit by their data (`Cards`), builds one board per combination of cards and variants with the scenario service, names the choices to play, the player who asks, a template question and the context rules, and says which events answer the question (`Recipe.isKey`).
+A **recipe** covers one interaction, such as an Anchored unit hit by Destroy. It finds the cards that fit by their data (`Cards`), builds one board per combination of cards and variants with the scenario service, names the choices to play, the player who asks, a template question and the context rules, and says which events answer each question (`Scenario.answers`).
 
 `DatasetBuilder` plays every scenario, then turns the events the recipe selected into the answer key (`AnswerKeys`):
 
