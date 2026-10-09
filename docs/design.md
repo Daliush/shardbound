@@ -42,6 +42,8 @@
 > **v2.13 (October 2026)** — phase 2, slice 5, and phase 2 is done: player views carry the resolution in progress, a `Determinizer` builds a whole game from one player's view alone (known cards kept, the rest drawn among the copies left), and `GreedyBot` plays one action ahead on that game, never on the real one; it beats the random bot in about 95% of games and is offered in the client. Measured with greedy against greedy, the decks are not balanced yet (Ember loses most of its games), reported for the maintainer. The scenario service is a documented public API for the phase 3 dataset generator.
 >
 > **v2.12 (October 2026)** — phase 2, slice 4: the five keywords in the engine (Echo with its order and target choices, Fracture step by step, Anchor with doom, Overcharge and its Shard lock, Link and its damage sharing), so every card is playable. A coverage test now fails when a rule of sections 1 to 11 has no test. Nine Tide cards and a Tide starter deck (39 cards + 1 token, three starter decks). Four rules settled with the maintainer along the way: 6.10 (a max defense below 0), 11.1.11 (an echo keeps a Sacrifice's count), 11.2.8 (a Fracture card pays its sacrifice cost at each step), and 5.4.3 reworded (the abilities it triggers resolve within the turn).
+>
+> **v2.14 (October 2026)** — phase 3 designed with the maintainer. The RAG pipeline: one chunk per rule, card or ruling, prefixed with its heading path; written cross-references followed after the fusion and before the reranker; BM25 and embeddings fused by RRF; one output schema and a generic prompt (§5.2). The evaluation dataset: Java recipes build the scenarios, the engine writes the key facts and the essential rules, the split is by interaction and cards are held out for LoRA (§6.1). Answers are graded on key facts instead of a verdict field (§6.3). Every RAG variant is benchmarked, and a benchmark explorer shows every precomputed run (§6.2, §8.2).
 
 ---
 
@@ -58,7 +60,12 @@
 | **Coach** | Agentic chatbot that acts on the app through MCP (collection, decks, simulations). |
 | **Arbiter** | Chatbot that answers rules questions, like an official rules referee at a tournament. Exists in several versions (RAG, LoRA, RAG + LoRA…) compared by the evaluation matrix. |
 | **LoRA Arbiter** | Version of the Arbiter whose model was fine-tuned with a LoRA adapter. |
-| **Answer key** | Reference answer computed by the engine: exact final state + trace of the rules applied. |
+| **Answer key** | Reference answer computed by the engine: the key facts of the outcome, the essential rules and the full rule trace (§6.1). |
+| **Interaction** | An abstract combination of mechanics, e.g. an Anchored unit hit by Destroy. One interaction gives many scenarios. The dataset is split by interaction (§6.1). |
+| **Scenario** | A concrete game: cards, board, moment of the turn, moves played. Built by a recipe, played by the engine's scenario service. |
+| **Recipe** | Java code, one per interaction, that builds its scenarios (cards filtered from their data × variants), names the moves and choices, says who asks the question and which events count (§6.1). |
+| **Key fact** | A sentence of the answer key, written by the engine from an event or a legal action, e.g. "Root Sentinel is anchored: it is not destroyed." The Arbiter's answer must state it. |
+| **Benchmark explorer** | Page of the site where a visitor sets every parameter (configuration, RAG variant, dataset version) and sees the matching precomputed results, down to each question (§8.2). |
 | **Judge (LLM-as-judge)** | Evaluation only: a large model called through an API, **not trained**, given a grading rubric, the question, the engine's answer key and the Arbiter's answer. It grades the Arbiter, **never the engine**. Unrelated to the Arbiter itself. |
 | **System 1 / System 2** | Architecture of the AI opponent: fast decisions (Jev) / strategic planning (LLM). |
 | **RAG** | A retrieval step **before** calling the model: relevant passages are fetched and added to the prompt. The model is not modified. RAG involves no training. |
@@ -238,12 +245,13 @@ flowchart LR
 | Migrations | Flyway | Java side, owns the business schema |
 | Frontend | Angular (standalone components, signals) + Tailwind | Small test frontend, then board, deck builder, chat panels, results pages |
 | Python services | FastAPI, dependencies managed with `uv` | AI service exposed to the backend |
-| RAG | BM25 + embeddings + reranker | Chunking per rule / card / ruling |
+| RAG | BM25 (in memory) + embeddings (pgvector), fused by RRF, then a cross-encoder reranker | One chunk per rule / card / ruling (§5.2) |
 | LoRA | Unsloth or PEFT (QLoRA) | Open model from 1.5B to 8B depending on available VRAM |
 | LoRA serving | vLLM (local) | Multi-LoRA on a single base model, for evaluation |
 | Local demo mode | Ollama or llama.cpp | Small quantized model + LoRA adapter, runs without a dedicated GPU |
 | API model | Claude Haiku (or equivalent) | Coach, bot's System 2, `api+rag` reference |
 | Judge | API model from a **different family** than the `api+rag` model | Avoids self-preference bias |
+| Question paraphraser, key-fact extractor | API model from a family that no evaluated configuration uses (Luna 6) | Writes the questions' wording, checks the key facts (§6.1, §6.3) |
 | Fast decisions | Jev (TypeSafe AI) | Behind an abstract interface, with a fallback |
 | Observability | Langfuse + OpenTelemetry | End-to-end Java ↔ Python traces |
 | Tests | JUnit 5 + AssertJ (Java), pytest (Python), Playwright (frontend, optional) | Rulings are JUnit tests |
@@ -274,7 +282,7 @@ A human in the browser, the Java MCTS and the Python Jev bot are all "players" p
 
 **The rule trace.** At each resolution step, the engine emits an event carrying the identifier of the rule applied, for example `[11.3.2 Anchor] Root Sentinel cannot leave the board`. This trace is the answer key for the Arbiter's citations and step order (§6.3), and it makes debugging the engine easier.
 
-The **scenario service** lets the Python dataset generator get the **computed ground truth** for interaction questions, instead of having an LLM write it.
+The **scenario service** gives the dataset generator the **computed ground truth** for interaction questions, instead of having an LLM write it: Java recipes build the scenarios and export them with their answer keys, and Python writes the questions' wording (§6.1).
 
 ---
 
@@ -369,7 +377,7 @@ In real TCGs, a rules referee settles rules disputes at tournaments. Here, the A
 
 Example question: "On my last turn, I played my Root Sentinel, which has Anchor, and linked it to my Bramble Warden. During their turn, my opponent casts Tempest, a neutral spell that destroys all units. What happens?"
 
-Expected answer, in a fixed format:
+Expected answer, as the user reads it (the `answer` field of the output, see below):
 
 ```
 Rules cited: 11.3.1, 11.3.2, 11.3.3 (Anchor), 11.5.3, 11.5.4 (Link)
@@ -388,13 +396,25 @@ Verdict: the Warden is destroyed, the Sentinel stays on the board and is no long
 
 The Arbiter exists in several versions, and **this is exactly what the evaluation matrix compares** (§6.2).
 
-**RAG version**: answers from `docs/rules`, `docs/rulings` and the card texts.
+**RAG version**: answers from `docs/rules`, `docs/rulings` and the card texts. Each brick below is a baseline, and its variants are benchmarked (§6.2).
 
-- **Semantic** chunking: one rule = one chunk, one card = one chunk, one ruling = one chunk.
-- Metadata: patch version, faction, keywords involved.
-- Hybrid BM25 + embeddings search, then reranking.
-- Answers must be **sourced** (rule / card identifier cited).
-- Explicit refusal when the answer is not in the docs.
+- **Chunks**: one rule = one chunk (its stable ID), one card = one chunk (the text written by `CardTextRenderer`, not the raw JSON), one ruling = one chunk. A parser prefixes each chunk with its heading path, `[11.3 Anchor > 11.3.4]`, so a short rule keeps its context; no model is involved. A chunk is stored as `{id, text, refs, source, hash, vector}`: only `text` is embedded, indexed and shown to the model, the other fields serve the code.
+- **Cross-references (`refs`)**, computed at indexing: the `(x.y.z)` written in a rule's text, found by a regex; for a card, its keywords and effects through a mapping table (`anchor` → 11.3, `damage` → 8.1; a keyword points to its whole section *(proposed)*). A content test checks that every reference resolves and that every keyword and effect is mapped. When the eval shows a missing context (11.3.4 says "protected" without citing 11.3.1), the fix is a reference added to the rule's text, not a retrieval heuristic. No parent-section or neighbor-rule expansion: neighbors are often unrelated and add noise.
+- **Pipeline**:
+
+  ```
+  question ─┬→ card names found     → their card chunks, added directly
+            ├→ BM25                 → list A ┐
+            └→ embedding → cosine   → list B ┘→ RRF (k = 60) → top ~20
+  top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 5-6, with their refs → prompt
+  ```
+
+  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped.
+- **Storage**: Postgres + pgvector, one row per chunk; with ~165 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit.
+- **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order, each followed by its refs), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
+- **Output**: one schema for every question, `{answer, citations, answerable}`. `answer` is the natural-language text the user reads, with the citations shown as links: nobody sees JSON. `citations` lists the rule and card IDs in the order they apply. `answerable` lets the Arbiter abstain. Structured outputs through the API for `api+rag`, constrained decoding for local models, validated with Pydantic (one retry; format failures are measured).
+- **Abstention**: the `answerable` field is the baseline; a threshold on the best reranker score (no model call) and Jev *noul* are variants (experiment 5, §6.4).
+- **Prompt injection**: the Arbiter has no tools, no secrets and only our own sources, so an injection can only make it say something wrong to its own user. Tags, the output schema, the router's `off_topic` class and a few adversarial questions in the dataset are enough; no guard model.
 
 **LoRA versions.**
 
@@ -461,18 +481,63 @@ This is the most important part of the repository for a recruiter.
 
 ### 6.1 Datasets
 
-Generated semi-automatically from the card JSON, the rules and the rulings. For interaction and multi-step questions, the **answer key is computed by the Java engine's scenario service**: exact final state + trace of the rules applied. A subset is **checked by hand** (≥ 150 annotated questions).
+**Questions are generated, answer keys are computed.** Nobody writes an answer key the engine can compute. A subset is **checked by hand** (≥ 150 annotated questions).
 
-| Question type | Example | Target volume |
-|---|---|---|
-| Factual | "How much does Ash Warden cost?" | 200 |
-| Simple rule | "What does Overcharge do?" | 150 |
-| Interaction | "What happens if a unit Linked to an Anchored unit is hit by Tempest?" | 200 |
-| Multi-step | A sequence of 3 actions with chained Echoes | 100 |
-| Unanswerable | A question about a mechanic that does not exist | 100 |
-| Deck building | "Is this deck legal?" | 50 |
+| Category | Example | Target volume | Answer key from |
+|---|---|---|---|
+| Factual | "How much does Ash Warden cost?" | 200 | The card JSON, through templates on its fields |
+| Simple rule | "What does Overcharge do?" | 150 | The rule: an LLM writes the question, the key facts come from the rule's own text |
+| Interaction | "What happens if a unit Linked to an Anchored unit is hit by Tempest?" | 200 | The engine's scenario service |
+| Multi-step | A sequence of 3 actions with chained Echoes | 100 | The engine's scenario service |
+| Unanswerable | A question about a mechanic that does not exist | 100 | Abstention: invented names absent from the catalog, open points of the rulebook |
+| Deck building | "Is this deck legal?" | 50 | The engine's `DeckValidator`, on valid decks and mutated ones (a 31st card, one copy too many, a card of another faction) |
 
-Strict rules: train / test split without leakage (no card or interaction shared between train and test multi-step questions), fixed seed, versioned datasets.
+The category is a tag used to balance the dataset and to report scores per category. Neither the Arbiter nor the grading sees it.
+
+**Recipes.** Interaction and multi-step questions come from recipes: Java code, one per interaction, built on the scenario service. A recipe:
+
+1. picks the cards that fit by filtering their data (`keywords` contains `anchor`, `effects` contains `destroy`), so a new card that fits gets its scenarios without new code;
+2. builds one board per combination of cards and variants (protected or not, who attacks…), from the scenario service's default board plus only what the interaction needs;
+3. names the moves, and the choices asked during resolution (an echo's target);
+4. says who asks the question: the question only names what that player sees in their `PlayerView`, and the key facts are written from their point of view;
+5. says which events count.
+
+The engine plays each scenario, and the events the recipe selected give the answer key:
+
+- **key facts**: the sentences `EventDescriber` writes for those events ("Root Sentinel is anchored: it is not destroyed."), or `ActionDescriber` for legal actions ("You can play Spark Dart.");
+- **essential rules**: the rules those events carry. The rest of the trace (`CardPlayed[6.3]`, `TurnStarted`…) is incidental.
+
+```json
+{
+  "category": "interaction",
+  "interaction": "anchor+destroy",
+  "scenario": "anchor+destroy/protected/root-sentinel/crystal-rupture",
+  "question": "My opponent just played Root Sentinel. If I cast Crystal Rupture on it, what happens?",
+  "key_facts": ["Root Sentinel is anchored: it is not destroyed."],
+  "rules": ["11.3.2", "11.3.3"],
+  "trace": ["CardPlayed[6.3]", "AnchorPrevented[11.3.2, 11.3.3]", "..."],
+  "split": "test"
+}
+```
+
+*(proposed)* The engine only lists legal actions, so it cannot say why an action is illegal. For "why can't I…" questions, the recipe names the rule and the engine confirms the action is absent. Those answer keys are tagged `"source": "recipe"`, like the abstentions drawn from the open points (which become wrong once a point is settled), so the explorer can filter them.
+
+**Choices that change the outcome.** By default the question states the choice ("…and its echo targets my Ash Warden"). Some questions are about the choice itself ("Who picks the echo's target?"). A few are answered "it depends": the generator runs the game to the decision, then plays each option from the paused state. The events before the decision give the common key facts; those after it give conditional ones ("If your opponent targets you, you take 3 damage."). Branches with the same outcome are merged, and only one decision branches per question.
+
+**Wording.** A recipe gives a template question; an LLM paraphrases it the way a player would ask; a second call rebuilds the scenario from the paraphrase, and the question is dropped if it does not match. The paraphraser comes from a family no evaluated configuration uses (§3.3), so the wording favors none of them. About 1,600 short calls per dataset version: well under a dollar.
+
+**Where it runs.** Java: recipes, scenarios and answer keys, deterministic and without a model, exported as JSON. Python: the wording and the split. *(proposed)* Coverage: games between bots, searched for interactions no recipe covers, tell which recipe to write next, and a check fails when a rule of sections 1 to 11 is essential in no test question.
+
+**Splits.** No leakage into the published numbers:
+
+- **test**: one set, shared by every configuration. Nothing is tuned or trained on it; it only produces the published numbers.
+- **dev** (~10%): the RAG's settings (thresholds, k, the prompt) are tuned on it, reading its failures.
+- **train** (phase 4): the LoRA training data.
+- The split is **by interaction**: an interaction and all its scenarios sit on one side, because a fix aimed at an interaction helps all its scenarios. Factual questions are grouped by card, simple-rule questions by rule. Rules are shared by every split: every question uses the core rules.
+- **Cards are held out between train and test** as well: a LoRA that saw Root Sentinel in 50 training scenarios would answer from memory instead of from the card text RAG provides. The catalog is small (2 Anchor cards, 2 Destroy cards), so some interactions get one card per side.
+- Drawn at random with a fixed seed, stratified by category, and written into the dataset (`"split"`), never recomputed.
+
+**Versions.** Questions are frozen per dataset version. A rules or card patch makes a new version: the engine recomputes the answer keys, and every run is redone on it. Each result records its dataset version.
 
 ### 6.2 Arbiter configuration matrix
 
@@ -488,30 +553,50 @@ All configurations except the last one use **the same open base model** (§4.2).
 | `lora-format+rag` | LoRA-format + RAG |
 | `api+rag` | API model (e.g. Haiku) + the same RAG — reference ceiling |
 
+**RAG variants.** The repository exists to compare approaches, so every brick of the RAG pipeline (§5.2) has a baseline and variants:
+
+| Brick | Baseline | Variants |
+|---|---|---|
+| Chunk prefix | heading path, from a parser | contextual retrieval: once, at indexing, an LLM writes one or two sentences that situate each chunk in its document |
+| Retrieval | hybrid, fused by RRF | BM25 only, embeddings only |
+| Expansion | written cross-references | none |
+| Reranker | cross-encoder | none, Jev *noul* |
+| Abstention | the `answerable` field | reranker threshold, Jev *noul* |
+| Output | API structured outputs / constrained decoding | prompt only |
+
+The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
+
 ### 6.3 What we measure, and how
 
-**Principle: whatever the engine can check, it checks. The judge only grades form.** The engine remains the single source of truth; the judge grades the Arbiter's answer with the engine's answer key in front of it.
+**Principle: whatever the engine can check, it checks. The judge only grades form.** The engine remains the single source of truth: it writes the key facts and the rules of every answer key. The Arbiter's answers are only read against them.
 
 | Part of the Arbiter's answer | How it is checked |
 |---|---|
-| Verdict | **Automatic**: compared with the final state computed by the engine |
-| Rules cited, step order | **Automatic**: compared with the engine's rule trace |
-| Format compliance | **Automatic**: parser |
+| Outcome | **Key facts**: for each key fact, an extractor answers a closed question: does `answer` state it, contradict it, or not mention it? A conditional fact counts only if its condition is stated too |
+| Rules cited | **Automatic**: recall on the essential rules. A cited rule found elsewhere in the trace is tolerated; a rule absent from the trace is an error |
+| Step order | **Automatic**: the order of `citations` against the trace |
+| Abstention | **Automatic**: `answerable` against the answer key |
+| Format compliance | **Automatic**: schema validation |
 | Tone, clarity | **Judge** (LLM-as-judge) |
+
+An answer is correct when it states every key fact and contradicts none; the share of key facts covered, and of branches covered for "it depends" questions, is published too. Outcome and rules are scored apart: the right outcome with the wrong rules is a guess, the right rules with the wrong outcome is a reasoning error.
+
+**The extractor** only answers closed questions, one per key fact, with the same generic prompt for every question. It comes from a family no evaluated configuration uses, and its error rate is measured on the hand-checked questions.
 
 **The judge**: a large model called through an API, not trained, with an explicit rubric. It is **calibrated** against human annotations (judge / human agreement published) and chosen from a **different model family** than the `api+rag` model, to avoid self-preference bias.
 
 **Other metrics**:
 
-- **Recall@k** and **MRR** of retrieval.
+- Retrieval: **Recall@k** is the decision metric, chosen beforehand: a chunk that is not retrieved cannot be used. **MRR**, precision@k and nDCG are published to explain it. The relevant chunks of a question are the essential rules and the cards of its answer key. No weighted composite score: the metrics are correlated, and arbitrary weights could change the winner.
 - **Faithfulness** to the context.
 - **Correct refusal rate** on unanswerable questions / **hallucination rate**.
 - **Latency** p50 / p95 and **cost** per request.
 
 **Statistical rigor**:
 
+- **Tune on dev, publish on test.** A setting picked on the test set (a threshold, a prompt) makes its score optimistic. The explorer shows every run on test; a configuration put forward as recommended is chosen on dev, then its test score is published.
 - **3 seeds per adapter.** Training involves randomness: two identical runs with different seeds can differ by a few points. Without several seeds, there is no way to tell whether a 2-point gap comes from the method or from luck. We publish the mean and the spread.
-- **Confidence intervals** by bootstrap: with 100 to 200 questions per category, they span several points.
+- **Confidence intervals** by bootstrap, resampling **interactions** rather than questions: the questions of one interaction tend to succeed or fail together, so resampling questions would give intervals too narrow. With 100 to 200 questions per category, they span several points.
 - **Paired tests** (McNemar): all configurations answer the same questions.
 - **Temperature 0** at inference.
 
@@ -570,6 +655,8 @@ Where training happens does not change the result: a 3B trained locally or on a 
 #### 5. Reranker vs Jev
 
 Filter chunks with a classic reranker vs with Jev (*noul*). Compare recall, latency, cost.
+
+The same comparison for abstention: the Arbiter's `answerable` field vs a threshold on the reranker's best score vs Jev *noul* ("do these chunks answer the question?", asked before the model call). Measured on the unanswerable questions: does it abstain when it should, and only then?
 
 Results are published as tables + charts in `evals/reports/`, summarized in the README and displayed on the site (§8).
 
@@ -648,10 +735,11 @@ Reminder: most recruiters will not click on the demo. The README GIF, the result
 | Content | Hosting |
 |---|---|
 | Precomputed evaluation results (matrix, patch, Elo, costs) | Static (GitHub Pages, Cloudflare Pages…) |
-| **Answer comparator**: pick a question and see the answers of all 7 configurations side by side, with the engine's answer key | Static (precomputed answers) |
+| **Benchmark explorer**: set every parameter (configuration, each RAG variant of §6.2, dataset version) and see the matching results, by category | Static (precomputed runs) |
+| **Answer comparator**: pick a question and see the answers of the configurations side by side, with the engine's answer key | Static (precomputed answers) |
 | Games against the `random` / `greedy` / `mcts` bots (optional) | Java backend on Cloud Run CPU, scale to zero |
 
-The comparator shows the Arbiter at work without running anything: far more telling than a table.
+The explorer is the heart of the site: the repository exists to compare approaches, and it lets a visitor do the comparing. It only reads precomputed runs, so the whole grid of §6.2 is computed beforehand, and every question can be opened in the comparator. The comparator shows the Arbiter at work without running anything: far more telling than a table.
 
 Cloud Run can run several instances of the game server and does not guarantee that two messages of a game reach the same one. So no instance keeps a game in memory between two messages: **games live in a small shared store**, and a pub/sub carries each update to the instance holding the player's connection (see `specs/phase-2-engine.md` §13.4). Phase 2 runs on in-memory adapters; the store is chosen when going online. Options: a serverless Postgres with a free tier (LISTEN/NOTIFY for the pub/sub, pgvector later), Firestore (serverless, built-in listeners) or Redis. A managed Cloud SQL instance stays on permanently and is billed monthly.
 
@@ -769,7 +857,9 @@ Solid foundations first, then AI, then the polished app. Each phase produces som
 | Data models drifting between languages | JSON Schema for cards, protobuf for the rest, code generation on both sides. |
 | RAG / LoRA comparison skewed by different models | Same open base model for the whole matrix; the API model only appears as a reference. |
 | Gaps caused by training randomness | 3 seeds per adapter, bootstrap confidence intervals, paired tests. |
-| Judge-biased evals (LLM-as-judge) | The engine checks verdict, citations and steps; the judge only grades form, is calibrated against human annotations and comes from a different family than the API model. |
+| Judge-biased evals (LLM-as-judge) | The engine writes the key facts and the rules; citations and steps are checked by code; an extractor only answers closed questions about key facts; the judge only grades form, is calibrated against human annotations and comes from a different family than the API model. |
+| Wording or grading that favors one configuration | The paraphraser and the extractor come from a family no evaluated configuration uses; the prompt is the same for every configuration. |
+| Tuning on the test set | Settings are tuned on dev; test only produces published numbers; the prompt stays generic, with no hint aimed at an interaction. |
 | MCTS cheating with hidden information | Determinization; never clone the raw internal state. |
 | Cost and slowness of simulations with model-based bots | Algorithmic bots by default, model-based tournaments capped and run offline. |
 | Not enough local VRAM | Stay at 1.5B–3B; a GPU rented by the second as a last resort. |
@@ -777,7 +867,7 @@ Solid foundations first, then AI, then the polished app. Each phase produces som
 | Local setup failing for a recruiter | GPU-free path, tested on a clean machine. |
 | Dependency on Jev (recent API, access and pricing may change) | Scope limited to the AI opponent and peripheral pieces; `DecisionModel` interface + local fallback; the project runs without a key. |
 | Confusing Arbiter and judge in the docs | Glossary (§0); "Arbiter" for the chatbot, "judge" only for evaluation. |
-| Train / test leakage | Split by cards and by interactions, checked by a script. |
+| Train / dev / test leakage | Split by interaction everywhere, cards also held out between train and test, the split written into the dataset; checked by a script. |
 | Scope creep | Follow the roadmap: finish a phase before starting the next. |
 
 ---
