@@ -499,13 +499,13 @@ The category is a tag used to balance the dataset and to report scores per categ
 1. picks the cards that fit by filtering their data (`keywords` contains `anchor`, `effects` contains `destroy`), so a new card that fits gets its scenarios without new code;
 2. builds one board per combination of cards and variants (protected or not, who attacks…), from the scenario service's default board plus only what the interaction needs;
 3. names the moves, and the choices asked during resolution (an echo's target);
-4. says who asks the question: the question only names what that player sees in their `PlayerView`, and the key facts are written from their point of view;
+4. says who asks the question: the question names no card hidden from that player (unless it is played during the scenario), and the key facts are written from their point of view;
 5. says which events count;
 6. names the **context rules**: the rules that explain the situation rather than what happens, which no event carries. A unit is protected because it arrived on its controller's last turn (11.3.1); its protection is over (11.3.6). A correct answer cites them too.
 
 The engine plays each scenario, and the events the recipe selected give the answer key:
 
-- **key facts**: the sentences `EventDescriber` writes for those events ("Root Sentinel is anchored: it is not destroyed."), or `ActionDescriber` for legal actions ("You can play Spark Dart.");
+- **key facts**: the sentences `EventDescriber` writes for those events ("Root Sentinel is anchored: it is not destroyed."), redacted as the asker would see them in a game: another player's draw names no card;
 - **essential rules**: the rules those events carry (`rules`), plus the recipe's context rules (`context_rules`, kept in their own field since a recipe wrote them, and checked against the rulebook). The rest of the trace (`CardPlayed[6.3]`, `TurnStarted`…) is incidental.
 
 ```json
@@ -522,7 +522,7 @@ The engine plays each scenario, and the events the recipe selected give the answ
 }
 ```
 
-*(proposed)* The engine only lists legal actions, so it cannot say why an action is illegal. For "why can't I…" questions, the rule is a context rule of the recipe, and the engine confirms the action is absent. The abstentions drawn from the open points are tagged `"source": "recipe"`, since they become wrong once a point is settled, so the explorer can filter them.
+**Legality questions.** "Can I play its next step this turn?" is answered from the legal actions of the decision the game waits for once the scenario's choices are played: the engine decides, the recipe writes the sentence for each outcome ("You cannot play the next step of Moonpull this turn."), and the rule that decides it is a context rule, since the engine lists legal actions without saying why the others are not. *(proposed)* The abstentions drawn from the open points are tagged `"source": "recipe"`, since they become wrong once a point is settled, so the explorer can filter them.
 
 **Choices that change the outcome.** By default the question states the choice ("…and its echo targets my Ash Warden"). Some questions are about the choice itself ("Who picks the echo's target?"). A few are answered "it depends": the generator runs the game to the decision, then plays each option from the paused state. The events before the decision give the common key facts; those after it give conditional ones ("If your opponent targets you, you take 3 damage."). Branches with the same outcome are merged, and only one decision branches per question.
 

@@ -11,6 +11,7 @@ import fr.daliush.shardbound.core.scenario.Choice;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Cards;
 import fr.daliush.shardbound.dataset.recipe.Category;
 import fr.daliush.shardbound.dataset.recipe.Recipe;
@@ -77,6 +78,6 @@ public final class AnchorDoomRecipe implements Recipe {
                 ? situation + " and neither player does anything else, what happens to it?"
                 : situation + ", what happens to it?";
         return new Scenario(String.join("/", interaction(), protection.label(), unit, source.id()), start, choices,
-                ASKER, question, AnchorDoomRecipe::answers, protection.contextRules());
+                ASKER, question, new Answer.Events(AnchorDoomRecipe::answers), protection.contextRules());
     }
 }

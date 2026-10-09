@@ -8,6 +8,7 @@ import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Cards;
 import fr.daliush.shardbound.dataset.recipe.Category;
 import fr.daliush.shardbound.dataset.recipe.Recipe;
@@ -87,6 +88,7 @@ public final class AnchorRemovalRecipe implements Recipe {
         String question = protection.situation(anchored.name(), side) + ". If I " + source.phrase("it")
                 + ", what happens to it?";
         return new Scenario(String.join("/", interaction, side.label(), protection.label(), unit, source.id()),
-                start, List.of(source.play(unit)), ASKER, question, this::answers, protection.contextRules());
+                start, List.of(source.play(unit)), ASKER, question, new Answer.Events(this::answers),
+                protection.contextRules());
     }
 }

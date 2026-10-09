@@ -27,8 +27,16 @@ public sealed interface Source {
         return effect().target();
     }
 
-    /** Gives the caster what playing it needs: the spell in hand or the attacker on the board, and the Shards. */
-    ScenarioBuilder prepare(ScenarioBuilder board, PlayerId caster);
+    /** The Shards it costs: the spell's cost, or the attack ability's. */
+    int cost();
+
+    /** Puts it where it is played from: the spell in the caster's hand, or the attacker on their board. */
+    ScenarioBuilder place(ScenarioBuilder board, PlayerId caster);
+
+    /** Places it and gives the caster exactly the Shards it costs. */
+    default ScenarioBuilder prepare(ScenarioBuilder board, PlayerId caster) {
+        return place(board, caster).shards(caster, cost());
+    }
 
     /** The choice that plays it, aimed at the first unit with card {@code unitCard} when its target is chosen. */
     Choice play(String unitCard);
@@ -44,8 +52,13 @@ public sealed interface Source {
         }
 
         @Override
-        public ScenarioBuilder prepare(ScenarioBuilder board, PlayerId caster) {
-            return board.shards(caster, card.cost().orElseThrow()).hand(caster, id());
+        public int cost() {
+            return card.cost().orElseThrow();
+        }
+
+        @Override
+        public ScenarioBuilder place(ScenarioBuilder board, PlayerId caster) {
+            return board.hand(caster, id());
         }
 
         @Override
@@ -67,8 +80,13 @@ public sealed interface Source {
         }
 
         @Override
-        public ScenarioBuilder prepare(ScenarioBuilder board, PlayerId caster) {
-            return board.shards(caster, ability().cost()).unit(caster, unit.id().value());
+        public int cost() {
+            return ability().cost();
+        }
+
+        @Override
+        public ScenarioBuilder place(ScenarioBuilder board, PlayerId caster) {
+            return board.unit(caster, unit.id().value());
         }
 
         @Override

@@ -4,7 +4,6 @@ import static fr.daliush.shardbound.core.scenario.Pick.unit;
 
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
-import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.content.Keyword;
 import fr.daliush.shardbound.core.content.SpellCard;
@@ -14,6 +13,7 @@ import fr.daliush.shardbound.core.scenario.Choices;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Cards;
 import fr.daliush.shardbound.dataset.recipe.Category;
 import fr.daliush.shardbound.dataset.recipe.Recipe;
@@ -71,11 +71,11 @@ public final class AnchorSacrificeRecipe implements Recipe {
         Choices.PlayChoice play = Choices.play(card.id().value()).sacrificing(unit(unit));
         boolean aimed = needsATarget(card);
         String question = protection.situation(anchored.name(), Side.MINE) + ". If I sacrifice it to play "
-                + card.name() + (aimed ? " on my opponent's " + catalog.card(new CardId(Cards.FILLER)).name() : "")
+                + card.name() + (aimed ? " on my opponent's " + Cards.fillerName(catalog) : "")
                 + ", what happens?";
         return new Scenario(String.join("/", interaction(), protection.label(), unit, card.id().value()), start,
-                List.of(aimed ? play.on(unit(Cards.FILLER)) : play), ASKER, question, AnchorSacrificeRecipe::answers,
-                protection.contextRules());
+                List.of(aimed ? play.on(unit(Cards.FILLER)) : play), ASKER, question,
+                new Answer.Events(AnchorSacrificeRecipe::answers), protection.contextRules());
     }
 
     /** A spell whose effect aims at a chosen target; a unit with a sacrifice cost has none yet. */

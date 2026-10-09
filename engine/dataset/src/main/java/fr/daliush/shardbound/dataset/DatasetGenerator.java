@@ -21,8 +21,8 @@ public final class DatasetGenerator {
             System.err.println("Usage: DatasetGenerator <version>");
             System.exit(2);
         }
-        Path contentDir = ContentLoader.find(Path.of(""))
-                .orElseThrow(() -> new IllegalStateException("No content/ folder above " + Path.of("").toAbsolutePath()));
+        Path contentDir = ContentLoader.find(Path.of("")).orElseThrow(
+                () -> new IllegalStateException("No content/ folder above " + Path.of("").toAbsolutePath()));
         Content content = ContentLoader.load(contentDir);
         Path root = contentDir.getParent();
         Rulebook rulebook = Rulebook.load(root.resolve("docs").resolve("rules"));

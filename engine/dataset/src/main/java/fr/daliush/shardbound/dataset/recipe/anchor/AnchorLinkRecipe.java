@@ -1,7 +1,6 @@
 package fr.daliush.shardbound.dataset.recipe.anchor;
 
 import fr.daliush.shardbound.core.content.CardCatalog;
-import fr.daliush.shardbound.core.content.CardId;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.content.Keyword;
 import fr.daliush.shardbound.core.content.UnitCard;
@@ -9,6 +8,7 @@ import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Cards;
 import fr.daliush.shardbound.dataset.recipe.Category;
 import fr.daliush.shardbound.dataset.recipe.Recipe;
@@ -73,7 +73,7 @@ public final class AnchorLinkRecipe implements Recipe {
     private Scenario scenario(CardCatalog catalog, UnitCard anchored, Source source, Aim aim,
             Protection protection) {
         String unit = anchored.id().value();
-        String partner = catalog.card(new CardId(Cards.FILLER)).name();
+        String partner = Cards.fillerName(catalog);
         GameState start = source.prepare(ScenarioBuilder.of(catalog), ASKER)
                 .unit(ASKER.opponent(), unit, setUp -> protection.setUp(setUp, Side.OPPONENTS))
                 .unit(ASKER.opponent(), Cards.FILLER)
@@ -85,7 +85,7 @@ public final class AnchorLinkRecipe implements Recipe {
         List<String> contextRules = Stream.concat(protection.contextRules().stream(), Stream.of("11.5.3")).toList();
         return new Scenario(String.join("/", interaction(), protection.label(), aim.label(), unit, source.id()),
                 start, List.of(source.play(aim == Aim.PARTNER ? Cards.FILLER : unit)), ASKER, question,
-                AnchorLinkRecipe::answers, contextRules);
+                new Answer.Events(AnchorLinkRecipe::answers), contextRules);
     }
 
     private static List<Aim> aims(Source source) {

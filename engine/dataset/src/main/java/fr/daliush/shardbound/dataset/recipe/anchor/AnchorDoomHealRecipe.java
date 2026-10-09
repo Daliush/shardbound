@@ -9,6 +9,7 @@ import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.PlayerId;
+import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Cards;
 import fr.daliush.shardbound.dataset.recipe.Category;
 import fr.daliush.shardbound.dataset.recipe.Recipe;
@@ -67,8 +68,8 @@ public final class AnchorDoomHealRecipe implements Recipe {
         String unit = anchored.id().value();
         return new Scenario(String.join("/", interaction(), "not-healed", unit), doomed(catalog, unit).build(),
                 List.of(endTurn()), ASKER,
-                situation(anchored) + " If I end my turn without healing it, what happens to it?", answers(unit),
-                CONTEXT_RULES);
+                situation(anchored) + " If I end my turn without healing it, what happens to it?",
+                new Answer.Events(answers(unit)), CONTEXT_RULES);
     }
 
     private Scenario healed(CardCatalog catalog, UnitCard anchored, Source heal) {
@@ -76,7 +77,7 @@ public final class AnchorDoomHealRecipe implements Recipe {
         return new Scenario(String.join("/", interaction(), "healed", unit, heal.id()),
                 heal.prepare(doomed(catalog, unit), ASKER).build(), List.of(heal.play(unit), endTurn()), ASKER,
                 situation(anchored) + " If I " + heal.phrase("it") + " and then end my turn, what happens to it?",
-                answers(unit), CONTEXT_RULES);
+                new Answer.Events(answers(unit)), CONTEXT_RULES);
     }
 
     /** Doomed while protected, then its protection ended at the start of the asker's turn (5.2.1). */

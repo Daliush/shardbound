@@ -5,7 +5,10 @@ import fr.daliush.shardbound.dataset.recipe.Side;
 import java.util.List;
 import java.util.Locale;
 
-/** Whether an Anchor unit is still protected (11.3.1): how to set it up, how a question says it, which rules explain it. */
+/**
+ * Whether an Anchor unit is still protected (11.3.1): how to set it up, how a question says it, and which rules explain
+ * it.
+ */
 enum Protection {
     PROTECTED(List.of("11.3.1")),
     EXPIRED(List.of("11.3.1", "11.3.6"));
