@@ -500,12 +500,13 @@ The category is a tag used to balance the dataset and to report scores per categ
 2. builds one board per combination of cards and variants (protected or not, who attacks…), from the scenario service's default board plus only what the interaction needs;
 3. names the moves, and the choices asked during resolution (an echo's target);
 4. says who asks the question: the question only names what that player sees in their `PlayerView`, and the key facts are written from their point of view;
-5. says which events count.
+5. says which events count;
+6. names the **context rules**: the rules that explain the situation rather than what happens, which no event carries. A unit is protected because it arrived on its controller's last turn (11.3.1); its protection is over (11.3.6). A correct answer cites them too.
 
 The engine plays each scenario, and the events the recipe selected give the answer key:
 
 - **key facts**: the sentences `EventDescriber` writes for those events ("Root Sentinel is anchored: it is not destroyed."), or `ActionDescriber` for legal actions ("You can play Spark Dart.");
-- **essential rules**: the rules those events carry. The rest of the trace (`CardPlayed[6.3]`, `TurnStarted`…) is incidental.
+- **essential rules**: the rules those events carry (`rules`), plus the recipe's context rules (`context_rules`, kept in their own field since a recipe wrote them, and checked against the rulebook). The rest of the trace (`CardPlayed[6.3]`, `TurnStarted`…) is incidental.
 
 ```json
 {
@@ -515,12 +516,13 @@ The engine plays each scenario, and the events the recipe selected give the answ
   "question": "My opponent just played Root Sentinel. If I cast Crystal Rupture on it, what happens?",
   "key_facts": ["Root Sentinel is anchored: it is not destroyed."],
   "rules": ["11.3.2", "11.3.3"],
-  "trace": ["CardPlayed[6.3]", "AnchorPrevented[11.3.2, 11.3.3]", "..."],
+  "context_rules": ["11.3.1"],
+  "trace": ["CardPlayed[6.3]", "AnchorPrevented[11.3.2, 11.3.3]", "SpellResolved[6.3, 3.5]"],
   "split": "test"
 }
 ```
 
-*(proposed)* The engine only lists legal actions, so it cannot say why an action is illegal. For "why can't I…" questions, the recipe names the rule and the engine confirms the action is absent. Those answer keys are tagged `"source": "recipe"`, like the abstentions drawn from the open points (which become wrong once a point is settled), so the explorer can filter them.
+*(proposed)* The engine only lists legal actions, so it cannot say why an action is illegal. For "why can't I…" questions, the rule is a context rule of the recipe, and the engine confirms the action is absent. The abstentions drawn from the open points are tagged `"source": "recipe"`, since they become wrong once a point is settled, so the explorer can filter them.
 
 **Choices that change the outcome.** By default the question states the choice ("…and its echo targets my Ash Warden"). Some questions are about the choice itself ("Who picks the echo's target?"). A few are answered "it depends": the generator runs the game to the decision, then plays each option from the paused state. The events before the decision give the common key facts; those after it give conditional ones ("If your opponent targets you, you take 3 damage."). Branches with the same outcome are merged, and only one decision branches per question.
 
@@ -573,8 +575,8 @@ The whole grid is computed once and stored, retrieval and generation alike, for 
 | Part of the Arbiter's answer | How it is checked |
 |---|---|
 | Outcome | **Key facts**: for each key fact, an extractor answers a closed question: does `answer` state it, contradict it, or not mention it? A conditional fact counts only if its condition is stated too |
-| Rules cited | **Automatic**: recall on the essential rules. A cited rule found elsewhere in the trace is tolerated; a rule absent from the trace is an error |
-| Step order | **Automatic**: the order of `citations` against the trace |
+| Rules cited | **Automatic**: recall on the essential rules, the key events' rules and the context rules. A cited rule found elsewhere in the trace is tolerated; a rule that is neither is an error |
+| Step order | **Automatic**: the order of the key events' rules in `citations` against the trace |
 | Abstention | **Automatic**: `answerable` against the answer key |
 | Format compliance | **Automatic**: schema validation |
 | Tone, clarity | **Judge** (LLM-as-judge) |
@@ -802,6 +804,7 @@ shardbound/
 │   ├── pom.xml
 │   ├── core/                   # the domain, no Spring: rules, legal actions, events + rule trace, views, scenarios, determinization, bots
 │   ├── api/                    # Spring Boot: REST (cards, decks, games) + WebSocket game server; later MCP and gRPC
+│   ├── dataset/                # evaluation scenarios: recipes played by core, exported with their answer keys (§6.1)
 │   └── (repository/)           # later, with Postgres
 ├── ai/                         # Python (uv)
 │   ├── chat/                   # orchestrator, coach, Arbiter, router, MCP client
@@ -820,7 +823,7 @@ shardbound/
 │   ├── patches/
 │   └── dev-workflow.md
 ├── evals/
-│   ├── datasets/
+│   ├── datasets/               # <version>/scenarios.jsonl from engine/dataset, then the worded questions
 │   ├── harness/
 │   └── reports/                # precomputed, published results
 └── .github/workflows/

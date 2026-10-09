@@ -25,6 +25,7 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 |---|---|---|
 | `engine/core` | Java 21, no Spring (Jackson only) | Rules, legal actions, events with rule trace, player views, scenarios, determinization, random / greedy (later MCTS) bots |
 | `engine/api` | Spring Boot | REST for resources (cards, decks, games), WebSocket protocol for live games; later MCP and gRPC |
+| `engine/dataset` | Java 21, on `engine/core` | Evaluation scenarios: one recipe per interaction, played by the engine, exported as JSONL with their answer keys |
 | `ai/` | Python (uv, FastAPI) | Chat orchestrator, RAG, LoRA, LLM and Jev bots, eval harness |
 | `frontend/` | Angular | Test UI first, polished UI later, results pages and answer comparator |
 | `proto/` | Protobuf / gRPC | Contract between the engine and the Python players |
