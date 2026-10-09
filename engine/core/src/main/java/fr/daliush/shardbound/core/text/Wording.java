@@ -12,19 +12,25 @@ final class Wording {
 
     private final CardCatalog catalog;
     private final PlayerId viewer;
+    private final boolean instanceIds;
 
     Wording(CardCatalog catalog, PlayerId viewer) {
-        this.catalog = catalog;
-        this.viewer = viewer;
+        this(catalog, viewer, true);
     }
 
-    /** "Sprout #61". */
+    Wording(CardCatalog catalog, PlayerId viewer, boolean instanceIds) {
+        this.catalog = catalog;
+        this.viewer = viewer;
+        this.instanceIds = instanceIds;
+    }
+
+    /** "Sprout #61", or "Sprout" without instance ids. */
     String card(CardInstance card) {
         return card(card.card(), card.id());
     }
 
     String card(CardId card, InstanceId id) {
-        return name(card) + " #" + id.value();
+        return instanceIds ? name(card) + " #" + id.value() : name(card);
     }
 
     String name(CardId card) {

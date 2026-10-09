@@ -55,6 +55,17 @@ class DescribersTest {
     }
 
     @Test
+    void namesCardsWithoutInstanceIdsForTextReadOutsideAGame() {
+        ScenarioResult result = run(scenario().shards(P1, 5).hand(P1, "neutral.crystal-rupture")
+                        .unit(P2, "root.root-sentinel", unit -> unit.anchorProtected()).build(),
+                play("neutral.crystal-rupture").on(unit("root.root-sentinel")));
+        EventDescriber withoutIds = EventDescriber.withoutInstanceIds(TestCards.CATALOG);
+
+        assertThat(result.events()).extracting(event -> withoutIds.describe(event, P1))
+                .contains("Root Sentinel is anchored: it is not destroyed.");
+    }
+
+    @Test
     void hidesTheCardAnOpponentDraws() {
         GameEvent.CardDrawn drawn = new GameEvent.CardDrawn(P2, Optional.empty(), List.of("5.2.3"));
 

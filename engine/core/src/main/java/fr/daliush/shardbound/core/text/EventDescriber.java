@@ -15,13 +15,24 @@ import java.util.OptionalInt;
 public final class EventDescriber {
 
     private final CardCatalog catalog;
+    private final boolean instanceIds;
 
     public EventDescriber(CardCatalog catalog) {
+        this(catalog, true);
+    }
+
+    private EventDescriber(CardCatalog catalog, boolean instanceIds) {
         this.catalog = catalog;
+        this.instanceIds = instanceIds;
+    }
+
+    /** Names cards without their instance id, "Sprout takes 3 damage.", for sentences read outside a game. */
+    public static EventDescriber withoutInstanceIds(CardCatalog catalog) {
+        return new EventDescriber(catalog, false);
     }
 
     public String describe(GameEvent event, PlayerId viewer) {
-        Wording w = new Wording(catalog, viewer);
+        Wording w = new Wording(catalog, viewer, instanceIds);
         return switch (event) {
             case GameEvent.GameStarted e -> w.subject(e.firstPlayer()) + " " + w.verb(e.firstPlayer(), "play", "plays")
                     + " first.";
