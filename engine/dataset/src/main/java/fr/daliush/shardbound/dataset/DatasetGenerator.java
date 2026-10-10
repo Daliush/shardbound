@@ -6,8 +6,8 @@ import fr.daliush.shardbound.dataset.recipe.Recipes;
 import java.nio.file.Path;
 
 /**
- * Writes {@code scenarios.jsonl}, {@code cards.jsonl} and {@code decks.jsonl} into {@code evals/datasets/<version>/}
- * from the repository's content. From {@code engine/}:
+ * Writes every question of a dataset version into {@code evals/datasets/<version>/}: {@code scenarios.jsonl},
+ * {@code cards.jsonl}, {@code decks.jsonl}, {@code rules.jsonl} and {@code unanswerable.jsonl}. From {@code engine/}:
  * {@code ./mvnw -q -pl dataset -am compile exec:java -Dexec.args=<version>}.
  */
 public final class DatasetGenerator {
@@ -30,7 +30,10 @@ public final class DatasetGenerator {
         writer.write(dir.resolve("scenarios.jsonl"), dataset.scenarios());
         writer.write(dir.resolve("cards.jsonl"), dataset.cards());
         writer.write(dir.resolve("decks.jsonl"), dataset.decks());
-        System.out.println(dataset.scenarios().size() + " scenarios, " + dataset.cards().size()
-                + " factual questions and " + dataset.decks().size() + " deck questions written to " + dir);
+        writer.write(dir.resolve("rules.jsonl"), dataset.rules());
+        writer.write(dir.resolve("unanswerable.jsonl"), dataset.unanswerable());
+        System.out.println(dataset.scenarios().size() + " scenarios, " + dataset.cards().size() + " factual, "
+                + dataset.decks().size() + " deck, " + dataset.rules().size() + " simple-rule and "
+                + dataset.unanswerable().size() + " unanswerable questions written to " + dir);
     }
 }

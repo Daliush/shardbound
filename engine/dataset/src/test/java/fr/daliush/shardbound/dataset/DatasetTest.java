@@ -14,12 +14,14 @@ import org.junit.jupiter.api.Test;
 class DatasetTest {
 
     @Test
-    void buildsTheThreeFilesOfQuestionsTheEngineAndTheCardDataAnswer() {
+    void buildsEveryFileOfAVersion() {
         Dataset dataset = Dataset.build(CONTENT, RULEBOOK, Recipes.all());
 
         assertThat(dataset.scenarios()).isNotEmpty();
         assertThat(dataset.cards()).hasSizeGreaterThan(150);
         assertThat(dataset.decks()).hasSizeGreaterThan(40);
+        assertThat(dataset.rules()).hasSizeGreaterThan(100);
+        assertThat(dataset.unanswerable()).hasSizeGreaterThan(90);
     }
 
     @Test
@@ -28,7 +30,8 @@ class DatasetTest {
         DeckQuestion deck = new DeckQuestion("same", "deck-building", "legal", "?", "Faction: Ember",
                 List.of(), List.of("The deck is legal."), List.of("2.1"));
 
-        assertThatThrownBy(() -> new Dataset(List.of(), List.of(card), List.of(deck)).check(RULEBOOK))
+        assertThatThrownBy(() -> new Dataset(List.of(), List.of(card), List.of(deck), List.of(), List.of())
+                .check(RULEBOOK))
                 .hasMessageContaining("Two questions have the id same");
     }
 
@@ -37,7 +40,8 @@ class DatasetTest {
         DeckQuestion deck = new DeckQuestion("deck", "deck-building", "legal", "?", "Faction: Ember",
                 List.of(), List.of("The deck is legal."), List.of("2.9"));
 
-        assertThatThrownBy(() -> new Dataset(List.of(), List.of(), List.of(deck)).check(RULEBOOK))
+        assertThatThrownBy(() -> new Dataset(List.of(), List.of(), List.of(deck), List.of(), List.of())
+                .check(RULEBOOK))
                 .hasMessageContaining("rule 2.9 is not in the rulebook");
     }
 }
