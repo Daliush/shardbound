@@ -2,7 +2,8 @@
 
 `engine/dataset` writes every question of a version with its answer key: `scenarios.jsonl`, `cards.jsonl`,
 `decks.jsonl`, `rules.jsonl` and `unanswerable.jsonl`. This rewords the questions the way a player would ask them,
-splits them into dev and test, and writes `dataset.jsonl` and `manifest.json` next to them.
+splits them into dev and test, and writes the two final datasets, `dataset-dev.jsonl` and `dataset-test.jsonl`, with
+`manifest.json` next to them.
 
 Nothing is worded or drawn twice. A question whose template has not changed since the base version (the previous
 one) keeps its wording, and a group keeps its side: only new questions go to the model, and only new groups are drawn.
@@ -22,6 +23,7 @@ from dataset.llm import LlmClient
 from dataset.wording import word
 
 ENGINE_FILES = ("scenarios.jsonl", "cards.jsonl", "decks.jsonl", "rules.jsonl", "unanswerable.jsonl")
+DATASETS = {"dev": "dataset-dev.jsonl", "test": "dataset-test.jsonl"}
 
 
 def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None, workers: int = 8,
@@ -31,10 +33,9 @@ def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None,
     if missing:
         raise SystemExit(f"Missing {', '.join(missing)} in {folder}: run the engine's generator first "
                          f"(engine/: ./mvnw -q -pl dataset -am compile exec:java -Dexec.args={folder.name}).")
-    if (folder / "dataset.jsonl").exists() and not overwrite:
-        raise SystemExit(f"{folder / 'dataset.jsonl'} exists: a dataset version is frozen. Pass --overwrite to "
-                         "build it again.")
-    previous = {entry["id"]: entry for entry in jsonl.read(base / "dataset.jsonl")} if base else {}
+    if is_built(folder) and not overwrite:
+        raise SystemExit(f"{folder} is built: a dataset version is frozen. Pass --overwrite to build it again.")
+    previous = {entry["id"]: entry for entry in read(base)} if base else {}
     entries = questions(folder)
     failures: list[dict] = []
     reused = word_all(entries, previous, content_module.load(root), client, workers, failures)
@@ -42,11 +43,23 @@ def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None,
     for entry in entries:
         entry["split"] = sides[(entry["category"], entry["group"])]
     entries = [_ordered(entry) for entry in entries]
-    jsonl.write(folder / "dataset.jsonl", entries)
+    for side, name in DATASETS.items():
+        jsonl.write(folder / name, [entry for entry in entries if entry["split"] == side])
     manifest = _manifest(root, folder, base, client, entries, reused, failures)
     (folder / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
                                           encoding="utf-8", newline="\n")
     return manifest
+
+
+def is_built(folder: Path) -> bool:
+    return any((folder / name).exists() for name in DATASETS.values())
+
+
+def read(folder: Path) -> list[dict]:
+    """Both final datasets of a built version, dev then test."""
+    if not is_built(folder):
+        raise SystemExit(f"{folder} has no dataset-dev.jsonl nor dataset-test.jsonl: it is not built.")
+    return [entry for name in DATASETS.values() for entry in jsonl.read(folder / name)]
 
 
 def questions(folder: Path) -> list[dict]:

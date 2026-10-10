@@ -6,12 +6,13 @@ from collections import Counter
 import pytest
 
 from dataset import jsonl, split
+from dataset.build import DATASETS, is_built, read
 from dataset.paths import repo_root
 
 
 def _versions():
     datasets = repo_root() / "evals" / "datasets"
-    return sorted(folder for folder in datasets.glob("*") if (folder / "dataset.jsonl").exists()
+    return sorted(folder for folder in datasets.glob("*") if is_built(folder)
                   and folder.name != "preview") if datasets.exists() else []
 
 
@@ -23,7 +24,7 @@ pytestmark = pytest.mark.skipif(not VERSIONS, reason="no dataset version is comm
 def committed(request):
     folder = request.param
     sample = folder / "hand-check.jsonl"
-    return (jsonl.read(folder / "dataset.jsonl"), jsonl.read(sample) if sample.exists() else None,
+    return (read(folder), jsonl.read(sample) if sample.exists() else None,
             json.loads((folder / "manifest.json").read_text(encoding="utf-8")))
 
 
@@ -32,6 +33,12 @@ def test_no_group_sits_on_both_sides_of_the_split(committed):
 
     assert split.leaks(entries) == []
     assert {entry["split"] for entry in entries} == {"dev", "test"}
+
+
+@pytest.mark.parametrize("folder", VERSIONS, ids=lambda folder: folder.name)
+def test_each_final_dataset_holds_only_its_side(folder):
+    for side, name in DATASETS.items():
+        assert {entry["split"] for entry in jsonl.read(folder / name)} == {side}
 
 
 def test_every_category_has_dev_and_test_groups(committed):

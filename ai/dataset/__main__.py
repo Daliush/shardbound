@@ -45,7 +45,7 @@ def main() -> None:
         raise SystemExit(f"{error}\nThe responses received so far are cached; fix the setting and run again.")
     counts = manifest["counts"]
     wording = manifest["wording"]
-    print(f"{counts['total']} questions written to evals/datasets/{args.version}/ "
+    print(f"{counts['total']} questions written to evals/datasets/{args.version}/dataset-{{dev,test}}.jsonl "
           f"({counts['by_split'].get('dev', 0)} dev, {counts['by_split'].get('test', 0)} test): "
           f"{wording['reused']} wordings kept from the base, {wording['reworded']} reworded, "
           f"{wording['template_kept']} kept their template.")
