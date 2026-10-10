@@ -18,3 +18,6 @@ __pycache__/
 
 # Java
 target/
+
+# Local previews of the evaluation dataset; versioned datasets are committed
+evals/datasets/preview/
