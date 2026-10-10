@@ -12,13 +12,16 @@ DEV_SHARE = 0.10
 SEED = 1
 
 
-def assign(entries: list[dict], seed: int, base: dict[tuple[str, str], str] | None = None) -> dict[tuple[str, str], str]:
+Group = tuple[str, str]
+
+
+def assign(entries: list[dict], seed: int, base: dict[Group, str] | None = None) -> dict[Group, str]:
     """(category, group) → "dev" or "test". A category with 2 groups or more has at least one in dev."""
     base = base or {}
     groups: dict[str, set[str]] = defaultdict(set)
     for entry in entries:
         groups[entry["category"]].add(entry["group"])
-    sides: dict[tuple[str, str], str] = {}
+    sides: dict[Group, str] = {}
     for category in sorted(groups):
         names = sorted(groups[category])
         new = [name for name in names if (category, name) not in base]
@@ -31,14 +34,14 @@ def assign(entries: list[dict], seed: int, base: dict[tuple[str, str], str] | No
     return sides
 
 
-def sides_of(entries: list[dict]) -> dict[tuple[str, str], str]:
+def sides_of(entries: list[dict]) -> dict[Group, str]:
     """The side of each group of a built version, to carry it into the next one."""
     return {(entry["category"], entry["group"]): entry["split"] for entry in entries}
 
 
-def leaks(entries: list[dict]) -> list[tuple[str, str]]:
+def leaks(entries: list[dict]) -> list[Group]:
     """The groups found on both sides of the split: there must be none."""
-    sides: dict[tuple[str, str], set[str]] = defaultdict(set)
+    sides: dict[Group, set[str]] = defaultdict(set)
     for entry in entries:
         sides[(entry["category"], entry["group"])].add(entry["split"])
     return sorted(group for group, found in sides.items() if len(found) > 1)

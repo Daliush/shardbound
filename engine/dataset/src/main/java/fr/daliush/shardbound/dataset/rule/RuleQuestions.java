@@ -26,7 +26,8 @@ public final class RuleQuestions {
     public List<RuleQuestion> checked(List<RuleQuestion> questions) {
         for (RuleQuestion question : questions) {
             if (!rulebook.has(question.rule())) {
-                throw new IllegalStateException(question.id() + ": rule " + question.rule() + " is not in the rulebook");
+                throw new IllegalStateException(question.id() + ": rule " + question.rule()
+                        + " is not in the rulebook");
             }
             if (!rulebook.text(question.rule()).orElseThrow().equals(question.ruleText())) {
                 throw new IllegalStateException(question.id() + ": rule " + question.rule() + " changed since its "

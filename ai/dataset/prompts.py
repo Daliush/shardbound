@@ -1,4 +1,4 @@
-"""Every prompt the dataset sends to the model: it rewords a question, or checks a rewording; it never sees an answer."""
+"""Every prompt the dataset sends to the model: it rewords a question or checks a rewording, never sees an answer."""
 
 import hashlib
 

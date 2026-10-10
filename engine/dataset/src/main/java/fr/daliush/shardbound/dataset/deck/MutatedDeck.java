@@ -15,7 +15,7 @@ record MutatedDeck(String id, Mutation mutation, Deck deck) {
         return new MutatedDeck(base(deck, Mutation.LEGAL), Mutation.LEGAL, deck);
     }
 
-    /** The starter deck with one copy more of each card {@code added} and one copy less of each card {@code removed}. */
+    /** The starter deck with one copy more of each card {@code added}, one copy less of each card {@code removed}. */
     static MutatedDeck changed(Deck starter, Mutation mutation, List<CardId> added, List<CardId> removed) {
         List<DeckEntry> entries = new ArrayList<>(starter.cards());
         removed.forEach(card -> change(entries, card, -1));
