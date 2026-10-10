@@ -1,13 +1,13 @@
 # Evaluation questions
 
-The Arbiter's questions that the engine and the card data answer, with their answer keys, computed instead of written by hand (design doc §6.1): the interaction and multi-step scenarios, and the factual questions about cards. This module builds them and exports them; the other categories, the questions' final wording and the train / dev / test split are added in Python.
+The Arbiter's questions that the engine and the card data answer, with their answer keys, computed instead of written by hand (design doc §6.1): the interaction and multi-step scenarios, the factual questions about cards, and the deck-building questions. This module builds them and exports them; the other categories, the questions' final wording and the train / dev / test split are added in Python.
 
 ```bash
-# from engine/: writes scenarios.jsonl and cards.jsonl into evals/datasets/v1/
+# from engine/: writes scenarios.jsonl, cards.jsonl and decks.jsonl into evals/datasets/v1/
 ./mvnw -q -pl dataset -am compile exec:java -Dexec.args=v1
 ```
 
-`Dataset` builds every file at once, so it also checks that no two questions share an id, across files.
+`Dataset` builds every file at once, so it also checks that no two questions share an id, across files, and that every rule a deck question cites is in the rulebook.
 
 ## Scenarios
 
@@ -82,4 +82,16 @@ A factual question's group is its card, which is also its essential citation: th
 
 ```json
 {"id":"card/ember.ash-warden/attack-1","category":"factual","card":"ember.ash-warden","question":"What does Ash Warden's Cinder Bite do?","key_facts":["Ash Warden's Cinder Bite costs 2 Shards.","Ash Warden's Cinder Bite: \"Deal 4 damage to the target.\"","Ash Warden's Cinder Bite has Echo 50."]}
+```
+
+## Deck-building questions
+
+`deck.DeckQuestions` asks "is this deck legal?" about each starter deck and about mutations of it, and the engine's `DeckValidator` answers: "The deck is legal.", or "The deck is not legal." and one key fact per problem it finds (`DeckProblem`), with that problem's rule as the essential rule. A legal deck passes every rule of section 2, so its essential rules are 2.1 to 2.4.
+
+Each mutation breaks one rule, and is the question's group: `legal` (the deck as it is, or one card swapped for another that fits), `card-count` (a 31st card, or a 29-card deck, 2.1), `faction` (a card of another faction, 2.2), `copies` (a third copy, 2.3) and `token` (2.4, only in the deck of the token's faction, since a token of another faction would break 2.2 too). The cards a mutation moves are drawn with a fixed seed (`Dataset.DECK_SEED`). A mutation that breaks another rule than its own stops the build.
+
+The question shows the whole deck in `decklist`, one line per card sorted by name, so no line gives the change away. The decklist is written here and never reworded: the Python wording only paraphrases `question`, then appends the decklist. One line of `decks.jsonl`:
+
+```json
+{"id":"deck/ember-starter/copies/+ember.spark-dart/-ember.ashborn-drake","category":"deck-building","mutation":"copies","question":"Can I play this deck?","decklist":"Faction: Ember\n2× Ash Warden\n1× Ashborn Drake\n…\n3× Spark Dart","cards":["ember.ash-warden","…"],"key_facts":["The deck is not legal.","The deck has 3 copies of Spark Dart, but a deck can contain at most 2 copies of a card."],"rules":["2.3"]}
 ```

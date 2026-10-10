@@ -6,7 +6,7 @@ import fr.daliush.shardbound.dataset.recipe.Recipes;
 import java.nio.file.Path;
 
 /**
- * Writes {@code scenarios.jsonl} and {@code cards.jsonl} into {@code evals/datasets/<version>/}
+ * Writes {@code scenarios.jsonl}, {@code cards.jsonl} and {@code decks.jsonl} into {@code evals/datasets/<version>/}
  * from the repository's content. From {@code engine/}:
  * {@code ./mvnw -q -pl dataset -am compile exec:java -Dexec.args=<version>}.
  */
@@ -29,7 +29,8 @@ public final class DatasetGenerator {
         DatasetWriter writer = new DatasetWriter();
         writer.write(dir.resolve("scenarios.jsonl"), dataset.scenarios());
         writer.write(dir.resolve("cards.jsonl"), dataset.cards());
-        System.out.println(dataset.scenarios().size() + " scenarios and " + dataset.cards().size()
-                + " factual questions written to " + dir);
+        writer.write(dir.resolve("decks.jsonl"), dataset.decks());
+        System.out.println(dataset.scenarios().size() + " scenarios, " + dataset.cards().size()
+                + " factual questions and " + dataset.decks().size() + " deck questions written to " + dir);
     }
 }
