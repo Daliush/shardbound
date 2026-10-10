@@ -15,6 +15,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - `content/decks/`: one JSON file per deck, plus the deck schema (`content/decks/README.md`).
 - `content/tests/`: tests for all the content above.
 - `engine/`: the Java engine, a Maven multi-module build. `engine/core` is the rules engine (no Spring: content, state, rules, views, events, determinization, bots, scenarios; its README lists the entry points and documents the scenario service); `engine/api` is the Spring Boot game server (REST, WebSocket protocol, game sessions); `engine/dataset` builds the Arbiter's evaluation scenarios from recipes and exports them with their answer keys (its README says how to add a recipe).
+- `evals/datasets/<version>/`: the Arbiter's evaluation data, versioned: `scenarios.jsonl` from `engine/dataset`, then the worded and split dataset. `evals/datasets/preview/` is a local output, ignored by git.
 - `frontend/`: the Angular test client (`frontend/README.md`).
 - `specs/`: implementation specs. `specs/phase-2-engine.md` covers the engine, the game server and the test frontend; `specs/phase-2-examples.md` shows its payloads on a real situation.
 - `.claude/skills/`: project knowledge for Claude Code.
@@ -62,6 +63,7 @@ bad card can't reach the engine or the RAG index.
 - Game and product decisions belong to the maintainer. Propose with a recommendation, and number your questions so they can be answered point by point. If a gap must be filled, mark it *(proposed)*.
 - Rule IDs are stable: never renumber them.
 - Keep the docs in sync: a decision that changes the design updates `docs/design.md` (and its changelog); a rule change also updates `docs/rules/12-open-points.md`.
+- Evaluation answer keys come from the engine or the card data, never from a hand or an LLM. An LLM may word a question, never its answer (`docs/design.md` §6.1). A test set is never used to tune anything.
 
 ## Status
 
@@ -72,4 +74,8 @@ Phase 2 of the roadmap in `docs/design.md` §11 is done, built in the five slice
 - Slice 3 (effects and card text) is done: every effect of rulebook section 8 but Link (Sacrifice as a cost and an effect, Modify, Discard, Return to hand, Freeze, Gain Shards, Recall, stat and cost auras); `CardTextRenderer` writes each card's text from its data, `GET /api/cards` returns it and the client shows it.
 - Slice 4 (keywords) is done: Echo, Fracture, Anchor with doom, Overcharge and Link, so every card of the catalog is playable; `RulebookCoverageTest` fails when a rule of sections 1 to 11 has no test. A Tide starter deck joins Ember's and Root's.
 - Slice 5 (bots) is done: views carry the resolution in progress; the `Determinizer` builds a whole game from one player's view alone; `GreedyBot` plays the best board one action ahead and beats `RandomBot` in about 95% of games; `greedy` is offered by the server and the client; the scenario service is a documented public API (`engine/core/README.md`).
-- Phase 3, the RAG Arbiter, is designed (`docs/design.md` §5.2 and §6, v2.14) and in progress: `engine/dataset` generates the evaluation scenarios from recipes: 25 interactions, 177 scenarios, each answer key reviewed against the rulebook; eight cards were added for it (47 cards + 1 token). Next: the dataset's wording in Python (LLM paraphrase and simple-rule questions), then the RAG and the eval harness.
+Phase 3, the RAG Arbiter, is designed (`docs/design.md` §5.2 and §6) and in progress:
+
+- The evaluation scenarios are done: `engine/dataset` builds them from recipes, 25 interactions and 177 scenarios, each answer key reviewed against the rulebook; eight cards were added for them (47 cards + 1 token).
+- Next: the dataset v1. The other question categories (factual, simple rule, unanswerable, deck building), then a Python pipeline that words every question with an LLM, checks the wording, splits by interaction and writes `evals/datasets/v1/`.
+- Then: the RAG pipeline (`docs/design.md` §5.2), then the eval harness (§6.3) and the benchmark explorer (§8.2).
