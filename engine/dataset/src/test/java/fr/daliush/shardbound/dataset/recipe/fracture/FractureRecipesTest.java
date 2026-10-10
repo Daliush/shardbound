@@ -38,6 +38,12 @@ class FractureRecipesTest {
     }
 
     @Test
+    void theAskerCannotKnowTheCardTheyWillDrawEither() {
+        assertThat(entry(steps, "fracture+steps/step-2/tide.spring-tide").keyFacts())
+                .containsExactly("You draw a card.", "Spring Tide returns to your hand, step 3.");
+    }
+
+    @Test
     void twoStepsCannotBePlayedInTheSameTurn() {
         DatasetEntry thisTurn = entry(steps, "fracture+steps/next-step-this-turn/tide.moonpull");
         DatasetEntry nextTurn = entry(steps, "fracture+steps/next-step-next-turn/tide.moonpull");

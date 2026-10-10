@@ -32,15 +32,22 @@ public final class AnswerKeys {
         if (keyEvents.isEmpty()) {
             throw new IllegalStateException(scenario.id() + ": no event answers the question in " + result.trace());
         }
-        // The asker only knows what they would see in a game: another player's draw names no card (3.3).
         List<String> keyFacts = Stream.concat(
-                        keyEvents.stream().map(event -> describer.describe(event.seenBy(scenario.asker()),
+                        keyEvents.stream().map(event -> describer.describe(asKnown(event, scenario),
                                 scenario.asker())),
                         events.finalState().apply(result.state()).stream())
                 .distinct().toList();
         return new AnswerKey(keyFacts,
                 keyEvents.stream().flatMap(event -> event.rules().stream()).distinct().toList(),
                 result.trace());
+    }
+
+    /**
+     * The event as the asker can state it before it happens: another player's draw names no card (3.3), and neither
+     * does their own, since nobody knows the order of a deck (3.2).
+     */
+    private static GameEvent asKnown(GameEvent event, Scenario scenario) {
+        return event instanceof GameEvent.CardDrawn ? event.redacted() : event.seenBy(scenario.asker());
     }
 
     /** Whether the move is one of the actions of the decision the game waits for at the end. */
