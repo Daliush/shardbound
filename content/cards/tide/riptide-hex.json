@@ -1,0 +1,8 @@
+{
+  "id": "tide.riptide-hex",
+  "name": "Riptide Hex",
+  "faction": "tide",
+  "type": "spell",
+  "cost": 2,
+  "effects": [{ "effect": "modify", "attack_damage": -1, "defense": -3, "duration": "end_of_turn", "target": "enemy_unit" }]
+}

@@ -85,7 +85,7 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 
 | Package | Contents |
 |---|---|
-| `content` | Card and deck model (sealed `CardDefinition`, `Effect`, `TargetSpec`…), `TextTemplates` (the wording of card texts), `ContentLoader` (strict), `DeckValidator`, `CardCatalog`. `content.json` holds the parsers. |
+| `content` | Card and deck model (sealed `CardDefinition`, `Effect`, `TargetSpec`…), `TextTemplates` (the wording of card texts), `ContentLoader` (strict), `DeckValidator` (with `DeckProblem`, one record per broken rule), `CardCatalog`. `content.json` holds the parsers. |
 | `state` | `GameState`, `PlayerState`, `Unit`, `Relic`, `HandCard`, `CardInstance`, `InstanceId`, `Shards`, `GameResult` |
 | `action` / `decision` | `Action` (sealed), `TargetRef`, `Decision`, `DecisionKind` |
 | `event` | `GameEvent` (sealed, all events nested, grouped by theme), `Visibility`, `Redaction`, `EventTarget` |
@@ -94,7 +94,7 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 | `rules` | `GameEngine` (the facade), `GameSetup`, `Transition`, then one sub-package per rulebook area: `game` (working copy, loop, state check), `setup`, `turn`, `play`, `combat`, `effect`, `aura` (continuous abilities, 8.14), `trigger`, `board` |
 | `scenario` | `ScenarioBuilder`, `ScenarioRunner`, `ScenarioResult` (with `trace()`), `Choices`, `Pick`; documented in `engine/core/README.md` |
 | `determinization` | `Determinizer`, the only public class: a whole game from one player's view; one package-private class per rule (`KnownHand`, `SeenCards`, `InstanceIds`, `OwnDeck`, `RemainingCopies`, `DerivedFields`, `Sides`) |
-| `text` | `EventDescriber` (event → English sentence), `ActionDescriber` (action → button label), `DecisionDescriber` (decision → prompt; it reads the paused step), `CardTextRenderer` (card → its rules text, line by line, each line with its kind) |
+| `text` | `EventDescriber` (event → English sentence; `withoutInstanceIds` for text read outside a game, such as the dataset's key facts), `ActionDescriber` (action → button label), `DecisionDescriber` (decision → prompt; it reads the paused step), `CardTextRenderer` (card → its rules text, line by line, each line with its kind) |
 | `bot` | `Player`; `Bot`, a player whose only memory is its generator (`rngState()`); one sub-package per bot, its entry point the only public class: `random.RandomBot`, `greedy.GreedyBot` (with `ActionOutcome`, `Evaluator`, `OpeningHand`) |
 | `json` | `GameJson`: a state, an event log, or any record made of engine types (a server's stored game) to JSON and back |
 | `random` | `SplitMix64`, the only randomness the engine uses |

@@ -182,6 +182,22 @@ class EffectRulesTest {
     }
 
     @Test
+    @DisplayName("8.4 — a heal reports what it restores: nothing for a unit at its max, part of it near the cap")
+    void healReportsWhatItRestores() {
+        ScenarioResult onUnits = run(scenario().shards(P1, 1)
+                        .unit(P1, "root.mossmender")
+                        .unit(P1, "neutral.shardling", unit -> unit.defense(2)).build(),
+                attack("root.mossmender").withAttack(1));
+        ScenarioResult onPlayer = run(scenario().hp(P1, 48).shards(P1, 2).hand(P1, "root.renewing-sap").build(),
+                play("root.renewing-sap"));
+
+        assertThat(onUnits.events(GameEvent.UnitHealed.class)).extracting(GameEvent.UnitHealed::amount)
+                .as("Mossmender at its max, Shardling one below").containsExactly(0, 1);
+        assertThat(onPlayer.events(GameEvent.PlayerHealed.class)).extracting(GameEvent.PlayerHealed::amount)
+                .as("4 HP from 48, capped at 50").containsExactly(2);
+    }
+
+    @Test
     @DisplayName("8.5 — Modify adds X to the damage of each damaging attack, and Y to both max and current defense")
     void modify() {
         ScenarioResult result = run(scenario().shards(P1, 4).hand(P1, "ember.roaring-pyre", "test.bulwark")

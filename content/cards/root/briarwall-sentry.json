@@ -1,0 +1,16 @@
+{
+  "id": "root.briarwall-sentry",
+  "name": "Briarwall Sentry",
+  "faction": "root",
+  "type": "unit",
+  "cost": 3,
+  "defense": 7,
+  "keywords": ["anchor"],
+  "attacks": [
+    {
+      "name": "Briar Strike",
+      "cost": 2,
+      "effects": [{ "effect": "damage", "amount": 5, "target": "attack_target" }]
+    }
+  ]
+}

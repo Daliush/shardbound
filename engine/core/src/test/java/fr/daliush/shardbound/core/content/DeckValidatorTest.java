@@ -67,6 +67,21 @@ class DeckValidatorTest {
                 .contains("contains the token root.sprout; tokens are never in a deck (2.4)");
     }
 
+    @Test
+    void saysWhichRuleEachProblemBreaks() {
+        CardId cinderling = new CardId("ember.cinderling");
+        CardId sprout = new CardId("root.sprout");
+        Deck deck = withEntries(List.of(new DeckEntry(cinderling, 3), new DeckEntry(sprout, 1)));
+
+        assertThat(validator.check(deck)).containsExactly(
+                new DeckProblem.WrongSize(4),
+                new DeckProblem.TooManyCopies(cinderling, 3),
+                new DeckProblem.Token(sprout),
+                new DeckProblem.OtherFaction(sprout, Faction.ROOT, Faction.EMBER));
+        assertThat(validator.check(deck)).extracting(problem -> problem.rule().orElseThrow())
+                .containsExactly("2.1", "2.3", "2.4", "2.2");
+    }
+
     /** The Python content tests check these same cases, so the two checkers cannot drift apart. */
     @TestFactory
     Stream<DynamicTest> agreesWithThePythonChecksOnTheSharedCases() {

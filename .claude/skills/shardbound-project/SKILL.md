@@ -25,7 +25,9 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 |---|---|---|
 | `engine/core` | Java 21, no Spring (Jackson only) | Rules, legal actions, events with rule trace, player views, scenarios, determinization, random / greedy (later MCTS) bots |
 | `engine/api` | Spring Boot | REST for resources (cards, decks, games), WebSocket protocol for live games; later MCP and gRPC |
-| `ai/` | Python (uv, FastAPI) | Chat orchestrator, RAG, LoRA, LLM and Jev bots, eval harness |
+| `engine/dataset` | Java 21, on `engine/core` | Every question of the evaluation dataset with its answer key: recipes played by the engine, factual and deck questions, simple-rule and unanswerable questions written once |
+| `ai/` | Python (uv) | The dataset's wording (Luna 6) and dev / test split (`ai/dataset`); later the chat orchestrator, RAG, LoRA, LLM and Jev bots, eval harness |
+| `evals/datasets/` | JSONL | The dataset versions; the final files are `dataset-dev.jsonl` and `dataset-test.jsonl`, built by `scripts/build-dataset.sh` |
 | `frontend/` | Angular | Test UI first, polished UI later, results pages and answer comparator |
 | `proto/` | Protobuf / gRPC | Contract between the engine and the Python players |
 | `content/cards/` | JSON + JSON Schema | Single source for card data |
@@ -42,13 +44,14 @@ Language rule: compute-heavy code and business logic go to Java; code that calls
    - MCTS: clone a state, and determinize one from a player's view.
 3. **Rule trace.** Each resolution step emits the ID of the rule applied. This trace is the answer key for the Arbiter's citations and step order.
 4. **MCTS must never clone the raw internal state.** It would see hidden cards and inflate its Elo. Use determinization: known cards stay fixed, the rest is sampled from the faction and neutral pool, respecting the 2-copy limit.
-5. **Whatever the engine can check, it checks**: verdict, citations, step order, format. The LLM judge only grades tone and clarity, is calibrated on human labels, and comes from a different model family than the `api+rag` model.
+5. **Whatever the engine can check, it checks.** The engine writes each answer key: key facts (sentences from `EventDescriber`), essential rules and the trace. Code checks citations, step order and format; an extractor only answers closed questions ("does the answer state this key fact?"); the LLM judge only grades tone and clarity, is calibrated on human labels, and comes from a different model family than the `api+rag` model. The Arbiter returns one schema for every question, `{answer, citations, answerable}`, with no verdict field.
 6. **Isolate variables.** One open base model for the whole Arbiter matrix. LoRA variants differ only by their training data. 3 seeds per adapter, bootstrap confidence intervals, paired tests, temperature 0.
 7. **LoRA learns how to arbitrate, not the cards.** Facts come from RAG. The patch experiment retrains nothing.
 8. **Only host a model whose weights we change.** Only the LoRA Arbiter needs a GPU, and only locally.
 9. **No AI online.** The site has precomputed results, an answer comparator and games against MCTS on Cloud Run CPU. The Arbiter runs locally through `docker compose --profile demo up`, which must work without a GPU.
 10. **Jev is peripheral**: the opponent's System 1, the router, an optional guardrail and the reranker experiment. It sits behind a `DecisionModel` interface with a fallback, and nothing in the Arbiter, RAG, LoRA or judge depends on it.
 11. **Destructive MCP tools are flagged statically** with `destructiveHint` and require user confirmation.
+12. **No leakage into published numbers.** The dataset is split by interaction (train / dev / test), cards are also held out between train and test, the RAG is tuned on dev only, and the prompt stays generic. One test set serves every configuration. Every RAG variant is benchmarked and shown in the benchmark explorer (`docs/design.md` §6.2, §8.2).
 
 ## Roadmap logic
 
@@ -61,7 +64,7 @@ To know where things stand, check the roadmap and the repository itself. Phase 1
 - slice 3 is done: every effect of section 8 but Link, with stat and cost auras, and the card text written from the card data, returned by `GET /api/cards` and shown by the client;
 - slice 4 is done: the keywords (Echo, Fracture, Anchor with doom, Overcharge) and Link, so every card is playable, and a rulebook coverage test; nine Tide cards and a Tide starter deck came with it (39 cards + 1 token, three starter decks);
 - slice 5 is done: views carry the resolution in progress, the `Determinizer` builds a whole game from one player's view alone, `GreedyBot` plays one action ahead on it (about 95% of its games won against the random bot) and is offered by the server and the client, and the scenario service is a documented public API (`engine/core/README.md`). Measured with greedy against greedy, the decks are not balanced yet; card changes wait for the maintainer;
-- next comes phase 3, the RAG Arbiter, whose dataset generator builds on the scenario service.
+- next comes phase 3, the RAG Arbiter, designed in `docs/design.md` §5.2 and §6 (v2.14): the RAG pipeline, Java recipes that build the dataset's scenarios on the scenario service, grading on key facts, and the benchmark explorer. The recipes are done (`engine/dataset`, 25 interactions, 177 scenarios; eight cards added for them, 47 cards + 1 token), and so is the dataset v1 (668 questions in six categories, worded by Luna 6, split into `dataset-dev.jsonl` and `dataset-test.jsonl`; a new version keeps v1's wordings and split for unchanged questions). Next come the RAG and the eval harness.
 
 Engine layout, so new code lands in the right place: `content` (card and deck model, strict loader), `state` / `action` / `decision` / `event` / `view` (immutable API types), `resolution` (pending steps and queued triggers, stored in the state), `rules` (`GameEngine` facade, then one sub-package per rulebook area: `game` loop and state check, `setup`, `turn`, `play`, `combat`, `effect`, `aura`, `trigger`, `board`), `scenario`, `text` (describers and card text), `determinization` (a whole game from one view), `bot` (the player contract, then one sub-package per bot: `random`, `greedy`), `json`. `engine/core/README.md` lists each package's entry point. The game server is designed for several instances: no instance owns a game: sessions are saved with an optimistic lock, and notifications tell every instance that a game moved (spec §13.4). Its layers, checked by an ArchUnit test: `controller` (REST and WebSocket endpoints) → `domain` (business objects, services, ports; no transport, no JSON) ← `adapter` (the ports implemented, entity mapping) → `dao` (pure data, `*InMemory` now).
 

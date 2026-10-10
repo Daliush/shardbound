@@ -1,0 +1,9 @@
+{"id":"card/ember.ash-warden/faction","category":"factual","card":"ember.ash-warden","question":"Which faction does Ash Warden belong to?","key_facts":["Ash Warden is an Ember card."]}
+{"id":"card/ember.ash-warden/cost","category":"factual","card":"ember.ash-warden","question":"How much does Ash Warden cost?","key_facts":["Ash Warden costs 3 Shards."]}
+{"id":"card/ember.ash-warden/defense","category":"factual","card":"ember.ash-warden","question":"How much defense does Ash Warden have?","key_facts":["Ash Warden has 6 defense."]}
+{"id":"card/tide.moonpull/faction","category":"factual","card":"tide.moonpull","question":"Which faction does Moonpull belong to?","key_facts":["Moonpull is a Tide card."]}
+{"id":"card/tide.moonpull/cost","category":"factual","card":"tide.moonpull","question":"How much does Moonpull cost?","key_facts":["Moonpull has Fracture 3.","Step 1 of Moonpull costs 1 Shard.","Step 2 of Moonpull costs 2 Shards.","Step 3 of Moonpull costs 3 Shards."]}
+{"id":"card/tide.moonpull/keywords","category":"factual","card":"tide.moonpull","question":"What keywords does Moonpull have?","key_facts":["Moonpull has Fracture 3."]}
+{"id":"card/neutral.shardling/faction","category":"factual","card":"neutral.shardling","question":"Which faction does Shardling belong to?","key_facts":["Shardling is a neutral card."]}
+{"id":"card/neutral.shardling/cost","category":"factual","card":"neutral.shardling","question":"How much does Shardling cost?","key_facts":["Shardling costs 1 Shard."]}
+{"id":"card/neutral.shardling/defense","category":"factual","card":"neutral.shardling","question":"How much defense does Shardling have?","key_facts":["Shardling has 3 defense."]}

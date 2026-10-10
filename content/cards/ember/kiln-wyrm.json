@@ -1,0 +1,22 @@
+{
+  "id": "ember.kiln-wyrm",
+  "name": "Kiln Wyrm",
+  "faction": "ember",
+  "type": "unit",
+  "cost": 5,
+  "defense": 9,
+  "attacks": [
+    {
+      "name": "Scorch",
+      "cost": 1,
+      "effects": [{ "effect": "damage", "amount": 2, "target": "attack_target" }],
+      "echo": 100
+    },
+    {
+      "name": "Kiln Blast",
+      "cost": 3,
+      "effects": [{ "effect": "damage", "amount": 6, "target": "attack_target" }],
+      "echo": 50
+    }
+  ]
+}

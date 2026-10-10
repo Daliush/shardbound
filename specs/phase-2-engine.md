@@ -206,7 +206,7 @@ record Content(CardCatalog catalog, Map<DeckId, Deck> decks) {}
 ```
 
 - `ContentLoader.load(contentDir)` reads `cards/*/*.json` and `decks/*.json` (skipping `*.schema.json`). It also checks cross-references: every deck card exists, every `summon.token` is a token.
-- `DeckValidator.problems(deck, catalog)` ports the content tests' rule checker (rules 2.1–2.4, same messages with rule IDs). `GameEngine.newGame` refuses an illegal deck.
+- `DeckValidator.problems(deck, catalog)` ports the content tests' rule checker (rules 2.1–2.4, same messages with rule IDs). `GameEngine.newGame` refuses an illegal deck. `DeckValidator.check(deck)` returns the same problems as `DeckProblem` records, each with its rule, for code that words them (the dataset's deck questions).
 
 ---
 
@@ -392,7 +392,7 @@ The events are the **rule trace**: they are the answer key for the Arbiter's cit
 | `AttackIntercepted(originalTarget, interceptor)`, `InterceptDeclined(defender)` | 7.5 | public |
 | `AttackCancelled(attacker)` | 7.10 | public |
 | `UnitDamaged(unit, amount)`, `PlayerDamaged(player, amount)`, `DamageShared(from, to, amount)` (amount can be 0, 8.15) | 8.1, 11.5.2 | public |
-| `UnitHealed(unit, amount)`, `PlayerHealed(player, amount)` | 8.4 | public |
+| `UnitHealed(unit, amount)`, `PlayerHealed(player, amount)`: the amount restored, 0 at the max | 8.4 | public |
 | `Modified(unit, attackDamage, defense, duration)` | 8.5 | public |
 | `ModifierExpired(unit, attackDamage, defense)` | 5.4.2, then 8.5 for a bonus or 8.17 for a malus | public |
 | `Frozen(unit, throughTurn)`, `UnitThawed(unit)` | 8.10 | public |

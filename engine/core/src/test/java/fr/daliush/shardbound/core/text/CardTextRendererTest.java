@@ -5,7 +5,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.CardId;
+import fr.daliush.shardbound.core.content.SpellCard;
 import fr.daliush.shardbound.core.content.TextTemplates;
+import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.content.json.CardParser;
 import fr.daliush.shardbound.core.testing.TestCards;
 import fr.daliush.shardbound.core.testing.TestContent;
@@ -56,6 +58,17 @@ class CardTextRendererTest {
                 .containsExactly(CardText.Kind.ATTACK, CardText.Kind.ABILITY);
         assertThat(sap.texts()).containsExactly("Heal yourself for 4 HP. Summon 1 Sprout token.");
         assertThat(sap.lines()).extracting(CardText.Line::kind).containsExactly(CardText.Kind.EFFECT);
+    }
+
+    @Test
+    void writesTheEffectsOfOneAttackOrOneStepAlone() {
+        UnitCard ashWarden = TestCards.CATALOG.unit(new CardId("ember.ash-warden"));
+        SpellCard moonpull = (SpellCard) TestCards.CATALOG.card(new CardId("tide.moonpull"));
+
+        assertThat(renderer.effects(ashWarden.attacks().getFirst().effects(), ashWarden))
+                .isEqualTo("Deal 4 damage to the target.");
+        assertThat(renderer.effects(moonpull.fracture().get(1).effects(), moonpull))
+                .isEqualTo("Give an enemy unit -2/-3.");
     }
 
     @Test

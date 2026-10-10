@@ -61,6 +61,11 @@ public final class CardTextRenderer {
         return new CardText(lines);
     }
 
+    /** The text of these effects as this card prints them, one sentence each: what an attack or a step does. */
+    public String effects(List<Effect> effects, CardDefinition card) {
+        return effects.stream().map(effect -> capitalized(effect(effect, card))).collect(Collectors.joining(" "));
+    }
+
     /** "Anchor.", "Anchor. Overcharge.": each keyword is its own sentence. */
     private String keywords(CardDefinition card) {
         return card.keywords().stream()
@@ -94,10 +99,6 @@ public final class CardTextRenderer {
                 : fill("layout.ability", Map.of("trigger", templates.get("triggers." + key(ability.trigger())),
                         "effects", effects(ability.effects(), card)))))
                 .toList();
-    }
-
-    private String effects(List<Effect> effects, CardDefinition card) {
-        return effects.stream().map(effect -> capitalized(effect(effect, card))).collect(Collectors.joining(" "));
     }
 
     private String effect(Effect effect, CardDefinition card) {

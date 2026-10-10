@@ -1,0 +1,11 @@
+{
+  "id": "ember.cinder-pact",
+  "name": "Cinder Pact",
+  "faction": "ember",
+  "type": "spell",
+  "cost": 2,
+  "effects": [
+    { "effect": "sacrifice", "count": 1 },
+    { "effect": "damage", "amount": 6, "target": "opponent" }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "version": "v1",
+  "base": null,
+  "seed": 1,
+  "dev_share": 0.1,
+  "model": "gpt-6-luna",
+  "model_options": {
+    "temperature": 1.0,
+    "reasoning_effort": "low"
+  },
+  "prompts_sha256": "217ee17e82e694ada34afde55e6ce51f4c96d52a162ad4d95a28f04a15668012",
+  "engine_commit": "bc9ddf94e54b9185aef41a2d10432381ebec082e",
+  "sources_clean": true,
+  "inputs_sha256": {
+    "scenarios.jsonl": "d34845b8598d42b9a88ca67c984ce81788b72c7ea67e758e37134964e9ce2a33",
+    "cards.jsonl": "29cb5933fb5cb0404ece99e108667979d03619f523012daf46ccb45b9791b4ce",
+    "decks.jsonl": "320b5acff14483eb954ec802080b0cc40563152bbaf67c80353491468f857060",
+    "rules.jsonl": "699e62ca989a2e55b426b1b4321c7b1bfb642d563d6c686412362cdf8108d94f",
+    "unanswerable.jsonl": "81097bc7d8217d6c004212e0b52c2291b6e1a9d062f4c94a7fb996a3fa75d3ff"
+  },
+  "counts": {
+    "total": 668,
+    "by_split": {
+      "dev": 72,
+      "test": 596
+    },
+    "by_category": {
+      "deck-building": {
+        "dev": 12,
+        "test": 37,
+        "total": 49
+      },
+      "factual": {
+        "dev": 21,
+        "test": 193,
+        "total": 214
+      },
+      "interaction": {
+        "dev": 7,
+        "test": 148,
+        "total": 155
+      },
+      "multi-step": {
+        "dev": 8,
+        "test": 14,
+        "total": 22
+      },
+      "simple-rule": {
+        "dev": 13,
+        "test": 117,
+        "total": 130
+      },
+      "unanswerable": {
+        "dev": 11,
+        "test": 87,
+        "total": 98
+      }
+    },
+    "groups": {
+      "deck-building": {
+        "dev": 1,
+        "test": 4
+      },
+      "factual": {
+        "dev": 5,
+        "test": 42
+      },
+      "interaction": {
+        "dev": 2,
+        "test": 18
+      },
+      "multi-step": {
+        "dev": 1,
+        "test": 4
+      },
+      "simple-rule": {
+        "dev": 13,
+        "test": 117
+      },
+      "unanswerable": {
+        "dev": 4,
+        "test": 32
+      }
+    }
+  },
+  "wording": {
+    "policy": "A question whose template is unchanged since the base version keeps its wording. A new or changed one is reworded, and keeps its template if the rewrite fails its check or a review rejects it (kept-templates.json).",
+    "paraphrase": 548,
+    "template": 9,
+    "written": 111,
+    "reused_now": 630,
+    "reworded_now": 37
+  },
+  "failed_checks": [
+    {
+      "id": "anchor+destroy/opponents/protected/root.oakheart-guardian/neutral.crystal-rupture",
+      "outcome": "template kept",
+      "reason": "model check: The rewrite omits “their,” making “last turn” less specific about whose turn it was."
+    },
+    {
+      "id": "anchor+sacrifice/protected/root.briarwall-sentry/ember.flamebound-zealot",
+      "outcome": "template kept",
+      "reason": "model check: The rewrite omits that Briarwall Sentry was played this turn, changing the described situation."
+    },
+    {
+      "id": "echo+chain/ember.ash-warden/ember.ashborn-drake/neutral.tempest",
+      "outcome": "rejected by review",
+      "reason": "The rewrite asks what happens to the two units, while the answer key also holds the damage both players take."
+    },
+    {
+      "id": "freeze+intercept/already-intercepted",
+      "outcome": "template kept",
+      "reason": "model check: The original says the attack happens, while the rewrite makes it conditional."
+    },
+    {
+      "id": "rule/1.2",
+      "outcome": "template kept",
+      "reason": "model check: The original asks how any player wins, while the rewrite asks specifically how the speaker wins."
+    },
+    {
+      "id": "rule/11.5.1",
+      "outcome": "template kept",
+      "reason": "changes a number"
+    },
+    {
+      "id": "unanswerable/mechanic/fusion-of-two-units/1",
+      "outcome": "template kept",
+      "reason": "drops Fusion of two units"
+    },
+    {
+      "id": "unanswerable/mechanic/fusion-of-two-units/2",
+      "outcome": "template kept",
+      "reason": "drops Fusion of two units"
+    },
+    {
+      "id": "unanswerable/mechanic/tribute-draw/1",
+      "outcome": "template kept",
+      "reason": "drops Tribute draw"
+    }
+  ]
+}

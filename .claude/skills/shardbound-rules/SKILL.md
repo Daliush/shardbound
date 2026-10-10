@@ -62,7 +62,7 @@ When the maintainer uses a term loosely in conversation, map it to the precise t
 
 ## Answering a rules question
 
-Use the Arbiter format. It is also the format of the eval answer keys, so practising it keeps everything consistent:
+Use the Arbiter format, the text an Arbiter's answer shows the player (eval answer keys are key facts and rule IDs computed by the engine, `docs/design.md` §6.1):
 
 ```
 Rules cited: <rule IDs>

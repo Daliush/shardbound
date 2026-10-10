@@ -1,0 +1,8 @@
+{
+  "id": "tide.brine-ward",
+  "name": "Brine Ward",
+  "faction": "tide",
+  "type": "spell",
+  "cost": 1,
+  "effects": [{ "effect": "modify", "attack_damage": 0, "defense": 3, "duration": "end_of_turn", "target": "ally_unit" }]
+}

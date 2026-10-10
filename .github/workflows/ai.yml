@@ -1,0 +1,39 @@
+name: AI
+
+# The Python AI layer: the dataset pipeline's tests, and the checks on every committed dataset version. Runs when the
+# project, the evaluation data, the content and rulebook it reads, or this workflow change. No model is called.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ai/**"
+      - "evals/**"
+      - "content/**"
+      - "docs/rules/**"
+      - ".github/workflows/ai.yml"
+  pull_request:
+    paths:
+      - "ai/**"
+      - "evals/**"
+      - "content/**"
+      - "docs/rules/**"
+      - ".github/workflows/ai.yml"
+  workflow_dispatch:
+
+jobs:
+  ai-tests:
+    name: Dataset pipeline and datasets
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Run the tests
+        run: uv run pytest
