@@ -13,6 +13,8 @@ MODEL = "LUNA_MODEL"
 API_KEY = "LUNA_API_KEY"
 TEMPERATURE = "LUNA_TEMPERATURE"
 REASONING_EFFORT = "LUNA_REASONING_EFFORT"
+# Luna 6 (gpt-6-luna) only takes temperature 1, its own; LUNA_TEMPERATURE overrides it for another model.
+DEFAULT_TEMPERATURE = 1.0
 
 
 def main() -> None:
@@ -29,9 +31,10 @@ def main() -> None:
     if args.fake:
         client = FakeClient()
     else:
-        model = OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY, TEMPERATURE, REASONING_EFFORT)
+        model = OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY, TEMPERATURE, REASONING_EFFORT,
+                                                        DEFAULT_TEMPERATURE)
         client = CachedClient(model, Path(__file__).resolve().parents[1] / ".cache" / "llm")
-        sent = ", ".join(f"{name}={value}" for name, value in model.options.items()) or "no option"
+        sent = ", ".join(f"{name}={value}" for name, value in model.options.items())
         print(f"Calling {model.model} at {os.environ[BASE_URL]} with {sent}.", flush=True)
     try:
         manifest = build(root, dataset_dir(root, args.version), client, workers=args.workers,

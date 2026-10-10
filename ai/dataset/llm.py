@@ -38,18 +38,15 @@ class LlmClient(Protocol):
 class OpenAiCompatibleClient:
     """Any chat-completions API that follows OpenAI's format.
 
-    `options` are the parameters sent besides the model and the messages. Temperature 0 by default; None leaves it
-    out, for a model that only takes its own default. `reasoning_effort` ("none", "low"…) is sent only when set, and
-    rewording a question needs none.
+    `options` are the parameters sent besides the model and the messages: always the temperature, and
+    `reasoning_effort` ("none", "low"…) when one is set, since rewording a question needs none.
     """
 
-    def __init__(self, base_url: str, model: str, api_key: str, temperature: float | None = 0.0,
+    def __init__(self, base_url: str, model: str, api_key: str, temperature: float,
                  reasoning_effort: str | None = None, timeout: float = 60.0, retries: int = 4,
                  transport: httpx.BaseTransport | None = None, backoff: float = 2.0):
         self.model = model
-        self.options: dict[str, str | float] = {}
-        if temperature is not None:
-            self.options["temperature"] = temperature
+        self.options: dict[str, str | float] = {"temperature": temperature}
         if reasoning_effort:
             self.options["reasoning_effort"] = reasoning_effort
         self._retries = retries
@@ -59,13 +56,14 @@ class OpenAiCompatibleClient:
 
     @classmethod
     def from_environment(cls, base_url_variable: str, model_variable: str, key_variable: str,
-                         temperature_variable: str, reasoning_effort_variable: str) -> "OpenAiCompatibleClient":
-        """The first three variables are required. The temperature is 0 when unset, the model's own with "default"."""
+                         temperature_variable: str, reasoning_effort_variable: str,
+                         default_temperature: float) -> "OpenAiCompatibleClient":
+        """The first three variables are required; the temperature and the reasoning effort are optional."""
         missing = [name for name in (base_url_variable, model_variable, key_variable) if not os.environ.get(name)]
         if missing:
             raise SystemExit(f"Set {', '.join(missing)} to call the model, or use --fake for a dry run.")
         return cls(os.environ[base_url_variable], os.environ[model_variable], os.environ[key_variable],
-                   temperature=_temperature(temperature_variable),
+                   temperature=_temperature(temperature_variable, default_temperature),
                    reasoning_effort=os.environ.get(reasoning_effort_variable) or None)
 
     def complete(self, prompt: Prompt) -> str:
@@ -131,14 +129,12 @@ class FakeClient:
         return self._replies[prompt.task](prompt)
 
 
-def _temperature(variable: str) -> float | None:
+def _temperature(variable: str, default: float) -> float:
     value = os.environ.get(variable, "").strip()
-    if value == "default":
-        return None
     try:
-        return float(value) if value else 0.0
+        return float(value) if value else default
     except ValueError:
-        raise SystemExit(f"{variable} must be a number or \"default\", not {value!r}.") from None
+        raise SystemExit(f"{variable} must be a number, not {value!r}.") from None
 
 
 def _between(text: str, start: str, end: str) -> str:

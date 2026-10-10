@@ -36,7 +36,7 @@ The model is Luna 6, a family no evaluated configuration uses (design doc §3.3)
 | `LUNA_BASE_URL` | `https://api.openai.com/v1`, the API root: the client adds `/chat/completions` |
 | `LUNA_MODEL` | `gpt-6-luna` |
 | `LUNA_API_KEY` | the key |
-| `LUNA_TEMPERATURE` | `default`: `gpt-6-luna` only takes its own temperature (1). Unset, the client sends 0 |
+| `LUNA_TEMPERATURE` | leave it unset: the client sends 1, the only temperature `gpt-6-luna` takes. Set it for another model |
 | `LUNA_REASONING_EFFORT` | `none`: rewording a question needs no reasoning. Unset, nothing is sent |
 
 The manifest records these settings with the model (`model_options`). Every response is cached on disk by model, settings and prompt (`ai/.cache/llm/`, not committed), so a rerun costs nothing and gives the same dataset. Since `gpt-6-luna` cannot run at temperature 0, a run without that cache would word some questions differently; the answer keys never change, since no model writes them. The committed files are the version.
