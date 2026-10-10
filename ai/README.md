@@ -29,7 +29,17 @@ A dataset version lives in `evals/datasets/<version>/`, committed. It is built i
 
 Each template question (scenarios, factual, deck building, unanswerable) is rewritten the way a player would ask it, then checked twice: by code (every card name, keyword and number kept, no card or rule number added), then by a second model call that compares it with the template (same situation, same question, no new card). A rewrite that fails keeps its template; a simple-rule question that fails is dropped, since it has no template. Both are listed in the manifest's `failed_checks`. A deck question's decklist is never sent to the model: only the sentence before it is reworded.
 
-The model is Luna 6, a family no evaluated configuration uses (design doc §3.3), called through an OpenAI-compatible chat-completions API at temperature 0. Set `LUNA_BASE_URL` (the API root, such as `https://api.openai.com/v1`), `LUNA_MODEL` (`gpt-6-luna`) and `LUNA_API_KEY`. `LUNA_REASONING_EFFORT` is optional and sent as `reasoning_effort` when set: `none` turns reasoning off, which rewording a question does not need, and which a reasoning model may require before it accepts temperature 0. The manifest records it with the model. Every response is cached on disk by model and prompt (`ai/.cache/llm/`, not committed), so a rerun costs nothing and gives the same dataset.
+The model is Luna 6, a family no evaluated configuration uses (design doc §3.3), called through an OpenAI-compatible chat-completions API. Set:
+
+| Variable | Value for v1 |
+|---|---|
+| `LUNA_BASE_URL` | `https://api.openai.com/v1`, the API root: the client adds `/chat/completions` |
+| `LUNA_MODEL` | `gpt-6-luna` |
+| `LUNA_API_KEY` | the key |
+| `LUNA_TEMPERATURE` | `default`: `gpt-6-luna` only takes its own temperature (1). Unset, the client sends 0 |
+| `LUNA_REASONING_EFFORT` | `none`: rewording a question needs no reasoning. Unset, nothing is sent |
+
+The manifest records these settings with the model (`model_options`). Every response is cached on disk by model, settings and prompt (`ai/.cache/llm/`, not committed), so a rerun costs nothing and gives the same dataset. Since `gpt-6-luna` cannot run at temperature 0, a run without that cache would word some questions differently; the answer keys never change, since no model writes them. The committed files are the version.
 
 ### Split
 

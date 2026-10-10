@@ -4,12 +4,13 @@ import argparse
 from pathlib import Path
 
 from dataset.build import build
-from dataset.llm import CachedClient, FakeClient, OpenAiCompatibleClient
+from dataset.llm import CachedClient, FakeClient, ModelApiError, OpenAiCompatibleClient
 from dataset.paths import dataset_dir, repo_root
 
 BASE_URL = "LUNA_BASE_URL"
 MODEL = "LUNA_MODEL"
 API_KEY = "LUNA_API_KEY"
+TEMPERATURE = "LUNA_TEMPERATURE"
 REASONING_EFFORT = "LUNA_REASONING_EFFORT"
 
 
@@ -27,9 +28,13 @@ def main() -> None:
     if args.fake:
         client = FakeClient()
     else:
-        client = CachedClient(OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY, REASONING_EFFORT),
-                              Path(__file__).resolve().parents[1] / ".cache" / "llm")
-    manifest = build(root, dataset_dir(root, args.version), client, workers=args.workers, overwrite=args.overwrite)
+        model = OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY, TEMPERATURE, REASONING_EFFORT)
+        client = CachedClient(model, Path(__file__).resolve().parents[1] / ".cache" / "llm")
+    try:
+        manifest = build(root, dataset_dir(root, args.version), client, workers=args.workers,
+                         overwrite=args.overwrite)
+    except ModelApiError as error:
+        raise SystemExit(f"{error}\nThe responses received so far are cached; fix the setting and run again.")
     counts = manifest["counts"]
     print(f"{counts['total']} questions written to evals/datasets/{args.version}/ "
           f"({counts['by_split'].get('dev', 0)} dev, {counts['by_split'].get('test', 0)} test); "

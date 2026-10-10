@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from dataset.llm import CachedClient, FakeClient, OpenAiCompatibleClient, Prompt
+from dataset.llm import CachedClient, FakeClient, ModelApiError, OpenAiCompatibleClient, Prompt
 
 PROMPT = Prompt("paraphrase", "You rewrite questions.", "<question>How much does Shardling cost?</question>")
 
@@ -40,12 +40,27 @@ def test_sends_a_reasoning_effort_only_when_one_is_set():
     assert sent[0]["temperature"] == 0
 
 
+def test_leaves_the_temperature_to_a_model_that_only_takes_its_own():
+    sent = []
+
+    def reply(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    client = OpenAiCompatibleClient("https://models.test/v1", "luna-6", "secret", temperature=None,
+                                    reasoning_effort="none", transport=httpx.MockTransport(reply))
+    client.complete(PROMPT)
+
+    assert "temperature" not in sent[0]
+    assert client.options == {"reasoning_effort": "none"}
+
+
 def test_shows_what_the_api_says_when_it_refuses_a_request():
     refusal = httpx.Response(400, json={"error": {"message": "Unsupported parameter: 'temperature'"}})
     client = OpenAiCompatibleClient("https://models.test/v1", "luna-6", "secret",
                                     transport=httpx.MockTransport(lambda request: refusal))
 
-    with pytest.raises(RuntimeError, match="answered 400: .*Unsupported parameter: 'temperature'"):
+    with pytest.raises(ModelApiError, match="answered 400: .*Unsupported parameter: 'temperature'"):
         client.complete(PROMPT)
 
 
@@ -58,22 +73,26 @@ def test_retries_when_the_api_is_busy():
     assert client.complete(PROMPT) == "ok"
 
 
-def test_needs_three_environment_variables_and_reads_the_reasoning_effort_if_set(monkeypatch):
+def test_needs_three_environment_variables_and_reads_the_optional_ones(monkeypatch):
     monkeypatch.setenv("TEST_BASE_URL", "https://models.test/v1")
-    monkeypatch.delenv("TEST_MODEL", raising=False)
-    monkeypatch.delenv("TEST_KEY", raising=False)
-    monkeypatch.delenv("TEST_EFFORT", raising=False)
-
-    variables = ("TEST_BASE_URL", "TEST_MODEL", "TEST_KEY", "TEST_EFFORT")
+    for name in ("TEST_MODEL", "TEST_KEY", "TEST_TEMPERATURE", "TEST_EFFORT"):
+        monkeypatch.delenv(name, raising=False)
+    variables = ("TEST_BASE_URL", "TEST_MODEL", "TEST_KEY", "TEST_TEMPERATURE", "TEST_EFFORT")
 
     with pytest.raises(SystemExit, match="Set TEST_MODEL, TEST_KEY"):
         OpenAiCompatibleClient.from_environment(*variables)
 
     monkeypatch.setenv("TEST_MODEL", "luna-6")
     monkeypatch.setenv("TEST_KEY", "secret")
-    assert OpenAiCompatibleClient.from_environment(*variables).options == {}
+    assert OpenAiCompatibleClient.from_environment(*variables).options == {"temperature": 0.0}
+    monkeypatch.setenv("TEST_TEMPERATURE", "default")
     monkeypatch.setenv("TEST_EFFORT", "none")
     assert OpenAiCompatibleClient.from_environment(*variables).options == {"reasoning_effort": "none"}
+    monkeypatch.setenv("TEST_TEMPERATURE", "0.2")
+    assert OpenAiCompatibleClient.from_environment(*variables).options["temperature"] == 0.2
+    monkeypatch.setenv("TEST_TEMPERATURE", "low")
+    with pytest.raises(SystemExit, match='TEST_TEMPERATURE must be a number or "default"'):
+        OpenAiCompatibleClient.from_environment(*variables)
 
 
 def test_answers_a_prompt_seen_before_from_disk(tmp_path):

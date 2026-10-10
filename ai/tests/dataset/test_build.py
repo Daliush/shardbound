@@ -4,7 +4,7 @@ import pytest
 
 from dataset import jsonl, split
 from dataset.build import build
-from dataset.llm import FakeClient
+from dataset.llm import FakeClient, ModelApiError
 
 CATEGORIES = {"interaction", "multi-step", "factual", "deck-building", "simple-rule", "unanswerable"}
 
@@ -119,3 +119,15 @@ def test_writes_a_manifest_that_says_how_the_dataset_was_made(root, version):
     assert set(manifest["inputs_sha256"]) == {"scenarios.jsonl", "cards.jsonl", "decks.jsonl"}
     assert sum(category["total"] for category in manifest["counts"]["by_category"].values()) \
         == manifest["counts"]["total"]
+
+
+def test_stops_calling_the_model_once_a_call_is_refused(root, version):
+    def refuse(prompt):
+        raise ModelApiError("The model API answered 400: temperature")
+
+    client = _client(**{"write-rule-question": refuse})
+
+    with pytest.raises(ModelApiError):
+        build(root, version, client, workers=1)
+    assert len(client.calls) < 5
+    assert not (version / "dataset.jsonl").exists()

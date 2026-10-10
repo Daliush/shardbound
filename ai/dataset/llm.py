@@ -24,25 +24,34 @@ class Prompt:
     user: str
 
 
+class ModelApiError(RuntimeError):
+    """The model's API refused a request: a wrong setting, a key or a quota, which a retry would not fix."""
+
+
 class LlmClient(Protocol):
     model: str
-    options: dict[str, str]
+    options: dict[str, str | float]
 
     def complete(self, prompt: Prompt) -> str: ...
 
 
 class OpenAiCompatibleClient:
-    """Any chat-completions API that follows OpenAI's format, at temperature 0.
+    """Any chat-completions API that follows OpenAI's format.
 
-    `reasoning_effort` ("none", "low"…) is sent only when set: a reasoning model may refuse temperature 0 unless its
-    reasoning is off, and rewording a question needs none.
+    `options` are the parameters sent besides the model and the messages. Temperature 0 by default; None leaves it
+    out, for a model that only takes its own default. `reasoning_effort` ("none", "low"…) is sent only when set, and
+    rewording a question needs none.
     """
 
-    def __init__(self, base_url: str, model: str, api_key: str, reasoning_effort: str | None = None,
-                 timeout: float = 60.0, retries: int = 4, transport: httpx.BaseTransport | None = None,
-                 backoff: float = 2.0):
+    def __init__(self, base_url: str, model: str, api_key: str, temperature: float | None = 0.0,
+                 reasoning_effort: str | None = None, timeout: float = 60.0, retries: int = 4,
+                 transport: httpx.BaseTransport | None = None, backoff: float = 2.0):
         self.model = model
-        self.options = {"reasoning_effort": reasoning_effort} if reasoning_effort else {}
+        self.options: dict[str, str | float] = {}
+        if temperature is not None:
+            self.options["temperature"] = temperature
+        if reasoning_effort:
+            self.options["reasoning_effort"] = reasoning_effort
         self._retries = retries
         self._backoff = backoff
         self._http = httpx.Client(base_url=base_url.rstrip("/"), timeout=timeout, transport=transport,
@@ -50,18 +59,18 @@ class OpenAiCompatibleClient:
 
     @classmethod
     def from_environment(cls, base_url_variable: str, model_variable: str, key_variable: str,
-                         reasoning_effort_variable: str) -> "OpenAiCompatibleClient":
-        """The first three variables are required; the reasoning effort is optional."""
+                         temperature_variable: str, reasoning_effort_variable: str) -> "OpenAiCompatibleClient":
+        """The first three variables are required. The temperature is 0 when unset, the model's own with "default"."""
         missing = [name for name in (base_url_variable, model_variable, key_variable) if not os.environ.get(name)]
         if missing:
             raise SystemExit(f"Set {', '.join(missing)} to call the model, or use --fake for a dry run.")
         return cls(os.environ[base_url_variable], os.environ[model_variable], os.environ[key_variable],
+                   temperature=_temperature(temperature_variable),
                    reasoning_effort=os.environ.get(reasoning_effort_variable) or None)
 
     def complete(self, prompt: Prompt) -> str:
         body = {
             "model": self.model,
-            "temperature": 0,
             "messages": [{"role": "system", "content": prompt.system}, {"role": "user", "content": prompt.user}],
             **self.options,
         }
@@ -72,7 +81,7 @@ class OpenAiCompatibleClient:
                     time.sleep(self._backoff ** attempt if self._backoff else 0)
                     continue
             if response.is_error:
-                raise RuntimeError(f"The model API answered {response.status_code}: {response.text[:500]}")
+                raise ModelApiError(f"The model API answered {response.status_code}: {response.text[:500]}")
             return response.json()["choices"][0]["message"]["content"].strip()
         raise RuntimeError("unreachable")
 
@@ -104,7 +113,7 @@ class FakeClient:
     """Answers without a model, for the tests and a dry run: a fixed reply per task, which a test can replace."""
 
     model = "fake"
-    options: dict[str, str] = {}
+    options: dict[str, str | float] = {}
 
     def __init__(self, replies: dict[str, Callable[[Prompt], str]] | None = None):
         self._replies = {
@@ -120,6 +129,16 @@ class FakeClient:
     def complete(self, prompt: Prompt) -> str:
         self.calls.append(prompt)
         return self._replies[prompt.task](prompt)
+
+
+def _temperature(variable: str) -> float | None:
+    value = os.environ.get(variable, "").strip()
+    if value == "default":
+        return None
+    try:
+        return float(value) if value else 0.0
+    except ValueError:
+        raise SystemExit(f"{variable} must be a number or \"default\", not {value!r}.") from None
 
 
 def _between(text: str, start: str, end: str) -> str:
