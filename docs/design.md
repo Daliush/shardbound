@@ -46,6 +46,8 @@
 > **v2.14 (October 2026)** — phase 3 designed with the maintainer. The RAG pipeline: one chunk per rule, card or ruling, prefixed with its heading path; written cross-references followed after the fusion and before the reranker; BM25 and embeddings fused by RRF; one output schema and a generic prompt (§5.2). The evaluation dataset: Java recipes build the scenarios, the engine writes the key facts and the essential rules, the split is by interaction and cards are held out for LoRA (§6.1). Answers are graded on key facts instead of a verdict field (§6.3). Every RAG variant is benchmarked, and a benchmark explorer shows every precomputed run (§6.2, §8.2).
 >
 > **v2.15 (October 2026)** — the evaluation scenarios: `engine/dataset` builds them from 25 recipes, one per interaction, and exports 177 questions with their answer keys, each reviewed against the rulebook. Eight cards join the catalog (47 cards + 1 token) to open rules no card reached: an aura that ends, a temporary defense change, an "Attack" ability, two Echo attacks, a Sacrifice effect, plus a third Anchor unit and Fracture spell. Some questions ask whether a move is legal, answered from the legal actions (§6.1).
+>
+> **v2.16 (October 2026)** — the evaluation dataset v1: 668 questions in six categories, with two final files, `dataset-dev.jsonl` and `dataset-test.jsonl`. The engine writes every question and its answer key, the factual and deck-building ones included; the simple-rule and unanswerable questions are written once and checked at every build. Luna 6 rewords the questions, a second call checks each rewrite, and no question is worded twice: a new version keeps the previous wording of an unchanged question, and a group keeps its side of the split. `scripts/build-dataset.sh` builds a version from end to end (§6.1).
 
 ---
 
@@ -488,10 +490,10 @@ This is the most important part of the repository for a recruiter.
 | Category | Example | Target volume | Answer key from |
 |---|---|---|---|
 | Factual | "How much does Ash Warden cost?" | 200 | The card JSON, through templates on its fields |
-| Simple rule | "What does Overcharge do?" | 150 | The rule: an LLM writes the question, the key facts come from the rule's own text |
+| Simple rule | "What does Overcharge do?" | 150 | The rule: one question per rule of sections 1 to 11, written once (by Luna 6 for v1); the key facts are the rule's own sentences |
 | Interaction | "What happens if a unit Linked to an Anchored unit is hit by Tempest?" | 200 | The engine's scenario service |
 | Multi-step | A sequence of 3 actions with chained Echoes | 100 | The engine's scenario service |
-| Unanswerable | A question about a mechanic that does not exist | 100 | Abstention: invented names absent from the catalog, open points of the rulebook |
+| Unanswerable | A question about a mechanic that does not exist | 100 | Abstention: invented names absent from the catalog and the rulebook, open points of the rulebook; written once |
 | Deck building | "Is this deck legal?" | 50 | The engine's `DeckValidator`, on valid decks and mutated ones (a 31st card, one copy too many, a card of another faction) |
 
 The category is a tag used to balance the dataset and to report scores per category. Neither the Arbiter nor the grading sees it.
@@ -524,15 +526,17 @@ The engine plays each scenario, and the events the recipe selected give the answ
 }
 ```
 
-**Legality questions.** "Can I play its next step this turn?" is answered from the legal actions of the decision the game waits for once the scenario's choices are played: the engine decides, the recipe writes the sentence for each outcome ("You cannot play the next step of Moonpull this turn."), and the rule that decides it is a context rule, since the engine lists legal actions without saying why the others are not. *(proposed)* The abstentions drawn from the open points are tagged `"source": "recipe"`, since they become wrong once a point is settled, so the explorer can filter them.
+**Legality questions.** "Can I play its next step this turn?" is answered from the legal actions of the decision the game waits for once the scenario's choices are played: the engine decides, the recipe writes the sentence for each outcome ("You cannot play the next step of Moonpull this turn."), and the rule that decides it is a context rule, since the engine lists legal actions without saying why the others are not.
+
+**Questions written once.** The simple-rule and unanswerable questions are not computed: they were written once for v1 and are kept as data next to the recipes, then checked at every build. A simple-rule question keeps the text of its rule, and a rule changed since stops the build, since its key facts would be out of date. An unanswerable question holds only while the sources say nothing about it: an invented name that a card or the rulebook now uses, or an open point now settled, stops the build. The questions on open points are tagged `"source": "open-point"`, so the explorer can filter them.
 
 **Final values.** Some questions ask about a value no event states, such as a unit's defense once a bonus ends. A scenario then adds facts read from its final state: the engine computes the value, the recipe words it ("Shardling has 3 defense, out of 3."). A "what happens" scenario must also play its outcome to the end: one that stops on a decision nobody answered (an echo order, a target) would cut its answer key short, so the build refuses it.
 
 **Choices that change the outcome.** By default the question states the choice ("…and its echo targets my Ash Warden"). Some questions are about the choice itself ("Who picks the echo's target?"). A few are answered "it depends": the generator runs the game to the decision, then plays each option from the paused state. The events before the decision give the common key facts; those after it give conditional ones ("If your opponent targets you, you take 3 damage."). Branches with the same outcome are merged, and only one decision branches per question.
 
-**Wording.** A recipe gives a template question; an LLM paraphrases it the way a player would ask; a second call rebuilds the scenario from the paraphrase, and the question is dropped if it does not match. The paraphraser comes from a family no evaluated configuration uses (§3.3), so the wording favors none of them. About 1,600 short calls per dataset version: well under a dollar.
+**Wording.** Every question starts as a template. Luna 6 (`gpt-6-luna`) rewrites it the way a player would ask; code checks the rewrite (every card name, keyword and number kept, no card or rule number added), then a second call compares it with the template (same situation, same question). A rewrite that fails keeps its template, and the manifest says so; the template stays in the entry (`template_question`). A deck question's list of cards never reaches the model. The model comes from a family no evaluated configuration uses (§3.3), so the wording favors none of them. It only takes temperature 1, so reproducibility does not rest on it: responses are cached on disk, and **nothing is worded twice**. A new version keeps the previous version's wording of every question whose template has not changed, so the same question reads the same in every version, and only new questions go to the model. About 1,400 short calls for v1: a few cents.
 
-**Where it runs.** Java: recipes, scenarios and answer keys, deterministic and without a model, exported as JSON. Python: the wording and the split. *(proposed)* Coverage: games between bots, searched for interactions no recipe covers, tell which recipe to write next, and a check fails when a rule of sections 1 to 11 is essential in no test question.
+**Where it runs.** Java (`engine/dataset`): every question and its answer key, deterministic and without a model, exported as JSON. Python (`ai/dataset`): the wording and the split. `scripts/build-dataset.sh` runs both. *(proposed)* Coverage: games between bots, searched for interactions no recipe covers, tell which recipe to write next, and a check fails when a rule of sections 1 to 11 is essential in no test question.
 
 **Splits.** No leakage into the published numbers:
 
@@ -541,9 +545,10 @@ The engine plays each scenario, and the events the recipe selected give the answ
 - **train** (phase 4): the LoRA training data.
 - The split is **by interaction**: an interaction and all its scenarios sit on one side, because a fix aimed at an interaction helps all its scenarios. Factual questions are grouped by card, simple-rule questions by rule. Rules are shared by every split: every question uses the core rules.
 - **Cards are held out between train and test** as well: a LoRA that saw Root Sentinel in 50 training scenarios would answer from memory instead of from the card text RAG provides. The catalog is small (2 Anchor cards, 2 Destroy cards), so some interactions get one card per side.
-- Drawn at random with a fixed seed, stratified by category, and written into the dataset (`"split"`), never recomputed.
+- Drawn at random with a fixed seed, stratified by category, and written into the dataset, never recomputed: a group keeps its side from one version to the next, and only new groups are drawn.
+- A version has two final datasets, `dataset-dev.jsonl` and `dataset-test.jsonl`, so a run reads one side only.
 
-**Versions.** Questions are frozen per dataset version. A rules or card patch makes a new version: the engine recomputes the answer keys, and every run is redone on it. Each result records its dataset version.
+**Versions.** Questions are frozen per dataset version, in `evals/datasets/<version>/`. A rules or card patch makes a new version: the engine recomputes the answer keys, the previous version is its base for the wording and the split, and every run is redone on it. Each result records its dataset version.
 
 ### 6.2 Arbiter configuration matrix
 
@@ -811,6 +816,7 @@ shardbound/
 │   ├── dataset/                # evaluation scenarios: recipes played by core, exported with their answer keys (§6.1)
 │   └── (repository/)           # later, with Postgres
 ├── ai/                         # Python (uv)
+│   ├── dataset/                # the evaluation dataset's wording and split (§6.1)
 │   ├── chat/                   # orchestrator, coach, Arbiter, router, MCP client
 │   ├── rag/                    # ingestion, retrieval, reranking
 │   ├── lora/                   # dataset generation, training (3 seeds), configs
@@ -820,6 +826,7 @@ shardbound/
 │   └── service/                # FastAPI service exposed to the backend
 ├── frontend/                   # Angular: test frontend, then polished frontend, results pages, comparator
 ├── deploy/                     # static site + Cloud Run CPU (limits, budget)
+├── scripts/                    # build-dataset.sh: a dataset version from end to end
 ├── docs/
 │   ├── design.md               # this document
 │   ├── rules/                  # rulebook: README.md index + one file per section (00-vocabulary.md … 12-open-points.md)
@@ -827,7 +834,7 @@ shardbound/
 │   ├── patches/
 │   └── dev-workflow.md
 ├── evals/
-│   ├── datasets/               # <version>/scenarios.jsonl from engine/dataset, then the worded questions
+│   ├── datasets/               # <version>/: the engine's questions, then dataset-dev.jsonl and dataset-test.jsonl
 │   ├── harness/
 │   └── reports/                # precomputed, published results
 └── .github/workflows/

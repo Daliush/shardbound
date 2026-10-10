@@ -1,6 +1,6 @@
 /**
- * The Arbiter's evaluation questions that the engine and the card data answer (design doc §6.1): every recipe's
- * scenarios played by the engine, the factual questions about cards and the deck-building questions, written with
- * their answer keys, one JSON line each. The other categories, the wording and the split are added in Python.
+ * Every question of the Arbiter's evaluation dataset with its answer key, one JSON line each (design doc §6.1): the
+ * recipes' scenarios played by the engine, the factual and deck-building questions, and the simple-rule and
+ * unanswerable questions written once. The wording and the split are added in Python.
  */
 package fr.daliush.shardbound.dataset;

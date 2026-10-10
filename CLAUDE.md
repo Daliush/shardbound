@@ -14,8 +14,10 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - `content/cards/`: one JSON file per card, plus the card schema and text templates (`content/cards/README.md`).
 - `content/decks/`: one JSON file per deck, plus the deck schema (`content/decks/README.md`).
 - `content/tests/`: tests for all the content above.
-- `engine/`: the Java engine, a Maven multi-module build. `engine/core` is the rules engine (no Spring: content, state, rules, views, events, determinization, bots, scenarios; its README lists the entry points and documents the scenario service); `engine/api` is the Spring Boot game server (REST, WebSocket protocol, game sessions); `engine/dataset` builds the Arbiter's evaluation scenarios from recipes and exports them with their answer keys (its README says how to add a recipe).
-- `evals/datasets/<version>/`: the Arbiter's evaluation data, versioned: `scenarios.jsonl` from `engine/dataset`, then the worded and split dataset. `evals/datasets/preview/` is a local output, ignored by git.
+- `engine/`: the Java engine, a Maven multi-module build. `engine/core` is the rules engine (no Spring: content, state, rules, views, events, determinization, bots, scenarios; its README lists the entry points and documents the scenario service); `engine/api` is the Spring Boot game server (REST, WebSocket protocol, game sessions); `engine/dataset` writes every question of the Arbiter's evaluation dataset with its answer key: scenarios from recipes, factual and deck questions, and the simple-rule and unanswerable questions written once (its README says how to add a recipe).
+- `ai/`: the Python AI layer, a `uv` project. `ai/dataset` words the dataset's questions with Luna 6 and splits them into dev and test (`ai/README.md`); the RAG and the eval harness come next.
+- `evals/datasets/<version>/`: the Arbiter's evaluation data, versioned and frozen. The final datasets are `dataset-dev.jsonl` (for tuning) and `dataset-test.jsonl` (for the published numbers); the other files are the engine's questions they come from, `manifest.json` and `hand-check.jsonl`. `evals/datasets/preview/` is a local output, ignored by git.
+- `scripts/build-dataset.sh`: builds a dataset version from end to end.
 - `frontend/`: the Angular test client (`frontend/README.md`).
 - `specs/`: implementation specs. `specs/phase-2-engine.md` covers the engine, the game server and the test frontend; `specs/phase-2-examples.md` shows its payloads on a real situation.
 - `.claude/skills/`: project knowledge for Claude Code.
@@ -34,7 +36,8 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - Bot reports, from `engine/`, on demand: `./mvnw -pl core test -Preports` (a few minutes; greedy against random and the decks' balance, printed and written to `core/target/reports/`). The default build skips them.
 - Whole game, from the root: `docker compose up --build` (client on http://localhost:4200, server on http://localhost:8080).
 - Game server, from `engine/`: `./mvnw -pl api -am spring-boot:run` (http://localhost:8080).
-- Evaluation scenarios, from `engine/`: `./mvnw -q -pl dataset -am compile exec:java -Dexec.args=<version>` writes `evals/datasets/<version>/scenarios.jsonl`.
+- Evaluation dataset, from the root: `scripts/build-dataset.sh <version> --base <previous version>` runs the engine's generator, then the wording and split; it needs `LUNA_BASE_URL`, `LUNA_MODEL` and `LUNA_API_KEY` (`ai/README.md`), and `--fake` makes a dry run into `preview` without a key. A built version is frozen unless `--overwrite` is passed. The engine's step alone, from `engine/`: `./mvnw -q -pl dataset -am compile exec:java -Dexec.args=<version>`.
+- AI tests, from `ai/`: `uv run pytest`. Run them after any change to `ai/` or `evals/`; they call no model. CI runs them (`.github/workflows/ai.yml`).
 - Test client, from `frontend/`: `npm start` (http://localhost:4200, proxies `/api` and `/ws` to the server), `npm test` (unit tests, once), `npm run build`. Run the tests and the build after any change to `frontend/`. CI runs them (`.github/workflows/frontend.yml`).
 
 ## Commits
@@ -77,5 +80,5 @@ Phase 2 of the roadmap in `docs/design.md` §11 is done, built in the five slice
 Phase 3, the RAG Arbiter, is designed (`docs/design.md` §5.2 and §6) and in progress:
 
 - The evaluation scenarios are done: `engine/dataset` builds them from recipes, 25 interactions and 177 scenarios, each answer key reviewed against the rulebook; eight cards were added for them (47 cards + 1 token).
-- Next: the dataset v1. The other question categories (factual, simple rule, unanswerable, deck building), then a Python pipeline that words every question with an LLM, checks the wording, splits by interaction and writes `evals/datasets/v1/`.
+- The dataset v1 is built: 668 questions (177 scenarios, 214 factual, 49 deck building, 130 simple rule, 98 unanswerable), worded by Luna 6, in `evals/datasets/v1/dataset-dev.jsonl` and `dataset-test.jsonl`. A new version keeps v1's wordings and split for every unchanged question.
 - Then: the RAG pipeline (`docs/design.md` §5.2), then the eval harness (§6.3) and the benchmark explorer (§8.2).

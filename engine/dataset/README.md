@@ -1,10 +1,20 @@
 # Evaluation questions
 
-The Arbiter's questions that the engine and the card data answer, with their answer keys, computed instead of written by hand (design doc §6.1): the interaction and multi-step scenarios, the factual questions about cards, and the deck-building questions. This module builds them and exports them; the other categories, the questions' final wording and the train / dev / test split are added in Python.
+Every question of the Arbiter's evaluation dataset, with its answer key (design doc §6.1). An answer key never comes from a hand or a model: the engine computes the scenarios', the card data gives the factual ones', `DeckValidator` the deck questions', and the rulebook the simple-rule ones'. The wording and the dev / test split are added afterwards in Python (`ai/dataset`).
+
+| File | Category | Where the questions come from |
+|---|---|---|
+| `scenarios.jsonl` | interaction, multi-step | the recipes, played by the engine |
+| `cards.jsonl` | factual | `card.CardQuestions`, from the card data |
+| `decks.jsonl` | deck building | `deck.DeckQuestions`, answered by `DeckValidator` |
+| `rules.jsonl` | simple rule | written once, kept in `src/main/resources/questions/rules.jsonl` |
+| `unanswerable.jsonl` | unanswerable | written once, kept in `src/main/resources/questions/unanswerable.jsonl` |
 
 ```bash
-# from engine/: writes scenarios.jsonl, cards.jsonl and decks.jsonl into evals/datasets/v1/
-./mvnw -q -pl dataset -am compile exec:java -Dexec.args=v1
+# from the repository: both steps, engine then wording and split
+scripts/build-dataset.sh v2 --base v1
+# from engine/: this module alone, into evals/datasets/v2/
+./mvnw -q -pl dataset -am compile exec:java -Dexec.args=v2
 ```
 
 `Dataset` builds every file at once, so it also checks that no two questions share an id, across files, and that every rule a deck question cites is in the rulebook.
@@ -94,4 +104,19 @@ The question shows the whole deck in `decklist`, one line per card sorted by nam
 
 ```json
 {"id":"deck/ember-starter/copies/+ember.spark-dart/-ember.ashborn-drake","category":"deck-building","mutation":"copies","question":"Can I play this deck?","decklist":"Faction: Ember\n2× Ash Warden\n1× Ashborn Drake\n…\n3× Spark Dart","cards":["ember.ash-warden","…"],"key_facts":["The deck is not legal.","The deck has 3 copies of Spark Dart, but a deck can contain at most 2 copies of a card."],"rules":["2.3"]}
+```
+
+## Questions written once
+
+The simple-rule and unanswerable questions are not computed: they were written once, for v1, and are kept as data in `src/main/resources/questions/`. The engine writes them out with the rest of a version, after checking that their answer key still holds.
+
+**Simple rule** (`rule.RuleQuestions`): one question per rule of sections 1 to 11, whose answer is that rule. Luna 6 wrote most of them; the ones a review found flawed were rewritten as templates, which the wording step rewords. The key facts are the rule's own sentences, examples left out; a rule of section 5 starts each fact with its subheading ("Start of turn: …"), since the heading says when the rule applies. Each line keeps the text of its rule (`rule_text`): a rule that changed since its question was written stops the build, since its key facts would be out of date. Write its question and key facts again.
+
+**Unanswerable** (`unanswerable.UnanswerableQuestions`): invented keywords, cards and mechanics (`source: "invented"`), and questions on the points `docs/rules/12-open-points.md` still lists as open (`source: "open-point"`). The answer key is an abstention: no key fact. An invented name that a card or the rulebook now uses, or an open point now settled, stops the build: the question would have an answer.
+
+One line of `rules.jsonl` and one of `unanswerable.jsonl`:
+
+```json
+{"id":"rule/7.5","category":"simple-rule","rule":"7.5","question":"What does it mean for a unit to intercept an attack, and what restrictions apply when it does so?","rule_text":"Intercept: when an attack targets one of their units, …","key_facts":["Intercept: when an attack targets one of their units, the defender may redirect the attack to another of their units, which becomes the new target.","A unit can intercept at most once per turn.","A frozen unit cannot intercept.","Neither a spell nor an echo can be intercepted (11.1.4)."]}
+{"id":"unanswerable/keyword/siphon/1","category":"unanswerable","group":"invented/siphon","question":"What does the Siphon keyword do?","source":"invented","name":"Siphon","protected_terms":["Siphon"]}
 ```
