@@ -1,0 +1,19 @@
+[project]
+name = "shardbound-ai"
+version = "0.1.0"
+description = "Shardbound's AI layer: the Arbiter's evaluation dataset first; the RAG and the eval harness come next."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --import-mode=importlib"
