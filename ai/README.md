@@ -29,7 +29,7 @@ A dataset version lives in `evals/datasets/<version>/`, committed. It is built i
 
 Each template question (scenarios, factual, deck building, unanswerable) is rewritten the way a player would ask it, then checked twice: by code (every card name, keyword and number kept, no card or rule number added), then by a second model call that compares it with the template (same situation, same question, no new card). A rewrite that fails keeps its template; a simple-rule question that fails is dropped, since it has no template. Both are listed in the manifest's `failed_checks`. A deck question's decklist is never sent to the model: only the sentence before it is reworded.
 
-The model is Luna 6, a family no evaluated configuration uses (design doc §3.3), called through an OpenAI-compatible chat-completions API at temperature 0. Set `LUNA_BASE_URL`, `LUNA_MODEL` and `LUNA_API_KEY`. Every response is cached on disk by model and prompt (`ai/.cache/llm/`, not committed), so a rerun costs nothing and gives the same dataset.
+The model is Luna 6, a family no evaluated configuration uses (design doc §3.3), called through an OpenAI-compatible chat-completions API at temperature 0. Set `LUNA_BASE_URL` (the API root, such as `https://api.openai.com/v1`), `LUNA_MODEL` (`gpt-6-luna`) and `LUNA_API_KEY`. `LUNA_REASONING_EFFORT` is optional and sent as `reasoning_effort` when set: `none` turns reasoning off, which rewording a question does not need, and which a reasoning model may require before it accepts temperature 0. The manifest records it with the model. Every response is cached on disk by model and prompt (`ai/.cache/llm/`, not committed), so a rerun costs nothing and gives the same dataset.
 
 ### Split
 
@@ -56,7 +56,7 @@ One line of `dataset.jsonl`:
 - `wording`: `paraphrase`, `template` (the rewrite failed its check) or `written` (a simple-rule question, written by the model).
 - `citations`: the essential citations, the ones a correct answer cites: the rules and context rules of a scenario or a deck question, the card of a factual question, the rule of a simple-rule question.
 - `hand-check.jsonl`: about 150 questions, stratified by category and spread over groups, with a `review` for the human check of design doc §6.1.
-- `manifest.json`: the counts per category and split, the seed, the model, a hash of the prompts, the engine commit, hashes of the content, the rulebook and the engine's files, and every check that failed.
+- `manifest.json`: the counts per category and split, the seed, the model and its options, a hash of the prompts, the engine commit, hashes of the content, the rulebook and the engine's files, and every check that failed.
 
 ## Code
 

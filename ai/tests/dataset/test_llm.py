@@ -26,6 +26,29 @@ def test_calls_a_chat_completions_api_at_temperature_0():
         {"role": "system", "content": PROMPT.system}, {"role": "user", "content": PROMPT.user}]}
 
 
+def test_sends_a_reasoning_effort_only_when_one_is_set():
+    sent = []
+
+    def reply(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    OpenAiCompatibleClient("https://models.test/v1", "luna-6", "secret", reasoning_effort="none",
+                           transport=httpx.MockTransport(reply)).complete(PROMPT)
+
+    assert sent[0]["reasoning_effort"] == "none"
+    assert sent[0]["temperature"] == 0
+
+
+def test_shows_what_the_api_says_when_it_refuses_a_request():
+    refusal = httpx.Response(400, json={"error": {"message": "Unsupported parameter: 'temperature'"}})
+    client = OpenAiCompatibleClient("https://models.test/v1", "luna-6", "secret",
+                                    transport=httpx.MockTransport(lambda request: refusal))
+
+    with pytest.raises(RuntimeError, match="answered 400: .*Unsupported parameter: 'temperature'"):
+        client.complete(PROMPT)
+
+
 def test_retries_when_the_api_is_busy():
     replies = iter([httpx.Response(429), httpx.Response(503),
                     httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})])
@@ -35,13 +58,22 @@ def test_retries_when_the_api_is_busy():
     assert client.complete(PROMPT) == "ok"
 
 
-def test_needs_its_three_environment_variables(monkeypatch):
+def test_needs_three_environment_variables_and_reads_the_reasoning_effort_if_set(monkeypatch):
     monkeypatch.setenv("TEST_BASE_URL", "https://models.test/v1")
     monkeypatch.delenv("TEST_MODEL", raising=False)
     monkeypatch.delenv("TEST_KEY", raising=False)
+    monkeypatch.delenv("TEST_EFFORT", raising=False)
+
+    variables = ("TEST_BASE_URL", "TEST_MODEL", "TEST_KEY", "TEST_EFFORT")
 
     with pytest.raises(SystemExit, match="Set TEST_MODEL, TEST_KEY"):
-        OpenAiCompatibleClient.from_environment("TEST_BASE_URL", "TEST_MODEL", "TEST_KEY")
+        OpenAiCompatibleClient.from_environment(*variables)
+
+    monkeypatch.setenv("TEST_MODEL", "luna-6")
+    monkeypatch.setenv("TEST_KEY", "secret")
+    assert OpenAiCompatibleClient.from_environment(*variables).options == {}
+    monkeypatch.setenv("TEST_EFFORT", "none")
+    assert OpenAiCompatibleClient.from_environment(*variables).options == {"reasoning_effort": "none"}
 
 
 def test_answers_a_prompt_seen_before_from_disk(tmp_path):
@@ -56,11 +88,14 @@ def test_answers_a_prompt_seen_before_from_disk(tmp_path):
     assert len(list(tmp_path.rglob("*.json"))) == 1
 
 
-def test_keeps_the_responses_of_two_models_apart(tmp_path):
+def test_keeps_the_responses_of_two_models_or_two_settings_apart(tmp_path):
     class Other(FakeClient):
         model = "other"
 
-    CachedClient(FakeClient(), tmp_path).complete(PROMPT)
-    CachedClient(Other(), tmp_path).complete(PROMPT)
+    class Reasoning(FakeClient):
+        options = {"reasoning_effort": "high"}
 
-    assert len(list(tmp_path.rglob("*.json"))) == 2
+    for client in (FakeClient(), Other(), Reasoning()):
+        CachedClient(client, tmp_path).complete(PROMPT)
+
+    assert len(list(tmp_path.rglob("*.json"))) == 3

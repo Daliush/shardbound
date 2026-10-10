@@ -26,33 +26,44 @@ class Prompt:
 
 class LlmClient(Protocol):
     model: str
+    options: dict[str, str]
 
     def complete(self, prompt: Prompt) -> str: ...
 
 
 class OpenAiCompatibleClient:
-    """Any chat-completions API that follows OpenAI's format, at temperature 0."""
+    """Any chat-completions API that follows OpenAI's format, at temperature 0.
 
-    def __init__(self, base_url: str, model: str, api_key: str, timeout: float = 60.0, retries: int = 4,
-                 transport: httpx.BaseTransport | None = None, backoff: float = 2.0):
+    `reasoning_effort` ("none", "low"…) is sent only when set: a reasoning model may refuse temperature 0 unless its
+    reasoning is off, and rewording a question needs none.
+    """
+
+    def __init__(self, base_url: str, model: str, api_key: str, reasoning_effort: str | None = None,
+                 timeout: float = 60.0, retries: int = 4, transport: httpx.BaseTransport | None = None,
+                 backoff: float = 2.0):
         self.model = model
+        self.options = {"reasoning_effort": reasoning_effort} if reasoning_effort else {}
         self._retries = retries
         self._backoff = backoff
         self._http = httpx.Client(base_url=base_url.rstrip("/"), timeout=timeout, transport=transport,
                                   headers={"Authorization": f"Bearer {api_key}"})
 
     @classmethod
-    def from_environment(cls, base_url_variable: str, model_variable: str, key_variable: str) -> "OpenAiCompatibleClient":
+    def from_environment(cls, base_url_variable: str, model_variable: str, key_variable: str,
+                         reasoning_effort_variable: str) -> "OpenAiCompatibleClient":
+        """The first three variables are required; the reasoning effort is optional."""
         missing = [name for name in (base_url_variable, model_variable, key_variable) if not os.environ.get(name)]
         if missing:
             raise SystemExit(f"Set {', '.join(missing)} to call the model, or use --fake for a dry run.")
-        return cls(os.environ[base_url_variable], os.environ[model_variable], os.environ[key_variable])
+        return cls(os.environ[base_url_variable], os.environ[model_variable], os.environ[key_variable],
+                   reasoning_effort=os.environ.get(reasoning_effort_variable) or None)
 
     def complete(self, prompt: Prompt) -> str:
         body = {
             "model": self.model,
             "temperature": 0,
             "messages": [{"role": "system", "content": prompt.system}, {"role": "user", "content": prompt.user}],
+            **self.options,
         }
         for attempt in range(self._retries + 1):
             response = self._http.post("/chat/completions", json=body)
@@ -60,28 +71,31 @@ class OpenAiCompatibleClient:
                 if attempt < self._retries:
                     time.sleep(self._backoff ** attempt if self._backoff else 0)
                     continue
-            response.raise_for_status()
+            if response.is_error:
+                raise RuntimeError(f"The model API answered {response.status_code}: {response.text[:500]}")
             return response.json()["choices"][0]["message"]["content"].strip()
         raise RuntimeError("unreachable")
 
 
 class CachedClient:
-    """Keeps every response on disk, by model and prompt: a rerun costs nothing and gives the same dataset."""
+    """Keeps every response on disk, by model, options and prompt: a rerun costs nothing and gives the same dataset."""
 
     def __init__(self, inner: LlmClient, cache_dir: Path):
         self.model = inner.model
+        self.options = inner.options
         self._inner = inner
         self._dir = cache_dir
 
     def complete(self, prompt: Prompt) -> str:
-        key = hashlib.sha256(json.dumps([self.model, prompt.system, prompt.user]).encode("utf-8")).hexdigest()
+        identity = [self.model, self.options, prompt.system, prompt.user]
+        key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode("utf-8")).hexdigest()
         file = self._dir / key[:2] / f"{key}.json"
         if file.exists():
             return json.loads(file.read_text(encoding="utf-8"))["response"]
         response = self._inner.complete(prompt)
         file.parent.mkdir(parents=True, exist_ok=True)
-        record = {"model": self.model, "task": prompt.task, "system": prompt.system, "user": prompt.user,
-                  "response": response}
+        record = {"model": self.model, "options": self.options, "task": prompt.task, "system": prompt.system,
+                  "user": prompt.user, "response": response}
         file.write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
         return response
 
@@ -90,6 +104,7 @@ class FakeClient:
     """Answers without a model, for the tests and a dry run: a fixed reply per task, which a test can replace."""
 
     model = "fake"
+    options: dict[str, str] = {}
 
     def __init__(self, replies: dict[str, Callable[[Prompt], str]] | None = None):
         self._replies = {

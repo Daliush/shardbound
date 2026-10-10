@@ -10,6 +10,7 @@ from dataset.paths import dataset_dir, repo_root
 BASE_URL = "LUNA_BASE_URL"
 MODEL = "LUNA_MODEL"
 API_KEY = "LUNA_API_KEY"
+REASONING_EFFORT = "LUNA_REASONING_EFFORT"
 
 
 def main() -> None:
@@ -26,7 +27,7 @@ def main() -> None:
     if args.fake:
         client = FakeClient()
     else:
-        client = CachedClient(OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY),
+        client = CachedClient(OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY, REASONING_EFFORT),
                               Path(__file__).resolve().parents[1] / ".cache" / "llm")
     manifest = build(root, dataset_dir(root, args.version), client, workers=args.workers, overwrite=args.overwrite)
     counts = manifest["counts"]
