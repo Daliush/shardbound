@@ -1,6 +1,6 @@
 """The language model that words questions, behind one interface: the real API, a disk cache, and a fake.
 
-The model only ever writes or checks a question, never an answer (design doc §6.1).
+The model only ever rewords or checks a question, never an answer (design doc §6.1).
 """
 
 import hashlib
@@ -117,9 +117,6 @@ class FakeClient:
         self._replies = {
             "paraphrase": lambda prompt: "Quick rules question: " + _between(prompt.user, "<question>", "</question>"),
             "check-paraphrase": lambda prompt: '{"verdict": "pass", "reason": "fake"}',
-            "write-rule-question": lambda prompt: "How does this part of the rules work: "
-                                                  + _between(prompt.user, "<rule>", "</rule>")[:60].rstrip() + "?",
-            "check-rule-question": lambda prompt: '{"verdict": "pass", "reason": "fake"}',
             **(replies or {}),
         }
         self.calls: list[Prompt] = []

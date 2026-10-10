@@ -1,4 +1,4 @@
-"""Every prompt the dataset sends to the model. The model writes or checks a question; it never sees an answer key."""
+"""Every prompt the dataset sends to the model: it rewords a question, or checks a rewording; it never sees an answer."""
 
 import hashlib
 
@@ -41,38 +41,7 @@ It passes only if all of these hold:
 
 Reply with JSON only: {{"verdict": "pass" or "fail", "reason": "one short sentence"}}"""
 
-WRITE_RULE_QUESTION_SYSTEM = f"""{_GAME}
-You write the questions players ask when they do not know a rule yet."""
-
-WRITE_RULE_QUESTION_USER = """Here is one rule of the rulebook, from the section "{section}".
-
-<rule>{rule}</rule>
-
-Write one question a player could ask the referee whose complete answer is this rule.
-
-Rules:
-- Ask about what the rule settles, the way a player would: about their game, a card, or what a word means.
-- The whole rule should be needed to answer it, and nothing else should be.
-- Do not quote the rule, and do not mention rule numbers or the rulebook.
-- Do not name any card.
-
-Reply with the question only."""
-
-CHECK_RULE_QUESTION_SYSTEM = f"""{_GAME}
-You check that a player's question is answered by one rule of the rulebook."""
-
-CHECK_RULE_QUESTION_USER = """<rule>{rule}</rule>
-<question>{question}</question>
-
-It passes only if all of these hold:
-- this rule answers the question completely, without needing another rule;
-- the question does not mention a rule number or the rulebook, and names no card;
-- a player who does not know the rule could ask it.
-
-Reply with JSON only: {{"verdict": "pass" or "fail", "reason": "one short sentence"}}"""
-
-ALL = (PARAPHRASE_SYSTEM, PARAPHRASE_USER, CHECK_PARAPHRASE_SYSTEM, CHECK_PARAPHRASE_USER,
-       WRITE_RULE_QUESTION_SYSTEM, WRITE_RULE_QUESTION_USER, CHECK_RULE_QUESTION_SYSTEM, CHECK_RULE_QUESTION_USER)
+ALL = (PARAPHRASE_SYSTEM, PARAPHRASE_USER, CHECK_PARAPHRASE_SYSTEM, CHECK_PARAPHRASE_USER)
 
 
 def paraphrase(question: str) -> Prompt:
@@ -82,16 +51,6 @@ def paraphrase(question: str) -> Prompt:
 def check_paraphrase(original: str, rewrite: str) -> Prompt:
     return Prompt("check-paraphrase", CHECK_PARAPHRASE_SYSTEM,
                   CHECK_PARAPHRASE_USER.format(original=original, rewrite=rewrite))
-
-
-def write_rule_question(section: str, rule: str) -> Prompt:
-    return Prompt("write-rule-question", WRITE_RULE_QUESTION_SYSTEM,
-                  WRITE_RULE_QUESTION_USER.format(section=section, rule=rule))
-
-
-def check_rule_question(rule: str, question: str) -> Prompt:
-    return Prompt("check-rule-question", CHECK_RULE_QUESTION_SYSTEM,
-                  CHECK_RULE_QUESTION_USER.format(rule=rule, question=question))
 
 
 def fingerprint() -> str:

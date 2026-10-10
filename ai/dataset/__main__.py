@@ -20,8 +20,9 @@ DEFAULT_TEMPERATURE = 1.0
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m dataset")
     commands = parser.add_subparsers(dest="command", required=True)
-    build_command = commands.add_parser("build", help="build evals/datasets/<version>/ from the engine's files")
+    build_command = commands.add_parser("build", help="word and split evals/datasets/<version>/")
     build_command.add_argument("version")
+    build_command.add_argument("--base", help="the previous version, whose wordings and split are kept")
     build_command.add_argument("--fake", action="store_true", help="a dry run with the fake model, without a key")
     build_command.add_argument("--overwrite", action="store_true", help="build a version that already exists")
     build_command.add_argument("--workers", type=int, default=8, help="model calls in parallel")
@@ -37,15 +38,17 @@ def main() -> None:
         sent = ", ".join(f"{name}={value}" for name, value in model.options.items())
         print(f"Calling {model.model} at {os.environ[BASE_URL]} with {sent}.", flush=True)
     try:
-        manifest = build(root, dataset_dir(root, args.version), client, workers=args.workers,
+        base = dataset_dir(root, args.base) if args.base else None
+        manifest = build(root, dataset_dir(root, args.version), client, base=base, workers=args.workers,
                          overwrite=args.overwrite)
     except ModelApiError as error:
         raise SystemExit(f"{error}\nThe responses received so far are cached; fix the setting and run again.")
     counts = manifest["counts"]
+    wording = manifest["wording"]
     print(f"{counts['total']} questions written to evals/datasets/{args.version}/ "
-          f"({counts['by_split'].get('dev', 0)} dev, {counts['by_split'].get('test', 0)} test); "
-          f"{manifest['wording']['template_kept']} kept their template, "
-          f"{manifest['wording']['rule_questions_dropped']} rule questions dropped.")
+          f"({counts['by_split'].get('dev', 0)} dev, {counts['by_split'].get('test', 0)} test): "
+          f"{wording['reused']} wordings kept from the base, {wording['reworded']} reworded, "
+          f"{wording['template_kept']} kept their template.")
 
 
 if __name__ == "__main__":

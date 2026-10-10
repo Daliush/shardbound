@@ -1,8 +1,11 @@
-"""Builds a dataset version: every category, worded, split, with its hand-check sample and its manifest.
+"""Words and splits a dataset version.
 
-The engine's files come first (`scenarios.jsonl`, `cards.jsonl`, `decks.jsonl`, from `engine/dataset`); this adds
-the unanswerable and simple-rule questions, words every question, splits by group and writes `dataset.jsonl`,
-`hand-check.jsonl` and `manifest.json` next to them.
+`engine/dataset` writes every question of a version with its answer key: `scenarios.jsonl`, `cards.jsonl`,
+`decks.jsonl`, `rules.jsonl` and `unanswerable.jsonl`. This rewords the questions the way a player would ask them,
+splits them into dev and test, and writes `dataset.jsonl` and `manifest.json` next to them.
+
+Nothing is worded or drawn twice. A question whose template has not changed since the base version (the previous
+one) keeps its wording, and a group keeps its side: only new questions go to the model, and only new groups are drawn.
 """
 
 import hashlib
@@ -13,18 +16,17 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from dataset import content as content_module
-from dataset import hand_check, jsonl, prompts, rulebook, simple_rules, split, unanswerable
+from dataset import jsonl, prompts, split
 from dataset.content import Content
 from dataset.llm import LlmClient
 from dataset.wording import word
 
-SEED = 1
-ENGINE_FILES = ("scenarios.jsonl", "cards.jsonl", "decks.jsonl")
-OUTPUT_FILES = ("dataset.jsonl", "hand-check.jsonl", "manifest.json")
+ENGINE_FILES = ("scenarios.jsonl", "cards.jsonl", "decks.jsonl", "rules.jsonl", "unanswerable.jsonl")
 
 
-def build(root: Path, folder: Path, client: LlmClient, workers: int = 8, overwrite: bool = False) -> dict:
-    """Builds the version in `folder` (`evals/datasets/<version>/`) from the content and rulebook under `root`."""
+def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None, workers: int = 8,
+          overwrite: bool = False) -> dict:
+    """Builds the version in `folder` (`evals/datasets/<version>/`), keeping what `base` already worded and split."""
     missing = [name for name in ENGINE_FILES if not (folder / name).exists()]
     if missing:
         raise SystemExit(f"Missing {', '.join(missing)} in {folder}: run the engine's generator first "
@@ -32,90 +34,76 @@ def build(root: Path, folder: Path, client: LlmClient, workers: int = 8, overwri
     if (folder / "dataset.jsonl").exists() and not overwrite:
         raise SystemExit(f"{folder / 'dataset.jsonl'} exists: a dataset version is frozen. Pass --overwrite to "
                          "build it again.")
-    content = content_module.load(root)
-    rules = rulebook.load(root / "docs" / "rules")
+    previous = {entry["id"]: entry for entry in jsonl.read(base / "dataset.jsonl")} if base else {}
+    entries = questions(folder)
     failures: list[dict] = []
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        rule_questions = rule_entries(rules, content, client, pool, failures)
-        entries = engine_entries(folder) + rule_questions + unanswerable_entries()
-        word_all([entry for entry in entries if entry["wording"] == "pending"], content, client, pool, failures)
-    sides = split.assign(entries, SEED)
+    reused = word_all(entries, previous, content_module.load(root), client, workers, failures)
+    sides = split.assign(entries, split.SEED, split.sides_of(list(previous.values())))
     for entry in entries:
         entry["split"] = sides[(entry["category"], entry["group"])]
     entries = [_ordered(entry) for entry in entries]
-    sample = hand_check.sample(entries, hand_check.SIZE, SEED)
     jsonl.write(folder / "dataset.jsonl", entries)
-    jsonl.write(folder / "hand-check.jsonl", sample)
-    manifest = _manifest(root, folder, client, entries, sample, failures)
-    (folder / "manifest.json").write_text(_json(manifest), encoding="utf-8", newline="\n")
+    manifest = _manifest(root, folder, base, client, entries, reused, failures)
+    (folder / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                                          encoding="utf-8", newline="\n")
     return manifest
 
 
-def engine_entries(folder: Path) -> list[dict]:
-    """The engine's three files, in the dataset's shape; the decklist is appended to a question after wording."""
+def questions(folder: Path) -> list[dict]:
+    """The engine's files in the dataset's shape: the group that decides the split, and the essential citations."""
     entries = []
-    for scenario in jsonl.read(folder / "scenarios.jsonl"):
-        entries.append(_entry(scenario, group=scenario["interaction"], source="engine",
-                              citations=_unique(scenario["rules"] + scenario["context_rules"])))
-    for card in jsonl.read(folder / "cards.jsonl"):
-        entries.append(_entry(card, group=card["card"], source="card-data", citations=[card["card"]],
-                              cards=[card["card"]]))
-    for deck in jsonl.read(folder / "decks.jsonl"):
-        entries.append(_entry(deck, group=deck["mutation"], source="engine", citations=deck["rules"],
-                              decklist=deck["decklist"]))
+    for row in jsonl.read(folder / "scenarios.jsonl"):
+        entries.append(_entry(row, group=row["interaction"], source="engine",
+                              citations=list(dict.fromkeys(row["rules"] + row["context_rules"]))))
+    for row in jsonl.read(folder / "cards.jsonl"):
+        entries.append(_entry(row, group=row["card"], source="card-data", citations=[row["card"]],
+                              cards=[row["card"]]))
+    for row in jsonl.read(folder / "decks.jsonl"):
+        entries.append(_entry(row, group=row["mutation"], source="engine", citations=row["rules"],
+                              decklist=row["decklist"]))
+    for row in jsonl.read(folder / "rules.jsonl"):
+        entries.append(_entry(row, group=row["rule"], source="rulebook", citations=[row["rule"]],
+                              rules=[row["rule"]]))
+    for row in jsonl.read(folder / "unanswerable.jsonl"):
+        entries.append(_entry({**row, "key_facts": []}, group=row["group"], source=row["source"], citations=[],
+                              answerable=False, protected=row["protected_terms"]))
     return entries
 
 
-def unanswerable_entries() -> list[dict]:
-    return [{"id": question.id, "category": "unanswerable", "group": question.group, "question": question.question,
-             "template_question": question.question, "wording": "pending", "protected": list(question.protected),
-             "answerable": False, "source": question.source, "key_facts": [], "citations": [], "rules": [],
-             "context_rules": [], "cards": [], "trace": []}
-            for question in unanswerable.questions()]
+def word_all(entries: list[dict], previous: dict[str, dict], content: Content, client: LlmClient, workers: int,
+             failures: list[dict]) -> int:
+    """Gives each entry its `question`: the base version's wording if its template is unchanged, else a new one.
 
-
-def rule_entries(rules: list[rulebook.Rule], content: Content, client: LlmClient, pool: ThreadPoolExecutor,
-                 failures: list[dict]) -> list[dict]:
-    entries = []
-    for asked in pool.map(lambda rule: simple_rules.ask(rule, content, client), simple_rules.selected(rules)):
-        rule = asked.rule
-        if asked.question is None:
-            failures.append({"id": f"rule/{rule.id}", "stage": "rule-question", "outcome": "dropped",
-                             "reason": asked.failure})
-            continue
-        entries.append({"id": f"rule/{rule.id}", "category": "simple-rule", "group": rule.id,
-                        "question": asked.question, "template_question": asked.question, "wording": "written",
-                        "answerable": True, "source": "rulebook", "key_facts": list(rule.facts),
-                        "citations": [rule.id], "rules": [rule.id], "context_rules": [], "cards": [], "trace": []})
-    return entries
-
-
-def word_all(entries: list[dict], content: Content, client: LlmClient, pool: ThreadPoolExecutor,
-             failures: list[dict]) -> None:
-    """Words each entry's template in place; a deck question is worded without its decklist, then gets it back."""
-    worded = pool.map(lambda entry: word(entry["template_question"], entry.get("protected", []), content, client),
-                      entries)
-    for entry, wording in zip(entries, worded):
-        entry["question"] = wording.question
-        entry["wording"] = wording.status
-        if wording.failure:
-            failures.append({"id": entry["id"], "stage": "paraphrase", "outcome": "template kept",
-                             "reason": wording.failure})
-        if "decklist" in entry:
-            entry["template_question"] += "\n\n" + entry["decklist"]
-            entry["question"] += "\n\n" + entry["decklist"]
+    A deck question is reworded without its decklist, which is appended afterwards. Returns how many were reused.
+    """
+    new = []
+    for entry in entries:
+        old = previous.get(entry["id"])
+        if old and old["template_question"] == entry["template_question"]:
+            entry["question"], entry["wording"] = old["question"], old["wording"]
+        else:
+            new.append(entry)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        worded = pool.map(lambda entry: word(entry["reword"], entry["protected"], content, client), new)
+        for entry, wording in zip(new, worded):
+            entry["question"] = wording.question + entry["suffix"]
+            entry["wording"] = wording.status
+            if wording.failure:
+                failures.append({"id": entry["id"], "outcome": "template kept", "reason": wording.failure})
+    return len(entries) - len(new)
 
 
 def _entry(row: dict, group: str, source: str, citations: list[str], cards: list[str] | None = None,
-           decklist: str | None = None) -> dict:
-    entry = {"id": row["id"], "category": row["category"], "group": group, "question": row["question"],
-             "template_question": row["question"], "wording": "pending", "answerable": True, "source": source,
-             "key_facts": row["key_facts"], "citations": citations, "rules": row.get("rules", []),
-             "context_rules": row.get("context_rules", []), "cards": cards or row.get("cards", []),
-             "trace": row.get("trace", [])}
-    if decklist is not None:
-        entry["decklist"] = decklist
-    return entry
+           rules: list[str] | None = None, decklist: str | None = None, answerable: bool = True,
+           protected: list[str] | None = None) -> dict:
+    """`reword`, `suffix` and `protected` are working fields: what the model rewords, what is appended after it, and
+    the words the rewrite must keep."""
+    suffix = f"\n\n{decklist}" if decklist else ""
+    return {"id": row["id"], "category": row["category"], "group": group, "template_question": row["question"] + suffix,
+            "answerable": answerable, "source": source, "key_facts": row["key_facts"], "citations": citations,
+            "rules": rules or row.get("rules", []), "context_rules": row.get("context_rules", []),
+            "cards": cards or row.get("cards", []), "trace": row.get("trace", []),
+            "reword": row["question"], "suffix": suffix, "protected": protected or []}
 
 
 _FIELDS = ("id", "category", "group", "split", "question", "template_question", "wording", "answerable", "source",
@@ -123,29 +111,27 @@ _FIELDS = ("id", "category", "group", "split", "question", "template_question", 
 
 
 def _ordered(entry: dict) -> dict:
-    """The dataset's fields in a fixed order; the working fields (decklist, protected names) are dropped."""
     return {field: entry[field] for field in _FIELDS}
 
 
-def _manifest(root: Path, folder: Path, client: LlmClient, entries: list[dict], sample: list[dict],
+def _manifest(root: Path, folder: Path, base: Path | None, client: LlmClient, entries: list[dict], reused: int,
               failures: list[dict]) -> dict:
     by_category: dict[str, Counter] = defaultdict(Counter)
     groups: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
     for entry in entries:
         by_category[entry["category"]][entry["split"]] += 1
         groups[entry["category"]][entry["split"]].add(entry["group"])
-    wording = Counter(entry["wording"] for entry in entries)
+    worded_now = len(entries) - reused
     return {
         "version": folder.name,
-        "seed": SEED,
+        "base": base.name if base else None,
+        "seed": split.SEED,
         "dev_share": split.DEV_SHARE,
         "model": client.model,
         "model_options": client.options,
         "prompts_sha256": prompts.fingerprint(),
         "engine_commit": _git(root, "rev-parse", "HEAD"),
         "sources_clean": _git(root, "status", "--porcelain", "--", "engine", "content", "docs/rules", "ai") == "",
-        "content_sha256": _tree_hash(root / "content", ("cards", "decks")),
-        "rulebook_sha256": _tree_hash(root / "docs", ("rules",)),
         "inputs_sha256": {name: _file_hash(folder / name) for name in ENGINE_FILES},
         "counts": {
             "total": len(entries),
@@ -156,21 +142,14 @@ def _manifest(root: Path, folder: Path, client: LlmClient, entries: list[dict], 
                        for category, sides in sorted(groups.items())},
         },
         "wording": {
-            "policy": "A paraphrase that fails its check keeps its template; a simple-rule question that fails its "
-                      "check is dropped, since it has no template.",
-            "paraphrased": wording["paraphrase"],
-            "template_kept": wording["template"],
-            "written_by_model": wording["written"],
-            "rule_questions_dropped": sum(1 for failure in failures if failure["outcome"] == "dropped"),
+            "policy": "A question whose template is unchanged since the base version keeps its wording. A new or "
+                      "changed one is reworded, and keeps its template if the rewrite fails its check.",
+            "reused": reused,
+            "reworded": worded_now - len(failures),
+            "template_kept": len(failures),
         },
         "failed_checks": sorted(failures, key=lambda failure: failure["id"]),
-        "hand_check": {"size": len(sample),
-                       "by_category": dict(sorted(Counter(row["category"] for row in sample).items()))},
     }
-
-
-def _unique(items: list[str]) -> list[str]:
-    return list(dict.fromkeys(items))
 
 
 def _git(root: Path, *args: str) -> str:
@@ -180,20 +159,6 @@ def _git(root: Path, *args: str) -> str:
         return "unknown"
 
 
-def _tree_hash(base: Path, folders: tuple[str, ...]) -> str:
-    """Line endings are normalized, so a checkout on Windows hashes like one on Linux."""
-    digest = hashlib.sha256()
-    for folder in folders:
-        for file in sorted((base / folder).rglob("*")):
-            if file.is_file():
-                digest.update(file.relative_to(base).as_posix().encode("utf-8") + b"\0")
-                digest.update(file.read_bytes().replace(b"\r\n", b"\n") + b"\0")
-    return digest.hexdigest()
-
-
 def _file_hash(file: Path) -> str:
+    """Line endings are normalized, so a checkout on Windows hashes like one on Linux."""
     return hashlib.sha256(file.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
-
-
-def _json(value: dict) -> str:
-    return json.dumps(value, ensure_ascii=False, indent=2) + "\n"
