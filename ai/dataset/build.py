@@ -7,6 +7,9 @@ splits them into dev and test, and writes the two final datasets, `dataset-dev.j
 
 Nothing is worded or drawn twice. A question whose template has not changed since the base version (the previous
 one) keeps its wording, and a group keeps its side: only new questions go to the model, and only new groups are drawn.
+A review can reject a rewording that passed its checks: `kept-templates.json` in the version's folder maps the id of
+each question to keep as its template to the reason. The version's `hand-check.jsonl`, if any, is refreshed from the
+new datasets, its reviews kept.
 """
 
 import hashlib
@@ -24,6 +27,8 @@ from dataset.wording import word
 
 ENGINE_FILES = ("scenarios.jsonl", "cards.jsonl", "decks.jsonl", "rules.jsonl", "unanswerable.jsonl")
 DATASETS = {"dev": "dataset-dev.jsonl", "test": "dataset-test.jsonl"}
+KEPT_TEMPLATES = "kept-templates.json"
+HAND_CHECK = "hand-check.jsonl"
 
 
 def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None, workers: int = 8,
@@ -37,7 +42,7 @@ def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None,
         raise SystemExit(f"{folder} is built: a dataset version is frozen. Pass --overwrite to build it again.")
     previous = {entry["id"]: entry for entry in read(base)} if base else {}
     entries = questions(folder)
-    failures: list[dict] = []
+    failures = (_failures_of(base) if base else {}) | _kept_templates(folder, entries)
     reused = word_all(entries, previous, content_module.load(root), client, workers, failures)
     sides = split.assign(entries, split.SEED, split.sides_of(list(previous.values())))
     for entry in entries:
@@ -45,6 +50,7 @@ def build(root: Path, folder: Path, client: LlmClient, base: Path | None = None,
     entries = [_ordered(entry) for entry in entries]
     for side, name in DATASETS.items():
         jsonl.write(folder / name, [entry for entry in entries if entry["split"] == side])
+    _refresh_hand_check(folder, entries)
     manifest = _manifest(root, folder, base, client, entries, reused, failures)
     (folder / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
                                           encoding="utf-8", newline="\n")
@@ -84,17 +90,24 @@ def questions(folder: Path) -> list[dict]:
 
 
 def word_all(entries: list[dict], previous: dict[str, dict], content: Content, client: LlmClient, workers: int,
-             failures: list[dict]) -> int:
-    """Gives each entry its `question`: the base version's wording if its template is unchanged, else a new one.
+             failures: dict[str, dict]) -> int:
+    """Gives each entry its `question`: its template if a review rejected its rewording (it is in `failures` already),
+    the base version's wording if its template is unchanged, else a new one.
 
-    A deck question is reworded without its decklist, which is appended afterwards. Returns how many were reused.
+    `failures` holds, by id, why a question keeps its template; a new failure is added to it. A deck question is
+    reworded without its decklist, which is appended afterwards. Returns how many wordings were reused.
     """
     new = []
+    reused = 0
     for entry in entries:
         old = previous.get(entry["id"])
-        if old and old["template_question"] == entry["template_question"]:
+        if failures.get(entry["id"], {}).get("outcome") == "rejected by review":
+            entry["question"], entry["wording"] = entry["template_question"], "template"
+        elif old and old["template_question"] == entry["template_question"]:
             entry["question"], entry["wording"] = old["question"], old["wording"]
+            reused += 1
         else:
+            failures.pop(entry["id"], None)
             new.append(entry)
     with ThreadPoolExecutor(max_workers=workers) as pool:
         worded = pool.map(lambda entry: word(entry["reword"], entry["protected"], content, client), new)
@@ -102,8 +115,8 @@ def word_all(entries: list[dict], previous: dict[str, dict], content: Content, c
             entry["question"] = wording.question + entry["suffix"]
             entry["wording"] = wording.status
             if wording.failure:
-                failures.append({"id": entry["id"], "outcome": "template kept", "reason": wording.failure})
-    return len(entries) - len(new)
+                failures[entry["id"]] = {"id": entry["id"], "outcome": "template kept", "reason": wording.failure}
+    return reused
 
 
 def _entry(row: dict, group: str, source: str, citations: list[str], cards: list[str] | None = None,
@@ -121,6 +134,39 @@ def _entry(row: dict, group: str, source: str, citations: list[str], cards: list
 
 _FIELDS = ("id", "category", "group", "split", "question", "template_question", "wording", "answerable", "source",
            "key_facts", "citations", "rules", "context_rules", "cards", "trace")
+_HAND_CHECK_FIELDS = ("id", "category", "split", "question", "template_question", "answerable", "key_facts",
+                      "citations")
+
+
+def _kept_templates(folder: Path, entries: list[dict]) -> dict[str, dict]:
+    """The rewordings a review rejected, from the version's kept-templates.json: {id: reason}."""
+    file = folder / KEPT_TEMPLATES
+    if not file.exists():
+        return {}
+    kept = json.loads(file.read_text(encoding="utf-8"))
+    unknown = sorted(set(kept) - {entry["id"] for entry in entries})
+    if unknown:
+        raise SystemExit(f"{file} names questions the version does not have: {', '.join(unknown)}")
+    return {id_: {"id": id_, "outcome": "rejected by review", "reason": reason} for id_, reason in kept.items()}
+
+
+def _failures_of(base: Path) -> dict[str, dict]:
+    """Why each question of the base version kept its template, carried with its wording."""
+    manifest = base / "manifest.json"
+    if not manifest.exists():
+        return {}
+    return {failure["id"]: failure for failure in json.loads(manifest.read_text(encoding="utf-8"))["failed_checks"]}
+
+
+def _refresh_hand_check(folder: Path, entries: list[dict]) -> None:
+    """The hand-check sample keeps its questions and reviews; their wording and answer keys follow the datasets."""
+    file = folder / HAND_CHECK
+    if not file.exists():
+        return
+    by_id = {entry["id"]: entry for entry in entries}
+    rows = [{**{field: by_id[row["id"]][field] for field in _HAND_CHECK_FIELDS}, "review": row["review"]}
+            for row in jsonl.read(file) if row["id"] in by_id]
+    jsonl.write(file, rows)
 
 
 def _ordered(entry: dict) -> dict:
@@ -128,16 +174,20 @@ def _ordered(entry: dict) -> dict:
 
 
 def _manifest(root: Path, folder: Path, base: Path | None, client: LlmClient, entries: list[dict], reused: int,
-              failures: list[dict]) -> dict:
+              failures: dict[str, dict]) -> dict:
+    """What the version holds and how it was made. Rebuilding a version on itself keeps its wordings: it has no base
+    then, since its wordings come from no other version."""
     by_category: dict[str, Counter] = defaultdict(Counter)
     groups: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
     for entry in entries:
         by_category[entry["category"]][entry["split"]] += 1
         groups[entry["category"]][entry["split"]].add(entry["group"])
-    worded_now = len(entries) - reused
+    wordings = Counter(entry["wording"] for entry in entries)
+    rejected = sum(1 for failure in failures.values() if failure["outcome"] == "rejected by review")
+    unknown = {"outcome": "template kept", "reason": "not recorded by the base version"}
     return {
         "version": folder.name,
-        "base": base.name if base else None,
+        "base": base.name if base and base.resolve() != folder.resolve() else None,
         "seed": split.SEED,
         "dev_share": split.DEV_SHARE,
         "model": client.model,
@@ -156,12 +206,17 @@ def _manifest(root: Path, folder: Path, base: Path | None, client: LlmClient, en
         },
         "wording": {
             "policy": "A question whose template is unchanged since the base version keeps its wording. A new or "
-                      "changed one is reworded, and keeps its template if the rewrite fails its check.",
-            "reused": reused,
-            "reworded": worded_now - len(failures),
-            "template_kept": len(failures),
+                      "changed one is reworded, and keeps its template if the rewrite fails its check or a review "
+                      "rejects it (kept-templates.json).",
+            "paraphrase": wordings["paraphrase"],
+            "template": wordings["template"],
+            "written": wordings["written"],
+            "reused_now": reused,
+            "reworded_now": len(entries) - reused - rejected,
         },
-        "failed_checks": sorted(failures, key=lambda failure: failure["id"]),
+        "failed_checks": [failures.get(entry["id"], {"id": entry["id"], **unknown})
+                          for entry in sorted(entries, key=lambda entry: entry["id"])
+                          if entry["wording"] == "template"],
     }
 
 

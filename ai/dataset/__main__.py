@@ -47,8 +47,8 @@ def main() -> None:
     wording = manifest["wording"]
     print(f"{counts['total']} questions written to evals/datasets/{args.version}/dataset-{{dev,test}}.jsonl "
           f"({counts['by_split'].get('dev', 0)} dev, {counts['by_split'].get('test', 0)} test): "
-          f"{wording['reused']} wordings kept from the base, {wording['reworded']} reworded, "
-          f"{wording['template_kept']} kept their template.")
+          f"{wording['reused_now']} wordings kept, {wording['reworded_now']} reworded now, "
+          f"{wording['template']} questions on their template.")
 
 
 if __name__ == "__main__":

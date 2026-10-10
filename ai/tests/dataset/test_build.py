@@ -19,8 +19,8 @@ def test_words_and_splits_every_question_of_the_engine_s_files(root, version):
     assert split.leaks(entries) == []
     assert {entry["split"] for entry in entries} == {"dev", "test"}
     assert len({entry["id"] for entry in entries}) == len(entries) == manifest["counts"]["total"]
-    assert manifest["wording"] == {"policy": manifest["wording"]["policy"], "reused": 0,
-                                   "reworded": len(entries), "template_kept": 0}
+    assert {key: value for key, value in manifest["wording"].items() if key != "policy"} == {
+        "paraphrase": len(entries), "template": 0, "written": 0, "reused_now": 0, "reworded_now": len(entries)}
 
 
 def test_writes_the_dev_and_the_test_questions_into_two_datasets(root, version):
@@ -71,7 +71,7 @@ def test_keeps_the_wording_and_the_side_of_every_question_unchanged_since_the_ba
     assert all(after[id_]["question"] == before[id_]["question"] for id_ in after if id_ != cards[0]["id"])
     assert all(after[id_]["split"] == before[id_]["split"] for id_ in after)
     assert manifest["base"] == "v-test"
-    assert manifest["wording"]["reused"] == len(after) - 1
+    assert manifest["wording"]["reused_now"] == len(after) - 1
     assert [call.task for call in client.calls] == ["paraphrase", "check-paraphrase"]
 
 
@@ -98,7 +98,7 @@ def test_keeps_the_template_of_a_question_whose_rewrite_fails_and_says_so(root, 
 
     assert moonpull and all(entry["question"] == entry["template_question"] for entry in moonpull)
     assert all(entry["wording"] == "template" for entry in moonpull)
-    assert manifest["wording"]["template_kept"] == len(moonpull)
+    assert manifest["wording"]["template"] == len(moonpull)
     assert {"id": "card/tide.moonpull/cost", "outcome": "template kept",
             "reason": "model check: lost a step"} in manifest["failed_checks"]
 
@@ -148,6 +148,70 @@ def test_writes_a_manifest_that_says_how_the_dataset_was_made(root, version):
     assert sum(category["total"] for category in manifest["counts"]["by_category"].values()) \
         == manifest["counts"]["total"]
 
+
+
+def test_keeps_the_template_of_a_rewording_a_review_rejected(root, version):
+    rejected = "card/ember.ash-warden/cost"
+    (version / "kept-templates.json").write_text(json.dumps({rejected: "narrows the question"}), encoding="utf-8")
+
+    manifest = build(root, version, FakeClient(), workers=2)
+    entry = next(entry for entry in read(version) if entry["id"] == rejected)
+
+    assert (entry["question"], entry["wording"]) == (entry["template_question"], "template")
+    assert manifest["failed_checks"] == [{"id": rejected, "outcome": "rejected by review",
+                                          "reason": "narrows the question"}]
+    assert manifest["wording"]["reworded_now"] == manifest["counts"]["total"] - 1
+
+
+def test_refuses_a_review_about_a_question_the_version_does_not_have(root, version):
+    (version / "kept-templates.json").write_text(json.dumps({"card/nothing": "?"}), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="names questions the version does not have: card/nothing"):
+        build(root, version, FakeClient(), workers=2)
+
+
+def test_carries_why_a_question_kept_its_template_into_the_next_version(root, version, tmp_path):
+    fails_on_moonpull = lambda prompt: ('{"verdict": "fail", "reason": "lost a step"}' if "Moonpull" in prompt.user
+                                        else '{"verdict": "pass"}')
+    build(root, version, FakeClient({"check-paraphrase": fails_on_moonpull}), workers=2)
+    following = tmp_path / "v-next"
+    _copy_unbuilt(version, following)
+
+    manifest = build(root, following, FakeClient(), base=version, workers=2)
+
+    assert manifest["wording"]["reworded_now"] == 0
+    assert {"id": "card/tide.moonpull/cost", "outcome": "template kept",
+            "reason": "model check: lost a step"} in manifest["failed_checks"]
+    assert len(manifest["failed_checks"]) == manifest["wording"]["template"]
+
+
+def test_a_version_rebuilt_on_itself_keeps_its_wordings_and_has_no_base(root, version):
+    build(root, version, FakeClient(), workers=2)
+    before = read(version)
+
+    manifest = build(root, version, FakeClient({"paraphrase": lambda prompt: "never asked"}), base=version,
+                     workers=2, overwrite=True)
+
+    assert read(version) == before
+    assert manifest["base"] is None
+    assert manifest["wording"]["reused_now"] == len(before)
+
+
+def test_refreshes_the_hand_check_sample_and_keeps_its_reviews(root, version):
+    build(root, version, FakeClient(), workers=2)
+    review = {"question": "ok", "answer_key": "ok", "notes": "checked"}
+    jsonl.write(version / "hand-check.jsonl", [{"id": "rule/7.5", "question": "old", "key_facts": [],
+                                                "review": review}])
+    rules = jsonl.read(version / "rules.jsonl")
+    jsonl.write(version / "rules.jsonl", [{**row, "key_facts": ["New fact."]} if row["rule"] == "7.5" else row
+                                          for row in rules])
+
+    build(root, version, FakeClient(), workers=2, overwrite=True)
+    row = jsonl.read(version / "hand-check.jsonl")[0]
+
+    assert row["key_facts"] == ["New fact."]
+    assert row["question"] == next(entry["question"] for entry in read(version) if entry["id"] == "rule/7.5")
+    assert row["review"] == review
 
 def _copy_unbuilt(version, following):
     """A copy of a built version holding only the engine's files, as the next version starts."""
