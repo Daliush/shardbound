@@ -14,8 +14,8 @@ class AnchorDoomHealRecipeTest {
 
     @Test
     void givesEachAnchorUnitOneScenarioWithoutAHealAndOnePerHealOfItsSide() {
-        // 2 Anchor units × (no heal + Mossmender's Mend).
-        assertThat(entries).hasSize(4);
+        // 3 Anchor units × (no heal + Mossmender's Mend).
+        assertThat(entries).hasSize(6);
     }
 
     @Test

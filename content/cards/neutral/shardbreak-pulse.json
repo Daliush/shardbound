@@ -1,0 +1,8 @@
+{
+  "id": "neutral.shardbreak-pulse",
+  "name": "Shardbreak Pulse",
+  "faction": "neutral",
+  "type": "spell",
+  "cost": 2,
+  "effects": [{ "effect": "destroy", "target": "enemy_relic" }]
+}

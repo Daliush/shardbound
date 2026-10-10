@@ -1,0 +1,10 @@
+{
+  "id": "tide.ebb-and-surge",
+  "name": "Ebb and Surge",
+  "faction": "tide",
+  "type": "spell",
+  "fracture": [
+    { "cost": 1, "effects": [{ "effect": "freeze", "target": "enemy_unit" }] },
+    { "cost": 3, "effects": [{ "effect": "return_to_hand", "target": "enemy_unit" }] }
+  ]
+}

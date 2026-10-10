@@ -14,8 +14,8 @@ class AnchorSacrificeRecipeTest {
 
     @Test
     void meetsEveryAnchorUnitWithEveryCardThatHasASacrificeCost() {
-        // 2 Anchor units × (Pyre Offering + Flamebound Zealot) × protected or expired.
-        assertThat(entries).hasSize(8);
+        // 3 Anchor units × (Pyre Offering + Flamebound Zealot) × protected or expired.
+        assertThat(entries).hasSize(12);
     }
 
     @Test

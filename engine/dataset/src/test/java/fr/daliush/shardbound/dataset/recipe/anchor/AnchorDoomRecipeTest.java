@@ -14,8 +14,8 @@ class AnchorDoomRecipeTest {
 
     @Test
     void meetsEveryAnchorUnitWithEveryDamageSpellThatHitsTheOpponent() {
-        // 2 Anchor units × (Spark Dart + Cinderfall) × protected or expired.
-        assertThat(entries).hasSize(8);
+        // 3 Anchor units × (Spark Dart + Cinderfall) × protected or expired.
+        assertThat(entries).hasSize(12);
     }
 
     @Test

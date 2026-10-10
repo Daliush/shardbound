@@ -13,7 +13,7 @@ class EchoRecipesTest {
     @Test
     void theEchoHitsTheAskersOnlyUnitOrTheAskerWhenTheyHaveNone() {
         List<DatasetEntry> entries = entries(new EchoDeathRecipe());
-        // 2 Echo units × (Crystal Rupture, Tempest, Spark Dart, Cinderfall) × one unit or none.
+        // 2 units with one Echo attack × (Crystal Rupture, Tempest, Spark Dart, Cinderfall) × one unit or none.
         assertThat(entries).hasSize(16);
 
         assertThat(entry(entries, "echo+death/one-unit/ember.ashborn-drake/neutral.crystal-rupture").keyFacts())
@@ -29,7 +29,8 @@ class EchoRecipesTest {
     void aUnitReturnedToHandDoesNotEcho() {
         List<DatasetEntry> entries = entries(new EchoReturnToHandRecipe());
 
-        assertThat(entries).hasSize(4).allSatisfy(entry -> {
+        // 3 Echo units, Kiln Wyrm's two Echo attacks included × (Receding Wave + Engulf).
+        assertThat(entries).hasSize(6).allSatisfy(entry -> {
             assertThat(entry.keyFacts()).singleElement().asString().endsWith("returns to your opponent's hand.");
             assertThat(entry.contextRules()).containsExactly("11.1.5");
         });

@@ -15,12 +15,12 @@ class AnchorRemovalRecipeTest {
 
     @Test
     void meetsEveryAnchorUnitWithEverySourceOnEachSideItCanHit() {
-        // 2 Anchor units × (Crystal Rupture on the opponent's side + Tempest on both sides) × protected or expired.
-        assertThat(destroyed).hasSize(12);
+        // 3 Anchor units × (Crystal Rupture on the opponent's side + Tempest on both sides) × protected or expired.
+        assertThat(destroyed).hasSize(18);
         assertThat(destroyed).extracting(DatasetEntry::id)
                 .noneMatch(id -> id.startsWith("anchor+destroy/mine/") && id.endsWith("crystal-rupture"));
-        // 2 Anchor units × (Receding Wave + Deepcurrent Behemoth's Engulf) × protected or expired.
-        assertThat(returned).hasSize(8);
+        // 3 Anchor units × (Receding Wave + Deepcurrent Behemoth's Engulf) × protected or expired.
+        assertThat(returned).hasSize(12);
     }
 
     @Test

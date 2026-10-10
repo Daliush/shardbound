@@ -14,8 +14,8 @@ class AnchorLinkRecipeTest {
 
     @Test
     void aimsAChosenTargetAtEachLinkedUnit() {
-        // 2 Anchor units × (Crystal Rupture on each unit + Tempest) × protected or expired.
-        assertThat(entries).hasSize(12);
+        // 3 Anchor units × (Crystal Rupture on each unit + Tempest) × protected or expired.
+        assertThat(entries).hasSize(18);
     }
 
     @Test

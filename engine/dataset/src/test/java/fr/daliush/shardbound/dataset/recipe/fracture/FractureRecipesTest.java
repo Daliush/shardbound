@@ -14,14 +14,21 @@ class FractureRecipesTest {
 
     @Test
     void eachStepReturnsToHandUntilTheLast() {
-        // (Moonpull, Spring Tide) × (3 steps + 2 legality questions).
-        assertThat(steps).hasSize(10);
+        // Moonpull and Spring Tide: 3 steps + 2 legality questions each; Ebb and Surge: 2 steps + 2.
+        assertThat(steps).hasSize(14);
 
         assertThat(entry(steps, "fracture+steps/step-1/tide.moonpull").keyFacts())
                 .containsExactly("Shardling gets +2/+2.", "Moonpull returns to your hand, step 2.");
         DatasetEntry last = entry(steps, "fracture+steps/step-3/tide.spring-tide");
         assertThat(last.keyFacts()).contains("Spring Tide goes to your graveyard.");
         assertThat(last.rules()).contains("11.2.4");
+    }
+
+    @Test
+    void aStepThatReturnsAUnitSaysSo() {
+        assertThat(entry(steps, "fracture+steps/step-2/tide.ebb-and-surge").keyFacts())
+                .containsExactly("Shard Construct returns to your opponent's hand.",
+                        "Ebb and Surge goes to your graveyard.");
     }
 
     @Test
@@ -44,8 +51,8 @@ class FractureRecipesTest {
     @Test
     void aFractureCardLosesItsProgressInAFullHandOrWhenDiscarded() {
         List<DatasetEntry> entries = entries(new FractureLostProgressRecipe());
-        // Spring Tide's step 2 draws into a full hand; each Fracture card is discarded by Brinesong.
-        assertThat(entries).hasSize(3);
+        // Spring Tide's step 2 draws into a full hand; each of the 3 Fracture cards is discarded by Brinesong.
+        assertThat(entries).hasSize(4);
 
         assertThat(entry(entries, "fracture+lost-progress/full-hand/step-2/tide.spring-tide").keyFacts())
                 .contains("Your hand is full: Spring Tide goes to the graveyard.");

@@ -75,6 +75,18 @@ class DatasetBuilderTest {
     }
 
     @Test
+    void rejectsAnOutcomeThatStopsOnADecisionNobodyAnswered() {
+        GameState start = ScenarioBuilder.of(CATALOG).shards(P1, 5).hand(P1, "neutral.crystal-rupture")
+                .unit(P2, "ember.kiln-wyrm").unit(P1, "neutral.shardling").build();
+        Scenario scenario = new Scenario("test/unanswered", start,
+                List.of(play("neutral.crystal-rupture").on(unit("ember.kiln-wyrm"))), P1, "What happens?",
+                new Answer.Events(event -> true), List.of());
+
+        assertThatThrownBy(() -> entries(recipe(scenario)))
+                .hasMessageContaining("stops on a CHOOSE_ORDER decision of P2");
+    }
+
+    @Test
     void rejectsAScenarioWhoseOutcomeAnswersNothing() {
         Recipe recipe = recipe(scenario("test/nothing", spark().build(), "What happens?",
                 event -> event instanceof GameEvent.AnchorPrevented, List.of()));
