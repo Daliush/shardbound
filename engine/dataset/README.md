@@ -32,7 +32,7 @@ A question asks one of two things (`Answer`):
 
 `DatasetBuilder` plays every scenario, then reads its answer key (`AnswerKeys`):
 
-- **key facts**: the sentences of the selected events as the asker would see them in a game, redacted (another player's draw names no card) and without instance ids (`EventDescriber.withoutInstanceIds`); or the legality sentence;
+- **key facts**: the sentences of the selected events as the asker would see them in a game, redacted (a draw names no card: another player's is hidden, and nobody knows the order of a deck, the asker's own included) and without instance ids (`EventDescriber.withoutInstanceIds`); or the legality sentence;
 - **rules**: the rule IDs the selected events carry;
 - **context rules**: the rules the recipe names because they explain the situation and no event carries them, such as 11.3.6 when a unit's protection is over. With `rules`, they are the essential rules a correct answer cites;
 - **trace**: every event, incidental ones included.
