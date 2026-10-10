@@ -35,7 +35,7 @@ class CardQuestionsTest {
         assertThat(question("ember.ash-warden", "attacks").keyFacts())
                 .containsExactly("Ash Warden has 2 attack abilities: Cinder Bite and Kindle.");
         CardQuestion cinderBite = question("ember.ash-warden", "attack-1");
-        assertThat(cinderBite.question()).isEqualTo("What does Ash Warden's Cinder Bite do?");
+        assertThat(cinderBite.question()).isEqualTo("What does Ash Warden's Cinder Bite cost, and what does it do?");
         assertThat(cinderBite.keyFacts()).containsExactly(
                 "Ash Warden's Cinder Bite costs 2 Shards.",
                 "Ash Warden's Cinder Bite: \"Deal 4 damage to the target.\"",
@@ -60,6 +60,8 @@ class CardQuestionsTest {
                 "Step 1 of Moonpull costs 1 Shard.",
                 "Step 2 of Moonpull costs 2 Shards.",
                 "Step 3 of Moonpull costs 3 Shards.");
+        assertThat(question("tide.moonpull", "step-2").question())
+                .isEqualTo("What does step 2 of Moonpull cost, and what does it do?");
         assertThat(question("tide.moonpull", "step-2").keyFacts()).containsExactly(
                 "Step 2 of Moonpull costs 2 Shards.",
                 "Step 2 of Moonpull: \"Give an enemy unit -2/-3.\"");

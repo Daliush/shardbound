@@ -110,7 +110,8 @@ public final class CardQuestions {
                 attackName + " costs " + shards(attack.cost()) + ".",
                 attackName + ": \"" + renderer.effects(attack.effects(), unit) + "\""));
         attack.echo().ifPresent(echo -> facts.add(attackName + " has Echo " + echo + "."));
-        return question(unit, "attack-" + (index + 1), "What does " + attackName + " do?", facts);
+        return question(unit, "attack-" + (index + 1), "What does " + attackName + " cost, and what does it do?",
+                facts);
     }
 
     private List<CardQuestion> spellQuestions(SpellCard spell) {
@@ -121,7 +122,8 @@ public final class CardQuestions {
         return steps(spell).map(step -> {
             String stepName = "Step " + step.number() + " of " + spell.name();
             return question(spell, "step-" + step.number(), "What does step " + step.number() + " of "
-                    + spell.name() + " do?", List.of(stepName + " costs " + shards(step.step().cost()) + ".",
+                    + spell.name() + " cost, and what does it do?", List.of(stepName + " costs "
+                    + shards(step.step().cost()) + ".",
                     stepName + ": \"" + renderer.effects(step.step().effects(), spell) + "\""));
         }).toList();
     }
