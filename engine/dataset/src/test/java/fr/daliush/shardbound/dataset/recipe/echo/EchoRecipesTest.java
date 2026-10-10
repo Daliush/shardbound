@@ -73,4 +73,17 @@ class EchoRecipesTest {
         assertThat(entry(entries, "echo+modify/ember.ash-warden/tide.reefkeeper:swell/neutral.tempest").question())
                 .startsWith("I have Ash Warden and Reefkeeper on my board");
     }
+
+    @Test
+    void theOrderOfTwoEchoesDecidesWhatTheSecondOneHits() {
+        List<DatasetEntry> entries = entries(new EchoOrderRecipe());
+
+        assertThat(entry(entries, "echo+order/ember.kiln-wyrm/first-0/neutral.crystal-rupture").keyFacts())
+                .as("Scorch, then Kiln Blast: both hit the Shardling").endsWith("Shardling is destroyed.");
+        DatasetEntry reversed = entry(entries, "echo+order/ember.kiln-wyrm/first-1/neutral.crystal-rupture");
+        assertThat(reversed.keyFacts()).as("Kiln Blast kills the Shardling, so Scorch hits the player")
+                .containsSubsequence("Shardling is destroyed.", "Kiln Wyrm died: Scorch echoes at 100%.",
+                        "Your opponent takes 2 damage.");
+        assertThat(reversed.contextRules()).contains("11.1.8");
+    }
 }

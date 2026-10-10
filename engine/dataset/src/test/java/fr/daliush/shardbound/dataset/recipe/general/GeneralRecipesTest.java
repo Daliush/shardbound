@@ -67,4 +67,55 @@ class GeneralRecipesTest {
         assertThat(entry(entries, "recall/opponents-graveyard/ember.rise-from-cinders").contextRules())
                 .containsExactly("8.13", "10.5");
     }
+
+    @Test
+    void anAuraThatEndsLowersTheMaxAndOnlyWhatIsAboveIt() {
+        List<DatasetEntry> entries = entries(new AuraEndRecipe());
+
+        assertThat(entries).hasSize(2).allSatisfy(entry -> assertThat(entry.keyFacts())
+                .contains("Coral Font is destroyed.", "Shardling has 3 defense, out of 3."));
+        assertThat(entry(entries, "aura+end/full/tide.coral-font/neutral.shardbreak-pulse").question())
+                .contains("boosts to 5 defense, out of 5");
+    }
+
+    @Test
+    void aBonusThatEndsCapsTheDefenseAndAMalusThatEndsGivesItBack() {
+        List<DatasetEntry> entries = entries(new ModifyExpiryRecipe());
+        assertThat(entries).hasSize(4);
+
+        assertThat(entry(entries, "modify+expiry/bonus-damaged/tide.brine-ward").keyFacts())
+                .as("1/3, then 4/6, then 3/3").endsWith("Shardling has 3 defense, out of 3.");
+        DatasetEntry malus = entry(entries, "modify+expiry/malus-then-hit/tide.riptide-hex/ember.spark-dart");
+        assertThat(malus.keyFacts()).as("9/9, 6/6, 3/6, then 6/9").endsWith("Shard Construct has 6 defense, out of 9.");
+        assertThat(malus.rules()).contains("8.17");
+        assertThat(entry(entries, "modify+expiry/lethal-malus/tide.riptide-hex").keyFacts())
+                .contains("Shardling is destroyed.");
+    }
+
+    @Test
+    void anAttackAbilityResolvesBeforeTheAttackAndTheIntercept() {
+        List<DatasetEntry> entries = entries(new AttackAbilityRecipe());
+        assertThat(entries).hasSize(3);
+
+        assertThat(entry(entries, "attack-ability/fragile-target/ember.ashfall-raider:searing-rush").keyFacts())
+                .as("the target dies first: the attack does nothing to it").containsExactly(
+                        "Ashfall Raider triggers its On attack ability.", "Shardling takes 1 damage.",
+                        "Shardling is destroyed.");
+        assertThat(entry(entries, "attack-ability/fragile-interceptor/ember.ashfall-raider:searing-rush")
+                .keyFacts()).endsWith("Shardling is destroyed.", "Shard Construct takes 4 damage.");
+    }
+
+    @Test
+    void aSacrificeEffectNeedsItsUnitsAndAnAnchoredOneStays() {
+        List<DatasetEntry> entries = entries(new SacrificeEffectRecipe());
+        // No unit, one unit, two units, and each of the 3 Anchor units still protected.
+        assertThat(entries).hasSize(6);
+
+        assertThat(entry(entries, "sacrifice-effect/no-unit/ember.cinder-pact").keyFacts())
+                .containsExactly("You cannot cast Cinder Pact.");
+        assertThat(entry(entries, "sacrifice-effect/protected-anchor/ember.cinder-pact/root.root-sentinel")
+                .keyFacts()).containsExactly(
+                        "Root Sentinel is anchored: it stays on the board, and the sacrifice counts as paid.",
+                        "Your opponent takes 6 damage.");
+    }
 }

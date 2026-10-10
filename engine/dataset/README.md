@@ -15,7 +15,7 @@ What applies an effect is a `Source`: a spell cast from hand, or the attack abil
 
 A question asks one of two things (`Answer`):
 
-- **what happens**: the scenario selects the events of the outcome that answer it (`Answer.Events`);
+- **what happens**: the scenario selects the events of the outcome that answer it (`Answer.Events`), and may add facts read from the final state when no event states the value asked, such as a unit's defense once a bonus ends (`StateFacts`);
 - **whether a move is legal** ("Can I play its next step this turn?"): the engine answers from the legal actions of the decision the game waits for once the choices are played (`Answer.Legality`, with `Moves`). The recipe writes the sentence for each outcome, and the rule that decides it is a context rule.
 
 `DatasetBuilder` plays every scenario, then reads its answer key (`AnswerKeys`):
@@ -25,7 +25,7 @@ A question asks one of two things (`Answer`):
 - **context rules**: the rules the recipe names because they explain the situation and no event carries them, such as 11.3.6 when a unit's protection is over. With `rules`, they are the essential rules a correct answer cites;
 - **trace**: every event, incidental ones included.
 
-It stops on a mistake in a recipe: two scenarios with one id, two recipes with one interaction, a scenario whose outcome has no key event, a context rule that is not in the rulebook, or a question that names a card its asker cannot know. A card in the opponent's hand or deck is hidden, unless the opponent plays it during the scenario, it is a Fracture card already played (11.2.5), or the same card is also in plain sight.
+It stops on a mistake in a recipe: two scenarios with one id, two recipes with one interaction, a scenario whose outcome has no key event or stops on a decision nobody answered (an echo order, a target), a context rule that is not in the rulebook, or a question that names a card its asker cannot know. A card in the opponent's hand or deck is hidden, unless the opponent plays it during the scenario, it is a Fracture card already played (11.2.5), or the same card is also in plain sight.
 
 One line of `scenarios.jsonl`:
 
@@ -37,29 +37,33 @@ One line of `scenarios.jsonl`:
 
 ## The recipes
 
-20 interactions, 127 scenarios with the current cards.
+25 interactions, 177 scenarios with the current cards.
 
 | Package | Interaction | Scenarios | What it asks |
 |---|---|---|---|
-| `anchor` | `anchor+destroy`, `anchor+return-to-hand` | 12, 8 | a protected unit stays; once its protection is over, it leaves (11.3.2, 11.3.3, 11.3.6) |
-| | `anchor+sacrifice` | 8 | a protected unit sacrificed stays, and the sacrifice counts as paid (11.3.3) |
-| | `anchor+doom`, `anchor+doom-heal` | 8, 4 | lethal damage dooms it; destroyed at the end of the turn its protection ends, unless healed (11.3.4, 11.3.5) |
-| | `anchor+link` | 12 | destruction is not shared, and the link breaks (11.5.3, 11.5.4) |
+| `anchor` | `anchor+destroy`, `anchor+return-to-hand` | 18, 12 | a protected unit stays; once its protection is over, it leaves (11.3.2, 11.3.3, 11.3.6) |
+| | `anchor+sacrifice` | 12 | a protected unit sacrificed stays, and the sacrifice counts as paid (11.3.3) |
+| | `anchor+doom`, `anchor+doom-heal` | 12, 6 | lethal damage dooms it; destroyed at the end of the turn its protection ends, unless healed (11.3.4, 11.3.5) |
+| | `anchor+link` | 18 | destruction is not shared, and the link breaks (11.5.3, 11.5.4) |
 | `echo` | `echo+death` | 16 | the echo replays at X%, aimed at the asker's only unit or at the asker (11.1.1–3, 7.3) |
-| | `echo+return-to-hand` | 4 | a unit returned to hand does not echo (11.1.5) |
+| | `echo+return-to-hand` | 6 | a unit returned to hand does not echo (11.1.5) |
 | | `echo+chain` | 4 | an echo that kills an Echo unit starts a chain; echoes of units that die together follow 9.8 (11.1.6) |
 | | `echo+modify` | 5 | the echo replays the printed attack, without the boost (11.1.9, 8.18) |
+| | `echo+order` | 2 | two echoes replay in the order their owner chooses, which decides what the second hits (11.1.8) |
 | `link` | `link+damage`, `link+no-share` | 4, 6 | damage is split, rounded up for the unit hit; nothing else is shared (11.5.2, 11.5.3) |
-| `fracture` | `fracture+steps` | 10 | each step returns the card to hand until the last; two steps never in one turn (11.2.2–4) |
-| | `fracture+lost-progress` | 3 | a full hand or a discard loses the progress (11.2.6, 11.2.7) |
+| `fracture` | `fracture+steps` | 14 | each step returns the card to hand until the last; two steps never in one turn (11.2.2–4) |
+| | `fracture+lost-progress` | 4 | a full hand or a discard loses the progress (11.2.6, 11.2.7) |
 | `overcharge` | `overcharge+locked-shards` | 4 | 2 Shards less now, 2 locked next turn; locks stack, the excess is lost (11.4.1–4) |
 | | `overcharge+attack-cost` | 2 | Overcharge never lowers an attack's cost (11.4.5) |
 | `general` | `death+trigger-order` | 8 | a spell resolves before the abilities it triggers, which follow arrival order; the game ends at once (9.8, 9.11, 1.6) |
 | | `freeze+intercept` | 3 | a frozen unit, or one that already intercepted, cannot intercept (7.5, 8.10) |
-| | `aura+damage` | 4 | an aura's defense keeps a unit alive (8.14) |
+| | `aura+damage`, `aura+end` | 4, 2 | an aura's defense keeps a unit alive; when the aura ends, only what is above the new max goes (8.14, 8.5) |
+| | `modify+expiry` | 4 | a bonus ending caps the defense, a malus ending gives back what it took, a malus to 0 max destroys (8.5, 8.17, 6.10) |
+| | `attack-ability` | 3 | an "Attack" ability resolves before the attack and the intercept (9.9, 7.9) |
+| | `sacrifice-effect` | 6 | no units, no spell; with more, its controller chooses; an anchored unit counts but stays (8.16, 11.3.3) |
 | | `recall` | 2 | Recall only takes from its controller's graveyard (8.13, 10.5) |
 
-What the current cards cannot produce yet: the end of an aura (no card removes a relic), the end of a temporary defense bonus (no card gives one), Recall into a full hand (playing the spell frees a place), an "Attack" ability (9.9), and a unit with two Echo attacks (11.1.8). A recipe gets these as soon as a card makes them possible.
+What the current cards cannot produce yet: Recall into a full hand (playing the spell frees a place). A recipe gets it as soon as a card makes it possible.
 
 ## Adding a recipe
 

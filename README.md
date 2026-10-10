@@ -47,4 +47,4 @@ The domain knows neither persistence nor transport. No server instance keeps a g
 
 ## Status
 
-Rules, 39 cards and three decks, the engine with every rule, effect and keyword, a random and a greedy bot that never see hidden cards (they determinize a game from their own view), the scenario service, the game server and the client are done: phase 2 is over, and the AI work comes next ([roadmap](docs/design.md)).
+Rules, 47 cards and three decks, the engine with every rule, effect and keyword, a random and a greedy bot that never see hidden cards (they determinize a game from their own view), the scenario service, the game server and the client are done: phase 2 is over. Phase 3, the RAG Arbiter, has started with its evaluation scenarios: 25 rules interactions played by the engine, 177 questions with answer keys nobody wrote by hand ([`engine/dataset`](engine/dataset/README.md), [roadmap](docs/design.md)).

@@ -8,13 +8,18 @@ import fr.daliush.shardbound.dataset.recipe.anchor.AnchorSacrificeRecipe;
 import fr.daliush.shardbound.dataset.recipe.echo.EchoChainRecipe;
 import fr.daliush.shardbound.dataset.recipe.echo.EchoDeathRecipe;
 import fr.daliush.shardbound.dataset.recipe.echo.EchoModifyRecipe;
+import fr.daliush.shardbound.dataset.recipe.echo.EchoOrderRecipe;
 import fr.daliush.shardbound.dataset.recipe.echo.EchoReturnToHandRecipe;
 import fr.daliush.shardbound.dataset.recipe.fracture.FractureLostProgressRecipe;
 import fr.daliush.shardbound.dataset.recipe.fracture.FractureStepsRecipe;
+import fr.daliush.shardbound.dataset.recipe.general.AttackAbilityRecipe;
 import fr.daliush.shardbound.dataset.recipe.general.AuraDamageRecipe;
+import fr.daliush.shardbound.dataset.recipe.general.AuraEndRecipe;
 import fr.daliush.shardbound.dataset.recipe.general.DeathTriggerOrderRecipe;
 import fr.daliush.shardbound.dataset.recipe.general.FreezeInterceptRecipe;
+import fr.daliush.shardbound.dataset.recipe.general.ModifyExpiryRecipe;
 import fr.daliush.shardbound.dataset.recipe.general.RecallRecipe;
+import fr.daliush.shardbound.dataset.recipe.general.SacrificeEffectRecipe;
 import fr.daliush.shardbound.dataset.recipe.link.LinkDamageRecipe;
 import fr.daliush.shardbound.dataset.recipe.link.LinkNoShareRecipe;
 import fr.daliush.shardbound.dataset.recipe.overcharge.OverchargeAttackCostRecipe;
@@ -39,6 +44,7 @@ public final class Recipes {
                 new EchoReturnToHandRecipe(),
                 new EchoChainRecipe(),
                 new EchoModifyRecipe(),
+                new EchoOrderRecipe(),
                 new LinkDamageRecipe(),
                 new LinkNoShareRecipe(),
                 new FractureStepsRecipe(),
@@ -48,6 +54,10 @@ public final class Recipes {
                 new DeathTriggerOrderRecipe(),
                 new FreezeInterceptRecipe(),
                 new AuraDamageRecipe(),
-                new RecallRecipe());
+                new RecallRecipe(),
+                new AuraEndRecipe(),
+                new ModifyExpiryRecipe(),
+                new AttackAbilityRecipe(),
+                new SacrificeEffectRecipe());
     }
 }
