@@ -85,7 +85,7 @@ Rule of thumb for any consumer: **talk to players only through `view` and `event
 
 | Package | Contents |
 |---|---|
-| `content` | Card and deck model (sealed `CardDefinition`, `Effect`, `TargetSpec`…), `TextTemplates` (the wording of card texts), `ContentLoader` (strict), `DeckValidator`, `CardCatalog`. `content.json` holds the parsers. |
+| `content` | Card and deck model (sealed `CardDefinition`, `Effect`, `TargetSpec`…), `TextTemplates` (the wording of card texts), `ContentLoader` (strict), `DeckValidator` (with `DeckProblem`, one record per broken rule), `CardCatalog`. `content.json` holds the parsers. |
 | `state` | `GameState`, `PlayerState`, `Unit`, `Relic`, `HandCard`, `CardInstance`, `InstanceId`, `Shards`, `GameResult` |
 | `action` / `decision` | `Action` (sealed), `TargetRef`, `Decision`, `DecisionKind` |
 | `event` | `GameEvent` (sealed, all events nested, grouped by theme), `Visibility`, `Redaction`, `EventTarget` |

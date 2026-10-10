@@ -3,7 +3,6 @@ package fr.daliush.shardbound.core.content;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -19,11 +18,16 @@ public final class DeckValidator {
         this.catalog = catalog;
     }
 
-    /** Every way the deck breaks the rules; empty if it is legal. */
+    /** Every way the deck breaks the rules, as messages citing their rule; empty if it is legal. */
     public List<String> problems(Deck deck) {
-        List<String> problems = new ArrayList<>();
+        return check(deck).stream().map(DeckProblem::message).toList();
+    }
+
+    /** Every way the deck breaks the rules; empty if it is legal. */
+    public List<DeckProblem> check(Deck deck) {
+        List<DeckProblem> problems = new ArrayList<>();
         if (deck.size() != DECK_SIZE) {
-            problems.add("has " + deck.size() + " cards, needs exactly " + DECK_SIZE + " (2.1)");
+            problems.add(new DeckProblem.WrongSize(deck.size()));
         }
         Map<CardId, Integer> entries = new LinkedHashMap<>();
         Map<CardId, Integer> copies = new LinkedHashMap<>();
@@ -33,34 +37,29 @@ public final class DeckValidator {
         }
         entries.forEach((card, times) -> {
             if (times > 1) {
-                problems.add("lists " + card + " " + times + " times; use one entry with a count (2.3)");
+                problems.add(new DeckProblem.ListedTwice(card, times));
             }
         });
         copies.forEach((card, count) -> problems.addAll(cardProblems(deck, card, count)));
         return problems;
     }
 
-    private List<String> cardProblems(Deck deck, CardId id, int count) {
+    private List<DeckProblem> cardProblems(Deck deck, CardId id, int count) {
         Optional<CardDefinition> found = catalog.find(id);
         if (found.isEmpty()) {
-            return List.of("contains " + id + ", which does not exist");
+            return List.of(new DeckProblem.UnknownCard(id));
         }
         CardDefinition card = found.get();
-        List<String> problems = new ArrayList<>();
+        List<DeckProblem> problems = new ArrayList<>();
         if (count > MAX_COPIES) {
-            problems.add("has " + count + " copies of " + id + ", max " + MAX_COPIES + " (2.3)");
+            problems.add(new DeckProblem.TooManyCopies(id, count));
         }
         if (card.isToken()) {
-            problems.add("contains the token " + id + "; tokens are never in a deck (2.4)");
+            problems.add(new DeckProblem.Token(id));
         }
         if (card.faction() != deck.faction() && card.faction() != Faction.NEUTRAL) {
-            problems.add("contains " + id + ", a " + lower(card.faction()) + " card, in a deck of faction "
-                    + lower(deck.faction()) + " (2.2)");
+            problems.add(new DeckProblem.OtherFaction(id, card.faction(), deck.faction()));
         }
         return problems;
-    }
-
-    private static String lower(Faction faction) {
-        return faction.name().toLowerCase(Locale.ROOT);
     }
 }

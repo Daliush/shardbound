@@ -21,6 +21,7 @@ Content content = ContentLoader.load(Path.of("content"));   // the repository's 
 CardCatalog catalog = content.catalog();
 Deck ember = content.deck("ember-starter");
 List<String> problems = new DeckValidator(catalog).problems(ember);   // empty when legal (section 2)
+List<DeckProblem> found = new DeckValidator(catalog).check(ember);    // the same, as records with their rule
 ```
 
 In tests, use `testing.TestContent.content()`. It finds `content/` by walking up from the working directory, and caches it. `testing.TestCards.CATALOG` is the real catalog plus a few `test.*` cards, for rules that no real card exercises yet.

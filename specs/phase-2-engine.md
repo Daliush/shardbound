@@ -206,7 +206,7 @@ record Content(CardCatalog catalog, Map<DeckId, Deck> decks) {}
 ```
 
 - `ContentLoader.load(contentDir)` reads `cards/*/*.json` and `decks/*.json` (skipping `*.schema.json`). It also checks cross-references: every deck card exists, every `summon.token` is a token.
-- `DeckValidator.problems(deck, catalog)` ports the content tests' rule checker (rules 2.1–2.4, same messages with rule IDs). `GameEngine.newGame` refuses an illegal deck.
+- `DeckValidator.problems(deck, catalog)` ports the content tests' rule checker (rules 2.1–2.4, same messages with rule IDs). `GameEngine.newGame` refuses an illegal deck. `DeckValidator.check(deck)` returns the same problems as `DeckProblem` records, each with its rule, for code that words them (the dataset's deck questions).
 
 ---
 

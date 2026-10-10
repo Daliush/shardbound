@@ -21,7 +21,7 @@ Both must agree exactly, messages included: the API returns the engine's message
 | Rulebook | `docs/rules/02-deck-building.md`, the summary in `docs/design.md` §2.1, and `12-open-points.md`. The maintainer decides (see `shardbound-rules`). |
 | Shared cases | `content/tests/fixtures/deck-rules.json`: decks with the exact problems both checkers must report. Change it first: both suites check it, so a side left behind fails its CI. |
 | Python | `content/tests/contentlib.py` (`deck_problems`, `DECK_SIZE`, `MAX_COPIES`) and `content/tests/test_deck_rules.py` |
-| Java | `engine/core/.../content/DeckValidator.java` (same constants, same message strings) and `DeckValidatorTest.java` |
+| Java | `engine/core/.../content/DeckValidator.java` (same constants) and `DeckProblem.java` (one record per problem, same message strings), `DeckValidatorTest.java` |
 | Docs | the "Deck-building rules" list in `content/decks/README.md`, and the deck constraints in the `shardbound-card-authoring` skill |
 | Decks | the starter decks in `content/decks/` must stay legal under the new rule; both suites check them |
 
