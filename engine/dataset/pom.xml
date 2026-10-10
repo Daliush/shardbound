@@ -12,7 +12,7 @@
 
     <artifactId>shardbound-dataset</artifactId>
     <name>Shardbound dataset</name>
-    <description>The Arbiter's evaluation scenarios: recipes played by the engine, exported with their answer keys.</description>
+    <description>The Arbiter's evaluation questions the engine and the card data answer, exported with their answer keys.</description>
 
     <properties>
         <!-- Only this module runs, so "-pl dataset -am compile exec:java" builds core and generates the dataset. -->

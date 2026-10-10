@@ -1,13 +1,15 @@
-# Evaluation scenarios
+# Evaluation questions
 
-The Arbiter's interaction questions and their answer keys, computed by the engine instead of written by hand (design doc §6.1). This module builds the scenarios and exports them; the questions' final wording and the train / dev / test split are added later, in Python.
+The Arbiter's questions that the engine and the card data answer, with their answer keys, computed instead of written by hand (design doc §6.1): the interaction and multi-step scenarios, and the factual questions about cards. This module builds them and exports them; the other categories, the questions' final wording and the train / dev / test split are added in Python.
 
 ```bash
-# from engine/
-./mvnw -q -pl dataset -am compile exec:java -Dexec.args=v1   # writes evals/datasets/v1/scenarios.jsonl
+# from engine/: writes scenarios.jsonl and cards.jsonl into evals/datasets/v1/
+./mvnw -q -pl dataset -am compile exec:java -Dexec.args=v1
 ```
 
-## How it works
+`Dataset` builds every file at once, so it also checks that no two questions share an id, across files.
+
+## Scenarios
 
 A **recipe** covers one interaction, such as an Anchored unit hit by Destroy. It finds the cards that fit by their data (`Cards`), builds one board per combination of cards and variants with the scenario service, and names, for each scenario, the choices to play, the player who asks, a template question, what answers it (`Answer`) and the context rules.
 
@@ -71,3 +73,13 @@ What the current cards cannot produce yet: Recall into a full hand (playing the 
 2. Keep the board minimal: the scenario service's default board plus only what the interaction needs. When an attack aims at a unit whose side has another one, the defender may intercept (7.5): keep that unit alone, or play the defender's choice too.
 3. Select the events that answer the question, and only those, and name the context rules no event carries. When a key fact names something the asker cannot work out, such as a turn number, the question says it.
 4. Add it to `Recipes.all()`, and write its test: the number of scenarios, and the answer key of one scenario per variant.
+
+## Factual questions
+
+`card.CardQuestions` asks about every card but tokens, from its data: its faction, its cost (each step's, for a Fracture spell), its keywords, its sacrifice cost, a unit's defense and attack abilities, and what each attack, spell, Fracture step and ability does. What a card does is quoted as `CardTextRenderer` prints it, so the key fact matches the card text the Arbiter retrieves.
+
+A factual question's group is its card, which is also its essential citation: the card's chunk. It has no essential rule. One line of `cards.jsonl`:
+
+```json
+{"id":"card/ember.ash-warden/attack-1","category":"factual","card":"ember.ash-warden","question":"What does Ash Warden's Cinder Bite do?","key_facts":["Ash Warden's Cinder Bite costs 2 Shards.","Ash Warden's Cinder Bite: \"Deal 4 damage to the target.\"","Ash Warden's Cinder Bite has Echo 50."]}
+```

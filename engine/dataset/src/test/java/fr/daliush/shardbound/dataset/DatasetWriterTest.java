@@ -2,6 +2,7 @@ package fr.daliush.shardbound.dataset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.daliush.shardbound.dataset.card.CardQuestion;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -20,5 +21,16 @@ class DatasetWriterTest {
                 "question":"What happens?","cards":["root.root-sentinel"],\
                 "key_facts":["Root Sentinel is destroyed."],"rules":["8.2"],"context_rules":["11.3.6"],\
                 "trace":["UnitDestroyed[8.2]"]}""");
+    }
+
+    @Test
+    void writesAnyRecordTheSameWay() {
+        CardQuestion question = new CardQuestion("card/neutral.shardling/cost", "factual", "neutral.shardling",
+                "How much does Shardling cost?", List.of("Shardling costs 1 Shard."));
+
+        assertThat(new DatasetWriter().toJsonLines(List.of(question))).isEqualTo("""
+                {"id":"card/neutral.shardling/cost","category":"factual","card":"neutral.shardling",\
+                "question":"How much does Shardling cost?","key_facts":["Shardling costs 1 Shard."]}
+                """);
     }
 }

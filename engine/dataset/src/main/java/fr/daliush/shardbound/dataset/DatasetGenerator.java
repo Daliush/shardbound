@@ -2,13 +2,12 @@ package fr.daliush.shardbound.dataset;
 
 import fr.daliush.shardbound.core.content.Content;
 import fr.daliush.shardbound.core.content.ContentLoader;
-import fr.daliush.shardbound.core.rules.GameEngine;
 import fr.daliush.shardbound.dataset.recipe.Recipes;
 import java.nio.file.Path;
-import java.util.List;
 
 /**
- * Writes {@code evals/datasets/<version>/scenarios.jsonl} from the repository's content. From {@code engine/}:
+ * Writes {@code scenarios.jsonl} and {@code cards.jsonl} into {@code evals/datasets/<version>/}
+ * from the repository's content. From {@code engine/}:
  * {@code ./mvnw -q -pl dataset -am compile exec:java -Dexec.args=<version>}.
  */
 public final class DatasetGenerator {
@@ -25,11 +24,12 @@ public final class DatasetGenerator {
                 () -> new IllegalStateException("No content/ folder above " + Path.of("").toAbsolutePath()));
         Content content = ContentLoader.load(contentDir);
         Path root = contentDir.getParent();
-        Rulebook rulebook = Rulebook.load(root.resolve("docs").resolve("rules"));
-        List<DatasetEntry> entries = new DatasetBuilder(new GameEngine(content.catalog()), content.catalog(), rulebook)
-                .entries(Recipes.all());
-        Path file = root.resolve("evals").resolve("datasets").resolve(args[0]).resolve("scenarios.jsonl");
-        new DatasetWriter().write(file, entries);
-        System.out.println(entries.size() + " scenarios written to " + file);
+        Dataset dataset = Dataset.build(content, Rulebook.load(root.resolve("docs").resolve("rules")), Recipes.all());
+        Path dir = root.resolve("evals").resolve("datasets").resolve(args[0]);
+        DatasetWriter writer = new DatasetWriter();
+        writer.write(dir.resolve("scenarios.jsonl"), dataset.scenarios());
+        writer.write(dir.resolve("cards.jsonl"), dataset.cards());
+        System.out.println(dataset.scenarios().size() + " scenarios and " + dataset.cards().size()
+                + " factual questions written to " + dir);
     }
 }

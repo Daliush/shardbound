@@ -9,18 +9,18 @@ import java.util.stream.Collectors;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Writes the entries as JSON Lines, one entry per line, with snake_case keys for the Python tooling. */
+/** Writes records as JSON Lines, one per line, with snake_case keys for the Python tooling. */
 public final class DatasetWriter {
 
     private final JsonMapper mapper = JsonMapper.builder()
             .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
             .build();
 
-    public String toJsonLines(List<DatasetEntry> entries) {
+    public String toJsonLines(List<?> entries) {
         return entries.stream().map(mapper::writeValueAsString).collect(Collectors.joining("\n", "", "\n"));
     }
 
-    public void write(Path file, List<DatasetEntry> entries) {
+    public void write(Path file, List<?> entries) {
         try {
             Files.createDirectories(file.getParent());
             Files.writeString(file, toJsonLines(entries));
