@@ -1,6 +1,7 @@
 """`uv run python -m dataset build <version>`: see ai/README.md."""
 
 import argparse
+import os
 from pathlib import Path
 
 from dataset.build import build
@@ -30,6 +31,8 @@ def main() -> None:
     else:
         model = OpenAiCompatibleClient.from_environment(BASE_URL, MODEL, API_KEY, TEMPERATURE, REASONING_EFFORT)
         client = CachedClient(model, Path(__file__).resolve().parents[1] / ".cache" / "llm")
+        sent = ", ".join(f"{name}={value}" for name, value in model.options.items()) or "no option"
+        print(f"Calling {model.model} at {os.environ[BASE_URL]} with {sent}.", flush=True)
     try:
         manifest = build(root, dataset_dir(root, args.version), client, workers=args.workers,
                          overwrite=args.overwrite)
