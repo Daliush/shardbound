@@ -81,14 +81,15 @@ public final class AnchorRemovalRecipe implements Recipe {
 
     private Scenario scenario(CardCatalog catalog, UnitCard anchored, Source source, Side side,
             Protection protection) {
-        String unit = anchored.id().value();
+        String anchoredCard = anchored.id().value();
+        PlayerId owner = side.of(ASKER);
         GameState start = source.prepare(ScenarioBuilder.of(catalog), ASKER)
-                .unit(side.of(ASKER), unit, setUp -> protection.setUp(setUp, side))
+                .unit(owner, anchoredCard, setUp -> protection.setUp(setUp, side))
                 .build();
         String question = protection.situation(anchored.name(), side) + ". If I " + source.phrase("it")
                 + ", what happens to it?";
-        return new Scenario(String.join("/", interaction, side.label(), protection.label(), unit, source.id()),
-                start, List.of(source.play(unit)), ASKER, question, new Answer.Events(this::answers),
-                protection.contextRules());
+        String id = String.join("/", interaction, side.label(), protection.label(), anchoredCard, source.id());
+        return new Scenario(id, start, List.of(source.play(anchoredCard)), ASKER, question,
+                new Answer.Events(this::answers), protection.contextRules());
     }
 }

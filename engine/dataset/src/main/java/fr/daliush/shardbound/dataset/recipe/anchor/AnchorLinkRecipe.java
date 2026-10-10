@@ -72,19 +72,22 @@ public final class AnchorLinkRecipe implements Recipe {
 
     private Scenario scenario(CardCatalog catalog, UnitCard anchored, Source source, Aim aim,
             Protection protection) {
-        String unit = anchored.id().value();
-        String partner = Cards.fillerName(catalog);
+        String anchoredCard = anchored.id().value();
+        String partnerCard = Cards.FILLER;
+        String partnerName = Cards.fillerName(catalog);
+        PlayerId owner = ASKER.opponent();
         GameState start = source.prepare(ScenarioBuilder.of(catalog), ASKER)
-                .unit(ASKER.opponent(), unit, setUp -> protection.setUp(setUp, Side.OPPONENTS))
-                .unit(ASKER.opponent(), Cards.FILLER)
-                .link(unit, Cards.FILLER)
+                .unit(owner, anchoredCard, setUp -> protection.setUp(setUp, Side.OPPONENTS))
+                .unit(owner, partnerCard)
+                .link(anchoredCard, partnerCard)
                 .build();
+        String aimedCard = aim == Aim.PARTNER ? partnerCard : anchoredCard;
+        String aimedName = aim == Aim.PARTNER ? partnerName : anchored.name();
         String question = protection.situation(anchored.name(), Side.OPPONENTS) + ", and it is linked to their "
-                + partner + ". If I " + source.phrase(aim == Aim.PARTNER ? partner : anchored.name())
-                + ", what happens?";
+                + partnerName + ". If I " + source.phrase(aimedName) + ", what happens?";
         List<String> contextRules = Stream.concat(protection.contextRules().stream(), Stream.of("11.5.3")).toList();
-        return new Scenario(String.join("/", interaction(), protection.label(), aim.label(), unit, source.id()),
-                start, List.of(source.play(aim == Aim.PARTNER ? Cards.FILLER : unit)), ASKER, question,
+        String id = String.join("/", interaction(), protection.label(), aim.label(), anchoredCard, source.id());
+        return new Scenario(id, start, List.of(source.play(aimedCard)), ASKER, question,
                 new Answer.Events(AnchorLinkRecipe::answers), contextRules);
     }
 

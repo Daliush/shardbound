@@ -65,17 +65,17 @@ public final class EchoDeathRecipe implements Recipe {
     private Scenario scenario(CardCatalog catalog, UnitCard echo, Source killer, Board board) {
         String echoCard = echo.id().value();
         OptionalInt lethal = Echoes.lethalDefense(killer, echo);
-        ScenarioBuilder start = killer.prepare(ScenarioBuilder.of(catalog), ASKER)
+        ScenarioBuilder builder = killer.prepare(ScenarioBuilder.of(catalog), ASKER)
                 .unit(ASKER.opponent(), echoCard, setUp -> Echoes.withDefense(setUp, lethal));
         if (board == Board.ONE_UNIT) {
-            start.unit(ASKER, Cards.FILLER);
+            builder.unit(ASKER, Cards.FILLER);
         }
         String state = lethal.isPresent() ? " has " + lethal.getAsInt() + " defense left" : " is on the board";
         String mine = board == Board.ONE_UNIT ? ", and my only unit is a " + Cards.fillerName(catalog) + "."
                 : ", and I have no unit on my board.";
         String question = "My opponent's " + echo.name() + state + mine + " If I " + killer.phrase("it")
                 + ", what happens?";
-        return new Scenario(String.join("/", interaction(), board.label(), echoCard, killer.id()), start.build(),
+        return new Scenario(String.join("/", interaction(), board.label(), echoCard, killer.id()), builder.build(),
                 List.of(killer.play(echoCard)), ASKER, question, new Answer.Events(Echoes::isDeathOrEcho),
                 CONTEXT_RULES);
     }

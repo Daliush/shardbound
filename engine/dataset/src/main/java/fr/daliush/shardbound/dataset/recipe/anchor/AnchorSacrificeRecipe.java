@@ -1,7 +1,5 @@
 package fr.daliush.shardbound.dataset.recipe.anchor;
 
-import static fr.daliush.shardbound.core.scenario.Pick.unit;
-
 import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.CardDefinition;
 import fr.daliush.shardbound.core.content.Effect;
@@ -9,7 +7,9 @@ import fr.daliush.shardbound.core.content.Keyword;
 import fr.daliush.shardbound.core.content.SpellCard;
 import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.event.GameEvent;
+import fr.daliush.shardbound.core.scenario.Choice;
 import fr.daliush.shardbound.core.scenario.Choices;
+import fr.daliush.shardbound.core.scenario.Pick;
 import fr.daliush.shardbound.core.scenario.ScenarioBuilder;
 import fr.daliush.shardbound.core.state.GameState;
 import fr.daliush.shardbound.core.state.PlayerId;
@@ -45,9 +45,9 @@ public final class AnchorSacrificeRecipe implements Recipe {
     public List<Scenario> scenarios(CardCatalog catalog) {
         List<Scenario> scenarios = new ArrayList<>();
         for (UnitCard anchored : Cards.unitsWith(catalog, Keyword.ANCHOR)) {
-            for (CardDefinition card : Cards.withSacrificeCost(catalog)) {
+            for (CardDefinition paid : Cards.withSacrificeCost(catalog)) {
                 for (Protection protection : Protection.values()) {
-                    scenarios.add(scenario(catalog, anchored, card, protection));
+                    scenarios.add(scenario(catalog, anchored, paid, protection));
                 }
             }
         }
@@ -61,20 +61,22 @@ public final class AnchorSacrificeRecipe implements Recipe {
                 || event instanceof GameEvent.UnitArrived;
     }
 
-    private Scenario scenario(CardCatalog catalog, UnitCard anchored, CardDefinition card, Protection protection) {
-        String unit = anchored.id().value();
+    private Scenario scenario(CardCatalog catalog, UnitCard anchored, CardDefinition paid, Protection protection) {
+        String anchoredCard = anchored.id().value();
+        String paidCard = paid.id().value();
+        boolean aimed = needsATarget(paid);
         GameState start = ScenarioBuilder.of(catalog)
-                .shards(ASKER, Cards.cost(card)).hand(ASKER, card.id().value())
-                .unit(ASKER, unit, setUp -> protection.setUp(setUp, Side.MINE))
+                .shards(ASKER, Cards.cost(paid)).hand(ASKER, paidCard)
+                .unit(ASKER, anchoredCard, setUp -> protection.setUp(setUp, Side.MINE))
                 .unit(ASKER.opponent(), Cards.FILLER)
                 .build();
-        Choices.PlayChoice play = Choices.play(card.id().value()).sacrificing(unit(unit));
-        boolean aimed = needsATarget(card);
+        Choices.PlayChoice sacrificingIt = Choices.play(paidCard).sacrificing(Pick.unit(anchoredCard));
+        Choice move = aimed ? sacrificingIt.on(Pick.unit(Cards.FILLER)) : sacrificingIt;
+        String target = aimed ? " on my opponent's " + Cards.fillerName(catalog) : "";
         String question = protection.situation(anchored.name(), Side.MINE) + ". If I sacrifice it to play "
-                + card.name() + (aimed ? " on my opponent's " + Cards.fillerName(catalog) : "")
-                + ", what happens?";
-        return new Scenario(String.join("/", interaction(), protection.label(), unit, card.id().value()), start,
-                List.of(aimed ? play.on(unit(Cards.FILLER)) : play), ASKER, question,
+                + paid.name() + target + ", what happens?";
+        String id = String.join("/", interaction(), protection.label(), anchoredCard, paidCard);
+        return new Scenario(id, start, List.of(move), ASKER, question,
                 new Answer.Events(AnchorSacrificeRecipe::answers), protection.contextRules());
     }
 

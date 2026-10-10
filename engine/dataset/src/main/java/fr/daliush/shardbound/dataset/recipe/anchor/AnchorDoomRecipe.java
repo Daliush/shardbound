@@ -62,22 +62,27 @@ public final class AnchorDoomRecipe implements Recipe {
     }
 
     private Scenario scenario(CardCatalog catalog, UnitCard anchored, Source source, Protection protection) {
-        String unit = anchored.id().value();
-        int lethal = Math.min(((Effect.Damage) source.effect()).amount(), anchored.defense());
+        String anchoredCard = anchored.id().value();
+        PlayerId owner = ASKER.opponent();
+        int lethalDefense = Math.min(((Effect.Damage) source.effect()).amount(), anchored.defense());
         GameState start = source.prepare(ScenarioBuilder.of(catalog), ASKER)
-                .unit(ASKER.opponent(), unit, setUp -> protection.setUp(setUp, Side.OPPONENTS).defense(lethal))
-                .deck(ASKER, Cards.FILLER).deck(ASKER.opponent(), Cards.FILLER)
+                .unit(owner, anchoredCard, setUp -> protection.setUp(setUp, Side.OPPONENTS).defense(lethalDefense))
+                .deck(ASKER, Cards.FILLER).deck(owner, Cards.FILLER)
                 .build();
-        String situation = protection.situation(anchored.name(), Side.OPPONENTS) + "; it has " + lethal
+        String ifI = protection.situation(anchored.name(), Side.OPPONENTS) + "; it has " + lethalDefense
                 + " defense left. If I " + source.phrase("it");
-        // While doomed it waits for the end of its controller's next turn: both players end their turn.
-        List<Choice> choices = protection == Protection.PROTECTED
-                ? List.of(source.play(unit), endTurn(), endTurn())
-                : List.of(source.play(unit));
-        String question = protection == Protection.PROTECTED
-                ? situation + " and neither player does anything else, what happens to it?"
-                : situation + ", what happens to it?";
-        return new Scenario(String.join("/", interaction(), protection.label(), unit, source.id()), start, choices,
-                ASKER, question, new Answer.Events(AnchorDoomRecipe::answers), protection.contextRules());
+        List<Choice> moves;
+        String question;
+        if (protection == Protection.PROTECTED) {
+            // Doomed, it waits for the end of the turn its protection ends: both players end their turn.
+            moves = List.of(source.play(anchoredCard), endTurn(), endTurn());
+            question = ifI + " and neither player does anything else, what happens to it?";
+        } else {
+            moves = List.of(source.play(anchoredCard));
+            question = ifI + ", what happens to it?";
+        }
+        String id = String.join("/", interaction(), protection.label(), anchoredCard, source.id());
+        return new Scenario(id, start, moves, ASKER, question, new Answer.Events(AnchorDoomRecipe::answers),
+                protection.contextRules());
     }
 }
