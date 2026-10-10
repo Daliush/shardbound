@@ -109,6 +109,7 @@ public final class FractureStepsRecipe implements Recipe {
     private static boolean answers(GameEvent event) {
         return event instanceof GameEvent.FractureAdvanced || event instanceof GameEvent.SpellResolved
                 || event instanceof GameEvent.Modified || event instanceof GameEvent.CardDrawn
-                || event instanceof GameEvent.Frozen || event instanceof GameEvent.UnitDestroyed;
+                || event instanceof GameEvent.Frozen || event instanceof GameEvent.ReturnedToHand
+                || event instanceof GameEvent.UnitDestroyed;
     }
 }

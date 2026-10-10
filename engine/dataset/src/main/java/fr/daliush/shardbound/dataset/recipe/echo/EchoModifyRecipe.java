@@ -46,7 +46,7 @@ public final class EchoModifyRecipe implements Recipe {
                 .filter(source -> source.target().isGroup())
                 .toList();
         List<Scenario> scenarios = new ArrayList<>();
-        for (UnitCard echo : Cards.unitsWithEcho(catalog)) {
+        for (UnitCard echo : Echoes.withOneEcho(catalog)) {
             for (Source boost : boosts) {
                 if (!isAttackOf(boost, echo)) {
                     for (Source sweeper : sweepers) {

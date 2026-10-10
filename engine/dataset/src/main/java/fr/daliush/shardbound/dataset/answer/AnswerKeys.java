@@ -7,6 +7,7 @@ import fr.daliush.shardbound.core.text.EventDescriber;
 import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Scenario;
 import java.util.List;
+import java.util.stream.Stream;
 
 /** Reads a played scenario's outcome through what its question asks. */
 public final class AnswerKeys {
@@ -32,9 +33,12 @@ public final class AnswerKeys {
             throw new IllegalStateException(scenario.id() + ": no event answers the question in " + result.trace());
         }
         // The asker only knows what they would see in a game: another player's draw names no card (3.3).
-        return new AnswerKey(
-                keyEvents.stream().map(event -> describer.describe(event.seenBy(scenario.asker()), scenario.asker()))
-                        .distinct().toList(),
+        List<String> keyFacts = Stream.concat(
+                        keyEvents.stream().map(event -> describer.describe(event.seenBy(scenario.asker()),
+                                scenario.asker())),
+                        events.finalState().apply(result.state()).stream())
+                .distinct().toList();
+        return new AnswerKey(keyFacts,
                 keyEvents.stream().flatMap(event -> event.rules().stream()).distinct().toList(),
                 result.trace());
     }

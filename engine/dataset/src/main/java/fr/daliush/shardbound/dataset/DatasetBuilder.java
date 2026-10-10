@@ -6,6 +6,7 @@ import fr.daliush.shardbound.core.scenario.ScenarioResult;
 import fr.daliush.shardbound.core.scenario.ScenarioRunner;
 import fr.daliush.shardbound.dataset.answer.AnswerKey;
 import fr.daliush.shardbound.dataset.answer.AnswerKeys;
+import fr.daliush.shardbound.dataset.recipe.Answer;
 import fr.daliush.shardbound.dataset.recipe.Recipe;
 import fr.daliush.shardbound.dataset.recipe.Scenario;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public final class DatasetBuilder {
                 }
                 checkContextRules(scenario);
                 ScenarioResult result = runner.run(scenario.start(), scenario.choicesToPlay());
+                checkResolved(scenario, result);
                 checkQuestion(scenario, result);
                 entries.add(entry(recipe, scenario, answerKeys.of(scenario, result)));
             }
@@ -61,6 +63,19 @@ public final class DatasetBuilder {
             if (!rulebook.has(rule)) {
                 throw new IllegalStateException(scenario.id() + ": rule " + rule + " is not in the rulebook");
             }
+        }
+    }
+
+    /**
+     * A "what happens" scenario must play its outcome to the end. Stopping on a decision in the middle of a step (an
+     * echo order, a target, cards to discard) would cut the answer key short without a sign: its choice is missing.
+     */
+    private static void checkResolved(Scenario scenario, ScenarioResult result) {
+        if (scenario.answer() instanceof Answer.Events) {
+            result.pending().filter(decision -> decision.kind().pausesAStep()).ifPresent(decision -> {
+                throw new IllegalStateException(scenario.id() + ": the outcome stops on a " + decision.kind()
+                        + " decision of " + decision.player() + "; play its choice in the scenario");
+            });
         }
     }
 

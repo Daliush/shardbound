@@ -1,17 +1,32 @@
 package fr.daliush.shardbound.dataset.recipe.echo;
 
 import fr.daliush.shardbound.core.content.AttackAbility;
+import fr.daliush.shardbound.core.content.CardCatalog;
 import fr.daliush.shardbound.core.content.Effect;
 import fr.daliush.shardbound.core.content.UnitCard;
 import fr.daliush.shardbound.core.event.GameEvent;
 import fr.daliush.shardbound.core.scenario.UnitSetup;
+import fr.daliush.shardbound.dataset.recipe.Cards;
 import fr.daliush.shardbound.dataset.recipe.Source;
+import java.util.List;
 import java.util.OptionalInt;
 
 /** What the Echo recipes share: the events of a death and its echo, and how much damage kills. */
 final class Echoes {
 
     private Echoes() {
+    }
+
+    /**
+     * The Echo units with a single Echo attack. A unit with two asks its owner in which order they replay (11.1.8):
+     * that order is the subject of {@link EchoOrderRecipe}, and the other recipes would stop on the question.
+     */
+    static List<UnitCard> withOneEcho(CardCatalog catalog) {
+        return Cards.unitsWithEcho(catalog).stream().filter(unit -> echoAttacks(unit) == 1).toList();
+    }
+
+    static long echoAttacks(UnitCard unit) {
+        return unit.attacks().stream().filter(attack -> attack.echo().isPresent()).count();
     }
 
     /** A death, its echo, and the damage the echo deals. */

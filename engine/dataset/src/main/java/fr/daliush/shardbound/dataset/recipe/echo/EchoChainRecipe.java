@@ -37,7 +37,7 @@ public final class EchoChainRecipe implements Recipe {
 
     @Override
     public List<Scenario> scenarios(CardCatalog catalog) {
-        List<UnitCard> echoes = Cards.unitsWithEcho(catalog);
+        List<UnitCard> echoes = Echoes.withOneEcho(catalog);
         List<Scenario> scenarios = new ArrayList<>();
         for (UnitCard theirs : echoes) {
             for (UnitCard mine : echoes) {

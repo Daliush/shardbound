@@ -52,7 +52,7 @@ public final class EchoDeathRecipe implements Recipe {
                 Cards.spellSources(catalog, Effect.Destroy.class, Side.OPPONENTS).stream(),
                 Cards.spellSources(catalog, Effect.Damage.class, Side.OPPONENTS).stream()).toList();
         List<Scenario> scenarios = new ArrayList<>();
-        for (UnitCard echo : Cards.unitsWithEcho(catalog)) {
+        for (UnitCard echo : Echoes.withOneEcho(catalog)) {
             for (Source killer : killers) {
                 for (Board board : Board.values()) {
                     scenarios.add(scenario(catalog, echo, killer, board));
