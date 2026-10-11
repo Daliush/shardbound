@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>fr.daliush.shardbound</groupId>
+        <artifactId>shardbound-engine</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>shardbound-corpus</artifactId>
+    <name>Shardbound corpus</name>
+    <description>The Arbiter's knowledge base: every rule, vocabulary term and card as a chunk for the RAG index.</description>
+
+    <properties>
+        <!-- Only this module runs, so "-pl corpus -am compile exec:java" builds core and writes the chunks. -->
+        <exec.skip>false</exec.skip>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>fr.daliush.shardbound</groupId>
+            <artifactId>shardbound-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>fr.daliush.shardbound.corpus.CorpusGenerator</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

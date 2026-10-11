@@ -15,6 +15,7 @@
     <modules>
         <module>core</module>
         <module>dataset</module>
+        <module>corpus</module>
         <module>api</module>
     </modules>
 
@@ -26,7 +27,8 @@
         <spring-boot.version>4.1.1</spring-boot.version>
         <!-- Only api runs, so "-pl api -am spring-boot:run" builds core in the reactor and starts the server. -->
         <spring-boot.run.skip>true</spring-boot.run.skip>
-        <!-- The same for the dataset generator: "-pl dataset -am compile exec:java" only runs it in dataset. -->
+        <!-- The same for the generators: "-pl dataset -am compile exec:java" only runs the dataset's, and
+             "-pl corpus -am compile exec:java" only the corpus's. -->
         <exec.skip>true</exec.skip>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
@@ -85,7 +87,8 @@
                     <version>${spring-boot.version}</version>
                 </plugin>
                 <plugin>
-                    <!-- Set for every module, since the goal checks it before it skips; only dataset runs it. -->
+                    <!-- Set for every module, since the goal checks it before it skips; dataset runs it, and
+                         corpus runs its own generator. -->
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${exec-maven-plugin.version}</version>
