@@ -41,7 +41,8 @@ Every rule has a stable ID such as `11.3.2`. The Arbiter cites these IDs, the en
 
 - never renumber or reuse an ID;
 - add new rules at the end of their section (`11.3.7`) or as a new section;
-- to remove a rule, keep its ID and replace the text with `*(removed in vX: reason)*`.
+- to remove a rule, keep its ID and replace the text with `*(removed in vX: reason)*`;
+- put an example under the rule it illustrates, indented as a quote (`  > *Example*: …`): the Arbiter's index cuts the rulebook rule by rule, so an example outside a rule reaches no chunk.
 
 ## Status markers
 

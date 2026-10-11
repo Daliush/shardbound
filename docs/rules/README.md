@@ -30,5 +30,6 @@
 ## Adding to the rulebook
 
 - A new rule goes at the end of its section, in the matching file (`11.3.7` goes at the end of the Anchor file).
+- An example goes under the rule it illustrates, indented as a quote (`  > *Example*: …`), so it stays with that rule.
 - A new section gets the next free number, its own file named `NN-name.md`, and a row in the table above.
 - A new keyword gets the next `11.N` number and its own `11-N-name.md` file.
