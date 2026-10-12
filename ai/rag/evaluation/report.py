@@ -6,8 +6,8 @@ from rag.evaluation.metrics import recall_at_k, reciprocal_rank
 from rag.evaluation.questions import RetrievalQuestion
 from rag.retrievers import Retriever
 
-RECALL_CUTOFFS = (5, 20)
-"""5: the chunks the prompt holds after the reranker. 20: the chunks the reranker receives."""
+RECALL_CUTOFFS = (10, 20)
+"""10: the chunks the prompt holds after the reranker. 20: the chunks the reranker receives."""
 
 
 @dataclass(frozen=True)
