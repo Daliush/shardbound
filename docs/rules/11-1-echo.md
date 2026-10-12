@@ -4,6 +4,8 @@
 
 - **11.1.1** Echo X is a passive carried by an attack ability, not by the unit itself. When the unit dies (9.3), each of its attack abilities that has Echo is replayed, without paying its cost.
 - **11.1.2** Every numeric value of the effect is multiplied by X% then rounded down. X can exceed 100: Echo 300 triples the values. Non-numeric effects (Freeze…) apply in full.
+
+  > *Example*: a unit dies; its attack ability "Freeze + 10 damage" has Echo 50. The echo applies "Freeze + 5 damage" to a new target. If the unit's other attack ability has no Echo, it is not replayed.
 - **11.1.3** If the replayed attack has a target, its owner chooses a new one, following the targeting rules of an attack (7.3). With no valid target, those effects do nothing (10.3).
 - **11.1.4** An echo is not an attack: it costs nothing and cannot be intercepted.
 - **11.1.5** A unit returned to hand does not die: its Echo does not trigger.
@@ -13,5 +15,3 @@
 - **11.1.9** Echo replays the attack ability **as printed on the card**. Modifications (8.5) and auras (8.14) that applied to the unit are lost when it dies, so they do not boost the echo.
 - **11.1.10** "Rounded down" applies to the size of the number: a negative value is rounded toward 0. Echo 50 on −3 gives −1, so rounding always weakens the echo, whether the value is a bonus or a malus.
 - **11.1.11** An echo does not change how many units a Sacrifice effect asks for: that number is the price of the effects printed after it (8.22), not an amount the echo applies. An amount scaled down to 0 does nothing, except damage, which still hits (8.15).
-
-> *Example*: a unit dies; its attack ability "Freeze + 10 damage" has Echo 50. The echo applies "Freeze + 5 damage" to a new target. If the unit's other attack ability has no Echo, it is not replayed.
