@@ -6,7 +6,7 @@ The Python side of the project: the code that calls or evaluates models (design 
 # from ai/
 uv run pytest                                      # the tests; no model is called
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
-uv run python -m rag evaluate random               # score a retriever on the dev questions
+uv run python -m rag evaluate random bm25          # score retrievers on the dev questions
 ```
 
 ## What `dataset/` does
@@ -69,13 +69,13 @@ The Arbiter's RAG (design doc §5.2), one brick at a time, each measured on the 
 ```text
 random on v1 dev, 61 answerable questions
 
-| Questions | Count | Recall@5 | Recall@20 | MRR |
+| Questions | Count | Recall@10 | Recall@20 | MRR |
 |---|---:|---:|---:|---:|
-| all | 61 | 0.4% | 9.0% | 0.051 |
+| all | 61 | 2.7% | 9.0% | 0.051 |
 | ...
 ```
 
-- **Recall@k** is the share of a question's relevant chunks found among the first k: 5 is what the prompt holds after the reranker, 20 what the reranker receives. It decides between two retrievers.
+- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 what the reranker receives. It decides between two retrievers.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
@@ -83,7 +83,8 @@ random on v1 dev, 61 answerable questions
 | Module | Role |
 |---|---|
 | `rag/chunks.py` | Reads the chunks `engine/corpus` writes |
-| `rag/retrievers/` | The `Retriever` interface (`rank_chunks`), then one module per retriever: `random_retriever.py` |
+| `rag/retrievers/` | The `Retriever` interface (`rank_chunks`), then one module per retriever: `random_retriever.py`, `bm25_retriever.py` |
+| `rag/__main__.py` | The retrievers by name: `random`, then `bm25` and its variants, each changing one setting (`bm25-no-stemming`, `bm25-stop-words-removed`, `bm25-robertson`, `bm25-atire`, `bm25l`, `bm25+`) |
 | `rag/evaluation/questions.py` | The answerable questions of a split, with their relevant chunks |
 | `rag/evaluation/metrics.py` | Recall@k and the reciprocal rank of one question |
 | `rag/evaluation/report.py` | The means over a split, overall and by category, as a Markdown table |
