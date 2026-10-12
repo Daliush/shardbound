@@ -20,7 +20,7 @@ def test_averages_each_metric_over_the_questions_then_by_category():
     report = evaluate_retriever(FixedRetriever(), QUESTIONS)
 
     assert report.overall.question_count == 2
-    assert report.overall.mean_recall_at == {5: (1.0 + 0.5) / 2, 20: (1.0 + 0.5) / 2}
+    assert report.overall.mean_recall_at == {10: (1.0 + 0.5) / 2, 20: (1.0 + 0.5) / 2}
     assert report.overall.mean_reciprocal_rank == (0.5 + 1.0) / 2
     assert report.by_category["simple-rule"].mean_reciprocal_rank == 0.5
     assert report.by_category["interaction"].mean_recall_at[20] == 0.5

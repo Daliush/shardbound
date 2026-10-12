@@ -50,6 +50,8 @@
 > **v2.16 (October 2026)** — the evaluation dataset v1: 668 questions in six categories, with two final files, `dataset-dev.jsonl` and `dataset-test.jsonl`. The engine writes every question and its answer key, the factual and deck-building ones included; the simple-rule and unanswerable questions are written once and checked at every build. Luna 6 rewords the questions, a second call checks each rewrite, and no question is worded twice: a new version keeps the previous wording of an unchanged question, and a group keeps its side of the split. `scripts/build-dataset.sh` builds a version from end to end (§6.1).
 >
 > **v2.17 (October 2026)** — the RAG's chunks: `engine/corpus` cuts the rulebook and the cards into 191 chunks (130 rules, 13 vocabulary terms, 48 cards) with their references, for the Python index. A rule's prefix is the titles of its sections, without its ID; cards and terms get none, and the text keeps the rulebook's Markdown. The vocabulary becomes chunks, the keyword examples move under the rule they illustrate, and a card's refs also cover its triggers and the token it summons (§5.2).
+>
+> **v2.18 (October 2026)** — the retrieval metrics and BM25: `ai/rag` scores any retriever on the dev questions, a question's relevant chunks being its citations, with a random retriever as the floor (§6.3). BM25 (bm25s, Lucene formula, English stemming) is the first retriever, with one variant per setting (§6.2). The prompt holds 10 chunks instead of 5-6: a chunk is about 40 tokens, and no question needs more than 10 rules (§5.2).
 
 ---
 
@@ -412,11 +414,11 @@ The Arbiter exists in several versions, and **this is exactly what the evaluatio
   question ─┬→ card names found     → their card chunks, added directly
             ├→ BM25                 → list A ┐
             └→ embedding → cosine   → list B ┘→ RRF (k = 60) → top ~20
-  top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 5-6, with their refs → prompt
+  top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10, with their refs → prompt
   ```
 
-  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped.
-- **Storage**: Postgres + pgvector, one row per chunk; with ~165 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit.
+  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them).
+- **Storage**: Postgres + pgvector, one row per chunk; with 191 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit.
 - **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order, each followed by its refs), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
 - **Output**: one schema for every question, `{answer, citations, answerable}`. `answer` is the natural-language text the user reads, with the citations shown as links: nobody sees JSON. `citations` lists the rule and card IDs in the order they apply. `answerable` lets the Arbiter abstain. Structured outputs through the API for `api+rag`, constrained decoding for local models, validated with Pydantic (one retry; format failures are measured).
 - **Abstention**: the `answerable` field is the baseline; a threshold on the best reranker score (no model call) and Jev *noul* are variants (experiment 5, §6.4).
@@ -572,9 +574,11 @@ All configurations except the last one use **the same open base model** (§4.2).
 |---|---|---|
 | Chunk prefix | heading path, from a parser | contextual retrieval: once, at indexing, an LLM writes one or two sentences that situate each chunk in its document |
 | Retrieval | hybrid, fused by RRF | BM25 only, embeddings only |
+| BM25 | Lucene formula, English stemming, stop words kept, k1 1.5, b 0.75 | no stemming, stop words removed, the Robertson, ATIRE, BM25L and BM25+ formulas |
 | Expansion | written cross-references | none |
 | Reranker | cross-encoder | none, Jev *noul* |
 | Abstention | the `answerable` field | reranker threshold, Jev *noul* |
+| Prompt size | 10 chunks after the reranker | 5, 20 |
 | Output | API structured outputs / constrained decoding | prompt only |
 
 The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
