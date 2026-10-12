@@ -1,11 +1,12 @@
 # Shardbound AI
 
-The Python side of the project: the code that calls or evaluates models (design doc §3.1). For now it holds one step of the Arbiter's evaluation dataset, the wording and the split (`dataset/`). The RAG (`rag/`) and the eval harness come next, in the same `uv` project.
+The Python side of the project: the code that calls or evaluates models (design doc §3.1). It holds one step of the Arbiter's evaluation dataset, the wording and the split (`dataset/`), and the Arbiter's RAG, built step by step (`rag/`). The eval harness comes next, in the same `uv` project.
 
 ```bash
 # from ai/
 uv run pytest                                      # the tests; no model is called
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
+uv run python -m rag evaluate random               # score a retriever on the dev questions
 ```
 
 ## What `dataset/` does
@@ -56,3 +57,33 @@ The run prints the model and the settings it sends (never the key) before its fi
 | `dataset/llm.py` | The model behind one interface: the OpenAI-compatible client, the disk cache, the fake |
 
 `tests/dataset/test_versions.py` checks every committed version (each file holds only its side, no group on both sides, counts match the manifest, abstentions exactly for unanswerable questions), so CI guards the data as well as the code.
+
+## What `rag/` does
+
+The Arbiter's RAG (design doc §5.2), one brick at a time, each measured on the dev questions before the next.
+
+**The chunks** come from `engine/corpus` (Java), which writes `ai/.corpus/chunks.jsonl`: one per rule, vocabulary term and card, with their refs. Write them before a run, from `engine/`: `./mvnw -q -pl corpus -am compile exec:java`.
+
+**The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
+
+```text
+random on v1 dev, 61 answerable questions
+
+| Questions | Count | Recall@5 | Recall@20 | MRR |
+|---|---:|---:|---:|---:|
+| all | 61 | 0.4% | 9.0% | 0.051 |
+| ...
+```
+
+- **Recall@k** is the share of a question's relevant chunks found among the first k: 5 is what the prompt holds after the reranker, 20 what the reranker receives. It decides between two retrievers.
+- **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
+- A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
+- The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
+
+| Module | Role |
+|---|---|
+| `rag/chunks.py` | Reads the chunks `engine/corpus` writes |
+| `rag/retrievers/` | The `Retriever` interface (`rank_chunks`), then one module per retriever: `random_retriever.py` |
+| `rag/evaluation/questions.py` | The answerable questions of a split, with their relevant chunks |
+| `rag/evaluation/metrics.py` | Recall@k and the reciprocal rank of one question |
+| `rag/evaluation/report.py` | The means over a split, overall and by category, as a Markdown table |
