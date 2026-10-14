@@ -1,5 +1,5 @@
-# The game server. Build context: the repository root, since the server loads content/ and the Arbiter's
-# evaluations (evals/reports/) at startup.
+# The game server. Build context: the repository root, since the server loads content/ at startup and reads the
+# Arbiter's evaluations (evals/reports/) at each request.
 # Tests are not run here: CI runs them.
 
 FROM eclipse-temurin:21-jdk AS build

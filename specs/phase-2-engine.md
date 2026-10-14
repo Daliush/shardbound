@@ -686,7 +686,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
-- The evaluations are the Arbiter's (phase 3, `docs/design.md` §8.2), loaded from `evals/reports/<version>/<split>/<timestamp>.json` (`shardbound.reports-dir`) by an in-memory DAO, a bucket later. The server serves each document as written: its format belongs to `ai/rag/evaluation/evaluation_json.py`. An evaluation that never ran: `404`.
+- The evaluations are the Arbiter's (phase 3, `docs/design.md` §8.2), loaded from `evals/reports/<version>/<split>/<timestamp>.json` (`shardbound.reports-dir`) by a DAO that reads the folder at each request, so a new evaluation is served at once; a bucket later. The server serves each document as written: its format belongs to `ai/rag/evaluation/evaluation_json.py`. An evaluation that never ran: `404`.
 
 ---
 
