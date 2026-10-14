@@ -3,7 +3,8 @@ The runs of a dataset split, in `evals/reports/<version>/<split>.json`, for the 
 
 {"dataset": {"version": "v1", "split": "dev"},
  "runs": [{"layers": {"retriever": "bm25", "answer": null}, "code": "60192f9",
-           "scores": {"overall": {…}, "by_category": {…}}, "questions": [{"question_id": …, "top_chunk_ids": […]}]}]}
+           "scores": {"overall": {…}, "by_category": {…}},
+           "questions": [{"question_id": …, "top_chunk_ids": […], …}]}]}
 """
 
 import json
@@ -21,10 +22,18 @@ def find_runs_file(root: Path, version: str, split: str) -> Path:
 
 
 def read_code_commit(root: Path) -> str:
-    """The commit the code was evaluated at, "-dirty" when tracked files had uncommitted changes."""
-    described = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=root, capture_output=True, text=True,
-                               check=True)
-    return described.stdout.strip()
+    """
+    The commit the code was evaluated at, "-dirty" when a tracked file had uncommitted changes. The reports are left
+    out: a runs file not committed yet says nothing about the code that scores.
+    """
+    commit = run_git(root, "rev-parse", "--short", "HEAD")
+    changes = run_git(root, "status", "--porcelain", "--untracked-files=no", "--", ".",
+                      f":(exclude){REPORTS_DIR.as_posix()}")
+    return f"{commit}-dirty" if changes else commit
+
+
+def run_git(root: Path, *arguments: str) -> str:
+    return subprocess.run(["git", *arguments], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
 
 
 def save_runs(file: Path, version: str, split: str, runs: list[Run], code_commit: str) -> None:
