@@ -58,7 +58,7 @@ Then the eval harness (§6.3: key facts, rules cited, step order, abstention, fo
 
 ## Step 1: the chunks (`engine/corpus`)
 
-`./mvnw -q -pl corpus -am compile exec:java` (from `engine/`) writes `ai/.corpus/chunks.jsonl`, not committed. 130 rules, 13 terms, 48 cards. Format and code map: `engine/corpus/README.md`.
+`./mvnw -q -pl corpus -am compile exec:java` (from `engine/`) writes `ai/.corpus/chunks.jsonl`, not committed: a handoff only `python -m rag index` reads. **The database is the RAG's single source of chunks** (the maintainer's decision): every retriever of an evaluation is built from `ChunkRepository.find_all_chunks()`, so a forgotten index can't mix two corpus versions in one run. 130 rules, 13 terms, 48 cards. Format and code map: `engine/corpus/README.md`.
 
 - **Rules**: the rulebook's Markdown kept (its bold marks names, defined terms, emphasis), items and examples included, prefixed with the **titles of the rule's sections, read from its ID**: 5.2.1 → `[5. Game sequence > 5.2 Start of turn (in this order)]`. The ID itself stays out of the text (no question quotes one; the prompt's tags carry it).
 - **Terms and cards** name their own subject: no prefix. A card: a stats line, then `CardTextRenderer`'s text.

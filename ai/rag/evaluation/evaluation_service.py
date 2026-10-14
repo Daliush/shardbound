@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
-from rag.chunks import read_chunks
 from rag.evaluation.questions import Question, read_questions
 from rag.evaluation.run_file import find_runs_file, read_code_commit, save_runs
 from rag.evaluation.runs import Layers, Run
 from rag.evaluation.scores import Report, average_scores, score_question
+from rag.repository.chunk_repository import ChunkRepositoryPostgres
+from rag.repository.database import connect_database
 from rag.retrievers import Retriever
 from rag.retrievers.registry import build_retriever
 
@@ -14,9 +15,12 @@ from rag.retrievers.registry import build_retriever
 def evaluate_all(retriever_names: list[str], root: Path, version: str, split: str) -> list[Run]:
     """
     One run per retriever, its answer layer empty until there is a generator, on the questions of
-    `dataset-<split>.jsonl`; saved in `evals/reports/<version>/<split>.json` for the frontend.
+    `dataset-<split>.jsonl`; saved in `evals/reports/<version>/<split>.json` for the frontend. Every retriever reads
+    the indexed chunks from the database, never the engine's file: a run can't mix two versions of the corpus.
     """
-    chunks = read_chunks(root)
+    chunks = ChunkRepositoryPostgres(connect_database()).find_all_chunks()
+    if not chunks:
+        raise LookupError("No chunks in the database: build the index with `uv run python -m rag index`")
     questions = read_questions(root, version, split)
     runs = []
     for retriever_name in retriever_names:

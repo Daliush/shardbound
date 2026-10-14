@@ -63,9 +63,9 @@ The run prints the model and the settings it sends (never the key) before its fi
 
 The Arbiter's RAG (design doc §5.2), one brick at a time, each measured on the dev questions before the next.
 
-**The chunks** come from `engine/corpus` (Java), which writes `ai/.corpus/chunks.jsonl`: one per rule, vocabulary term and card, with their refs. Write them before a run, from `engine/`: `./mvnw -q -pl corpus -am compile exec:java`.
+**The chunks** come from `engine/corpus` (Java), which writes `ai/.corpus/chunks.jsonl`: one per rule, vocabulary term and card, with their refs. The file is only a handoff: `python -m rag index` reads it into the database, and **the database is the RAG's only source of chunks**. Every retriever of an evaluation is built from the indexed chunks, so a run can never mix two versions of the corpus, even if the chunks were regenerated without indexing.
 
-**The dense index** lives in Postgres with pgvector (the `db` service of `compose.yaml`): a `chunks` table, and a `chunk_embeddings` table with one vector per chunk and embedding model. `python -m rag index` embeds only the chunks whose text changed since a model last did, so a run where nothing changed loads no model.
+**The index** lives in Postgres with pgvector (the `db` service of `compose.yaml`): a `chunks` table, and a `chunk_embeddings` table with one vector per chunk and embedding model. `python -m rag index` embeds only the chunks whose text changed since a model last did, so a run where nothing changed loads no model.
 
 **The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
 
