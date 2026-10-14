@@ -1,4 +1,4 @@
-"""The two retrieval metrics of one question."""
+"""The retrieval metrics of one question: how well a ranking holds the chunks it needs."""
 
 
 def recall_at_k(ranked_ids: list[str], relevant_ids: frozenset[str], k: int) -> float:

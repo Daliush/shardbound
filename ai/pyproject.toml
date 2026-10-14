@@ -1,12 +1,17 @@
 [project]
 name = "shardbound-ai"
 version = "0.1.0"
-description = "Shardbound's AI layer: the Arbiter's evaluation dataset first; the RAG and the eval harness come next."
+description = "Shardbound's AI layer: the Arbiter's evaluation dataset, its RAG and, next, the eval harness."
 requires-python = ">=3.12"
 dependencies = [
     "bm25s>=0.3.13",
     "httpx>=0.27",
+    "pgvector>=0.5.1",
+    "psycopg[binary]>=3.3.6",
     "pystemmer>=3.1.0",
+    "sentence-transformers>=6.1.0",
+    "sqlalchemy>=2.1.4",
+    "torch>=2.14.1",
 ]
 
 [dependency-groups]
@@ -16,6 +21,16 @@ dev = [
 
 [tool.uv]
 package = false
+
+# The CPU build of torch on Windows and Linux too, where PyPI's carries CUDA (~2 GB): the embedding models run on CPU,
+# and every machine, CI included, gets the same light install. macOS wheels are CPU builds already.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -6,7 +6,8 @@ The Python side of the project: the code that calls or evaluates models (design 
 # from ai/
 uv run pytest                                      # the tests; no model is called
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
-uv run python -m rag evaluate random bm25          # score retrievers on the dev questions
+uv run python -m rag index                         # write the chunks and their vectors into the database
+uv run python -m rag evaluate                      # score every retriever on the dev questions (or name some)
 ```
 
 ## What `dataset/` does
@@ -62,7 +63,9 @@ The run prints the model and the settings it sends (never the key) before its fi
 
 The Arbiter's RAG (design doc §5.2), one brick at a time, each measured on the dev questions before the next.
 
-**The chunks** come from `engine/corpus` (Java), which writes `ai/.corpus/chunks.jsonl`: one per rule, vocabulary term and card, with their refs. Write them before a run, from `engine/`: `./mvnw -q -pl corpus -am compile exec:java`.
+**The chunks** come from `engine/corpus` (Java), which writes `ai/.corpus/chunks.jsonl`: one per rule, vocabulary term and card, with their refs. The file is only a handoff: `python -m rag index` reads it into the database, and **the database is the RAG's only source of chunks**. Every retriever of an evaluation is built from the indexed chunks, so a run can never mix two versions of the corpus, even if the chunks were regenerated without indexing.
+
+**The index** lives in Postgres with pgvector (the `db` service of `compose.yaml`): a `chunks` table, and a `chunk_embeddings` table with one vector per chunk and embedding model. `python -m rag index` embeds only the chunks whose text changed since a model last did, so a run where nothing changed loads no model.
 
 **The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
 
@@ -80,11 +83,55 @@ random on v1 dev, 61 answerable questions
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
 
-| Module | Role |
-|---|---|
-| `rag/chunks.py` | Reads the chunks `engine/corpus` writes |
-| `rag/retrievers/` | The `Retriever` interface (`rank_chunks`), then one module per retriever: `random_retriever.py`, `bm25_retriever.py` |
-| `rag/__main__.py` | The retrievers by name: `random`, then `bm25` and its variants, each changing one setting (`bm25-no-stemming`, `bm25-stop-words-removed`, `bm25-robertson`, `bm25-atire`, `bm25l`, `bm25+`) |
-| `rag/evaluation/questions.py` | The answerable questions of a split, with their relevant chunks |
-| `rag/evaluation/metrics.py` | Recall@k and the reciprocal rank of one question |
-| `rag/evaluation/report.py` | The means over a split, overall and by category, as a Markdown table |
+`rag/` has one package per responsibility; the command line (`rag/__main__.py`) only reads its arguments, calls a service and prints.
+
+```
+rag/
+├── __main__.py                 the command line: index, evaluate; it calls a service and prints
+├── chunks.py                   the chunks engine/corpus writes
+├── indexing/
+│   └── indexing_service.py     the index: the chunks into the database, then each model's vectors of the changed ones
+├── repository/                 the database, Postgres with pgvector, through SQLAlchemy
+│   ├── database.py             the connection; the tables created from the entities
+│   ├── entities.py             ChunkRow, ChunkEmbeddingRow
+│   ├── chunk_repository.py     ChunkRepository, ChunkRepositoryPostgres
+│   ├── embedding_repository.py EmbeddingRepository, EmbeddingRepositoryPostgres: the vectors, ranked by cosine
+│   └── evaluation_repository.py EvaluationRepository, EvaluationRepositoryFile: one file per evaluation
+├── retrievers/
+│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first
+│   ├── registry.py             every retriever by name
+│   ├── random/                 the floor
+│   ├── bm25/                   bm25_retriever.py, bm25_variants.py (the list of BM25 variants)
+│   └── dense/                  embedding_models.py (the list of models), chunk_embedding.py (a chunk and its vector),
+│                               chunk_embedder.py (embed the changed chunks), dense_retriever.py (rank by cosine)
+└── evaluation/
+    ├── evaluation_service.py   the flow: evaluate_all builds each retriever, evaluate runs it on every question
+    ├── questions.py            Question: every question of a split, its relevant chunks, answerable or not
+    ├── retrieval_metrics.py    Recall@k and the reciprocal rank of one question (answer_metrics.py will join it)
+    ├── scores.py               QuestionResult, Scores, Report
+    ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "answer": null}
+    ├── evaluation_json.py      an evaluation as the JSON the benchmark explorer reads, and its name
+    ├── code_commit.py          the commit evaluated, "-dirty" with uncommitted changes
+    └── report_table.py         the Markdown table
+```
+
+- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`.
+- The database is the RAG's, not only dense retrieval's: `chunks` (a chunk and its refs, which the refs expansion will read) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), then per run its scores overall and by category and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
+
+## Running the RAG on a new machine
+
+Needs **JDK 21** (the engine writes the chunks), **uv** (Python and its packages), and **Docker** (the database). No GPU: the embedding models run on CPU.
+
+```bash
+# from the repository root: chunks, database and vectors, in one go
+scripts/build-index.sh
+# then, from ai/
+uv run python -m rag evaluate random bm25 dense-qwen3-0.6b
+```
+
+- `uv` installs the exact versions of `uv.lock`, with the **CPU build of torch** on every platform (`pyproject.toml` points uv at PyTorch's CPU index), about 200 MB instead of 2 GB.
+- The first index run downloads each embedding model once from Hugging Face (Qwen3-Embedding-0.6B: about 1.2 GB) into its cache. On Windows, a warning about symlinks only means the cache copies files instead of linking them.
+- The database is local: `docker compose up -d --wait db`, user and password `shardbound`, port 5432. `RAG_DATABASE_URL` points elsewhere, as a SQLAlchemy URL (`postgresql+psycopg://user:password@host:port/database`).
+- The tests need none of this: they use a fake model and an in-memory store, and call no model.

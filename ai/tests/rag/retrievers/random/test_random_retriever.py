@@ -1,4 +1,4 @@
-from rag.retrievers.random_retriever import RandomRetriever
+from rag.retrievers.random.random_retriever import RandomRetriever
 
 CHUNK_IDS = [f"8.{n}" for n in range(1, 23)]
 

@@ -5,7 +5,8 @@ spring:
     virtual:
       enabled: true
 
-# See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set.
+# See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set, and
+# shardbound.reports-dir, the Arbiter's evaluations, is then the repository's evals/reports.
 shardbound:
   sessions:
     finished-ttl: 30m

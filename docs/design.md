@@ -52,6 +52,10 @@
 > **v2.17 (October 2026)** — the RAG's chunks: `engine/corpus` cuts the rulebook and the cards into 191 chunks (130 rules, 13 vocabulary terms, 48 cards) with their references, for the Python index. A rule's prefix is the titles of its sections, without its ID; cards and terms get none, and the text keeps the rulebook's Markdown. The vocabulary becomes chunks, the keyword examples move under the rule they illustrate, and a card's refs also cover its triggers and the token it summons (§5.2).
 >
 > **v2.18 (October 2026)** — the retrieval metrics and BM25: `ai/rag` scores any retriever on the dev questions, a question's relevant chunks being its citations, with a random retriever as the floor (§6.3). BM25 (bm25s, Lucene formula, English stemming) is the first retriever, with one variant per setting (§6.2). The prompt holds 10 chunks instead of 5-6: a chunk is about 40 tokens, and no question needs more than 10 rules (§5.2).
+>
+> **v2.19 (October 2026)** — dense retrieval: Qwen3-Embedding-0.6B embeds the chunks on CPU, and Postgres with pgvector stores them, the chunks in one table and their vectors per model in another; only changed chunks are embedded again. The embedding model is a registry entry, so another model is one more line (§5.2, §6.2).
+
+> **v2.20 (October 2026)** — evaluations are stored for the benchmark explorer: each `evaluate` is one file, `evals/reports/<version>/<split>/<timestamp>.json`, never overwritten and with no index, holding the dataset, the time, the code commit and its runs, each named by its layers (`retriever`, `answer`). The Python side saves it behind a repository and the game server serves it through a DAO (`GET /api/evaluations/…`), a folder for now, read at each request, a bucket online with nothing else to change. The RAG reads its chunks from the database only, so a run can't mix two versions of the corpus (§6.2, §8.2).
 
 ---
 
@@ -418,7 +422,7 @@ The Arbiter exists in several versions, and **this is exactly what the evaluatio
   ```
 
   RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them).
-- **Storage**: Postgres + pgvector, one row per chunk; with 191 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit.
+- **Storage**: Postgres + pgvector, the RAG's only source of chunks (the engine's `chunks.jsonl` is only the handoff the index reads), two tables: one row per chunk (its text and refs), and one row per chunk and embedding model (its vector), so several models' vectors sit side by side and are compared without re-embedding; with 191 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit. When the FastAPI service arrives (§5.5), indexing becomes one of its endpoints and the handoff file goes: the engine posts its chunks once its batch is done, and the service saves them, answers `202 Accepted` at once and embeds the changed ones **asynchronously**, in the background, since embedding takes about a minute on CPU (longer on a model's first download) and the engine must not wait on it.
 - **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order, each followed by its refs), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
 - **Output**: one schema for every question, `{answer, citations, answerable}`. `answer` is the natural-language text the user reads, with the citations shown as links: nobody sees JSON. `citations` lists the rule and card IDs in the order they apply. `answerable` lets the Arbiter abstain. Structured outputs through the API for `api+rag`, constrained decoding for local models, validated with Pydantic (one retry; format failures are measured).
 - **Abstention**: the `answerable` field is the baseline; a threshold on the best reranker score (no model call) and Jev *noul* are variants (experiment 5, §6.4).
@@ -574,6 +578,7 @@ All configurations except the last one use **the same open base model** (§4.2).
 |---|---|---|
 | Chunk prefix | heading path, from a parser | contextual retrieval: once, at indexing, an LLM writes one or two sentences that situate each chunk in its document |
 | Retrieval | hybrid, fused by RRF | BM25 only, embeddings only |
+| Embedding model | Qwen3-Embedding-0.6B, on CPU | other local models, each one entry of a registry |
 | BM25 | Lucene formula, English stemming, stop words kept, k1 1.5, b 0.75 | no stemming, stop words removed, the Robertson, ATIRE, BM25L and BM25+ formulas |
 | Expansion | written cross-references | none |
 | Reranker | cross-encoder | none, Jev *noul* |
@@ -756,7 +761,7 @@ Reminder: most recruiters will not click on the demo. The README GIF, the result
 | **Answer comparator**: pick a question and see the answers of the configurations side by side, with the engine's answer key | Static (precomputed answers) |
 | Games against the `random` / `greedy` / `mcts` bots (optional) | Java backend on Cloud Run CPU, scale to zero |
 
-The explorer is the heart of the site: the repository exists to compare approaches, and it lets a visitor do the comparing. It only reads precomputed runs, so the whole grid of §6.2 is computed beforehand, and every question can be opened in the comparator. The comparator shows the Arbiter at work without running anything: far more telling than a table.
+The explorer is the heart of the site: the repository exists to compare approaches, and it lets a visitor do the comparing. It only reads precomputed runs, so the whole grid of §6.2 is computed beforehand, and every question can be opened in the comparator. Each evaluation is one JSON file, `evals/reports/<version>/<split>/<timestamp>.json`, written once and never rewritten: its runs are named by their layers (`{"retriever": "bm25", "answer": null}`), so the explorer switches between them by layer. There is no index to maintain: the game server lists a split's timestamps (`GET /api/evaluations/{version}/{split}`) and serves each file as written (`…/{timestamp}`). Both sides store them behind a contract (a repository in Python, a DAO in the server), a folder today, read at each request so a new evaluation shows at once, a bucket once online. The comparator shows the Arbiter at work without running anything: far more telling than a table.
 
 Cloud Run can run several instances of the game server and does not guarantee that two messages of a game reach the same one. So no instance keeps a game in memory between two messages: **games live in a small shared store**, and a pub/sub carries each update to the instance holding the player's connection (see `specs/phase-2-engine.md` §13.4). Phase 2 runs on in-memory adapters; the store is chosen when going online. Options: a serverless Postgres with a free tier (LISTEN/NOTIFY for the pub/sub, pgvector later), Firestore (serverless, built-in listeners) or Redis. A managed Cloud SQL instance stays on permanently and is billed monthly.
 
@@ -843,7 +848,7 @@ shardbound/
 ├── evals/
 │   ├── datasets/               # <version>/: the engine's questions, then dataset-dev.jsonl and dataset-test.jsonl
 │   ├── harness/
-│   └── reports/                # precomputed, published results
+│   └── reports/                # <version>/<split>/<timestamp>.json: one file per evaluation, published
 └── .github/workflows/
 ```
 

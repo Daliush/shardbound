@@ -6,6 +6,7 @@ import bm25s
 import Stemmer
 
 from rag.chunks import Chunk
+from rag.retrievers import Retriever
 
 
 @dataclass(frozen=True)
@@ -22,23 +23,27 @@ class Bm25Settings:
     b: float = 0.75
 
 
-class Bm25Retriever:
+class Bm25Retriever(Retriever):
     """Indexes the chunks once; each question then only reads the index."""
 
     def __init__(self, chunks: list[Chunk], settings: Bm25Settings = Bm25Settings()) -> None:
-        self._chunk_ids = [chunk.id for chunk in chunks]
         self._settings = settings
         self._stemmer = Stemmer.Stemmer("english") if settings.stemming else None
+        self._indexed_chunk_ids = [chunk.id for chunk in chunks]
+        """bm25s knows a chunk only by its position in the index; this list gives back its id."""
         self._index = bm25s.BM25(method=settings.formula, k1=settings.k1, b=settings.b)
-        self._index.index(self._split_into_words([chunk.text for chunk in chunks]), show_progress=False)
+        self._index.index([self._split_into_words(chunk.text) for chunk in chunks], show_progress=False)
 
     def rank_chunks(self, question: str) -> list[str]:
         """Only the chunks sharing at least one word with the question: the others score 0, BM25 found nothing."""
-        positions, scores = self._index.retrieve(self._split_into_words([question]), k=len(self._chunk_ids),
-                                                 show_progress=False)
-        return [self._chunk_ids[position] for position, score in zip(positions[0], scores[0]) if score > 0]
+        scores = self._index.get_scores(self._split_into_words(question))
+        score_by_chunk_id = {}
+        for position, chunk_id in enumerate(self._indexed_chunk_ids):
+            if scores[position] > 0:
+                score_by_chunk_id[chunk_id] = scores[position]
+        return sorted(score_by_chunk_id, key=score_by_chunk_id.get, reverse=True)
 
-    def _split_into_words(self, texts: list[str]) -> list[list[str]]:
+    def _split_into_words(self, text: str) -> list[str]:
         """Lowercase words, stemmed or not, stop words kept or not: the same for the chunks and the question."""
-        return bm25s.tokenize(texts, stopwords="english" if self._settings.stop_words_removed else None,
-                              stemmer=self._stemmer, return_ids=False, show_progress=False)
+        return bm25s.tokenize([text], stopwords="english" if self._settings.stop_words_removed else None,
+                              stemmer=self._stemmer, return_ids=False, show_progress=False)[0]

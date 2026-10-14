@@ -39,7 +39,7 @@ Both must agree exactly, messages included: the API returns the engine's message
 |---|---|
 | Rulebook | sections 8, 9, 10 or 11 for a closed-list change (a game design decision, see `shardbound-rules`) |
 | Python | `content/cards/card.schema.json`, `content/cards/text-templates.json`, `test_card_schema.py`, `test_card_rules.py`, `test_text_templates.py` |
-| Java | the model records in `engine/core/.../content/` (`Effect`, `TargetSpec`, `Trigger`, `Keyword`…), `content/json/CardParser.java` and `EffectParser.java`, and `ContentLoader.checkReferences` for cross-references. The engine also has to implement the new element: see `shardbound-engine-dev`, recipes 1 to 3. |
+| Java | the model records in `engine/core/.../content/` (`Effect`, `TargetSpec`, `Trigger`, `Keyword`…), `content/json/CardParser.java` and `EffectParser.java`, and `ContentLoader.checkReferences` for cross-references. The engine also has to implement the new element: see `shardbound-engine-dev`, recipes 1 to 3. A new keyword, trigger or effect also needs its rule in `engine/corpus`'s `card.CardRefs`, whose switches have no default: the corpus does not compile until it is mapped. |
 | Docs | `content/cards/README.md`, and the closed lists in the `shardbound-card-authoring` skill |
 
 ### The text templates
@@ -47,7 +47,8 @@ Both must agree exactly, messages included: the API returns the engine's message
 Python checks that every effect, target, trigger and keyword has wording (`test_text_templates.py`). The engine loads the same file strictly (`ContentLoader` into `content.TextTemplates`, by dotted key such as `effects.heal.player`) and writes card text with it (`text.CardTextRenderer`). On the Java side:
 
 - `CardTextRendererTest` has one case per template key, and fails when a key of the file has no case: a new key needs a case there, and a new effect, target, trigger or keyword needs its rendering in `CardTextRenderer`;
-- its golden test reads the two examples of `content/cards/README.md` itself, so changing their wording there or in the templates changes what the test expects.
+- its golden test reads the two examples of `content/cards/README.md` itself, so changing their wording there or in the templates changes what the test expects;
+- the Arbiter's card chunks are this text (`engine/corpus`): a wording change changes their hash, so the RAG index embeds them again.
 
 ## Checks that exist only in Python, on purpose
 

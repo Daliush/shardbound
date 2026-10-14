@@ -1,7 +1,7 @@
 import pytest
 
 from rag.chunks import Chunk
-from rag.retrievers.bm25_retriever import Bm25Retriever, Bm25Settings
+from rag.retrievers.bm25.bm25_retriever import Bm25Retriever, Bm25Settings
 
 CHUNKS = [
     Chunk("8.2", "rule", "[8. Effects] **Destroy**: sends a unit or relic to the graveyard.", (), "r", "h"),

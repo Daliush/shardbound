@@ -1,50 +1,45 @@
-"""Scores retrievers on a dataset split, from ai/: `uv run python -m rag evaluate random bm25`."""
+"""The RAG's command line, from ai/. It only reads the arguments, calls a service and prints:
+
+uv run python -m rag index                         # chunks and vectors into the database (indexing)
+uv run python -m rag evaluate                      # every retriever on the dev questions (evaluation)
+uv run python -m rag evaluate bm25 dense-qwen3-0.6b
+"""
 
 import argparse
-from collections.abc import Callable
 
 from dataset.paths import repo_root
-from rag.chunks import Chunk, read_chunks
-from rag.evaluation.questions import read_retrieval_questions
-from rag.evaluation.report import evaluate_retriever, format_report
-from rag.retrievers import Retriever
-from rag.retrievers.bm25_retriever import Bm25Retriever, Bm25Settings
-from rag.retrievers.random_retriever import RandomRetriever
-
-BM25_VARIANTS = {
-    "bm25": Bm25Settings(),
-    "bm25-no-stemming": Bm25Settings(stemming=False),
-    "bm25-stop-words-removed": Bm25Settings(stop_words_removed=True),
-    "bm25-robertson": Bm25Settings(formula="robertson"),
-    "bm25-atire": Bm25Settings(formula="atire"),
-    "bm25l": Bm25Settings(formula="bm25l"),
-    "bm25+": Bm25Settings(formula="bm25+"),
-}
-
-RETRIEVERS: dict[str, Callable[[list[Chunk]], Retriever]] = {
-    "random": lambda chunks: RandomRetriever([chunk.id for chunk in chunks]),
-    **{name: (lambda chunks, settings=settings: Bm25Retriever(chunks, settings))
-       for name, settings in BM25_VARIANTS.items()},
-}
+from rag.evaluation.evaluation_json import name_evaluation
+from rag.evaluation.evaluation_service import evaluate_all
+from rag.evaluation.report_table import format_report_table
+from rag.indexing.indexing_service import build_index
+from rag.repository.evaluation_repository import EvaluationRepositoryFile
+from rag.retrievers.registry import list_retriever_names
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m rag")
     commands = parser.add_subparsers(dest="command", required=True)
-    evaluate = commands.add_parser("evaluate", help="score retrievers on a dataset split")
-    evaluate.add_argument("retrievers", nargs="+", choices=sorted(RETRIEVERS), metavar="retriever",
-                          help=", ".join(sorted(RETRIEVERS)))
+    commands.add_parser("index", help="write the chunks and their vectors into the database, for every model")
+    evaluate = commands.add_parser("evaluate", help="score retrievers on a dataset split, all of them by default")
+    evaluate.add_argument("retrievers", nargs="*", choices=list_retriever_names(), metavar="retriever",
+                          help=", ".join(list_retriever_names()))
     evaluate.add_argument("--version", default="v1")
     evaluate.add_argument("--split", default="dev", choices=["dev", "test"],
                           help="dev to tune; test only for the published numbers")
     arguments = parser.parse_args(argv)
 
     root = repo_root()
-    chunks = read_chunks(root)
-    questions = read_retrieval_questions(root, arguments.version, arguments.split)
-    for name in arguments.retrievers:
-        print(f"{name} on {arguments.version} {arguments.split}, {len(questions)} answerable questions\n")
-        print(format_report(evaluate_retriever(RETRIEVERS[name](chunks), questions)) + "\n")
+    if arguments.command == "index":
+        for model_name, embedded in build_index(root).items():
+            print(f"{model_name}: {embedded} chunks embedded, the others unchanged")
+    else:
+        evaluation = evaluate_all(arguments.retrievers or list_retriever_names(), root, arguments.version,
+                                  arguments.split, EvaluationRepositoryFile(root))
+        for run in evaluation.runs:
+            print(f"retriever {run.layers.retriever}, answer {run.layers.answer} on {arguments.version} "
+                  f"{arguments.split}, {run.report.overall.question_count} answerable questions\n")
+            print(format_report_table(run.report) + "\n")
+        print(f"Saved as {name_evaluation(evaluation)}")
 
 
 if __name__ == "__main__":

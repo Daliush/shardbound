@@ -1,4 +1,7 @@
-"""The chunks `engine/corpus` writes into `ai/.corpus/chunks.jsonl`: one per rule, vocabulary term and card."""
+"""
+A chunk, and the file `engine/corpus` writes into `ai/.corpus/chunks.jsonl`, one per rule, vocabulary term and
+card. The file only hands the chunks from the engine to the index: everything else reads them from the database.
+"""
 
 from dataclasses import dataclass
 from pathlib import Path

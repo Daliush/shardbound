@@ -1,6 +1,24 @@
 # Runs the game locally: docker compose up --build, then http://localhost:4200.
 # One server instance only: its games live in memory (spec §13.4).
+# The RAG's database alone: docker compose up -d --wait db.
 services:
+  # The Arbiter's RAG index: the chunks and their vectors, in Postgres with pgvector. A local database only.
+  db:
+    image: pgvector/pgvector:0.8.0-pg17
+    environment:
+      POSTGRES_USER: shardbound
+      POSTGRES_PASSWORD: shardbound
+      POSTGRES_DB: shardbound
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shardbound -d shardbound"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
   api:
     build:
       context: .
@@ -14,3 +32,6 @@ services:
       - "4200:80"
     depends_on:
       - api
+
+volumes:
+  db-data:

@@ -1,6 +1,6 @@
 ---
 name: shardbound-game-server
-description: How Shardbound's game server (engine/api) and its Angular test client (frontend/) work and how to change them — the layers (controller → domain ← adapter → dao, checked by ArchUnit), the REST resources, the WebSocket game protocol (state, update, rejected, act, sync, versions, close code 4409), game sessions built for several instances (versioned saves through GameSessionPort, notifications through GameNotificationPort, the outbox, GameSocketRegistry), bots rebuilt at every move, the wire format of views and events, and the client's socket service, update pacing and grouped decision buttons. Use this whenever you touch engine/api or frontend/, add a REST endpoint, a protocol message, a view field, a bot or a DAO, debug a game that does not update, a rejected message or a reconnection, test the server or the client, decide which layer code belongs to, or explain how a click in the browser reaches the engine — even for a one-line change. For the engine itself, use shardbound-engine and shardbound-engine-dev.
+description: How Shardbound's game server (engine/api) and its Angular test client (frontend/) work and how to change them — the layers (controller → domain ← adapter → dao, checked by ArchUnit), the REST resources (games, cards, the Arbiter's evaluations for the benchmark explorer), the WebSocket game protocol (state, update, rejected, act, sync, versions, close code 4409), game sessions built for several instances (versioned saves through GameSessionPort, notifications through GameNotificationPort, the outbox, GameSocketRegistry), bots rebuilt at every move, the wire format of views and events, and the client's socket service, update pacing and grouped decision buttons. Use this whenever you touch engine/api or frontend/, add a REST endpoint, a protocol message, a view field, a bot or a DAO, debug a game that does not update, a rejected message or a reconnection, test the server or the client, decide which layer code belongs to, or explain how a click in the browser reaches the engine — even for a one-line change. For the engine itself, use shardbound-engine and shardbound-engine-dev.
 ---
 
 # The game server and the test client
@@ -18,9 +18,9 @@ controller ──▶ domain ◀── adapter ──▶ dao
 | Layer | Holds | Knows |
 |---|---|---|
 | `controller` | The endpoints: `rest/` (controllers, `dto/`), `ws/` (handshake, handler, `GameSocketRegistry`, `SeatSocket`, `message/`), `mappers/` (DTOs and messages ↔ business objects, the protocol JSON) | the domain only |
-| `domain` | `bo/` (business objects: `game`, `view`, `command`, `error`), `services/` (`game`, `update`, `bot`, `security`, `content`), `mappers/view` (engine → what a seat may see), `ports/` (the interfaces it needs) | nothing but itself and core; no transport, no JSON |
-| `adapter` | The ports implemented on the DAOs (`game/GameSessionAdapter`, `notification/GameNotificationAdapter`), and the entity ↔ business object mapping (`mappers/game`) | the domain and the DAOs |
-| `dao` | Pure data: `entities/`, `game/GameDao`, `notification/GameNotificationDao`, each with an `*InMemory` implementation (later `*Database`) | nothing above it |
+| `domain` | `bo/` (business objects: `game`, `view`, `command`, `error`, `evaluation`), `services/` (`game`, `update`, `bot`, `security`, `content`, `evaluation`), `mappers/view` (engine → what a seat may see), `ports/` (the interfaces it needs) | nothing but itself and core; no transport, no JSON |
+| `adapter` | The ports implemented on the DAOs (`game/GameSessionAdapter`, `notification/GameNotificationAdapter`, `evaluation/EvaluationAdapter`), and the entity ↔ business object mapping (`mappers/game`) | the domain and the DAOs |
+| `dao` | Pure data: `entities/`, `game/GameDao`, `notification/GameNotificationDao`, `evaluation/EvaluationDao`, with an `*InMemory` implementation for games and notifications (later `*Database`) and `EvaluationDaoFile` for the evaluations (later a bucket) | nothing above it |
 
 `config` wires them, outside the layers. `ArchitectureTest` (ArchUnit) fails the build if a layer reaches the wrong way, or if the domain imports Spring Web, servlets or Jackson. Services, mappers and adapters take their collaborators through their constructors, so a test can wire a whole instance by hand (`testing.TestInstance`).
 
@@ -52,6 +52,7 @@ controller ──▶ domain ◀── adapter ──▶ dao
 - **Events** are one to one with the engine's records (`EventViewMapper`, which redacts first): `type` is the record name in snake_case, then `rules`, `text` (`EventDescriber`, from the seat's point of view), then the record's components. A new engine event needs no change.
 - **Secrets**: seat tokens and join codes are 32 random bytes in base64url, stored as SHA-256 hashes, compared in constant time (`SeatTokens`). The seed is never returned.
 - **REST** bodies leave optional fields out; errors are Problem Details (`ApiExceptionHandler` maps each `GameException`). `GET /api/cards` carries each card's `text` from core's `CardTextRenderer`, through `ContentService`.
+- **Evaluations** are the Arbiter's (phase 3), for the benchmark explorer: `GET /api/evaluations/{version}/{split}` lists a split's timestamps, oldest first, and `GET /api/evaluations/{version}/{split}/{timestamp}` returns one evaluation, served as written, since its format belongs to `ai/rag/evaluation/evaluation_json.py`; one that never ran is a 404 (`EvaluationException`). `EvaluationDaoFile` reads `<version>/<split>/<timestamp>.json` from the reports folder at each request, so an evaluation saved while the server runs is served at once; a name from the URL is only compared with the files found, never made into a path (`shardbound.reports-dir`, by default the repository's `evals/reports`; `/app/reports` in the image); online, a bucket implements `EvaluationDao` and nothing above it changes.
 
 ## The client, in short
 
@@ -81,7 +82,8 @@ Rules of the house, on top of the engine skills' code style:
 | `domain.mappers.view.ViewMappersTest`, `domain.bo.game.OutboxTest` | What each seat sees; every event of 30 random games written one to one; the outbox's window |
 | `adapter.game.GameSessionAdapterTest` | A session comes back unchanged through the entity mapper and the DAO's JSON; the optimistic lock |
 | `controller.ws.TwoInstancesTest` | Two instances wired by hand on shared DAOs, with fake WebSockets: every version in order across instances, the same answer applied once, replacement across instances |
-| `controller.mappers.ws.ProtocolJsonTest`, `controller.rest.RestApiTest`, `controller.ws.GameWebSocketTest` | The JSON rules; REST with MockMvc and Problem Details; a real WebSocket client on a random port |
+| `controller.mappers.ws.ProtocolJsonTest`, `controller.rest.RestApiTest`, `controller.ws.GameWebSocketTest` | The JSON rules; REST with MockMvc and Problem Details, the evaluations read from `src/test/resources/reports`; a real WebSocket client on a random port |
+| `dao.evaluation.EvaluationDaoFileTest` | A split's timestamps in order, one evaluation as written, one saved after the first read, files of another layout, a missing folder, and no file read outside the folder |
 | `ArchitectureTest` | The layers |
 | `frontend` (Vitest) | The socket service, `DecisionGroups`, a smoke test per page |
 

@@ -28,6 +28,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
   - `shardbound-engine-dev`: how to change the engine (workflow, design rules, recipes, tests, docs to keep in sync).
   - `shardbound-game-server`: how the game server works (sessions, protocol, several instances) and how to change it, frontend included.
   - `shardbound-content-sync`: deck rules and content formats are checked by both the Python content tests and the Java engine; what to change on each side.
+  - `shardbound-rag`: the RAG Arbiter, built step by step with the maintainer: the plan, the chunks, the retrievers and their metrics, settled and open decisions.
 
 ## Commands
 
@@ -37,8 +38,9 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - Whole game, from the root: `docker compose up --build` (client on http://localhost:4200, server on http://localhost:8080).
 - Game server, from `engine/`: `./mvnw -pl api -am spring-boot:run` (http://localhost:8080).
 - Evaluation dataset, from the root: `scripts/build-dataset.sh <version> --base <previous version>` runs the engine's generator, then the wording and split; it needs `LUNA_BASE_URL`, `LUNA_MODEL` and `LUNA_API_KEY` (`ai/README.md`), and `--fake` makes a dry run into `preview` without a key. A built version is frozen unless `--overwrite` is passed. The engine's step alone, from `engine/`: `./mvnw -q -pl dataset -am compile exec:java -Dexec.args=<version>`.
-- The Arbiter's chunks, from `engine/`: `./mvnw -q -pl corpus -am compile exec:java` writes `ai/.corpus/chunks.jsonl` (not committed: it is derived from the rulebook and the cards).
-- Retrieval metrics, from `ai/`: `uv run python -m rag evaluate <retriever>` scores retrievers on the dev questions (Recall@10, Recall@20, MRR, by category); it reads `ai/.corpus/chunks.jsonl`, so write the chunks first. `--split test` only for the published numbers.
+- The Arbiter's chunks, from `engine/`: `./mvnw -q -pl corpus -am compile exec:java` writes `ai/.corpus/chunks.jsonl` (not committed: it is derived from the rulebook and the cards), the handoff that only `python -m rag index` reads.
+- The RAG's dense index, from the root: `scripts/build-index.sh` writes the chunks (Java), starts the database (`docker compose up -d --wait db`, Postgres with pgvector) and embeds the changed chunks (`uv run python -m rag index`); it needs JDK 21, uv and Docker, and the first run downloads the embedding model (`ai/README.md`).
+- Retrieval metrics, from `ai/`: `uv run python -m rag evaluate [retriever…]` scores every retriever, or the ones named, on the dev questions (Recall@10, Recall@20, MRR, by category) and saves them as one new file, `evals/reports/<version>/<split>/<timestamp>.json`, each run named by its layers (`retriever`, `answer`), which the game server serves to the benchmark explorer (`GET /api/evaluations/…`); every retriever reads the indexed chunks from the database, never `chunks.jsonl`, so build the index first. `--split test` only for the published numbers.
 - AI tests, from `ai/`: `uv run pytest`. Run them after any change to `ai/` or `evals/`; they call no model. CI runs them (`.github/workflows/ai.yml`).
 - Test client, from `frontend/`: `npm start` (http://localhost:4200, proxies `/api` and `/ws` to the server), `npm test` (unit tests, once), `npm run build`. Run the tests and the build after any change to `frontend/`. CI runs them (`.github/workflows/frontend.yml`).
 
@@ -83,5 +85,5 @@ Phase 3, the RAG Arbiter, is designed (`docs/design.md` §5.2 and §6) and in pr
 
 - The evaluation scenarios are done: `engine/dataset` builds them from recipes, 25 interactions and 177 scenarios, each answer key reviewed against the rulebook; eight cards were added for them (47 cards + 1 token).
 - The dataset v1 is built: 668 questions (177 scenarios, 214 factual, 49 deck building, 130 simple rule, 98 unanswerable), worded by Luna 6, in `evals/datasets/v1/dataset-dev.jsonl` and `dataset-test.jsonl`. A new version keeps v1's wordings and split for every unchanged question.
-- The RAG pipeline (`docs/design.md` §5.2) is in progress, built step by step with the maintainer: `engine/corpus` writes the chunks (130 rules, 13 vocabulary terms, 48 cards) with their refs; `ai/rag` scores any retriever on the dev questions (Recall@10, what the prompt holds; Recall@20, what the reranker receives; MRR), with a random retriever as the floor; BM25 (bm25s) is the first retriever, with its variants. Next: embeddings in pgvector, RRF fusion, refs expansion, the reranker, then generation.
+- The RAG pipeline (`docs/design.md` §5.2) is in progress, built step by step with the maintainer: `engine/corpus` writes the chunks (130 rules, 13 vocabulary terms, 48 cards) with their refs; `ai/rag` scores any retriever on the dev questions (Recall@10, what the prompt holds; Recall@20, what the reranker receives; MRR), with a random retriever as the floor; BM25 (bm25s) is the first retriever, with its variants; dense retrieval embeds the chunks with Qwen3-Embedding-0.6B into pgvector; each evaluation is saved as its own timestamped file and served by the game server (`GET /api/evaluations/…`). Next: RRF fusion, refs expansion, the reranker, then generation.
 - Then: the eval harness (§6.3) and the benchmark explorer (§8.2).
