@@ -2,8 +2,10 @@
 
 import random
 
+from rag.retrievers import Retriever
 
-class RandomRetriever:
+
+class RandomRetriever(Retriever):
     """Every chunk in a random order, the same order for a question at every run."""
 
     def __init__(self, chunk_ids: list[str], seed: int = 1) -> None:

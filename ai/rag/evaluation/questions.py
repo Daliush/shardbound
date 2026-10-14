@@ -1,4 +1,4 @@
-"""The dataset's questions as retrieval sees them: a text and the chunks a correct answer needs."""
+"""The dataset's questions, as the evaluation reads them."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -8,20 +8,23 @@ from dataset.paths import dataset_dir
 
 
 @dataclass(frozen=True)
-class RetrievalQuestion:
+class Question:
     id: str
     category: str
     text: str
+    answerable: bool
     relevant_ids: frozenset[str]
+    """
+    Its `citations`, what a correct answer cites: the rules of a scenario, a deck or a simple-rule question, the card
+    of a factual question. Not `cards`, which lists every card of a scenario, deck fillers and whole decklists
+    included. Empty for an unanswerable question.
+    """
 
 
-def read_retrieval_questions(root: Path, version: str, split: str) -> list[RetrievalQuestion]:
-    """
-    The answerable questions of `dataset-<split>.jsonl`. Their relevant chunks are their `citations`, what a correct
-    answer cites: the rules of a scenario, a deck or a simple-rule question, the card of a factual question. Not
-    `cards`, which lists every card of a scenario, deck fillers and whole decklists included. An unanswerable
-    question has no relevant chunk, so it is left out.
-    """
-    rows = jsonl.read(dataset_dir(root, version) / f"dataset-{split}.jsonl")
-    return [RetrievalQuestion(row["id"], row["category"], row["question"], frozenset(row["citations"]))
-            for row in rows if row["answerable"]]
+def read_questions(root: Path, version: str, split: str) -> list[Question]:
+    """Every question of `dataset-<split>.jsonl`, unanswerable ones included."""
+    questions = []
+    for row in jsonl.read(dataset_dir(root, version) / f"dataset-{split}.jsonl"):
+        questions.append(Question(id=row["id"], category=row["category"], text=row["question"],
+                                  answerable=row["answerable"], relevant_ids=frozenset(row["citations"])))
+    return questions

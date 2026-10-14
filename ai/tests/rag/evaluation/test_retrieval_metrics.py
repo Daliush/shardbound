@@ -1,4 +1,4 @@
-from rag.evaluation.metrics import recall_at_k, reciprocal_rank
+from rag.evaluation.retrieval_metrics import recall_at_k, reciprocal_rank
 
 RELEVANT = frozenset({"11.3.2", "11.3.3", "11.5.4", "neutral.tempest"})
 """The example we worked through: 11.3.2 first, Tempest third, 11.5.4 twelfth, 11.3.3 not ranked."""
