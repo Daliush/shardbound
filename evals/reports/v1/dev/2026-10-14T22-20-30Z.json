@@ -3,13 +3,14 @@
   "version": "v1",
   "split": "dev"
  },
+ "evaluated_at": "2026-10-14T22:20:30Z",
+ "code": "b55f3d7",
  "runs": [
   {
    "layers": {
     "retriever": "random",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -1961,7 +1962,6 @@
     "retriever": "bm25",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -3913,7 +3913,6 @@
     "retriever": "bm25-no-stemming",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -5865,7 +5864,6 @@
     "retriever": "bm25-stop-words-removed",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -7788,7 +7786,6 @@
     "retriever": "bm25-robertson",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -9740,7 +9737,6 @@
     "retriever": "bm25-atire",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -11692,7 +11688,6 @@
     "retriever": "bm25l",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -13644,7 +13639,6 @@
     "retriever": "bm25+",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
@@ -15596,7 +15590,6 @@
     "retriever": "dense-qwen3-0.6b",
     "answer": null
    },
-   "code": "45c56b9",
    "scores": {
     "overall": {
      "question_count": 61,
