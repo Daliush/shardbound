@@ -95,7 +95,8 @@ rag/
 │   ├── database.py             the connection; the tables created from the entities
 │   ├── entities.py             ChunkRow, ChunkEmbeddingRow
 │   ├── chunk_repository.py     ChunkRepository, ChunkRepositoryPostgres
-│   └── embedding_repository.py EmbeddingRepository, EmbeddingRepositoryPostgres: the vectors, ranked by cosine
+│   ├── embedding_repository.py EmbeddingRepository, EmbeddingRepositoryPostgres: the vectors, ranked by cosine
+│   └── evaluation_repository.py EvaluationRepository, EvaluationRepositoryFile: one file per evaluation
 ├── retrievers/
 │   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first
 │   ├── registry.py             every retriever by name
@@ -108,14 +109,16 @@ rag/
     ├── questions.py            Question: every question of a split, its relevant chunks, answerable or not
     ├── retrieval_metrics.py    Recall@k and the reciprocal rank of one question (answer_metrics.py will join it)
     ├── scores.py               QuestionResult, Scores, Report
-    ├── runs.py                 Run and its Layers: {"retriever": "bm25", "answer": null}
-    ├── run_file.py             the runs saved for the frontend
+    ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "answer": null}
+    ├── evaluation_json.py      an evaluation as the JSON the benchmark explorer reads, and its name
+    ├── code_commit.py          the commit evaluated, "-dirty" with uncommitted changes
     └── report_table.py         the Markdown table
 ```
 
 - A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk and its refs, which the refs expansion will read) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each evaluation is a run**, named by its layers: `{"retriever": "bm25", "answer": null}`; `answer` will name the generator. `evaluate` saves the runs in `evals/reports/<version>/<split>.json`: per run, the code commit, the scores overall and by category, and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. A run evaluated again replaces the one with the same layers.
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), then per run its scores overall and by category and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## Running the RAG on a new machine
 
