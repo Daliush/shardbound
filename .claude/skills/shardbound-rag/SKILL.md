@@ -33,8 +33,8 @@ top ~20 → + refs (one level) → cross-encoder reranker → top 10 → prompt 
 | 1 | Chunks with their refs | `engine/corpus` (Java) | done |
 | 2 | Retrieval metrics, random floor | `ai/rag/evaluation` | done |
 | 3 | BM25 and its variants | `ai/rag/retrievers/bm25_retriever.py` | done |
-| 4 | Dense retrieval: embeddings in pgvector, cosine | `ai/rag` + Postgres in `compose.yaml` | next |
-| 5 | RRF fusion, card names found in the question | `ai/rag` | |
+| 4 | Dense retrieval: embeddings in pgvector, cosine | `ai/rag` + Postgres in `compose.yaml` | done |
+| 5 | RRF fusion, card names found in the question | `ai/rag` | next |
 | 6 | Refs expansion | `ai/rag` | |
 | 7 | Cross-encoder reranker | `ai/rag` | |
 | 8 | Prompt and structured output `{answer, citations, answerable}` | `ai/rag` | |
@@ -68,12 +68,14 @@ Then the eval harness (§6.3: key facts, rules cited, step order, abstention, fo
 
 ## Steps 2 and 3: measuring retrievers (`ai/rag`)
 
-`uv run python -m rag evaluate random bm25 …` (from `ai/`) prints one table per retriever: Recall@10, Recall@20, MRR, overall and by category.
+`uv run python -m rag evaluate` (from `ai/`; every retriever by default, or name some) prints one table per retriever: Recall@10, Recall@20, MRR, overall and by category.
+
+Layout, one package per responsibility (the maintainer wants to find anything at a glance): `rag/__main__.py` only parses, calls a service and prints; `indexing/` and `evaluation/` hold one service each, one per command; `repository/` is the RAG's database (`database.py`, `entities.py`, one repository per table: a contract and its `…Postgres` implementation, with `…InMemory` fakes in the tests, the maintainer's suffix convention); `retrievers/` holds the `Retriever` contract, `registry.py` (every retriever by name) and one sub-package per family (`random/`, `bm25/` with `bm25_variants.py`, `dense/` with `embedding_models.py`, `chunk_embedding.py`, `chunk_embedder.py`); `evaluation/` holds the whole evaluation flow in `evaluation_service.py` (`evaluate_all` builds each retriever, `evaluate` runs it on every question and scores), plus `questions.py`, `retrieval_metrics.py`, `scores.py`, `runs.py`, `run_file.py`, `report_table.py`. **Each evaluation is a run named by its layers** (`{"retriever": "bm25", "answer": null}`; the maintainer wants the frontend to switch between runs by layer), saved in `evals/reports/<version>/<split>.json` with the code commit, the scores and each question's first 20 chunks; a run evaluated again replaces the one with the same layers. **Name for the future**: what the evaluation will share once answers are scored is generic (`Question`, `Scores`, `Report`, `evaluate`; `read_questions` returns the unanswerable questions too, which abstention will need); only what really is retrieval says so (`retrieval_metrics.py`, `RECALL_CUTOFFS`). The maintainer was angry at `RetrievalScores`. Loops are written as explicit `for` loops, not comprehensions that hide them. Never pass two lists that only line up by position (chunks and vectors): make one object per item where it is produced (`EmbeddingModel.embed_chunk(chunk)` returns a `ChunkEmbedding(chunk, vector)`), and no `zip`.
 
 - **Recall@10** is what the prompt holds after the reranker; **Recall@20** what the reranker receives.
 - Unanswerable questions have no relevant chunk and are left out: **61 of the 72 dev questions**. One question moves a score by ~1.6 points and a 7-question category is noise: dev gives a direction, test (596) the published numbers. `--split test` is never used to choose anything.
 - The **random** retriever is the floor and proves the measure. Best possible Recall@10 is 100% on v1 (no question needs more than 10 rules).
-- A retriever implements one method, `rank_chunks(question) -> list[str]` (chunk ids, best first). The registry in `rag/__main__.py` names each retriever; a variant is one more entry that changes **one** setting.
+- A retriever extends the `Retriever` abstract class (one method, `rank_chunks(question) -> list[str]`, chunk ids best first). Contracts are `ABC`s that classes extend explicitly, as in Java, not implicit `Protocol`s: the maintainer wants to see the contract in the class line. `retrievers/registry.py` names each retriever; a variant is one more entry, in its family's list, that changes **one** setting.
 
 Numbers on v1 dev:
 
@@ -81,14 +83,19 @@ Numbers on v1 dev:
 |---|---:|---:|---:|
 | random | 2.7% | 9.0% | 0.051 |
 | bm25 (Lucene, stemming, stop words kept) | 53.5% | 59.3% | 0.583 |
+| dense-qwen3-0.6b | 62.3% | 74.1% | 0.567 |
 
-BM25 finds factual (100% Recall@20) and simple-rule questions (92%), and misses scenario questions (they name cards, not the rules they need) and deck questions (the decklist floods the ranking; the question never says "30"). The five formulas and the stemming and stop-word variants are within about two questions of each other. bm25s removes English stop words **by default**: the baseline keeps them ("not", "no" carry meaning in rules).
+BM25 finds factual (100% Recall@20) and simple-rule questions (92%), and misses scenario questions (they name cards, not the rules they need) and deck questions (the decklist floods the ranking; the question never says "30"). Dense retrieval finds deck questions by meaning (92% Recall@20, BM25 0%) and every simple-rule and factual question, but misses multi-step ones (3%, BM25 36%): the two complement each other, which is the case for fusion. The five formulas and the stemming and stop-word variants are within about two questions of each other. bm25s removes English stop words **by default**: the baseline keeps them ("not", "no" carry meaning in rules).
 
-## Step 4: dense retrieval (next)
+## Step 4: dense retrieval
 
-- One embedding model for now, **Qwen3-Embedding-0.6B** (sentence-transformers, CPU), behind a registry of local embedding models so another is one entry; each model becomes a `dense-<model>` retriever, like the BM25 variants.
-- Storage in **Postgres + pgvector** (a `db` service in `compose.yaml`): the chunks with their refs, and their vectors per model, re-embedded only when a chunk's `hash` changes. pgvector computes the cosine in SQL (`<=>`). Every chunk has a cosine, so all are ranked.
-- CI never downloads a model or starts a database: tests use a fake model and a fake store. Running it on another machine must work from a written setup (uv, JDK 21, Docker) and one script.
+`scripts/build-index.sh` (from the root) writes the chunks, starts the database and embeds; then `uv run python -m rag evaluate dense-qwen3-0.6b`. Setup for a new machine: the end of `ai/README.md`.
+
+- **Qwen3-Embedding-0.6B** (sentence-transformers, CPU, 1024 dimensions), one entry of `LOCAL_EMBEDDING_MODELS` (`retrievers/dense/embedding_models.py`): our name → Hugging Face id. One class, `LocalEmbeddingModel(name)`, runs any of them, one instance per model. Each entry becomes a `dense-<name>` retriever and is indexed by `python -m rag index`. The model's own configuration adds its query marker (`encode_query`: an instruction before the question; `encode_document`: nothing). It loads only when there is something to embed.
+- **Postgres + pgvector** (`db` service of `compose.yaml`, `rag/repository/`), through **SQLAlchemy** (the maintainer refused SQL in strings): two entities, `ChunkRow` (the chunk with its refs, for the whole RAG) and `ChunkEmbeddingRow` (one vector per chunk and model, with the hash of the text it was made from); the tables are created from them, no migrations yet (Alembic when data must survive a schema change). Only changed chunks are embedded again. pgvector ranks by cosine distance in SQL (`<=>`); every chunk has a cosine, so all are ranked.
+- `uv` installs the CPU build of torch on every platform (`pyproject.toml` points at PyTorch's CPU index), CI included.
+- CI never downloads a model or starts a database: `tests/rag/retrievers/dense/conftest.py` has a fake model (word counts) and `EmbeddingRepositoryInMemory`, with the same contract as `EmbeddingRepositoryPostgres`. The SQL is proven by a real index and evaluate run, not by CI.
+- Not done yet: the index does not record the rulebook's commit, which design §5.2 asks for; add it when runs are stored for the benchmark explorer.
 
 ## Settled, and still open
 
