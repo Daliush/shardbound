@@ -28,6 +28,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
   - `shardbound-engine-dev`: how to change the engine (workflow, design rules, recipes, tests, docs to keep in sync).
   - `shardbound-game-server`: how the game server works (sessions, protocol, several instances) and how to change it, frontend included.
   - `shardbound-content-sync`: deck rules and content formats are checked by both the Python content tests and the Java engine; what to change on each side.
+  - `shardbound-rag`: the RAG Arbiter, built step by step with the maintainer: the plan, the chunks, the retrievers and their metrics, settled and open decisions.
 
 ## Commands
 
@@ -83,5 +84,5 @@ Phase 3, the RAG Arbiter, is designed (`docs/design.md` §5.2 and §6) and in pr
 
 - The evaluation scenarios are done: `engine/dataset` builds them from recipes, 25 interactions and 177 scenarios, each answer key reviewed against the rulebook; eight cards were added for them (47 cards + 1 token).
 - The dataset v1 is built: 668 questions (177 scenarios, 214 factual, 49 deck building, 130 simple rule, 98 unanswerable), worded by Luna 6, in `evals/datasets/v1/dataset-dev.jsonl` and `dataset-test.jsonl`. A new version keeps v1's wordings and split for every unchanged question.
-- The RAG pipeline (`docs/design.md` §5.2) is in progress, built step by step with the maintainer: `engine/corpus` writes the chunks (130 rules, 13 vocabulary terms, 48 cards) with their refs; `ai/rag` scores any retriever on the dev questions (Recall@10, what the prompt holds; Recall@20, what the reranker receives; MRR), with a random retriever as the floor; BM25 (bm25s) is the first retriever, with its variants. Next: embeddings in pgvector, RRF fusion, refs expansion, the reranker, then generation.
+- The RAG pipeline (`docs/design.md` §5.2) is in progress, built step by step with the maintainer: `engine/corpus` writes the chunks (130 rules, 13 vocabulary terms, 48 cards) with their refs; `ai/rag` scores any retriever on the dev questions (Recall@10, what the prompt holds; Recall@20, what the reranker receives; MRR), with a random retriever as the floor; BM25 (bm25s) is the first retriever, with its variants. Next: dense retrieval (Qwen3-Embedding-0.6B, vectors in pgvector), RRF fusion, refs expansion, the reranker, then generation.
 - Then: the eval harness (§6.3) and the benchmark explorer (§8.2).

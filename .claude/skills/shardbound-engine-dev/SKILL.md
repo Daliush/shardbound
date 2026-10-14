@@ -55,6 +55,8 @@ A keyword (section 11) usually touches several of these. Put each part where its
 ## Code style (the maintainer's)
 
 - Clean code: SRP, GRASP, SOLID. Small `final` classes with one job, grouped by rulebook area. Each rule procedure is a static method that takes the `Game`, and the variation points are sealed types with an exhaustive `switch`. The compiler then points at every place a new effect, step or event must be handled.
+- Every method name says what it does or returns without reading its body, verb first: `buildAllChunks`, `findRefsOfCard`, `expandIfSection`, `mapSectionNumbersToTitles`. Bare nouns (`rules`, `cards`) and vague verbs (`readFrom`, `of`) were refused.
+- No static entry point that builds an instance to hold hidden state: a stateless static method with local variables, or a plain object. A module's main class reads as its flow, and each step sits in its own package with one public entry class (`engine/corpus`: `CorpusGenerator` → `rulebook`, `card`, `ref`, `chunk`).
 - Intention-revealing names over comments. Comments are short, simple sentences that state the rule and cite its ID: `/** 7.5: the defender's other units that are not frozen and have not intercepted this turn. */`. Never re-explain the whole method.
 - Records with domain methods. `Unit` and `PlayerState` change through a private `Draft`, so each method names only the fields it touches.
 - Booleans and their setters say who did what: `hasAttackedThisTurn` and `markHasAttacked`, not `attackedThisTurn` (which reads as "was attacked").
