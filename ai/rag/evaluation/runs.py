@@ -1,6 +1,7 @@
-"""A run: what was evaluated, layer by layer, and its report."""
+"""An evaluation and its runs: what was evaluated, layer by layer, and its report."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from rag.evaluation.scores import Report
 
@@ -20,3 +21,14 @@ class Layers:
 class Run:
     layers: Layers
     report: Report
+
+
+@dataclass(frozen=True)
+class Evaluation:
+    """One `evaluate` command: when, on which code and dataset split, and the runs it scored."""
+
+    version: str
+    split: str
+    evaluated_at: datetime
+    code_commit: str
+    runs: list[Run]

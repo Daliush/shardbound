@@ -8,10 +8,11 @@ uv run python -m rag evaluate bm25 dense-qwen3-0.6b
 import argparse
 
 from dataset.paths import repo_root
+from rag.evaluation.evaluation_json import name_evaluation
 from rag.evaluation.evaluation_service import evaluate_all
 from rag.evaluation.report_table import format_report_table
-from rag.evaluation.run_file import find_runs_file
 from rag.indexing.indexing_service import build_index
+from rag.repository.evaluation_repository import EvaluationRepositoryFile
 from rag.retrievers.registry import list_retriever_names
 
 
@@ -32,12 +33,13 @@ def main(argv: list[str] | None = None) -> None:
         for model_name, embedded in build_index(root).items():
             print(f"{model_name}: {embedded} chunks embedded, the others unchanged")
     else:
-        runs = evaluate_all(arguments.retrievers or list_retriever_names(), root, arguments.version, arguments.split)
-        for run in runs:
+        evaluation = evaluate_all(arguments.retrievers or list_retriever_names(), root, arguments.version,
+                                  arguments.split, EvaluationRepositoryFile(root))
+        for run in evaluation.runs:
             print(f"retriever {run.layers.retriever}, answer {run.layers.answer} on {arguments.version} "
                   f"{arguments.split}, {run.report.overall.question_count} answerable questions\n")
             print(format_report_table(run.report) + "\n")
-        print(f"Runs saved in {find_runs_file(root, arguments.version, arguments.split).relative_to(root)}")
+        print(f"Saved as {name_evaluation(evaluation)}")
 
 
 if __name__ == "__main__":

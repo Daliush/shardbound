@@ -24,7 +24,8 @@ RETRIEVER_FACTORIES: dict[str, Callable[[list[Chunk]], Retriever]] = {
                                               EmbeddingRepositoryPostgres(connect_database())))
        for model_name in LOCAL_EMBEDDING_MODELS},
 }
-"""Name → how to build it from the chunks. A retriever is built only when it is evaluated: a dense one loads a model."""
+"""Name → how to build it from the chunks. A retriever is built only when it is evaluated: a dense one loads its
+model."""
 
 
 def list_retriever_names() -> list[str]:
