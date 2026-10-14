@@ -1,0 +1,2 @@
+{"dataset": {"version": "v1", "split": "dev"}, "evaluated_at": "2026-10-15T18:00:00Z", "code": "45c56b9",
+ "runs": [{"layers": {"retriever": "dense-qwen3-0.6b", "answer": null}, "scores": {}, "questions": []}]}

@@ -676,6 +676,8 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, websocketPath: "/ws/games/{id}" }` |
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "human" } }` | `201 { gameId, playerToken, joinCode, websocketPath }` |
 | `POST` | `/api/games/{id}/join` | `{ "joinCode": "…", "deck": "root-starter" }` | `200 { gameId, playerToken, websocketPath }` |
+| `GET` | `/api/evaluations/{version}/{split}` | — | `["2026-10-15T09-00-00Z", "2026-10-15T18-00-00Z"]`: the timestamps of a dataset split's evaluations, oldest first (phase 3) |
+| `GET` | `/api/evaluations/{version}/{split}/{timestamp}` | — | the evaluation as the Python evaluation wrote it: `{ dataset, evaluated_at, code, runs: [{ layers: { retriever, answer }, scores, questions }] }` (phase 3) |
 
 - The creator always takes seat P1, and the bot or the joiner seat P2. Who plays first is decided by the RNG (5.1.1).
 - A bot game starts at creation. A human vs human game starts when the second player joins; before that, the creator's view has status `waiting_for_opponent`.
@@ -684,6 +686,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
+- The evaluations are the Arbiter's (phase 3, `docs/design.md` §8.2), loaded from `evals/reports/<version>/<split>/<timestamp>.json` (`shardbound.reports-dir`) by an in-memory DAO, a bucket later. The server serves each document as written: its format belongs to `ai/rag/evaluation/evaluation_json.py`. An evaluation that never ran: `404`.
 
 ---
 

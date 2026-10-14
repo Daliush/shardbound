@@ -1,4 +1,5 @@
-# The game server. Build context: the repository root, since the server loads content/ at startup.
+# The game server. Build context: the repository root, since the server loads content/ and the Arbiter's
+# evaluations (evals/reports/) at startup.
 # Tests are not run here: CI runs them.
 
 FROM eclipse-temurin:21-jdk AS build
@@ -11,6 +12,8 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /src/engine/api/target/shardbound-api-*.jar app.jar
 COPY content/ content/
+COPY evals/reports/ reports/
 ENV SHARDBOUND_CONTENT_DIR=/app/content
+ENV SHARDBOUND_REPORTS_DIR=/app/reports
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,5 +1,6 @@
 package fr.daliush.shardbound.api.controller.rest;
 
+import fr.daliush.shardbound.api.domain.bo.error.EvaluationException;
 import fr.daliush.shardbound.api.domain.bo.error.GameException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -21,6 +22,19 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             case GameException.JoinRefused ignored -> HttpStatus.CONFLICT;
             case GameException.InvalidToken ignored -> HttpStatus.UNAUTHORIZED;
         };
+        return describeProblem(status, exception, request);
+    }
+
+    @ExceptionHandler
+    public ProblemDetail refused(EvaluationException exception, HttpServletRequest request) {
+        HttpStatus status = switch (exception) {
+            case EvaluationException.UnknownEvaluation ignored -> HttpStatus.NOT_FOUND;
+        };
+        return describeProblem(status, exception, request);
+    }
+
+    private static ProblemDetail describeProblem(HttpStatus status, RuntimeException exception,
+                                                 HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, exception.getMessage());
         problem.setInstance(URI.create(request.getRequestURI()));
         return problem;

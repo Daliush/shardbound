@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest
+@SpringBootTest(properties = "shardbound.reports-dir=src/test/resources/reports")
 @AutoConfigureMockMvc
 class RestApiTest {
 
@@ -112,6 +112,29 @@ class RestApiTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.instance").value("/api/games/8f2c6d1e-3b7a-4c59-9e10-5a4b2d7f9c31/join"));
         join("not-a-game", "{ \"joinCode\": \"x\", \"deck\": \"root-starter\" }").andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listsASplitsEvaluationsOldestFirstThenServesOneAsTheEvaluationWroteIt() throws Exception {
+        mvc.perform(get("/api/evaluations/v1/dev"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(contains("2026-10-15T09-00-00Z", "2026-10-15T18-00-00Z")));
+        mvc.perform(get("/api/evaluations/v1/dev/2026-10-15T18-00-00Z"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.evaluated_at").value("2026-10-15T18:00:00Z"))
+                .andExpect(jsonPath("$.runs[0].layers.retriever").value("dense-qwen3-0.6b"))
+                .andExpect(jsonPath("$.runs[0].layers.answer").isEmpty());
+        mvc.perform(get("/api/evaluations/v2/dev")).andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void refusesAnEvaluationThatNeverRanWithAProblem() throws Exception {
+        mvc.perform(get("/api/evaluations/v1/dev/2026-10-15T10-00-00Z"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("Unknown evaluation: v1/dev/2026-10-15T10-00-00Z"))
+                .andExpect(jsonPath("$.instance").value("/api/evaluations/v1/dev/2026-10-15T10-00-00Z"));
     }
 
     private ResultActions create(String body) throws Exception {

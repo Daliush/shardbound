@@ -1,0 +1,2 @@
+{"dataset": {"version": "v1", "split": "dev"}, "evaluated_at": "2026-10-15T09:00:00Z", "code": "45c56b9",
+ "runs": [{"layers": {"retriever": "bm25", "answer": null}, "scores": {}, "questions": []}]}

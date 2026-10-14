@@ -1,4 +1,4 @@
-# The game server's image needs engine/ and content/ only.
+# The game server's image needs engine/, content/ and the evaluations in evals/reports/.
 .git
 .claude
 docs
