@@ -99,7 +99,9 @@ BM25 finds factual (100% Recall@20) and simple-rule questions (92%), and misses 
 
 ## Settled, and still open
 
-Settled with the maintainer: relevant chunks = citations; the prompt holds **10 chunks** (a chunk is ~40 tokens; 5 would cap 8% of the questions); prompt size 5 and 20 are variants; refs are attached **before** the reranker, so a chunk found only through a ref is judged like the others; bm25s + PyStemmer over a hand-written BM25.
+Settled with the maintainer: relevant chunks = citations; the prompt holds **10 chunks** (a chunk is ~40 tokens; 5 would cap 8% of the questions); prompt size 5 and 20 are variants; refs are attached **before** the reranker, so a chunk found only through a ref is judged like the others; bm25s + PyStemmer over a hand-written BM25; the database is the RAG's only source of chunks.
+
+Decided for later (the maintainer, 2026-10-14): when the FastAPI service is built, indexing becomes one of its endpoints. The engine posts its chunks once its batch ends, instead of writing `chunks.jsonl`; the service saves them, answers `202 Accepted` at once and embeds the changed ones **asynchronously** in the background (design §5.2). Not before: the batch would otherwise need a running server.
 
 Open, to raise when the step comes:
 
