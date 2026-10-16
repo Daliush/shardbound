@@ -1,6 +1,7 @@
 """
 Every retriever by name, as the evaluation and the command line know them. Each family lists its own variants in its
-package: the BM25 settings in `bm25/bm25_variants.py`, the dense models in `dense/embedding_models.py`.
+package: the BM25 settings in `bm25/bm25_variants.py`, the dense models in `dense/embedding_models.py`. A fusion
+names the retrievers it fuses, built as they are built alone.
 """
 
 from collections.abc import Callable
@@ -13,6 +14,7 @@ from rag.retrievers.bm25.bm25_retriever import Bm25Retriever
 from rag.retrievers.bm25.bm25_variants import BM25_VARIANTS
 from rag.retrievers.dense.dense_retriever import DenseRetriever
 from rag.retrievers.dense.embedding_models import LOCAL_EMBEDDING_MODELS, LocalEmbeddingModel
+from rag.retrievers.fusion.rrf_retriever import RrfRetriever
 from rag.retrievers.random.random_retriever import RandomRetriever
 
 RETRIEVER_FACTORIES: dict[str, Callable[[list[Chunk]], Retriever]] = {
@@ -23,6 +25,8 @@ RETRIEVER_FACTORIES: dict[str, Callable[[list[Chunk]], Retriever]] = {
                                DenseRetriever(LocalEmbeddingModel(model_name),
                                               EmbeddingRepositoryPostgres(connect_database())))
        for model_name in LOCAL_EMBEDDING_MODELS},
+    "rrf-bm25-dense": lambda chunks: RrfRetriever([build_retriever("bm25", chunks),
+                                                   build_retriever("dense-qwen3-0.6b", chunks)]),
 }
 """Name → how to build it from the chunks. A retriever is built only when it is evaluated: a dense one loads its
 model."""
