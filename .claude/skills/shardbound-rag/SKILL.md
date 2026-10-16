@@ -89,7 +89,7 @@ BM25 finds factual (100% Recall@20) and simple-rule questions (92%), and misses 
 
 ## Step 4: dense retrieval
 
-`scripts/build-index.sh` (from the root) writes the chunks, starts the database and embeds; then `uv run python -m rag evaluate dense-qwen3-0.6b`; `scripts/evaluate.sh dense-qwen3-0.6b` runs both. Setup for a new machine: the end of `ai/README.md`.
+`scripts/build-index.sh` (from the root) writes the chunks, starts the database and embeds; then `uv run python -m rag evaluate dense-qwen3-0.6b`; `scripts/evaluate.sh dense-qwen3-0.6b` runs both (how to run and check the whole pipeline: the `shardbound-pipeline-run` skill). Setup for a new machine: the end of `ai/README.md`.
 
 - **Qwen3-Embedding-0.6B** (sentence-transformers, CPU, 1024 dimensions), one entry of `LOCAL_EMBEDDING_MODELS` (`retrievers/dense/embedding_models.py`): our name → Hugging Face id. One class, `LocalEmbeddingModel(name)`, runs any of them, one instance per model. Each entry becomes a `dense-<name>` retriever and is indexed by `python -m rag index`. The model's own configuration adds its query marker (`encode_query`: an instruction before the question; `encode_document`: nothing). It loads only when there is something to embed.
 - **Postgres + pgvector** (`db` service of `compose.yaml`, `rag/repository/`), through **SQLAlchemy** (the maintainer refused SQL in strings): two entities, `ChunkRow` (the chunk with its refs, for the whole RAG) and `ChunkEmbeddingRow` (one vector per chunk and model, with the hash of the text it was made from); the tables are created from them, no migrations yet (Alembic when data must survive a schema change). Only changed chunks are embedded again. pgvector ranks by cosine distance in SQL (`<=>`); every chunk has a cosine, so all are ranked.

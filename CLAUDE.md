@@ -29,6 +29,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
   - `shardbound-game-server`: how the game server works (sessions, protocol, several instances) and how to change it, frontend included.
   - `shardbound-content-sync`: deck rules and content formats are checked by both the Python content tests and the Java engine; what to change on each side.
   - `shardbound-rag`: the RAG Arbiter, built step by step with the maintainer: the plan, the chunks, the retrievers and their metrics, settled and open decisions.
+  - `shardbound-pipeline-run`: running the Arbiter's pipeline end to end (dataset, chunks, index, evaluation), in which order, and checking each output.
 
 ## Commands
 
@@ -41,7 +42,7 @@ Open-source portfolio project: an invented trading card game used as a testbed f
 - The Arbiter's chunks, from `engine/`: `./mvnw -q -pl corpus -am compile exec:java` writes `ai/.corpus/chunks.jsonl` (not committed: it is derived from the rulebook and the cards), the handoff that only `python -m rag index` reads.
 - The RAG's dense index, from the root: `scripts/build-index.sh` writes the chunks (Java), starts the database (`docker compose up -d --wait db`, Postgres with pgvector) and embeds the changed chunks (`uv run python -m rag index`); it needs JDK 21, uv and Docker, and the first run downloads the embedding model (`ai/README.md`).
 - Retrieval metrics, from `ai/`: `uv run python -m rag evaluate [retriever…]` scores every retriever, or the ones named, on the dev questions of the latest dataset, v2 unless `--version` says otherwise (Recall@10, Recall@20, MRR, by category) and saves them as one new file, `evals/reports/<version>/<split>/<timestamp>.json`, each run named by its layers (`retriever`, `answer`), which the game server serves to the benchmark explorer (`GET /api/evaluations/…`); every retriever reads the indexed chunks from the database, never `chunks.jsonl`, so build the index first. `--split test` only for the published numbers.
-- The retrieval evaluation end to end, from the root: `scripts/evaluate.sh [retriever…] [--version <v>] [--split dev|test]` runs `build-index.sh`, then `rag evaluate` with these arguments; it needs Docker running.
+- The retrieval evaluation end to end, from the root: `scripts/evaluate.sh [retriever…] [--version <v>] [--split dev|test]` runs `build-index.sh`, then `rag evaluate` with these arguments; it needs Docker running (`shardbound-pipeline-run` skill).
 - AI tests, from `ai/`: `uv run pytest`. Run them after any change to `ai/` or `evals/`; they call no model. CI runs them (`.github/workflows/ai.yml`).
 - Test client, from `frontend/`: `npm start` (http://localhost:4200, proxies `/api` and `/ws` to the server), `npm test` (unit tests, once), `npm run build`. Run the tests and the build after any change to `frontend/`. CI runs them (`.github/workflows/frontend.yml`).
 
