@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> None:
     evaluate = commands.add_parser("evaluate", help="score retrievers on a dataset split, all of them by default")
     evaluate.add_argument("retrievers", nargs="*", choices=list_retriever_names(), metavar="retriever",
                           help=", ".join(list_retriever_names()))
-    evaluate.add_argument("--version", default="v1")
+    evaluate.add_argument("--version", default="v2")
     evaluate.add_argument("--split", default="dev", choices=["dev", "test"],
                           help="dev to tune; test only for the published numbers")
     arguments = parser.parse_args(argv)

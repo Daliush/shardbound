@@ -57,7 +57,7 @@
 
 > **v2.20 (October 2026)** — evaluations are stored for the benchmark explorer: each `evaluate` is one file, `evals/reports/<version>/<split>/<timestamp>.json`, never overwritten and with no index, holding the dataset, the time, the code commit and its runs, each named by its layers (`retriever`, `answer`). The Python side saves it behind a repository and the game server serves it through a DAO (`GET /api/evaluations/…`), a folder for now, read at each request, a bucket online with nothing else to change. The RAG reads its chunks from the database only, so a run can't mix two versions of the corpus (§6.2, §8.2).
 >
-> **v2.21 (October 2026)** — players start with 20 HP instead of 50, which is also their maximum (rule 1.1): at 50, games dragged on. The engine and the card guidelines follow (§2.1).
+> **v2.21 (October 2026)** — players start with 20 HP instead of 50, which is also their maximum (rule 1.1): at 50, games dragged on. The engine and the card guidelines follow. The evaluation dataset v2 is built on v1: rule 1.1's answer key changes and the four death-trigger scenarios played at full HP are now asked at 20 HP, reworded; every other question keeps its wording and side of the split. The RAG's chunks and index are rebuilt (§2.1, §6.1).
 
 ---
 
