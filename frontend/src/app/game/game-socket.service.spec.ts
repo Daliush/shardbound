@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { FakeWebSocket } from '../testing/fake-web-socket';
 import { aView } from '../testing/views';
-import { GameSocketService, REPLACED, UPDATE_PACE_MS, WEB_SOCKET } from './game-socket.service';
+import { GameSocketService, REPLACED, WEB_SOCKET } from './game-socket.service';
 
 describe('GameSocketService', () => {
   let service: GameSocketService;
@@ -33,18 +33,17 @@ describe('GameSocketService', () => {
     expect(service.log().map((e) => e.text)).toEqual(['Turn 5: your turn.', 'You play Spark Dart.']);
   });
 
-  it('shows queued updates one by one, about 400 ms apart', () => {
+  it('keeps truth current and forwards each version to the Director in order', () => {
+    const versions: number[] = [];
+    service.frames.subscribe(frame => { if (frame.type === 'update') versions.push(frame.view.version); });
     const socket = FakeWebSocket.latest();
     socket.receive({ type: 'state', view: aView(12), history: [] });
     socket.receive({ type: 'update', view: aView(13), events: [] });
     socket.receive({ type: 'update', view: aView(14), events: [] });
     socket.receive({ type: 'update', view: aView(15), events: [] });
 
-    expect(service.view()?.version).toBe(13);
-    vi.advanceTimersByTime(UPDATE_PACE_MS);
-    expect(service.view()?.version).toBe(14);
-    vi.advanceTimersByTime(UPDATE_PACE_MS);
     expect(service.view()?.version).toBe(15);
+    expect(versions).toEqual([13, 14, 15]);
   });
 
   it('asks for the full state when a version is missing', () => {

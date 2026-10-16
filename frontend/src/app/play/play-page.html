@@ -1,0 +1,22 @@
+<section class="page play-page">
+  <div class="intro"><h1>Take your seat.</h1><p>Choose a faction. Make every Shard count.</p></div>
+  @if (invitation(); as invitation) {
+    <section class="invitation"><h2>A table for two.</h2><p>Send this invite to your opponent, or let them scan it on their phone.</p><div class="invite-body">@if (qr()) { <img [src]="qr()" width="180" height="180" alt="QR code for this game’s invite" /> }<div><a [href]="invitation.link">{{ invitation.link }}</a><div class="invite-actions"><button (click)="copy()">{{ copied() ? 'Copied' : 'Copy invite' }}</button><a class="button primary" [routerLink]="['/games', invitation.gameId]">Go to the game</a></div></div></div></section>
+  } @else {
+    <form (submit)="$event.preventDefault(); create()">
+      <h2>Your deck</h2><app-deck-picker [decks]="decks()" [selected]="deck()" (chosen)="deck.set($event)" />
+      @if (!decks().length && !error()) { <p role="status" class="muted">Loading the starter decks…</p> }
+      <div class="opponent-section"><h2>Across the table</h2><fieldset><legend class="sr-only">Opponent</legend>
+        <label class="opponent-choice"><input type="radio" name="opponent" [checked]="opponent() === 'bot'" (change)="opponent.set('bot')" /><span>A bot<small>Practice at your own pace</small></span></label>
+        <label class="opponent-choice"><input type="radio" name="opponent" [checked]="opponent() === 'human'" (change)="opponent.set('human')" /><span>Invite a friend<small>Share a link, play together</small></span></label>
+      </fieldset>
+      @if (opponent() === 'bot') { <div class="bot-options"><label>Opponent<select name="bot" [value]="bot()" (change)="bot.set(value($event))">@for (b of bots(); track b) { <option [value]="b" [selected]="b === bot()">{{ b }}</option> }</select><small>{{ bot() === 'random' ? 'Plays any legal move.' : bot() === 'greedy' ? 'Plays the best board one action ahead.' : '' }}</small></label><label>Its deck<select name="botDeck" [value]="botDeck()" (change)="botDeck.set(value($event))">@for (d of decks(); track d.id) { <option [value]="d.id" [selected]="d.id === botDeck()">{{ d.name }}</option> }</select></label></div> }
+      </div>
+      <button class="primary create" type="submit" [disabled]="!deck() || creating() || (opponent() === 'bot' && !bot())">{{ creating() ? 'Preparing the table…' : opponent() === 'human' ? 'Create invite' : 'Enter the Arena' }}</button>
+    </form>
+  }
+  @if (error(); as message) { <p role="alert" class="error">{{ message }}</p> }
+</section>
+
+
+

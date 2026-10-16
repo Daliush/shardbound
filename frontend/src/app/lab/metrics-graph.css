@@ -1,0 +1,31 @@
+:host { display: block; }
+.graph-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.graph-toolbar p { font-size: .85rem; color: var(--muted); margin: 0; }
+label { display: flex; align-items: center; gap: .75rem; font-size: .75rem; color: var(--muted); }
+select { font-size: .8rem; background: var(--lab-surface); }
+.plot { margin-top: 1.5rem; overflow-x: auto; }
+svg { display: block; width: 100%; min-width: 600px; overflow: visible; }
+.grid { stroke: var(--line); stroke-dasharray: 3 5; stroke-opacity: .65; }
+.axis { stroke: var(--line); }
+text { fill: var(--muted); font: 11px var(--font-ui); }
+.axis-title { text-anchor: middle; fill: var(--text); font-size: 13px; font-weight: 500; }
+.axis-caption { text-anchor: middle; }
+.tick { text-anchor: end; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--obsidian-950); stroke-width: 5px; }
+path { stroke: currentColor; fill: none; stroke-width: 2; opacity: .7; }
+circle { fill: var(--obsidian-950); stroke: currentColor; stroke-width: 2; }
+g { transition: opacity 180ms; }
+.faded { opacity: .12; }
+.highlighted path { stroke-width: 3; opacity: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: .1rem .8rem; padding-bottom: 1.5rem; }
+.legend button { padding: .4rem .2rem; font-size: .75rem; font-weight: 400; }
+i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: .5rem; }
+.legend .dimmed i { opacity: .4; } .legend button[aria-pressed="true"] { color: var(--lab-accent); background: var(--lab-accent-soft); }
+.score-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: .8rem; }
+caption { text-align: left; font-size: .9rem; font-weight: 500; margin-bottom: 1rem; }
+th,td { padding: .8rem .5rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 400; }
+thead th { color: var(--muted); font-size: .72rem; }
+td,thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.scale-note { color: var(--muted); font-size: .73rem; margin: 1rem 0; }
+@media(max-width:600px) { .graph-toolbar { align-items: flex-start; flex-direction: column; } .graph-toolbar label { width: 100%; justify-content: space-between; } .plot { margin-inline: -1rem; } .legend { gap: .1rem .6rem; } .legend button { font-size: .72rem; } }

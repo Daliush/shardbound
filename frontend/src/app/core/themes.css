@@ -1,0 +1,106 @@
+/* Semantic aliases keep every existing surface, card and game control in sync. */
+:root {
+  --lab-surface: #101218;
+  --lab-subtle: #15181f;
+  --lab-accent: #b5a4f7;
+  --lab-accent-soft: #242034;
+  --chart-0: #b5a4f7;
+  --chart-1: #68c8c1;
+  --chart-2: #e6b76b;
+  --chart-3: #8cb6f0;
+  --chart-4: #e69eb8;
+  --chart-5: #b2c981;
+  --chart-6: #d4a189;
+  --chart-7: #a3b3c6;
+  --chart-8: #a3a3ab;
+}
+html[data-theme='light'] {
+  color-scheme: light;
+  --obsidian-950: #ffffff;
+  --obsidian-900: #f8f9fb;
+  --obsidian-800: #f0f2f5;
+  --obsidian-700: #e2e5eb;
+  --text: #23252e;
+  --muted: #656a78;
+  --line: #dfe2e8;
+  --prism: #6650ab;
+  --prism-deep: #51428c;
+  --prism-light: #5c418c;
+  --ember: #b5461d;
+  --ember-light: #943b18;
+  --tide: #16707c;
+  --tide-light: #235f86;
+  --root: #3d7333;
+  --root-light: #826019;
+  --hp: #a12f5c;
+  --heal: #36772f;
+  --damage: #b43436;
+  --frost: #226e96;
+  --doom: #a53d56;
+  --locked: #896322;
+  --contender-0: #6550a3;
+  --contender-1: #197e77;
+  --contender-2: #a16a22;
+  --contender-3: #44764b;
+  --shadow-raised: 0 18px 38px #23252e1a;
+  --lab-surface: #ffffff;
+  --lab-subtle: #f7f8fa;
+  --lab-accent: #6650ab;
+  --lab-accent-soft: #f0ecf8;
+  --chart-0: #7754bd;
+  --chart-1: #16857b;
+  --chart-2: #b77d23;
+  --chart-3: #487cbd;
+  --chart-4: #ba5e86;
+  --chart-5: #718d39;
+  --chart-6: #a16d4e;
+  --chart-7: #60768f;
+  --chart-8: #85858e;
+}
+/* Shared game colors also respond to appearance changes. */
+:root {
+  --game-surface: #111722;
+  --game-toolbar: #0a0e17de;
+  --game-dock: #0c111bf5;
+  --game-hud: #0d121b;
+  --game-stack: #161b27;
+  --game-relic: #131925;
+  --game-counter: #0a101c;
+  --game-rule-text: #f0eef4;
+  --game-defense: #d9e7f1;
+  --game-defense-icon: #a6bacb;
+  --game-cost: #addbff;
+  --game-health: #f6b9c9;
+  --game-ready: #c7f6bf;
+  --game-ready-surface: #213c31;
+  --game-attack: #ffb1a2;
+  --game-attack-surface: #301e22;
+  --game-effect: #f1d39a;
+  --game-sacrifice: #e9b5ff;
+  --game-label-shadow: 0 1px 4px #000;
+  --game-on-accent: #0b1018;
+}
+html[data-theme='light'] {
+  --game-surface: #ffffff;
+  --game-toolbar: #ffffffed;
+  --game-dock: #f8f9fbfa;
+  --game-hud: #f4f6f9;
+  --game-stack: #e6eaf0;
+  --game-relic: #f1f3f7;
+  --game-counter: #ffffff;
+  --game-rule-text: #303540;
+  --game-defense: #354658;
+  --game-defense-icon: #566c7e;
+  --game-cost: #235f86;
+  --game-health: #a12f5c;
+  --game-ready: #306c36;
+  --game-ready-surface: #eaf3e9;
+  --game-attack: #b24432;
+  --game-attack-surface: #f9ebe7;
+  --game-effect: #87621d;
+  --game-sacrifice: #854da2;
+  --game-label-shadow: none;
+  --game-on-accent: #ffffff;
+}
+:root { --game-selectable: #b2edbb; --game-selected: #ecf9ff; }
+html[data-theme='light'] { --game-selectable: #397546; --game-selected: #235f86; }

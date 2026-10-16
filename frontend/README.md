@@ -15,3 +15,11 @@ Start the server first, from `engine/`: `./mvnw -pl api -am spring-boot:run`.
 - `home/`, `join/`: creating a game, and joining one from an invite link.
 
 Seat tokens are shared by every tab of a browser. To play both seats on one machine, use a second browser, a private window, or a second dev server: `npm start -- --port 4201`.
+
+## Benchmark Lab and appearance
+
+The `/lab` route has four primary views: a sortable leaderboard, a chart across all metrics, a two-combination comparison, and a pipeline builder. All scores come from the selected recorded evaluation through `/api/evaluations/`; the browser never runs a model or estimates scores for an unrecorded combination. The random retriever is displayed as a separate reference floor. The builder discovers available layers and variants from the report, preserves its recipe in the URL, and reveals only an exact matching run.
+
+Dataset, split, report, metric, comparison and builder selection are shareable in the URL. The report is fetched only when dataset/split/report changes. Question inspection, category results and history remain accessible under **About this benchmark**.
+
+Appearance is controlled by the sun/moon button (including in the arena), or **Settings → Appearance** for the system preference. The preference is saved locally and applied before first paint. `core/themes.css` contains both application and game semantic colors. Lab animations use GSAP, stop on component destruction, and respect reduced motion and instant animation preferences.

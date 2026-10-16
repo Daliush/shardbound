@@ -1,0 +1,26 @@
+<section class="question-detail">
+  <header><div><p class="muted">{{ humanize(category()) }}</p><h2>{{ id() }}</h2></div><button class="quiet" (click)="closed.emit()">Close question</button></header>
+  <div class="id-cards">@for (card of cardsInId(); track card.id) { <app-chunk-chip [id]="card.id" /> }</div>
+  <p class="explanation">A first hit identifies the first relevant chunk. Green checks also mark chunks known relevant from another run’s first hit. Other relevant chunks are unknown unless the report supplies them.</p>
+  <div class="ladder" [style.--columns]="columns().length">
+    <svg class="rank-links" viewBox="0 0 1000 1200" preserveAspectRatio="none" aria-hidden="true">@for (path of paths(); track $index) { <path [attr.d]="path.path" [class.lit]="hovered() === path.id" /> }</svg>
+    @for (column of columns(); track column.key; let i = $index) {
+      <article class="ladder-column" [style.--contender]="'var(--contender-' + i + ')'">
+        <div class="column-header"><h3><b>{{ 'ABCD'[i] }}</b>{{ column.name }}</h3>@if (column.question; as question) { <div class="question-metrics"><span>R@10 <b>{{ format('recall_at.10',question.recall_at['10']) }}</b></span><span>R@20 <b>{{ format('recall_at.20',question.recall_at['20']) }}</b></span><span>RR <b>{{ format('reciprocal_rank',question.reciprocal_rank) }}</b></span></div><p>{{ column.hit ? 'First relevant chunk at #' + column.hit.rank : 'No relevant chunk in the first 20' }}</p> }</div>
+        @if (column.question; as question) {
+          @for (chunk of question.top_chunk_ids.slice(0,20); track $index; let rank = $index) {
+            <div class="rank-slot" [class.first-hit]="column.hit?.rank === rank + 1" [class.relevant]="knownRelevant().has(chunk)" (mouseenter)="hovered.set(chunk)" (mouseleave)="hovered.set(null)" (focusin)="hovered.set(chunk)" (focusout)="hovered.set(null)">
+              <span class="rank">{{ rank + 1 }}</span><app-chunk-chip [id]="chunk" />@if (knownRelevant().has(chunk)) { <span class="hit" [attr.aria-label]="column.hit?.rank === rank + 1 ? 'First relevant chunk' : 'Known relevant chunk'">✓</span> }
+              <small class="other-ranks">{{ ranks(chunk,column.key) }}</small>
+            </div>
+            @if (rank === 9) { <div class="cutoff">in the prompt (k = 10)</div> }
+            @if (rank === 19) { <div class="cutoff">what the reranker receives (k = 20)</div> }
+          }
+          @if (column.extras.length) { <dl class="future-fields">@for (entry of column.extras; track entry[0]) { <dt>{{ humanize(entry[0]) }}</dt><dd>{{ generic(entry[1]) }}</dd> }</dl> }
+        } @else { <p class="empty-state">This question is absent from this run.</p> }
+      </article>
+    }
+  </div>
+</section>
+
+

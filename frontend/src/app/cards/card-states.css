@@ -1,15 +1,8 @@
-[data-mark='selectable'] .face { border-color: var(--faction); animation: breathe 2.5s ease-in-out infinite; }
-[data-mark='selected'] .artifact { translate: 0 -8px; }
-[data-mark='selected'] .face { outline: 2px solid var(--faction-light); outline-offset: 2px; }
-[data-mark='targetable'] .face { outline: 2px dashed var(--target); outline-offset: 2px; }
-[data-mark='targetable'] .art-window::after { content: ''; position: absolute; inset: 20%; border: 2px dashed var(--target); border-radius: 50%; }
-.frozen .art-window { filter: saturate(.3); }
-.frozen .face { border-color: var(--frost); background: linear-gradient(145deg, color-mix(in srgb, var(--frost) 20%, var(--obsidian-900)), var(--obsidian-950)); }
-.frozen .glare { background: linear-gradient(32deg, transparent 45%, var(--frost) 45.5%, transparent 46%), linear-gradient(120deg, transparent 62%, var(--frost) 62.5%, transparent 63%); }
-.doomed .face { border-color: var(--doom); }
-.doomed .art-window { filter: saturate(.5) brightness(.65); }
-.anchored .front::after { content: ''; position: absolute; bottom: 0; left: 5%; right: 5%; height: 4%; border-top: 2px dashed var(--root-light); pointer-events: none; }
-.spent .art-window { filter: brightness(.6) saturate(.6); }
-.arrived .art-window::before { content: ''; position: absolute; inset: 0; z-index: 1; background: radial-gradient(ellipse at bottom, color-mix(in srgb, var(--faction) 30%, transparent), transparent 70%); }
-.token .face { border-style: dashed; background: color-mix(in srgb, var(--faction-deep) 50%, var(--obsidian-950)); }
-@keyframes breathe { 50% { box-shadow: inset 0 0 0 2px var(--obsidian-950), 0 4px 18px color-mix(in srgb, var(--faction) 28%, transparent); } }
+[data-mark='selectable'] { --ready: var(--game-selectable); }
+[data-mark='selectable']::before, [data-mark='selected']::before, [data-mark='targetable']::before { content: ''; position: absolute; inset: -7px; border-radius: 16px; pointer-events: none; background: var(--ready, var(--heal)); filter: blur(13px); opacity: .38; }
+[data-mark='selectable'] .face { border-color: var(--game-selectable); box-shadow: 0 0 12px #8fe5a137, 0 5px 24px #8fe5a126; }
+[data-mark='selected']::before { background: var(--game-selected); opacity: .5; }[data-mark='selected'] .face { border-color: var(--game-selected); box-shadow: 0 0 18px #c6edff55; }
+[data-mark='targetable']::before { background: var(--target); opacity: .5; }[data-mark='targetable'] .face { border-color: var(--target); box-shadow: 0 0 14px #ffd29b55; }
+.frozen .art-window { filter: saturate(.3); }.frozen .face { border-color: var(--frost); }
+.doomed .face { border-color: var(--doom); }.doomed .art-window { filter: saturate(.5); }
+.spent .art-window { filter: brightness(.7) saturate(.6); }.anchored .state-icons { color: var(--heal); }.token .type-line { color: var(--root); }

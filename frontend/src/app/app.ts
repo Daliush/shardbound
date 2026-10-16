@@ -6,15 +6,16 @@ import { Backdrop } from './core/backdrop';
 import { Icon } from './core/icon';
 import { SettingsPanel } from './core/settings-panel';
 import { InspectPanel } from './cards/inspect-panel';
+import { ThemeToggle } from './core/theme-toggle';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Backdrop, Icon, SettingsPanel, InspectPanel],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Backdrop, Icon, SettingsPanel, InspectPanel, ThemeToggle],
   template: `
     <app-backdrop />
     @if (!inGame()) {
       <header><a class="brand" routerLink="/" aria-label="Shardbound home"><app-icon name="neutral" /><span>Shardbound</span></a>
-        <nav aria-label="Main navigation"><a routerLink="/play" routerLinkActive="active">Play</a><a routerLink="/lab" routerLinkActive="active">Lab</a></nav><app-settings-panel />
+        <nav aria-label="Main navigation"><a routerLink="/play" routerLinkActive="active">Play</a><a routerLink="/lab" routerLinkActive="active">Lab</a></nav><div class="header-actions"><app-theme-toggle /><app-settings-panel /></div>
       </header>
     }
     <main [class.in-game]="inGame()"><router-outlet /></main>

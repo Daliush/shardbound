@@ -5,12 +5,13 @@ import { Settings } from '../core/settings';
 import { CardBook } from '../game/card-book';
 import { Mark } from '../game/decision-groups';
 import { CardArt } from './card-art';
+import { RulesText } from './rules-text';
 
 @Component({
   selector: 'app-card',
-  imports: [Icon],
+  imports: [Icon, RulesText],
   templateUrl: './card.html',
-  styleUrls: ['./card.css', './card-states.css'],
+  styleUrls: ['./card.css', './card-states.css', './card-modes.css', './card-back.css'],
   host: { '[attr.data-mode]': 'mode()', '(pointermove)': 'point($event)', '(pointerleave)': 'resetTilt()', '(pointercancel)': 'resetTilt()' },
 })
 export class CardComponent {
@@ -20,6 +21,7 @@ export class CardComponent {
   readonly mode = input<'hand' | 'board' | 'inspect' | 'thumb'>('hand');
   readonly back = input(false);
   readonly mark = input<Mark>(null);
+  readonly readyAttacks = input<number[]>([]);
   protected readonly book = inject(CardBook);
   protected readonly art = inject(CardArt);
   protected readonly settings = inject(Settings);
@@ -27,12 +29,16 @@ export class CardComponent {
   protected readonly failedArt = signal('');
   protected readonly pointer = signal({ x: 0, y: 0, glare: 50 });
   readonly definition = computed(() => this.book.card(this.cardId()));
+  protected readonly displayLines = computed(() => (this.definition()?.text ?? []).map(line => {
+    if (this.mode() !== 'board' || line.kind !== 'attack') return line;
+    return { ...line, text: line.text.replace(/^.+?\((\d+ Shards?)\):/, '$1:').replace(/Deal (\d+) damage to the target\./g, '$1 damage.') };
+  }));
   protected readonly faction = computed(() => this.definition()?.faction ?? this.cardId().split('.')[0] ?? 'neutral');
   protected readonly artSource = computed(() => this.failedArt() === this.cardId() ? this.art.placeholder(this.cardId(), this.faction()) : this.art.source(this.cardId(), this.faction()));
   protected readonly printedCost = computed(() => this.definition()?.fracture?.find(step => step.step === (this.hand()?.fractureStep ?? 1))?.cost ?? this.definition()?.cost);
   protected readonly cost = computed(() => this.hand()?.cost ?? this.printedCost());
   protected readonly transform = computed(() => {
-    if (this.settings.reducedMotion() || this.mode() === 'inspect') return this.back() ? 'rotateY(180deg)' : '';
+    if (this.settings.reducedMotion() || this.mode() !== 'thumb') return this.back() ? 'rotateY(180deg)' : '';
     const tilt = this.settings.preferences().gyroscope ? this.settings.tilt() : this.pointer();
     return 'rotateX(' + -tilt.x + 'deg) rotateY(' + (tilt.y + (this.back() ? 180 : 0)) + 'deg)';
   });
@@ -52,7 +58,7 @@ export class CardComponent {
   protected readonly accessibleText = computed(() => {
     const card = this.definition();
     if (this.back()) return 'Face-down card';
-    return [card?.name ?? this.cardId(), card?.token ? 'Token' : '', card?.type, this.cost() === undefined ? '' : this.cost() + ' Shards', ...(card?.text.map(line => line.text) ?? [])].join('. ');
+    return [card?.name ?? this.cardId(), card?.token ? 'Token' : '', card?.type, this.cost() === undefined ? '' : this.cost() + ' Shards', ...(card?.text.map(line => line.text) ?? [])].filter(Boolean).join('. ');
   });
   protected point(event: PointerEvent): void {
     if (this.mode() === 'inspect' || this.settings.reducedMotion()) return;
@@ -62,3 +68,5 @@ export class CardComponent {
   protected resetTilt(): void { this.pointer.set({ x: 0, y: 0, glare: 50 }); }
   protected signed(value: number): string { return (value < 0 ? '' : '+') + value; }
 }
+
+
