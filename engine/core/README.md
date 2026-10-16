@@ -106,7 +106,7 @@ The order of the events is the order the rules applied, and each event names its
 ### Defaults
 
 - Turn 3, P1 active and first player, so each player has taken their turns (P1 2, P2 1).
-- Both players at 50 HP with 0 Shards; empty hands, decks and graveyards; mulligans decided; seed 1.
+- Both players at 20 HP with 0 Shards; empty hands, decks and graveyards; mulligans decided; seed 1.
 - Units at full defense, arrived on an earlier turn, so they can attack.
 - Instance ids and arrival order follow the order of the calls: the first card named is `#1`, the first unit placed arrives first.
 

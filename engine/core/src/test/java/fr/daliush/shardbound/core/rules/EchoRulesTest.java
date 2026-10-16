@@ -56,7 +56,7 @@ class EchoRulesTest {
                 play("neutral.crystal-rupture").on(unit("ember.ashborn-drake")));
 
         assertThat(halved.unit("neutral.shard-construct").defense()).as("4 at 50%").isEqualTo(7);
-        assertThat(doubled.player(P1).hp()).as("7 at 200%, on the player with no unit (7.3)").isEqualTo(36);
+        assertThat(doubled.player(P1).hp()).as("7 at 200%, on the player with no unit (7.3)").isEqualTo(6);
     }
 
     @Test
@@ -92,7 +92,7 @@ class EchoRulesTest {
         assertThat(result.pending().orElseThrow().kind()).as("no intercept").isEqualTo(DecisionKind.MAIN);
         assertThat(trace(result)).contains("EchoTriggered[11.1.1, 11.1.2]", "UnitDamaged[8.1]")
                 .doesNotContain("AttackDeclared[7.4]", "AbilityTriggered[9.9]");
-        assertThat(result.player(P1).hp()).isEqualTo(50);
+        assertThat(result.player(P1).hp()).isEqualTo(20);
         assertThat(result.unit("neutral.shardling").defense()).isEqualTo(1);
     }
 
@@ -136,7 +136,7 @@ class EchoRulesTest {
 
         assertThat(trace(result)).containsSubsequence("UnitDestroyed[6.6]", "EchoTriggered[11.1.1, 11.1.2]",
                 "UnitDamaged[8.1]", "UnitDestroyed[6.6]", "EchoTriggered[11.1.1, 11.1.2]", "PlayerDamaged[8.1]");
-        assertThat(result.player(P2).hp()).isEqualTo(48);
+        assertThat(result.player(P2).hp()).isEqualTo(18);
         assertThat(result.state().unitsByArrival()).isEmpty();
     }
 

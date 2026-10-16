@@ -52,3 +52,11 @@ Gaps found while implementing the keywords (phase 2, slice 4), settled with the 
 | 6.10 | Maluses can take a unit's max defense to 0 or below; its defense stays at 0 and no heal raises it above its max. An anchored unit stays doomed until a malus ends and gives back what it took, as 8.17 says: both defenses go up by Y. |
 | 11.1.11 | An echo does not scale the count of a Sacrifice effect, which is the price of the effects after it; an amount scaled to 0 does nothing, damage excepted (8.15). |
 | 11.2.8 | A Fracture card with a sacrifice cost pays it at each step. |
+
+## Changed by the maintainer (2026-10-16)
+
+Settled rules the maintainer changed afterwards:
+
+| Rule | Decision |
+|---|---|
+| 1.1 | *Changed*: each player starts with 20 HP instead of 50, which is also their maximum, so games end sooner. |

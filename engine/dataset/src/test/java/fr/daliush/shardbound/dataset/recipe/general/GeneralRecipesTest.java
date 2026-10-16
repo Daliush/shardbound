@@ -18,7 +18,7 @@ class GeneralRecipesTest {
         assertThat(entries).hasSize(8);
 
         DatasetEntry entry = entry(entries,
-                "death+trigger-order/tide.shoal-sprite/ember.cinderling/neutral.tempest/50-hp");
+                "death+trigger-order/tide.shoal-sprite/ember.cinderling/neutral.tempest/20-hp");
         assertThat(entry.keyFacts()).containsSubsequence("Tempest goes to your graveyard.",
                 "Shoal Sprite triggers its Death ability.", "Your opponent draws a card.",
                 "Cinderling triggers its Death ability.", "You take 2 damage.");

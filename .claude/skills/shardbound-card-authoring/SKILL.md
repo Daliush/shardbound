@@ -55,7 +55,7 @@ A deck is 30 cards, from one faction plus neutral cards, with at most 2 copies o
 
 ## Numbers
 
-Player HP is 50 (rule 1.1). Follow the number scale in `content/cards/README.md` ("Balance guidelines"): roughly 2 points of value per Shard, so a unit dies to an attack of the same cost. It is a guideline, not a rule. The maintainer is happy to rebalance through patch notes when a card turns out wrong, since patches also feed the LLM patch experiment, so don't over-agonize over exact numbers.
+Player HP is 20 (rule 1.1). Follow the number scale in `content/cards/README.md` ("Balance guidelines"): roughly 2 points of value per Shard, so a unit dies to an attack of the same cost. It is a guideline, not a rule. The maintainer is happy to rebalance through patch notes when a card turns out wrong, since patches also feed the LLM patch experiment, so don't over-agonize over exact numbers.
 
 ## Balance watch-points
 

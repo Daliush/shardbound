@@ -46,7 +46,7 @@ class TargetRulesTest {
         ScenarioResult result = run(scenario().shards(P1, 1).unit(P1, "tide.brine-adept").build(),
                 attack("tide.brine-adept").on(player(P2)));
 
-        assertThat(result.player(P2).hp()).isEqualTo(48);
+        assertThat(result.player(P2).hp()).isEqualTo(18);
         assertThat(result.events(GameEvent.Modified.class)).isEmpty();
     }
 

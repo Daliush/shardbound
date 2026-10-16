@@ -52,7 +52,7 @@ class EffectRulesTest {
                 attack("neutral.shardling").on(player(P2)));
 
         assertThat(onUnit.unit("neutral.shard-construct").defense()).isEqualTo(6);
-        assertThat(onPlayer.player(P2).hp()).isEqualTo(47);
+        assertThat(onPlayer.player(P2).hp()).isEqualTo(17);
         assertThat(trace(onPlayer)).contains("PlayerDamaged[8.1]");
     }
 
@@ -148,7 +148,7 @@ class EffectRulesTest {
                 "SacrificeFailed[8.22]");
         assertThat(result.events(GameEvent.UnitSacrificed.class)).isEmpty();
         assertThat(result.unit("test.altar").defense()).isEqualTo(3);
-        assertThat(result.player(P2).hp()).isEqualTo(50);
+        assertThat(result.player(P2).hp()).isEqualTo(20);
     }
 
     @Test
@@ -166,18 +166,18 @@ class EffectRulesTest {
     }
 
     @Test
-    @DisplayName("8.4 — heal restores defense up to the max, and HP up to 50")
+    @DisplayName("8.4 — heal restores defense up to the max, and HP up to 20")
     void heal() {
         ScenarioResult onUnits = run(scenario().shards(P1, 1)
                         .unit(P1, "root.mossmender", unit -> unit.defense(4))
                         .unit(P1, "neutral.shardling", unit -> unit.defense(1)).build(),
                 attack("root.mossmender").withAttack(1));
-        ScenarioResult onPlayer = run(scenario().hp(P1, 48).shards(P1, 2).hand(P1, "root.renewing-sap").build(),
+        ScenarioResult onPlayer = run(scenario().hp(P1, 18).shards(P1, 2).hand(P1, "root.renewing-sap").build(),
                 play("root.renewing-sap"));
 
         assertThat(onUnits.unit("root.mossmender").defense()).isEqualTo(5);
         assertThat(onUnits.unit("neutral.shardling").defense()).isEqualTo(3);
-        assertThat(onPlayer.player(P1).hp()).isEqualTo(50);
+        assertThat(onPlayer.player(P1).hp()).isEqualTo(20);
         assertThat(trace(onPlayer)).contains("PlayerHealed[8.4]");
     }
 
@@ -188,13 +188,13 @@ class EffectRulesTest {
                         .unit(P1, "root.mossmender")
                         .unit(P1, "neutral.shardling", unit -> unit.defense(2)).build(),
                 attack("root.mossmender").withAttack(1));
-        ScenarioResult onPlayer = run(scenario().hp(P1, 48).shards(P1, 2).hand(P1, "root.renewing-sap").build(),
+        ScenarioResult onPlayer = run(scenario().hp(P1, 18).shards(P1, 2).hand(P1, "root.renewing-sap").build(),
                 play("root.renewing-sap"));
 
         assertThat(onUnits.events(GameEvent.UnitHealed.class)).extracting(GameEvent.UnitHealed::amount)
                 .as("Mossmender at its max, Shardling one below").containsExactly(0, 1);
         assertThat(onPlayer.events(GameEvent.PlayerHealed.class)).extracting(GameEvent.PlayerHealed::amount)
-                .as("4 HP from 48, capped at 50").containsExactly(2);
+                .as("4 HP from 18, capped at 20").containsExactly(2);
     }
 
     @Test
@@ -208,7 +208,7 @@ class EffectRulesTest {
         Unit cinderling = result.unit("ember.cinderling");
         assertThat(cinderling.defense()).isEqualTo(5);
         assertThat(cinderling.maxDefense()).isEqualTo(5);
-        assertThat(result.player(P2).hp()).isEqualTo(44);
+        assertThat(result.player(P2).hp()).isEqualTo(14);
         assertThat(trace(result)).containsSubsequence("Modified[8.5]", "Modified[8.5]", "PlayerDamaged[8.1]");
     }
 
@@ -270,7 +270,7 @@ class EffectRulesTest {
         // Flick deals 3 + 3; then Cinderling dies and its "Death" ability deals its printed 2.
         assertThat(result.events(GameEvent.PlayerDamaged.class)).extracting(GameEvent.PlayerDamaged::amount)
                 .containsExactly(6, 2);
-        assertThat(result.player(P2).hp()).isEqualTo(42);
+        assertThat(result.player(P2).hp()).isEqualTo(12);
     }
 
     @Test
@@ -300,7 +300,7 @@ class EffectRulesTest {
 
         assertThat(trace(result)).containsSubsequence("CardDrawn[8.6]", "HpLost[8.6, 1.4]");
         assertThat(result.player(P1).hand()).hasSize(1);
-        assertThat(result.player(P1).hp()).isEqualTo(49);
+        assertThat(result.player(P1).hp()).isEqualTo(19);
     }
 
     @Test
@@ -362,7 +362,7 @@ class EffectRulesTest {
         assertThat(trace(result)).containsSubsequence("ReturnedToHand[8.8, 6.7]", "SpellResolved[6.3, 3.5]",
                 "AbilityTriggered[9.4]", "CardDrawn[8.6]");
         assertThat(result.events(GameEvent.UnitDestroyed.class)).isEmpty();
-        assertThat(result.player(P1).hp()).isEqualTo(50);
+        assertThat(result.player(P1).hp()).isEqualTo(20);
     }
 
     @Test
@@ -378,7 +378,7 @@ class EffectRulesTest {
                 .containsExactly(new CardId("ember.cinderling"));
         assertThat(trace(result)).contains("SentToGraveyardHandFull[8.8, 3.3]");
         assertThat(result.events(GameEvent.AbilityTriggered.class)).isEmpty();
-        assertThat(result.player(P1).hp()).isEqualTo(50);
+        assertThat(result.player(P1).hp()).isEqualTo(20);
     }
 
     @Test

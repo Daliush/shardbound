@@ -73,7 +73,7 @@ class CardRulesTest {
         assertThat(result.player(P1).units()).extracting(Unit::card).containsExactly(new CardId("neutral.shardling"));
         assertThat(result.player(P1).graveyard()).extracting(CardInstance::card)
                 .containsExactly(new CardId("ember.cinderling"), new CardId("ember.pyre-offering"));
-        assertThat(result.player(P2).hp()).isEqualTo(48);
+        assertThat(result.player(P2).hp()).isEqualTo(18);
     }
 
     @Test

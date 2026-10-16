@@ -20,21 +20,21 @@ class EvaluatorTest {
 
     @Test
     void hpBoardsUnitCountsAndHandSize() {
-        GameState state = scenario().hp(P1, 40).hp(P2, 45)
+        GameState state = scenario().hp(P1, 15).hp(P2, 20)
                 .unit(P1, "ember.cinderling")                      // 2 defense, Flick deals 3
                 .unit(P2, "neutral.shard-construct")               // 9 defense, Crush deals 7
                 .unit(P2, "neutral.shardling")                     // 3 defense, Glint deals 3
                 .hand(P1, "test.bolt", "test.bolt")
                 .build();
 
-        double expected = (40 - 45) + (2 + 2 * 3) - ((9 + 2 * 7) + (3 + 2 * 3)) + 3 * (1 - 2) + 0.5 * 2;
+        double expected = (15 - 20) + (2 + 2 * 3) - ((9 + 2 * 7) + (3 + 2 * 3)) + 3 * (1 - 2) + 0.5 * 2;
         assertThat(evaluator.score(state, P1)).isEqualTo(expected);
-        assertThat(evaluator.score(state, P2)).isEqualTo((45 - 40) + 32 - 8 + 3 * (2 - 1));
+        assertThat(evaluator.score(state, P2)).isEqualTo((20 - 15) + 32 - 8 + 3 * (2 - 1));
     }
 
     @Test
     void aDoomedUnitCountsItsZeroDefense() {
-        GameState state = scenario().hp(P1, 50).hp(P2, 50)
+        GameState state = scenario().hp(P1, 20).hp(P2, 20)
                 .unit(P1, "neutral.shard-construct", unit -> unit.anchorProtected().doomed())
                 .build();
 

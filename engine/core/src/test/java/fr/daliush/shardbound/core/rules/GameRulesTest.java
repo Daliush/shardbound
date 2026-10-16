@@ -24,13 +24,13 @@ import org.junit.jupiter.api.Test;
 class GameRulesTest {
 
     @Test
-    @DisplayName("1.1 — each player starts with 50 HP")
+    @DisplayName("1.1 — each player starts with 20 HP")
     void startingHp() {
         Transition start = new GameEngine(TestContent.catalog()).newGame(new GameSetup(
                 TestContent.content().deck("ember-starter"), TestContent.content().deck("root-starter"), 1));
 
-        assertThat(start.state().p1().hp()).isEqualTo(50);
-        assertThat(start.state().p2().hp()).isEqualTo(50);
+        assertThat(start.state().p1().hp()).isEqualTo(20);
+        assertThat(start.state().p2().hp()).isEqualTo(20);
     }
 
     @Test
@@ -62,7 +62,7 @@ class GameRulesTest {
         assertThat(result.events(GameEvent.HpLost.class))
                 .extracting(GameEvent.HpLost::player, GameEvent.HpLost::amount)
                 .containsExactly(tuple(P2, 1), tuple(P2, 2));
-        assertThat(result.player(P2).hp()).isEqualTo(47);
+        assertThat(result.player(P2).hp()).isEqualTo(17);
         assertThat(result.player(P2).fatigue()).isEqualTo(2);
         assertThat(result.state().isOver()).isFalse();
     }

@@ -52,7 +52,7 @@ class TriggerRulesTest {
 
         assertThat(trace(result)).containsSubsequence("UnitDestroyed[6.6]", "AbilityTriggered[9.3]",
                 "PlayerDamaged[8.1]");
-        assertThat(result.player(P1).hp()).isEqualTo(48);
+        assertThat(result.player(P1).hp()).isEqualTo(18);
     }
 
     @Test
@@ -90,12 +90,12 @@ class TriggerRulesTest {
     @Test
     @DisplayName("9.6 — \"Turn end\" abilities trigger at the end of their controller's turn only")
     void turnEnd() {
-        ScenarioResult result = run(scenario().hp(P1, 40).hp(P2, 40).deck(P2, "neutral.shardling")
+        ScenarioResult result = run(scenario().hp(P1, 15).hp(P2, 15).deck(P2, "neutral.shardling")
                         .unit(P1, "test.guard").unit(P2, "test.guard").build(),
                 endTurn());
 
-        assertThat(result.player(P1).hp()).isEqualTo(42);
-        assertThat(result.player(P2).hp()).isEqualTo(40);
+        assertThat(result.player(P1).hp()).isEqualTo(17);
+        assertThat(result.player(P2).hp()).isEqualTo(15);
     }
 
     @Test

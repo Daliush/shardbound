@@ -56,6 +56,8 @@
 > **v2.19 (October 2026)** — dense retrieval: Qwen3-Embedding-0.6B embeds the chunks on CPU, and Postgres with pgvector stores them, the chunks in one table and their vectors per model in another; only changed chunks are embedded again. The embedding model is a registry entry, so another model is one more line (§5.2, §6.2).
 
 > **v2.20 (October 2026)** — evaluations are stored for the benchmark explorer: each `evaluate` is one file, `evals/reports/<version>/<split>/<timestamp>.json`, never overwritten and with no index, holding the dataset, the time, the code commit and its runs, each named by its layers (`retriever`, `answer`). The Python side saves it behind a repository and the game server serves it through a DAO (`GET /api/evaluations/…`), a folder for now, read at each request, a bucket online with nothing else to change. The RAG reads its chunks from the database only, so a run can't mix two versions of the corpus (§6.2, §8.2).
+>
+> **v2.21 (October 2026)** — players start with 20 HP instead of 50, which is also their maximum (rule 1.1): at 50, games dragged on. The engine and the card guidelines follow (§2.1).
 
 ---
 
@@ -115,7 +117,7 @@ Why an invented game? Because a base LLM **cannot know** the rules. Every correc
 
 ### 2.1 Core rules (summary)
 
-- 2 players, 50 **HP** each (also the maximum). Units have **defense** instead.
+- 2 players, 20 **HP** each (also the maximum). Units have **defense** instead.
 - 30-card deck: a single faction + neutral cards, at most 2 copies of a card. Opening hand of 5 cards, one mulligan allowed.
 - **Information**: each player knows the opposing **faction**, but neither the opposing decklist nor hand.
 - Resource: **Shards**. +1 max Shard per turn (cap 10). Shards pay for playing cards **and** for attacking.
