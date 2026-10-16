@@ -29,7 +29,7 @@ import java.util.function.UnaryOperator;
  * Builds any legal game state without playing a game (design doc §3.4): a board, hands, decks and counters. Cards are
  * named by id, such as {@code "ember.cinderling"}.
  * <p>
- * Defaults: turn 3, P1 active and first player, both players at 50 HP with 0 Shards, empty hands, decks and
+ * Defaults: turn 3, P1 active and first player, both players at 20 HP with 0 Shards, empty hands, decks and
  * graveyards, mulligans decided, seed 1. Units arrived on an earlier turn, so they can attack. Instance ids and
  * arrival order follow the order of the calls. An empty deck means fatigue at the next draw (1.4): give a player a
  * {@link #deck} when a turn passes.
@@ -86,7 +86,7 @@ public final class ScenarioBuilder {
         return this;
     }
 
-    /** HP, at most 50; at 0 or less the game ends as soon as the state is checked (1.2). */
+    /** HP, at most 20; at 0 or less the game ends as soon as the state is checked (1.2). */
     public ScenarioBuilder hp(PlayerId player, int hp) {
         return change(player, state -> state.withHp(hp));
     }

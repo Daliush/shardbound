@@ -10,7 +10,7 @@ import fr.daliush.shardbound.core.state.Unit;
 import java.util.List;
 
 /**
- * 8.4 Heal X: up to a unit's max defense, or up to a player's 50 HP. The events report what was restored, 0 for a
+ * 8.4 Heal X: up to a unit's max defense, or up to a player's 20 HP. The events report what was restored, 0 for a
  * unit or a player already at their max.
  */
 final class HealEffect {

@@ -141,7 +141,7 @@ class CombatRulesTest {
                         .unit(P2, "neutral.shard-construct").build(),
                 play("test.bolt"));
 
-        assertThat(result.player(P2).hp()).isEqualTo(47);
+        assertThat(result.player(P2).hp()).isEqualTo(17);
     }
 
     @Test
@@ -159,13 +159,13 @@ class CombatRulesTest {
     @Test
     @DisplayName("7.9 — an attack whose target left the board still happens: only the effects on the target do nothing")
     void targetGone() {
-        ScenarioResult result = run(scenario().hp(P1, 40).shards(P1, 1).unit(P1, "test.charger")
+        ScenarioResult result = run(scenario().hp(P1, 15).shards(P1, 1).unit(P1, "test.charger")
                         .unit(P2, "root.sprout").unit(P2, "neutral.shardling").build(),
                 attack("test.charger").on(unit("root.sprout")));
 
         assertThat(result.decisions()).hasSize(1);
         assertThat(result.events(GameEvent.UnitDamaged.class)).hasSize(2);
-        assertThat(result.player(P1).hp()).isEqualTo(41);
+        assertThat(result.player(P1).hp()).isEqualTo(16);
         assertThat(result.unit("test.charger").hasAttackedThisTurn()).isTrue();
     }
 
@@ -187,7 +187,7 @@ class CombatRulesTest {
         ScenarioResult result = run(scenario().shards(P1, 1).unit(P1, "ember.cinderling").build(),
                 attack("ember.cinderling").on(player(P2)));
 
-        assertThat(result.player(P2).hp()).isEqualTo(47);
+        assertThat(result.player(P2).hp()).isEqualTo(17);
     }
 
     private static List<Action.Attack> attacks(GameState start) {

@@ -213,7 +213,7 @@ class AnchorRulesTest {
 
         assertThat(trace(result)).containsSubsequence("AbilityTriggered[9.6]", "UnitDestroyed[5.4.3, 11.3.5]",
                 "AbilityTriggered[9.3]", "PlayerDamaged[8.1]", "TurnEnded[5.4]", "TurnStarted[5.2]");
-        assertThat(result.player(P2).hp()).isEqualTo(48);
+        assertThat(result.player(P2).hp()).isEqualTo(18);
     }
 
     @Test

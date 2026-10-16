@@ -107,31 +107,31 @@ class TurnRulesTest {
     @Test
     @DisplayName("5.4 — \"Turn end\" abilities resolve, then the turn ends and Shards are lost")
     void endOfTurnOrder() {
-        ScenarioResult result = run(scenario().hp(P1, 40).shards(P1, 2).unit(P1, "test.guard").build(), endTurn());
+        ScenarioResult result = run(scenario().hp(P1, 15).shards(P1, 2).unit(P1, "test.guard").build(), endTurn());
 
         assertThat(trace(result)).containsSubsequence(
                 "AbilityTriggered[9.6]", "PlayerHealed[8.4]", "TurnEnded[5.4]", "TurnStarted[5.2]");
-        assertThat(result.player(P1).hp()).isEqualTo(42);
+        assertThat(result.player(P1).hp()).isEqualTo(17);
         assertThat(result.player(P1).shards().available()).isZero();
     }
 
     @Test
     @DisplayName("5.4.1 — only the active player's \"Turn end\" abilities trigger, first of the end of turn")
     void turnEndAbilities() {
-        ScenarioResult result = run(scenario().hp(P1, 40).hp(P2, 40).unit(P1, "test.guard").unit(P2, "test.guard")
+        ScenarioResult result = run(scenario().hp(P1, 15).hp(P2, 15).unit(P1, "test.guard").unit(P2, "test.guard")
                         .deck(P2, "neutral.shardling").build(),
                 endTurn());
 
         assertThat(result.events(GameEvent.AbilityTriggered.class)).singleElement()
                 .matches(event -> event.source().owner() == P1, "P1's guard");
         assertThat(trace(result)).containsSubsequence("AbilityTriggered[9.6]", "PlayerHealed[8.4]", "TurnEnded[5.4]");
-        assertThat(result.player(P2).hp()).isEqualTo(40);
+        assertThat(result.player(P2).hp()).isEqualTo(15);
     }
 
     @Test
     @DisplayName("5.4.2 — \"until end of turn\" effects end once the \"Turn end\" abilities have resolved")
     void temporaryEffectsEnd() {
-        ScenarioResult result = run(scenario().hp(P1, 40).shards(P1, 2).hand(P1, "ember.roaring-pyre")
+        ScenarioResult result = run(scenario().hp(P1, 15).shards(P1, 2).hand(P1, "ember.roaring-pyre")
                         .unit(P1, "test.guard").build(),
                 play("ember.roaring-pyre"), endTurn());
 

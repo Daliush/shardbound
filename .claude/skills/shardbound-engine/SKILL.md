@@ -126,7 +126,7 @@ ScenarioResult result = new ScenarioRunner(engine).run(start,
 result.state(); result.events(); result.decisions(); result.pending(); result.findUnit("ember.cinderling");
 ```
 
-Defaults worth knowing: turn 3, P1 active and first player, 50 HP, 0 Shards, **empty decks**, so a draw costs fatigue HP. Units have arrived on an earlier turn, so they can attack. Instance ids and arrival order follow the order of the calls. A `Choice` that matches zero or several actions throws, and the message lists the decision's actions. `result.trace()` gives the events as `"UnitDamaged[8.1]"` lines. More examples: `references/cookbook.md`; the public guide, with the pitfalls: `engine/core/README.md`.
+Defaults worth knowing: turn 3, P1 active and first player, 20 HP, 0 Shards, **empty decks**, so a draw costs fatigue HP. Units have arrived on an earlier turn, so they can attack. Instance ids and arrival order follow the order of the calls. A `Choice` that matches zero or several actions throws, and the message lists the decision's actions. `result.trace()` gives the events as `"UnitDamaged[8.1]"` lines. More examples: `references/cookbook.md`; the public guide, with the pitfalls: `engine/core/README.md`.
 
 ## Bots and determinization
 

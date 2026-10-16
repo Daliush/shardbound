@@ -26,8 +26,8 @@ public record PlayerState(
         List<Relic> relics,
         List<CardInstance> graveyard) {
 
-    public static final int STARTING_HP = 50;
-    public static final int MAX_HP = 50;
+    public static final int STARTING_HP = 20;
+    public static final int MAX_HP = 20;
     public static final int MAX_HAND = 10;
     public static final int MAX_UNIT_PLACES = 6;
     public static final int MAX_RELICS = 3;

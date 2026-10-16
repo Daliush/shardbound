@@ -129,7 +129,7 @@ These are rules of thumb for new cards, not game rules. If a card turns out too 
 | Damage to the player | About 1.5 per Shard, since it skips the units protecting the player |
 | Heals and buffs | About 2 points per Shard |
 
-The intent: a unit dies to an attack of the same cost, so trades are even, and once a board is cleared, 50 HP takes several turns of pressure to finish.
+The intent: a unit dies to an attack of the same cost, so trades are even, and once a board is cleared, 20 HP takes a few turns of pressure to finish.
 
 ## Tests
 

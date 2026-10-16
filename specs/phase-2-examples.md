@@ -279,7 +279,7 @@ What you receive at turn 5. `view` is the full `GameView` (spec §13.3); `histor
     "yourTurn": true,
     "you": {
       "faction": "ember",
-      "hp": 50, "maxHp": 50,
+      "hp": 20, "maxHp": 20,
       "shards": 3, "maxShards": 3, "lockedNextTurn": 0,
       "fatigue": 0,
       "deckCount": 23,
@@ -318,7 +318,7 @@ What you receive at turn 5. `view` is the full `GameView` (spec §13.3); `histor
     },
     "opponent": {
       "faction": "root",
-      "hp": 50, "maxHp": 50,
+      "hp": 20, "maxHp": 20,
       "shards": 0, "maxShards": 2, "lockedNextTurn": 0,
       "fatigue": 0,
       "deckCount": 23,
@@ -477,7 +477,7 @@ The creator of a game against a human, before the second player joins:
 {
   "gameId": "8f2c6d1e-…", "version": 0, "status": "waiting_for_opponent",
   "turn": 0, "activePlayer": null, "yourTurn": false,
-  "you": { "faction": "ember", "hp": 50, "maxHp": 50, "shards": 0, "maxShards": 0, "lockedNextTurn": 0, "fatigue": 0, "deckCount": 30, "hand": [], "mulliganDecided": false, "units": [], "relics": [], "graveyard": [] },
+  "you": { "faction": "ember", "hp": 20, "maxHp": 20, "shards": 0, "maxShards": 0, "lockedNextTurn": 0, "fatigue": 0, "deckCount": 30, "hand": [], "mulliganDecided": false, "units": [], "relics": [], "graveyard": [] },
   "opponent": null,
   "decision": null, "waitingFor": null, "result": null
 }

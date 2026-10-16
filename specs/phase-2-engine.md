@@ -489,7 +489,7 @@ For each rulebook section: how the engine implements it. Rule IDs in parentheses
 
 ### Section 1 — The game
 
-- **1.1** `hp = 50`; max HP 50.
+- **1.1** `hp = 20`; max HP 20.
 - **1.2 / 1.3** After every atomic step, if a player has `hp <= 0`, the game ends at once: one player at 0 → `Win(other, HP)`; both → `Draw(DOUBLE_KO)`. Steps and triggers still waiting are dropped (1.6). Emit `GameEnded`.
 - **1.4** Each draw from an empty deck: `fatigue += 1`, `hp -= fatigue`. This is HP loss, not damage: Link does not share it. Emit `HpLost(reason FATIGUE)`. It applies to every draw: start of turn and Draw effects.
 - **1.5** After the end-of-turn steps of global turn 100 (each player's 50th turn), if no result: `Draw(TURN_LIMIT)`.
@@ -881,7 +881,7 @@ Found while building slice 4, written as *(proposed)* rules, then settled with t
 - **Rulebook coverage test** (slice 4): reads every rule ID (`**N.N**` or `**N.N.N**`) from `docs/rules/*.md` and every test display name. It fails if a rule from sections 1–11 has no test, except rules in an explicit allowlist with a reason (purely descriptive rules such as 6.1). *Built as `RulebookCoverageTest`, which reads the `@DisplayName`s of the core test sources; the allowlist holds 3.1, 6.1, 6.2 and 10.1, a tested rule must leave it, and a display name citing a rule or section that does not exist fails too. Engine CI also runs when `docs/rules/` changes.*
 - **Playable cards**: every card of the catalog is offered as a play, and every attack ability as an attack, on a board that gives each what it needs (`PlayableCardsTest`).
 - **Content tests**: the loader loads every card and deck; the deck validator agrees with the Python content tests; the text renderer golden tests (section 9).
-- **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over every pair of starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 50; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
+- **Full-game fuzz**: 1,000 games RandomBot vs RandomBot over every pair of starter decks, with different seeds, and 300 more where one side plays a test deck of `test.*` cards, for the effects no real card has yet. Every game ends with a result. After **every** step, invariants hold: HP ≤ 20; hand ≤ 10; at most 6 units and 3 relics per player; Shards ≥ 0; instance ids unique; every card in exactly one zone; links mutual; every listed legal action can be applied without an exception; the deciding player is the one the decision names.
 - **Determinism**: same seed, decks and bot seeds → identical event lists and final state.
 - **Redaction**: a view never contains the opponent's hand or any deck order; redacted events never contain the hidden card. *Built (slice 5) in its strongest form: at every step of random games, two states that differ only in what a player may not see (the opponent's hand and deck, the player's deck order, the game's generator) give that player the same view, resolution in progress included.*
 - Performance smoke test: 1,000 random games run within a minute on a laptop (report the number).

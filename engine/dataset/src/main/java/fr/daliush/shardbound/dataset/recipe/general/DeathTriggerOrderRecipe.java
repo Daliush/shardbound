@@ -29,7 +29,7 @@ public final class DeathTriggerOrderRecipe implements Recipe {
 
     private static final PlayerId ASKER = PlayerId.P1;
     private static final int LOW_HP = 2;
-    private static final int FULL_HP = 50;
+    private static final int FULL_HP = 20;
 
     @Override
     public String interaction() {
