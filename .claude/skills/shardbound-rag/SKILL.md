@@ -74,15 +74,15 @@ Layout, one package per responsibility (the maintainer wants to find anything at
 
 - **Recall@10** is what the prompt holds after the reranker; **Recall@20** what the reranker receives.
 - Unanswerable questions have no relevant chunk and are left out: **61 of the 72 dev questions**. One question moves a score by ~1.6 points and a 7-question category is noise: dev gives a direction, test (596) the published numbers. `--split test` is never used to choose anything.
-- The **random** retriever is the floor and proves the measure. Best possible Recall@10 is 100% on v1 (no question needs more than 10 rules).
+- The **random** retriever is the floor and proves the measure. Best possible Recall@10 is 100% on v1 and v2 (no question needs more than 10 rules).
 - A retriever extends the `Retriever` abstract class (one method, `rank_chunks(question) -> list[str]`, chunk ids best first). Contracts are `ABC`s that classes extend explicitly, as in Java, not implicit `Protocol`s: the maintainer wants to see the contract in the class line. `retrievers/registry.py` names each retriever; a variant is one more entry, in its family's list, that changes **one** setting.
 
-Numbers on v1 dev:
+Numbers on v2 dev. Only its four reworded death-trigger questions score differently than on v1: BM25's and dense retrieval's recalls move by 0.2 points at most, the random floor by about 1.
 
 | Retriever | Recall@10 | Recall@20 | MRR |
 |---|---:|---:|---:|
-| random | 2.7% | 9.0% | 0.051 |
-| bm25 (Lucene, stemming, stop words kept) | 53.5% | 59.3% | 0.583 |
+| random | 8.9% | 11.9% | 0.093 |
+| bm25 (Lucene, stemming, stop words kept) | 53.3% | 59.3% | 0.575 |
 | dense-qwen3-0.6b | 62.3% | 74.1% | 0.567 |
 
 BM25 finds factual (100% Recall@20) and simple-rule questions (92%), and misses scenario questions (they name cards, not the rules they need) and deck questions (the decklist floods the ranking; the question never says "30"). Dense retrieval finds deck questions by meaning (92% Recall@20, BM25 0%) and every simple-rule and factual question, but misses multi-step ones (3%, BM25 36%): the two complement each other, which is the case for fusion. The five formulas and the stemming and stop-word variants are within about two questions of each other. bm25s removes English stop words **by default**: the baseline keeps them ("not", "no" carry meaning in rules).
