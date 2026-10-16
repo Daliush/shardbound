@@ -129,6 +129,8 @@ Needs **JDK 21** (the engine writes the chunks), **uv** (Python and its packages
 scripts/build-index.sh
 # then, from ai/
 uv run python -m rag evaluate random bm25 dense-qwen3-0.6b
+# or both, from the root: the index, then the evaluation with these arguments
+scripts/evaluate.sh random bm25 dense-qwen3-0.6b
 ```
 
 - `uv` installs the exact versions of `uv.lock`, with the **CPU build of torch** on every platform (`pyproject.toml` points uv at PyTorch's CPU index), about 200 MB instead of 2 GB.
