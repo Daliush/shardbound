@@ -6,7 +6,8 @@ spring:
       enabled: true
 
 # See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set, and
-# shardbound.reports-dir, the Arbiter's evaluations, is then the repository's evals/reports.
+# shardbound.reports-dir and shardbound.datasets-dir, the Arbiter's evaluations and their datasets, are then the
+# repository's evals/reports and evals/datasets.
 shardbound:
   sessions:
     finished-ttl: 30m

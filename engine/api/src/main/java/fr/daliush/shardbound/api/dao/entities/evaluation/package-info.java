@@ -1,4 +1,4 @@
 /**
- * An evaluation as it is stored: the document the Python evaluation wrote, and where it sits.
+ * Evaluations and datasets as they are stored: the files the Python side wrote, and where they sit.
  */
 package fr.daliush.shardbound.api.dao.entities.evaluation;

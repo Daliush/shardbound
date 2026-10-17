@@ -8,12 +8,14 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
  * The {@code shardbound.*} properties (spec §3.4). {@code contentDir} is found by walking up when not set, and
- * {@code reportsDir} is then the repository's {@code evals/reports}.
+ * {@code reportsDir} and {@code datasetsDir} are then the repository's {@code evals/reports} and
+ * {@code evals/datasets}.
  */
 @ConfigurationProperties("shardbound")
 public record ShardboundProperties(
         Path contentDir,
         Path reportsDir,
+        Path datasetsDir,
         @DefaultValue Sessions sessions,
         @DefaultValue Bots bots,
         @DefaultValue Websocket websocket) {

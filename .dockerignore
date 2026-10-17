@@ -1,4 +1,4 @@
-# The game server's image needs engine/, content/ and the evaluations in evals/reports/.
+# The game server's image needs engine/, content/, and the evaluations and datasets in evals/.
 .git
 .claude
 docs
@@ -8,3 +8,4 @@ frontend
 **/node_modules
 **/__pycache__
 **/.venv
+evals/datasets/preview

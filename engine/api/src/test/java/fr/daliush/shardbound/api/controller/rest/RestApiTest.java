@@ -1,5 +1,6 @@
 package fr.daliush.shardbound.api.controller.rest;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -19,7 +20,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest(properties = "shardbound.reports-dir=src/test/resources/reports")
+@SpringBootTest(properties = {"shardbound.reports-dir=src/test/resources/reports",
+        "shardbound.datasets-dir=src/test/resources/datasets"})
 @AutoConfigureMockMvc
 class RestApiTest {
 
@@ -135,6 +137,25 @@ class RestApiTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("Unknown evaluation: v1/dev/2026-10-15T10-00-00Z"))
                 .andExpect(jsonPath("$.instance").value("/api/evaluations/v1/dev/2026-10-15T10-00-00Z"));
+    }
+
+    @Test
+    void servesADatasetSplitAsTheDatasetWroteIt() throws Exception {
+        String jsonl = mvc.perform(get("/api/datasets/v1/dev"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_NDJSON))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(jsonl.lines().map(line -> json.readTree(line).get("id").asString()))
+                .containsExactly("q1", "q2");
+    }
+
+    @Test
+    void refusesADatasetThatWasNeverBuiltWithAProblem() throws Exception {
+        mvc.perform(get("/api/datasets/v1/test"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("Unknown dataset: v1/test"))
+                .andExpect(jsonPath("$.instance").value("/api/datasets/v1/test"));
     }
 
     private ResultActions create(String body) throws Exception {
