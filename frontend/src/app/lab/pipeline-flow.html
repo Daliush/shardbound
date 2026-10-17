@@ -22,7 +22,7 @@
       }
     </svg>
   </div>
-  <div class="flow-legend" aria-hidden="true"><span><i class="cited"></i>Cited in the answer key</span><span><i class="card"></i>Card the question is about</span><span><i class="other"></i>Other chunk</span><span><i class="cut-key"></i>10 · prompt, 20 · handed on</span></div>
+  <div class="flow-legend" aria-hidden="true"><span><i class="cited"></i>Required for the answer (cited)</span><span><i class="card"></i>Card the question involves, not required</span><span><i class="other"></i>Other chunk</span><span><i class="cut-key"></i>10 · prompt, 20 · handed on</span></div>
   @if (cited().length) {
     <div class="rank-table-wrap"><table class="rank-table"><caption>Rank of each cited source at each stage</caption>
       <thead><tr><th scope="col">Cited source</th>@for (column of columns(); track column.stage.retriever) { <th scope="col">{{ column.stage.label }}</th> }</tr></thead>
