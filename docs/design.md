@@ -60,6 +60,8 @@
 > **v2.21 (October 2026)** — players start with 20 HP instead of 50, which is also their maximum (rule 1.1): at 50, games dragged on. The engine and the card guidelines follow. The evaluation dataset v2 is built on v1: rule 1.1's answer key changes and the four death-trigger scenarios played at full HP are now asked at 20 HP, reworded; every other question keeps its wording and side of the split. The RAG's chunks and index are rebuilt (§2.1, §6.1).
 >
 > **v2.22 (October 2026)** — RRF fusion: BM25 and dense retrieval merged by rank (k = 60). On v2 dev, Recall@20, what the reranker will receive, rises to 78.6% (dense alone 74.1%), while Recall@10 falls to 59.6% (62.3%). The card names found in the question come with the refs expansion, since only their refs can raise recall (§5.2, §6.2).
+>
+> **v2.23 (October 2026)** — the refs expansion: each card and term chunk carries its name, and the fused top 20 gains the chunks of the cards the question names (exact names, whole words) and the refs of all of them, one level deep. On v2 dev, the candidates hold 95.3% of the relevant chunks, 41 chunks on average, against 78.6% in the top 20; the 7 interaction questions go from 0% to 89.8%. Since what the reranker receives is longer than any cutoff, the evaluation adds the candidate recall and the number of candidates (§5.2, §6.2, §6.3).
 
 ---
 
@@ -419,13 +421,13 @@ The Arbiter exists in several versions, and **this is exactly what the evaluatio
 - **Pipeline**:
 
   ```
-  question ─┬→ card names found     → their card chunks, added directly
+  question ─┬→ card names found     → their card chunks
             ├→ BM25                 → list A ┐
             └→ embedding → cosine   → list B ┘→ RRF (k = 60) → top ~20
-  top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10, with their refs → prompt
+  named cards + top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10, with their refs → prompt
   ```
 
-  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them).
+  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The cards a question names are found by their exact names, as whole words, whatever their case, and join the top ~20, so that their refs are followed too; a misspelt name is not caught yet. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them).
 - **Storage**: Postgres + pgvector, the RAG's only source of chunks (the engine's `chunks.jsonl` is only the handoff the index reads), two tables: one row per chunk (its text and refs), and one row per chunk and embedding model (its vector), so several models' vectors sit side by side and are compared without re-embedding; with 191 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit. When the FastAPI service arrives (§5.5), indexing becomes one of its endpoints and the handoff file goes: the engine posts its chunks once its batch is done, and the service saves them, answers `202 Accepted` at once and embeds the changed ones **asynchronously**, in the background, since embedding takes about a minute on CPU (longer on a model's first download) and the engine must not wait on it.
 - **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order, each followed by its refs), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
 - **Output**: one schema for every question, `{answer, citations, answerable}`. `answer` is the natural-language text the user reads, with the citations shown as links: nobody sees JSON. `citations` lists the rule and card IDs in the order they apply. `answerable` lets the Arbiter abstain. Structured outputs through the API for `api+rag`, constrained decoding for local models, validated with Pydantic (one retry; format failures are measured).
@@ -584,7 +586,8 @@ All configurations except the last one use **the same open base model** (§4.2).
 | Retrieval | hybrid, fused by RRF | BM25 only, embeddings only |
 | Embedding model | Qwen3-Embedding-0.6B, on CPU | other local models, each one entry of a registry |
 | BM25 | Lucene formula, English stemming, stop words kept, k1 1.5, b 0.75 | no stemming, stop words removed, the Robertson, ATIRE, BM25L and BM25+ formulas |
-| Expansion | written cross-references | none |
+| Expansion | written cross-references | none; before the reranker only |
+| Card names | exact, whole words, whatever the case | tolerant of typos (once questions with typos can measure it) |
 | Reranker | cross-encoder | none, Jev *noul* |
 | Abstention | the `answerable` field | reranker threshold, Jev *noul* |
 | Prompt size | 10 chunks after the reranker | 5, 20 |

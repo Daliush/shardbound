@@ -81,7 +81,7 @@ retriever random, answer None on v2 dev, 61 answerable questions
 ```
 
 - **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
-- **Candidate recall** is the same share among every chunk the retriever returns, however many: the candidates the reranker receives, a ceiling for what it can keep. **Candidates** is their mean number, without which returning every chunk would score 100%, as the random, dense and fused retrievers do; BM25 returns only the chunks sharing a word with the question.
+- **Candidate recall** is the same share among every chunk the retriever returns, however many: the candidates the reranker receives, a ceiling for what it can keep. **Candidates** is their mean number, without which returning every chunk would score 100%, as random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ do; the other BM25 variants return only the chunks sharing a word with the question.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
