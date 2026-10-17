@@ -107,7 +107,8 @@ rag/
 │   ├── bm25/                   bm25_retriever.py, bm25_variants.py (the list of BM25 variants)
 │   ├── dense/                  embedding_models.py (the list of models), chunk_embedding.py (a chunk and its vector),
 │   │                           chunk_embedder.py (embed the changed chunks), dense_retriever.py (rank by cosine)
-│   └── fusion/                 rrf_retriever.py (several rankings merged by rank)
+│   ├── fusion/                 rrf_retriever.py (several rankings merged by rank)
+│   └── expansion/              expansion_retriever.py (a retriever's top, plus the named cards and the refs)
 └── evaluation/
     ├── evaluation_service.py   the flow: evaluate_all builds each retriever, evaluate runs it on every question
     ├── questions.py            Question: every question of a split, its relevant chunks, answerable or not
@@ -119,8 +120,8 @@ rag/
     └── report_table.py         the Markdown table
 ```
 
-- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`.
-- The database is the RAG's, not only dense retrieval's: `chunks` (a chunk and its refs, which the refs expansion will read) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
+- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`; an expansion one naming the retriever it wraps: `rrf-bm25-dense-expanded`.
+- The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
 - **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), then per run its scores overall and by category and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
