@@ -7,7 +7,7 @@ def format_report_table(report: Report) -> str:
     titles = ["Questions", "Count"]
     for k in RECALL_CUTOFFS:
         titles.append(f"Recall@{k}")
-    titles.extend(["MRR", "Candidate recall", "Candidates"])
+    titles.extend(["MRR", "Candidates"])
     header = "| " + " | ".join(titles) + " |"
     separator = "|---|" + "---:|" * (len(titles) - 1)
     rows = [format_row("all", report.overall)]
@@ -19,4 +19,4 @@ def format_report_table(report: Report) -> str:
 def format_row(label: str, scores: Scores) -> str:
     recalls = " | ".join(f"{scores.mean_recall_at[k]:.1%}" for k in RECALL_CUTOFFS)
     return (f"| {label} | {scores.question_count} | {recalls} | {scores.mean_reciprocal_rank:.3f} "
-            f"| {scores.mean_candidate_recall:.1%} | {scores.mean_candidate_count:.1f} |")
+            f"| {scores.mean_candidate_count:.1f} |")
