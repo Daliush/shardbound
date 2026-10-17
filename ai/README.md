@@ -74,16 +74,16 @@ The tables are created from the entities when missing, never altered: there are 
 ```text
 retriever random, answer None on v2 dev, 61 answerable questions
 
-| Questions | Count | Recall@10 | Recall@20 | MRR | Candidate recall | Candidates |
-|---|---:|---:|---:|---:|---:|---:|
-| all | 61 | 8.9% | 11.9% | 0.093 | 100.0% | 191.0 |
+| Questions | Count | Recall@10 | Recall@20 | MRR | Candidates |
+|---|---:|---:|---:|---:|---:|
+| all | 61 | 8.9% | 11.9% | 0.093 | 191.0 |
 | ...
 ```
 
 - **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
-- **Candidate recall** is the same share among every chunk the retriever returns, however many: the candidates the reranker receives, a ceiling for what it can keep. **Candidates** is their mean number, without which returning every chunk would score 100%, as random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ do; the other BM25 variants return only the chunks sharing a word with the question.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
-- **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), every metric being read from them.
+- **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), from which Recall@k and MRR are read.
+- **Candidates** is the mean number of chunks a retriever returns: the candidates the reranker receives. random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ return all 191; the other BM25 variants return only the chunks sharing a word with the question. The share of the relevant chunks among all of them, the most a reranker could keep, is the last value of the recall curve.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
 

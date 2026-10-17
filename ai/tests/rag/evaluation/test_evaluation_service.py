@@ -62,13 +62,12 @@ def test_finds_among_all_the_candidates_a_relevant_chunk_ranked_past_twenty():
 
     assert anchor_question.relevant_ranks == {"11.3.2": 1, "11.3.3": 21}
     assert anchor_question.candidate_count == 21
-    assert anchor_question.candidate_recall == 1.0
 
 
-def test_averages_a_recall_curve_that_agrees_with_the_other_scores():
+def test_averages_a_recall_curve_that_agrees_with_recall_at_k_and_counts_a_chunk_past_the_twentieth():
     overall = evaluate(FixedRetriever(), QUESTIONS).overall
 
     assert len(overall.mean_recall_curve) == 21
     assert overall.mean_recall_curve[9] == overall.mean_recall_at[10]
     assert overall.mean_recall_curve[19] == overall.mean_recall_at[20]
-    assert overall.mean_recall_curve[-1] == overall.mean_candidate_recall
+    assert overall.mean_recall_curve[-1] == 1.0, "every relevant chunk is among the candidates"
