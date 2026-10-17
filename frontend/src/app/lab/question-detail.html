@@ -6,30 +6,5 @@
       @else { <p>Unanswerable: the rules don't cover it, so the Arbiter should say so rather than answer.</p> }
     </section>
   }
-  <app-pipeline-flow [id]="id()" [runs]="pipeline()" [cards]="question()?.cards ?? []" />
-  <h3 class="ladder-heading">Two combinations, rank by rank</h3>
-  <div class="id-cards">@for (card of cardsInId(); track card.id) { <app-chunk-chip [id]="card.id" /> }</div>
-  <p class="explanation">Cited chunks are the sources the answer needs. Every reported cited rank appears below, including sources beyond the first 20. Green checks mark cited chunks in the retrieved list.</p>
-  <div class="ladder" [style.--columns]="columns().length">
-
-    @for (column of columns(); track column.key; let i = $index) {
-      <article class="ladder-column" [style.--contender]="column.color">
-        <div class="column-header"><h3><b>{{ 'ABCD'[i] }}</b>{{ column.name }}</h3>@if (column.question; as question) { <div class="question-metrics"><span>R@10 <b>{{ format('recall_at.10',question.recall_at['10']) }}</b></span><span>R@20 <b>{{ format('recall_at.20',question.recall_at['20']) }}</b></span><span>RR <b>{{ format('reciprocal_rank',question.reciprocal_rank) }}</b></span></div><p>{{ column.hit ? 'First relevant chunk at #' + column.hit.rank : column.ranks !== null ? 'No cited chunk retrieved' : 'No known hit in the first 20; later ranks unknown' }}</p> }</div>
-        @if (column.question; as question) {
-          <div class="cited-evidence"><p>{{ candidates(question) }}</p><h4>All cited sources</h4>@if (column.ranks !== null) { <ul>@for (entry of column.ranks; track entry[0]) { <li [class.not-retrieved]="entry[1] === null"><app-chunk-chip [id]="entry[0]" /><span>{{ entry[1] === null ? 'Not retrieved' : '#' + entry[1] }}</span></li> } @empty { <li>No cited sources reported.</li> }</ul> } @else { <p>This older report has no cited-rank list. Ranks beyond the top 20 are unknown.</p> }</div><h4 class="top-heading">First 20 retrieved chunks</h4>
-          @for (chunk of question.top_chunk_ids.slice(0,20); track $index; let rank = $index) {
-            <div class="rank-slot" [class.first-hit]="column.hit?.rank === rank + 1" [class.relevant]="knownRelevant().has(chunk)" (mouseenter)="hovered.set(chunk)" (mouseleave)="hovered.set(null)" (focusin)="hovered.set(chunk)" (focusout)="hovered.set(null)">
-              <span class="rank">{{ rank + 1 }}</span><app-chunk-chip [id]="chunk" />@if (knownRelevant().has(chunk)) { <span class="hit" [attr.aria-label]="column.hit?.rank === rank + 1 ? 'First relevant chunk' : 'Known relevant chunk'">✓</span> }
-              <small class="other-ranks">{{ ranks(chunk,column.key) }}</small>
-            </div>
-            @if (rank === 9) { <div class="cutoff">in the prompt (k = 10)</div> }
-            @if (rank === 19) { <div class="cutoff">reference expansion starts here (k = 20)</div> }
-          }
-          @if (column.extras.length) { <dl class="future-fields">@for (entry of column.extras; track entry[0]) { <dt>{{ humanize(entry[0]) }}</dt><dd>{{ generic(entry[1]) }}</dd> }</dl> }
-        } @else { <p class="empty-state">This question is absent from this run.</p> }
-      </article>
-    }
-  </div>
+  <app-pipeline-flow [id]="id()" [runs]="runs()" [cards]="question()?.cards ?? []" />
 </section>
-
-

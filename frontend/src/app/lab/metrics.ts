@@ -50,17 +50,6 @@ export function metricDescription(key: string): string {
 export function questionMetric(question: EvaluationQuestion | undefined, key: string): number | null {
   return atPath(question, key.startsWith('mean_') ? key.slice(5) : key);
 }
-export function firstHit(question: EvaluationQuestion | undefined): { rank: number; chunk: string } | null {
-  const ranks = relevantRanks(question);
-  if (ranks) {
-    const found = Object.entries(ranks).filter((entry): entry is [string,number] => entry[1] !== null).sort((a,b) => a[1]-b[1]);
-    return found.length ? {chunk:found[0][0],rank:found[0][1]} : null;
-  }
-  if (!question || question.reciprocal_rank < .05 || question.reciprocal_rank > 1) return null;
-  const rank = Math.round(1 / question.reciprocal_rank);
-  const chunk = question.top_chunk_ids[rank - 1];
-  return rank >= 1 && rank <= 20 && chunk ? {rank,chunk} : null;
-}
 export function relevantRanks(question: EvaluationQuestion | undefined): Record<string,number | null> | null {
   const value = question?.['relevant_ranks'];
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -70,11 +59,6 @@ export function relevantRanks(question: EvaluationQuestion | undefined): Record<
 export function candidateSummary(fields: Fields | undefined): string {
   const candidates = formatMetric('mean_candidate_count',atPath(fields,'mean_candidate_count')) + ' candidates', ceiling = recallCurve(fields).at(-1);
   return ceiling === undefined ? candidates : (ceiling * 100).toFixed(1) + '% of ' + candidates;
-}
-export function questionCandidates(question: EvaluationQuestion): string {
-  const ranks = relevantRanks(question), count = atPath(question,'candidate_count');
-  if (ranks) return Object.values(ranks).filter(rank => rank !== null).length + ' of ' + Object.keys(ranks).length + ' cited chunks among ' + formatMetric('candidate_count',count) + ' candidates';
-  return formatMetric('candidate_count',count) + ' candidates';
 }
 export interface Delta { id: string; category: string; a: number; b: number; delta: number; }
 export function differences(a: EvaluationRun, b: EvaluationRun, metric: string): Delta[] {

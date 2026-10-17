@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { EvaluationQuestion, EvaluationRun } from '../api/evaluation';
-import { candidateSummary, firstHit, formatMetric, isContextMetric, metrics, questionCandidates, relevantRanks } from './metrics';
+import { candidateSummary, formatMetric, isContextMetric, metrics, relevantRanks } from './metrics';
 import { rankedRuns, runColor } from './presentation';
 import { recallAt, recallCurve, curvePath } from './recall-model';
 import { RecallChart } from './recall-chart';
@@ -30,12 +30,10 @@ describe('Report metric semantics', () => {
     expect(rankedRuns(runs,'mean_candidate_count').map(row => [row.run,row.rank])).toEqual([[runs[0],null],[runs[1],null]]);
     expect(runColor(runs[0])).toBe(runColor({...runs[0],scores:{overall:{},by_category:{}}}));
   });
-  it('finds the actual first cited rank beyond twenty and keeps missing citations', () => {
+  it('keeps every cited rank, past twenty and missing, and none for an older report', () => {
     const question: EvaluationQuestion = {question_id:'q',category:'interaction',top_chunk_ids:['card'],recall_at:{'10':0,'20':0},reciprocal_rank:1/21,relevant_ranks:{'11.1.1':21,'8.5':33,'8.18':null},candidate_count:50};
-    expect(firstHit(question)).toEqual({rank:21,chunk:'11.1.1'});
     expect(relevantRanks(question)).toEqual({'11.1.1':21,'8.5':33,'8.18':null});
-    expect(questionCandidates(question)).toBe('2 of 3 cited chunks among 50 candidates');
-    expect(firstHit({...question,relevant_ranks:{'8.18':null}})).toBeNull();
+    expect(relevantRanks({question_id:'old',category:'interaction',top_chunk_ids:['card'],recall_at:{'10':0},reciprocal_rank:0})).toBeNull();
   });
 });
 

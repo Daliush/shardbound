@@ -1,6 +1,6 @@
 import { EvaluationQuestion, EvaluationRun } from '../api/evaluation';
 import { combination, decodeRun, layerNames, runKey, variants } from './layer-model';
-import { countDifferences, differences, firstHit, formatMetric, metricName, metrics } from './metrics';
+import { countDifferences, differences, formatMetric, metricName, metrics } from './metrics';
 import { readState, writeState } from './url-state';
 function question(id: string, value: number): EvaluationQuestion { return {question_id:id,category:'rule',top_chunk_ids:['1.1','ember.ash-warden'],recall_at:{'10':value},reciprocal_rank:.5}; }
 function run(layers: EvaluationRun['layers'], questions: EvaluationQuestion[] = []): EvaluationRun { return {layers,scores:{overall:{mean_recall_at:{'10':.5},latency_ms:12.5,quality:{custom_metric:.3}},by_category:{}},questions}; }
@@ -25,12 +25,6 @@ describe('Lab metrics', () => {
   it('names known metrics and formats unknown values without inventing a percentage', () => {
     expect(metricName('mean_recall_at.10')).toBe('Recall@10'); expect(formatMetric('mean_recall_at.10',.321)).toBe('32.1%');
     expect(metricName('quality.custom_metric')).toBe('Quality · Custom Metric'); expect(formatMetric('latency_ms',12.5)).toBe('12.5'); expect(formatMetric('quality.custom_metric',.3)).toBe('0.3'); expect(formatMetric('latency_ms',null)).toBe('—');
-  });
-  it('identifies only a first hit present in the reported top twenty', () => {
-    expect(firstHit(question('q',1))).toEqual({rank:2,chunk:'ember.ash-warden'});
-    expect(firstHit({...question('q',1),reciprocal_rank:.04})).toBeNull();
-    expect(firstHit({...question('q',1),reciprocal_rank:.05,top_chunk_ids:Array.from({length:20},(_,index) => String(index))})).toEqual({rank:20,chunk:'19'});
-    expect(firstHit({...question('q',1),reciprocal_rank:0})).toBeNull();
   });
   it('compares only matching questions with both values and counts ties', () => {
     const rows = differences(run({},[question('a',.8),question('b',.2),question('c',.4),question('missing',1)]),run({},[question('a',.3),question('b',.7),question('c',.4)]),'mean_recall_at.10');

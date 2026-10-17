@@ -1,6 +1,7 @@
 :host { display: block; }
 .pipeline-flow { background: var(--lab-surface); border-radius: 14px; padding: 1.4rem; margin: 1.5rem 0 2rem; }
 h3 { font: 500 1.05rem var(--font-ui); margin: 0 0 .45rem; }
+.no-ranks { margin: 1.5rem 0 0; font-size: .75rem; color: var(--muted); }
 .flow-intro { margin: 0; font-size: .75rem; line-height: 1.7; color: var(--muted); max-width: 85ch; }
 .flow-canvas { margin-top: 1.2rem; overflow-x: auto; }
 svg { display: block; width: 100%; min-width: 600px; overflow: visible; }
