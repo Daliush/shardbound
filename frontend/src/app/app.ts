@@ -7,6 +7,7 @@ import { Icon } from './core/icon';
 import { SettingsPanel } from './core/settings-panel';
 import { InspectPanel } from './cards/inspect-panel';
 import { ThemeToggle } from './core/theme-toggle';
+import { Ambience } from './core/ambience';
 
 @Component({
   selector: 'app-root',
@@ -22,8 +23,10 @@ import { ThemeToggle } from './core/theme-toggle';
     <app-inspect-panel />
   `,
   styleUrl: './app.css',
+  host: { '[attr.data-faction]': 'ambience.faction()' },
 })
 export class App {
+  protected readonly ambience = inject(Ambience);
   private readonly router = inject(Router);
   private readonly url = toSignal(this.router.events.pipe(filter(event => event instanceof NavigationEnd), map(() => this.router.url)), { initialValue: this.router.url });
   protected readonly inGame = computed(() => this.url().startsWith('/games/'));

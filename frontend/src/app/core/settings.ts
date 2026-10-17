@@ -39,7 +39,7 @@ export class Settings implements OnDestroy {
       try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { /* Private browsing may deny storage. */ }
       document.documentElement.dataset['reducedMotion'] = String(this.reducedMotion());
       document.documentElement.dataset['theme'] = this.theme();
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', this.theme() === 'dark' ? '#07080d' : '#ffffff');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', this.theme() === 'dark' ? '#252d3a' : '#e6e3dc');
     });
   }
 

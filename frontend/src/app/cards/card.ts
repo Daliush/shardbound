@@ -20,6 +20,7 @@ export class CardComponent {
   readonly unit = input<UnitView | null>(null);
   readonly mode = input<'hand' | 'board' | 'inspect' | 'thumb'>('hand');
   readonly back = input(false);
+  readonly interactiveTilt = input(true);
   readonly mark = input<Mark>(null);
   readonly readyAttacks = input<number[]>([]);
   protected readonly book = inject(CardBook);
@@ -61,7 +62,7 @@ export class CardComponent {
     return [card?.name ?? this.cardId(), card?.token ? 'Token' : '', card?.type, this.cost() === undefined ? '' : this.cost() + ' Shards', ...(card?.text.map(line => line.text) ?? [])].filter(Boolean).join('. ');
   });
   protected point(event: PointerEvent): void {
-    if (this.mode() === 'inspect' || this.settings.reducedMotion()) return;
+    if (!this.interactiveTilt() || this.mode() === 'inspect' || this.settings.reducedMotion()) return;
     const rect = this.element.nativeElement.getBoundingClientRect();
     this.pointer.set({ x: ((event.clientY - rect.top) / rect.height - .5) * 20, y: ((event.clientX - rect.left) / rect.width - .5) * 24, glare: (event.clientX - rect.left) / rect.width * 100 });
   }

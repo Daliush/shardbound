@@ -1,9 +1,9 @@
 :root {
   color-scheme: dark;
-  --obsidian-950: #07080d;
-  --obsidian-900: #0c0f18;
-  --obsidian-800: #161a26;
-  --obsidian-700: #242b3b;
+  --obsidian-950: #252d3a;
+  --obsidian-900: #2b3544;
+  --obsidian-800: #344052;
+  --obsidian-700: #435168;
   --ember: #ff8b50;
   --ember-deep: #c2261b;
   --ember-light: #ffd29b;
@@ -23,8 +23,8 @@
   --doom: #f396a3;
   --locked: #e9c38d;
   --text: #eeeaf2;
-  --muted: #acb2c5;
-  --line: #353d50;
+  --muted: #bac5d6;
+  --line: #526177;
   --panel: var(--obsidian-900);
   --card: var(--obsidian-800);
   --accent: var(--prism);
@@ -45,7 +45,7 @@
   --ease-spring: cubic-bezier(.22, 1.3, .36, 1);
   --motion-short: 180ms;
   --motion-beat: 460ms;
-  --shadow-raised: 0 18px 38px color-mix(in srgb, var(--black) 65%, transparent);
+  --shadow-raised: 0 18px 38px color-mix(in srgb, var(--black) 35%, transparent);
 }
 [data-faction='ember'] { --faction: var(--ember); --faction-deep: var(--ember-deep); --faction-light: var(--ember-light); }
 [data-faction='tide'] { --faction: var(--tide); --faction-deep: var(--tide-deep); --faction-light: var(--tide-light); }
