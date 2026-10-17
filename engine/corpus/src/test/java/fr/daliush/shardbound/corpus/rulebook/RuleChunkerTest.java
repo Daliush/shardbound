@@ -41,6 +41,11 @@ class RuleChunkerTest {
     }
 
     @Test
+    void givesNoNameToARule() {
+        assertThat(chunks).extracting(Chunk::name).containsOnlyNulls();
+    }
+
+    @Test
     void prefixesEachRuleWithTheTitlesOfItsSectionsButNotItsId() {
         assertThat(chunks.getFirst().text()).isEqualTo(
                 "[5. Game sequence > 5.2 Start of turn (in this order)] Anchor protections on the active player's "

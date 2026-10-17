@@ -26,4 +26,10 @@ class VocabularyChunkerTest {
                 "**Attack ability**: What a card does, in the form *trigger → effect → target*.");
         assertThat(chunks).allSatisfy(chunk -> assertThat(chunk.kind()).isEqualTo(Chunk.Kind.TERM));
     }
+
+    @Test
+    void namesEachChunkAfterItsTerm() {
+        assertThat(VocabularyChunker.chunkTerms(VOCABULARY, "docs/rules/00-vocabulary.md")).extracting(Chunk::name)
+                .containsExactly("HP", "Attack ability");
+    }
 }

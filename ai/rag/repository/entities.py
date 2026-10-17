@@ -17,6 +17,7 @@ class ChunkRow(Base):
 
     id: Mapped[str] = mapped_column(primary_key=True)
     kind: Mapped[str]
+    name: Mapped[str | None]
     text: Mapped[str]
     refs: Mapped[list[str]] = mapped_column(ARRAY(String))
     source: Mapped[str]

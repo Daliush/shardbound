@@ -67,6 +67,8 @@ The Arbiter's RAG (design doc §5.2), one brick at a time, each measured on the 
 
 **The index** lives in Postgres with pgvector (the `db` service of `compose.yaml`): a `chunks` table, and a `chunk_embeddings` table with one vector per chunk and embedding model. `python -m rag index` embeds only the chunks whose text changed since a model last did, so a run where nothing changed loads no model.
 
+The tables are created from the entities when missing, never altered: there are no migrations, since everything in them is rebuilt from the repository. After a change to an entity, drop the database (`docker compose down -v`, from the root) and build the index again: every chunk is embedded again, about a minute on CPU.
+
 **The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
 
 ```text

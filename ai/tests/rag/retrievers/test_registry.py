@@ -5,7 +5,7 @@ from rag.retrievers.dense.embedding_models import LOCAL_EMBEDDING_MODELS
 from rag.retrievers.random.random_retriever import RandomRetriever
 from rag.retrievers.registry import build_retriever, list_retriever_names
 
-CHUNKS = [Chunk("8.2", "rule", "[8. Effects] **Destroy**: sends a unit to the graveyard.", (), "r", "h")]
+CHUNKS = [Chunk("8.2", "rule", None, "[8. Effects] **Destroy**: sends a unit to the graveyard.", (), "r", "h")]
 
 
 def test_names_random_then_every_bm25_variant_then_every_dense_model_then_the_fusion():

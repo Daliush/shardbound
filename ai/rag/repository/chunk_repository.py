@@ -28,13 +28,13 @@ class ChunkRepositoryPostgres(ChunkRepository):
     def save_chunks(self, chunks: list[Chunk]) -> None:
         with Session(self._engine) as session, session.begin():
             for chunk in chunks:
-                session.merge(ChunkRow(id=chunk.id, kind=chunk.kind, text=chunk.text, refs=list(chunk.refs),
-                                       source=chunk.source, hash=chunk.hash))
+                session.merge(ChunkRow(id=chunk.id, kind=chunk.kind, name=chunk.name, text=chunk.text,
+                                       refs=list(chunk.refs), source=chunk.source, hash=chunk.hash))
             session.execute(delete(ChunkRow).where(ChunkRow.id.not_in([chunk.id for chunk in chunks])))
 
     def find_all_chunks(self) -> list[Chunk]:
         with Session(self._engine) as session:
             chunks = []
             for row in session.scalars(select(ChunkRow).order_by(ChunkRow.id)):
-                chunks.append(Chunk(row.id, row.kind, row.text, tuple(row.refs), row.source, row.hash))
+                chunks.append(Chunk(row.id, row.kind, row.name, row.text, tuple(row.refs), row.source, row.hash))
             return chunks

@@ -26,7 +26,7 @@ final class VocabularyChunker {
     /** The row's Markdown as written, the term in bold as the table prints it. */
     private static Chunk buildTermChunk(String term, String meaning, String source) {
         String text = "**" + term + "**: " + meaning;
-        return new Chunk(buildTermId(term), Chunk.Kind.TERM, text, WrittenRefs.findRefsInText(text), source);
+        return Chunk.term(buildTermId(term), term, text, WrittenRefs.findRefsInText(text), source);
     }
 
     /** "Attack ability" gives "vocabulary.attack-ability". */

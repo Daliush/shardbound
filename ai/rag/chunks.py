@@ -14,10 +14,14 @@ GENERATE_COMMAND = "./mvnw -q -pl corpus -am compile exec:java"
 
 @dataclass(frozen=True)
 class Chunk:
-    """Only `text` is embedded, indexed and shown to the model; `refs` are the chunks it relies on."""
+    """
+    Only `text` is embedded, indexed and shown to the model. `name` is what a card or a term is called, by which the
+    RAG finds the cards a question names, and None for a rule, found by its text. `refs` are the chunks it relies on.
+    """
 
     id: str
     kind: str
+    name: str | None
     text: str
     refs: tuple[str, ...]
     source: str
@@ -29,5 +33,8 @@ def read_chunks(root: Path) -> list[Chunk]:
     file = root / CHUNKS_FILE
     if not file.is_file():
         raise FileNotFoundError(f"No {CHUNKS_FILE}: write it from engine/ with `{GENERATE_COMMAND}`")
-    return [Chunk(row["id"], row["kind"], row["text"], tuple(row["refs"]), row["source"], row["hash"])
-            for row in jsonl.read(file)]
+    chunks = []
+    for row in jsonl.read(file):
+        chunks.append(Chunk(row["id"], row["kind"], row["name"], row["text"], tuple(row["refs"]), row["source"],
+                            row["hash"]))
+    return chunks
