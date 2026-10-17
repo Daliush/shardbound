@@ -14,5 +14,9 @@ class DenseRetriever(Retriever):
         self._model = model
         self._repository = repository
 
+    @property
+    def description(self) -> str:
+        return f"dense retrieval ({self._model.name} embeddings, ranked by cosine)"
+
     def rank_chunks(self, question: str) -> list[str]:
         return self._repository.rank_chunk_ids(self._model.name, self._model.embed_question(question))

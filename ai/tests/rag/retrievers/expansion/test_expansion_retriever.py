@@ -91,6 +91,13 @@ def test_keeps_each_chunk_once_where_it_first_comes():
     assert ranked == ["ember.ash-warden", "neutral.tempest", "8.2", "8.5", "11.1.1", "8.14"]
 
 
+def test_describes_itself_by_its_top_k_and_the_retriever_it_wraps():
+    expansion = ExpansionRetriever(FixedRanking([], "a fusion"), CHUNKS)
+
+    assert expansion.description == (
+        "refs expansion, one level deep, of the cards the question names and the top 20 of a fusion")
+
+
 def test_refuses_chunks_with_no_card_to_find():
     with pytest.raises(LookupError, match="python -m rag index"):
         ExpansionRetriever(FixedRanking([]), [rule("8.2")])

@@ -17,6 +17,10 @@ class FixedRetriever(Retriever):
     def __init__(self) -> None:
         self.asked: list[str] = []
 
+    @property
+    def description(self) -> str:
+        return "fixed rankings"
+
     def rank_chunks(self, question: str) -> list[str]:
         self.asked.append(question)
         return RANKINGS[question]

@@ -30,6 +30,11 @@ class ExpansionRetriever(Retriever):
             raise LookupError("No card among the chunks: build the index with `uv run python -m rag index`")
         self._card_name_pattern = self._compile_card_name_pattern()
 
+    @property
+    def description(self) -> str:
+        return (f"refs expansion, one level deep, of the cards the question names and the top {self._top_k} of "
+                f"{self._retriever.description}")
+
     def rank_chunks(self, question: str) -> list[str]:
         retrieved = self._find_named_cards(question) + self._retriever.rank_chunks(question)[:self._top_k]
         return list(dict.fromkeys(retrieved + self._follow_refs(retrieved)))

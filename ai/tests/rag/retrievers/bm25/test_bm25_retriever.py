@@ -33,6 +33,13 @@ def test_keeps_the_stop_words_unless_told_to_remove_them():
     assert "7.6" in Bm25Retriever(CHUNKS, Bm25Settings(stop_words_removed=True)).rank_chunks(question)
 
 
+def test_describes_itself_by_its_settings():
+    assert Bm25Retriever(CHUNKS).description == (
+        "BM25 (lucene formula, k1 = 1.5, b = 0.75, stemmed words, stop words kept)")
+    assert Bm25Retriever(CHUNKS, Bm25Settings(stemming=False, stop_words_removed=True)).description == (
+        "BM25 (lucene formula, k1 = 1.5, b = 0.75, unstemmed words, stop words removed)")
+
+
 @pytest.mark.parametrize("formula", ["lucene", "robertson", "atire", "bm25l", "bm25+"])
 def test_every_formula_ranks_the_matching_chunk_first(formula: str):
     assert Bm25Retriever(CHUNKS, Bm25Settings(formula=formula)).rank_chunks("Is my unit doomed?")[0] == "11.3.4"

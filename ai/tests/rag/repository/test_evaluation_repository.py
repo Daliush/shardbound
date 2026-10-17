@@ -6,7 +6,7 @@ from pathlib import Path
 from rag.evaluation.runs import Evaluation
 from rag.repository.evaluation_repository import EvaluationRepositoryFile
 
-EVALUATION = Evaluation(version="v1", split="dev", code_commit="45c56b9", runs=[],
+EVALUATION = Evaluation(version="v1", split="dev", code_commit="45c56b9", description="A check", runs=[],
                         evaluated_at=datetime(2026, 10, 15, 9, 0, 0, tzinfo=timezone.utc))
 
 

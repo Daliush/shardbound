@@ -12,10 +12,10 @@ What each step does and why lives in `docs/design.md` §5.2 and §6, `ai/README.
 | Step | Command, from the root | Needs | Writes |
 |---|---|---|---|
 | Dataset | `bash scripts/build-dataset.sh <version> --base <previous>` | JDK 21, uv, `LUNA_BASE_URL`, `LUNA_MODEL`, `LUNA_API_KEY` | `evals/datasets/<version>/` |
-| Chunks, index, evaluation | `bash scripts/evaluate.sh [retriever…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
+| Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
 | Served | the game server, `GET /api/evaluations/<v>/<split>` then `/<timestamp>` | the server running | nothing |
 
-`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every retriever on the latest dataset's dev split by default. `--split test` is only for the published numbers, never to choose anything.
+`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every retriever on the latest dataset's dev split by default. The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything.
 
 If `docker version` shows no server, ask the maintainer to start Docker Desktop. Do not reset it.
 

@@ -7,7 +7,7 @@ The Python side of the project: the code that calls or evaluates models (design 
 uv run pytest                                      # the tests; no model is called
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
 uv run python -m rag index                         # write the chunks and their vectors into the database
-uv run python -m rag evaluate                      # score every retriever on the dev questions (or name some)
+uv run python -m rag evaluate --description "…"    # score every retriever on the dev questions (or name some)
 ```
 
 ## What `dataset/` does
@@ -101,7 +101,7 @@ rag/
 │   ├── embedding_repository.py EmbeddingRepository, EmbeddingRepositoryPostgres: the vectors, ranked by cosine
 │   └── evaluation_repository.py EvaluationRepository, EvaluationRepositoryFile: one file per evaluation
 ├── retrievers/
-│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first
+│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first; its description
 │   ├── registry.py             every retriever by name
 │   ├── random/                 the floor
 │   ├── bm25/                   bm25_retriever.py, bm25_variants.py (the list of BM25 variants)
@@ -122,7 +122,7 @@ rag/
 
 - A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`; an expansion one naming the retriever it wraps: `rrf-bm25-dense-expanded`.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), then per run its scores overall and by category and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), its description (why it was run: `--description` is required and cannot be blank; evaluations written before it have none), then per run its description (what its retriever does, which each retriever writes from its settings), its scores overall and by category and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## Running the RAG on a new machine
@@ -133,9 +133,9 @@ Needs **JDK 21** (the engine writes the chunks), **uv** (Python and its packages
 # from the repository root: chunks, database and vectors, in one go
 scripts/build-index.sh
 # then, from ai/
-uv run python -m rag evaluate random bm25 dense-qwen3-0.6b
+uv run python -m rag evaluate random bm25 dense-qwen3-0.6b --description "A first look"
 # or both, from the root: the index, then the evaluation with these arguments
-scripts/evaluate.sh random bm25 dense-qwen3-0.6b
+scripts/evaluate.sh random bm25 dense-qwen3-0.6b --description "A first look"
 ```
 
 - `uv` installs the exact versions of `uv.lock`, with the **CPU build of torch** on every platform (`pyproject.toml` points uv at PyTorch's CPU index), about 200 MB instead of 2 GB.

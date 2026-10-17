@@ -14,3 +14,7 @@ def test_ranks_another_question_in_another_order():
     retriever = RandomRetriever(CHUNK_IDS)
 
     assert retriever.rank_chunks("What does Destroy do?") != retriever.rank_chunks("What does Heal do?")
+
+
+def test_describes_itself_by_its_seed():
+    assert RandomRetriever(CHUNK_IDS, seed=7).description == "every chunk in a random order (seed 7)"

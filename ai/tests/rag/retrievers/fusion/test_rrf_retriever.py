@@ -36,3 +36,9 @@ def test_breaks_a_tie_by_the_order_of_the_retrievers():
     ranked = RrfRetriever([FixedRanking(["8.2"]), FixedRanking(["11.3.2"])]).rank_chunks(QUESTION)
 
     assert ranked == ["8.2", "11.3.2"]
+
+
+def test_describes_itself_by_its_k_and_the_retrievers_it_fuses():
+    fusion = RrfRetriever([FixedRanking([], "lexical retrieval"), FixedRanking([], "semantic retrieval")])
+
+    assert fusion.description == "RRF (k = 60) of lexical retrieval and semantic retrieval"
