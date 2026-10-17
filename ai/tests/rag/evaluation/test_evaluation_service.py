@@ -36,6 +36,7 @@ def test_averages_each_metric_over_the_answerable_questions_then_by_category():
     assert report.overall.question_count == 2
     assert report.overall.mean_recall_at == {10: (1.0 + 0.5) / 2, 20: (1.0 + 0.5) / 2}
     assert report.overall.mean_reciprocal_rank == (0.5 + 1.0) / 2
+    assert report.overall.mean_candidate_count == (2 + 21) / 2
     assert list(report.by_category) == ["interaction", "simple-rule"]
     assert report.by_category["simple-rule"].mean_reciprocal_rank == 0.5
     assert report.by_category["interaction"].mean_recall_at[20] == 0.5
@@ -50,3 +51,10 @@ def test_keeps_each_question_result_with_its_first_twenty_chunks():
     assert deck_question.reciprocal_rank == 0.5
     assert len(anchor_question.top_chunk_ids) == 20
     assert anchor_question.recall_at == {10: 0.5, 20: 0.5}
+
+
+def test_finds_among_all_the_candidates_a_relevant_chunk_ranked_past_twenty():
+    [_, anchor_question] = evaluate(FixedRetriever(), QUESTIONS).questions
+
+    assert anchor_question.candidate_count == 21
+    assert anchor_question.candidate_recall == 1.0

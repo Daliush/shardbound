@@ -62,11 +62,13 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
                if old_ranks.get(question["question_id"]) != question["top_chunk_ids"]]
       print(f'{name}: R@10 {before["mean_recall_at"]["10"]:.3f} -> {after["mean_recall_at"]["10"]:.3f}, '
             f'R@20 {before["mean_recall_at"]["20"]:.3f} -> {after["mean_recall_at"]["20"]:.3f}, '
-            f'MRR {before["mean_reciprocal_rank"]:.3f} -> {after["mean_reciprocal_rank"]:.3f}, ranked differently: {moved}')
+            f'MRR {before["mean_reciprocal_rank"]:.3f} -> {after["mean_reciprocal_rank"]:.3f}, '
+            f'candidate recall {before.get("mean_candidate_recall")} -> {after.get("mean_candidate_recall")}, '
+            f'ranked differently: {moved}')
   EOF
   ```
 
-  A question whose id changed shows as ranked differently. A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
+  A question whose id changed shows as ranked differently; a report written before the candidate measures has none (`None`). A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
 - **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`, or the `api` configuration of `.claude/launch.json`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
 
 ## In a worktree, beside the maintainer's work

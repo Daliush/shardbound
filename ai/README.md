@@ -72,15 +72,16 @@ The tables are created from the entities when missing, never altered: there are 
 **The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
 
 ```text
-random on v1 dev, 61 answerable questions
+retriever random, answer None on v2 dev, 61 answerable questions
 
-| Questions | Count | Recall@10 | Recall@20 | MRR |
-|---|---:|---:|---:|---:|
-| all | 61 | 2.7% | 9.0% | 0.051 |
+| Questions | Count | Recall@10 | Recall@20 | MRR | Candidate recall | Candidates |
+|---|---:|---:|---:|---:|---:|---:|
+| all | 61 | 8.9% | 11.9% | 0.093 | 100.0% | 191.0 |
 | ...
 ```
 
-- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 what the reranker receives. It decides between two retrievers.
+- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
+- **Candidate recall** is the same share among every chunk the retriever returns, however many: the candidates the reranker receives, a ceiling for what it can keep. **Candidates** is their mean number, without which returning every chunk would score 100%, as the random, dense and fused retrievers do; BM25 returns only the chunks sharing a word with the question.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.

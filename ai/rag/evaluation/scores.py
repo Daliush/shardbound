@@ -3,10 +3,11 @@
 from dataclasses import dataclass
 
 from rag.evaluation.questions import Question
-from rag.evaluation.retrieval_metrics import recall_at_k, reciprocal_rank
+from rag.evaluation.retrieval_metrics import recall, recall_at_k, reciprocal_rank
 
 RECALL_CUTOFFS = (10, 20)
-"""10: the chunks the prompt holds after the reranker. 20: the chunks the reranker receives."""
+"""10: the chunks the prompt holds after the reranker. 20: the top 20 the refs expansion starts from, and the prompt of
+the 20-chunk variant. What the reranker receives, however many chunks, is measured by the candidate recall."""
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,10 @@ class QuestionResult:
     top_chunk_ids: list[str]
     recall_at: dict[int, float]
     reciprocal_rank: float
+    candidate_recall: float
+    """The share of the relevant chunks among every chunk the retriever returned: the candidates a reranker
+    receives."""
+    candidate_count: int
 
 
 @dataclass(frozen=True)
@@ -25,6 +30,8 @@ class Scores:
     question_count: int
     mean_recall_at: dict[int, float]
     mean_reciprocal_rank: float
+    mean_candidate_recall: float
+    mean_candidate_count: float
 
 
 @dataclass(frozen=True)
@@ -40,18 +47,26 @@ def score_question(question: Question, ranked_ids: list[str]) -> QuestionResult:
         recall_at[k] = recall_at_k(ranked_ids, question.relevant_ids, k)
     return QuestionResult(question_id=question.id, category=question.category,
                           top_chunk_ids=ranked_ids[:max(RECALL_CUTOFFS)], recall_at=recall_at,
-                          reciprocal_rank=reciprocal_rank(ranked_ids, question.relevant_ids))
+                          reciprocal_rank=reciprocal_rank(ranked_ids, question.relevant_ids),
+                          candidate_recall=recall(ranked_ids, question.relevant_ids),
+                          candidate_count=len(ranked_ids))
 
 
 def average_scores(results: list[QuestionResult]) -> Scores:
     """Every question weighs the same, whatever its number of relevant chunks."""
     recall_sums = {k: 0.0 for k in RECALL_CUTOFFS}
     reciprocal_rank_sum = 0.0
+    candidate_recall_sum = 0.0
+    candidate_count_sum = 0
     for result in results:
         for k in RECALL_CUTOFFS:
             recall_sums[k] += result.recall_at[k]
         reciprocal_rank_sum += result.reciprocal_rank
+        candidate_recall_sum += result.candidate_recall
+        candidate_count_sum += result.candidate_count
     count = len(results)
     return Scores(question_count=count,
                   mean_recall_at={k: total / count for k, total in recall_sums.items()},
-                  mean_reciprocal_rank=reciprocal_rank_sum / count)
+                  mean_reciprocal_rank=reciprocal_rank_sum / count,
+                  mean_candidate_recall=candidate_recall_sum / count,
+                  mean_candidate_count=candidate_count_sum / count)

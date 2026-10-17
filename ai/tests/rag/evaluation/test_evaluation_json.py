@@ -9,8 +9,10 @@ EVALUATED_AT = datetime(2026, 10, 15, 10, 42, 7, tzinfo=timezone.utc)
 
 
 def build_evaluation(retrievers: list[str]) -> Evaluation:
-    scores = Scores(1, {10: 1.0, 20: 1.0}, 1.0)
-    result = QuestionResult("rule/2.2", "simple-rule", ["2.2", "2.1"], {10: 1.0, 20: 1.0}, 1.0)
+    scores = Scores(question_count=1, mean_recall_at={10: 1.0, 20: 1.0}, mean_reciprocal_rank=1.0,
+                    mean_candidate_recall=1.0, mean_candidate_count=2.0)
+    result = QuestionResult(question_id="rule/2.2", category="simple-rule", top_chunk_ids=["2.2", "2.1"],
+                            recall_at={10: 1.0, 20: 1.0}, reciprocal_rank=1.0, candidate_recall=1.0, candidate_count=2)
     runs = []
     for retriever in retrievers:
         runs.append(Run(Layers(retriever=retriever),

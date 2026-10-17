@@ -3,7 +3,12 @@
 
 def recall_at_k(ranked_ids: list[str], relevant_ids: frozenset[str], k: int) -> float:
     """The share of the relevant chunks found among the first `k` ranked: 2 of 4 gives 0.5."""
-    return len(relevant_ids & set(ranked_ids[:k])) / len(relevant_ids)
+    return recall(ranked_ids[:k], relevant_ids)
+
+
+def recall(ranked_ids: list[str], relevant_ids: frozenset[str]) -> float:
+    """The share of the relevant chunks found anywhere in the ranking, however long it is."""
+    return len(relevant_ids & set(ranked_ids)) / len(relevant_ids)
 
 
 def reciprocal_rank(ranked_ids: list[str], relevant_ids: frozenset[str]) -> float:

@@ -8,4 +8,4 @@ class Retriever(ABC):
 
     @abstractmethod
     def rank_chunks(self, question: str) -> list[str]:
-        """The ids of the chunks it ranks for `question`, the most relevant first."""
+        """The ids of the chunks it ranks for `question`, the most relevant first, each id once."""
