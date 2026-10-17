@@ -22,6 +22,8 @@ The `/lab` route has four primary views: a sortable leaderboard, a chart across 
 
 Dataset, split, report, metric, comparison and builder selection are shareable in the URL. The report is fetched only when dataset/split/report changes. Question inspection, category results and history remain accessible under **About this benchmark**.
 
+Each question shows its wording and answer key, read from `/api/datasets/` and joined to the report by id; without the dataset the lab still works on ids. A question opens on the pipeline flow: every stage (BM25, dense, RRF, RRF + refs, in `lab/pipeline-model.ts`; the reranker will be one more) draws its chunks by rank, links each cited chunk from stage to stage with d3, and tables the cited ranks. The metrics are dot plots on an axis zoomed on their values, the random floor as a reference line. By category, one budget slider and one legend drive every category's recall chart. The four main pipelines have their own color; the BM25 variants share a muted shade of BM25's.
+
 Appearance is controlled by the sun/moon button (including in the arena), or **Settings → Appearance** for the system preference. The preference is saved locally and applied before first paint. `core/themes.css` contains both application and game semantic colors. The light palette uses a warm stone base (`#e6e3dc`), soft ivory panels, and charcoal text across the home, Lab, and game surfaces; browser chrome uses the same base from first paint. Lab animations use GSAP, stop on component destruction, and respect reduced motion and instant animation preferences.
 
 ## Elemental home

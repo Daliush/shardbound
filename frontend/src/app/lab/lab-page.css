@@ -13,14 +13,14 @@
 .lab-nav button[aria-current] { color: var(--lab-accent); border-bottom-color: var(--lab-accent); }
 .lab-nav button:hover { background: transparent; color: var(--text); }
 .lab-nav button[aria-current]:hover { border-bottom-color: var(--lab-accent); }
-.report-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 1.1rem 0 2.8rem; }
+.report-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: .6rem 0 1.6rem; }
 .report-scope { display: flex; gap: .55rem; align-items: center; font-size: .72rem; color: var(--muted); }
 .status-dot { width: 6px; height: 6px; background: var(--heal); border-radius: 50%; }
 .scope-count { margin-left: .6rem; }
 .scope-separator { margin-inline: .65rem; color: var(--line); }
 .dataset-controls { display: flex; gap: .5rem; }
 .dataset-controls select { min-height: 34px; padding: .35rem .6rem; font-size: .7rem; background: transparent; border-color: transparent; }
-.view-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 2rem; }
+.view-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.5rem; }
 .view-heading h1 { font: 500 2rem/1.2 var(--font-ui); letter-spacing: -.035em; margin: 0 0 .6rem; }
 .view-heading p { color: var(--muted); font-size: .85rem; margin: 0; }
 .build-action { background: var(--lab-surface); font-size: .78rem; white-space: nowrap; }

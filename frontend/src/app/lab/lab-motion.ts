@@ -19,6 +19,8 @@ export class LabMotion implements OnDestroy {
         gsap.from(host, { opacity: .5, y: 5, duration: .24, ease: 'power2.out', clearProps: 'opacity,transform' });
         const bars = host.querySelectorAll('[data-score-bar]');
         if (bars.length) gsap.from(bars, { scaleX: 0, transformOrigin: 'left center', duration: .55, stagger: .025, ease: 'power3.out', clearProps: 'transform' });
+        const dots = host.querySelectorAll('[data-score-dot]');
+        if (dots.length) gsap.from(dots, { scale: 0, opacity: 0, duration: .4, stagger: .012, ease: 'back.out(2)', clearProps: 'transform,opacity' });
         const paths = host.querySelectorAll<SVGPathElement>('[data-score-line]');
         paths.forEach(path => {
           const length = path.getTotalLength?.() ?? 0;

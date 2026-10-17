@@ -2,7 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 import { scaleLinear } from 'd3-scale';
 import { EvaluationRun } from '../api/evaluation';
 import { runKey, runName } from './layer-model';
-import { atPath, formatMetric, humanize, isRatio, metricName } from './metrics';
+import { atPath, formatMetric, humanize, isContextMetric, isRatio, metricName } from './metrics';
 import { ScoreChart } from './score-chart';
 @Component({
   selector:'app-categories',imports:[ScoreChart],
@@ -19,6 +19,7 @@ export class Categories {
   protected readonly categories = computed(() => [...new Set(this.runs().flatMap(run => Object.keys(run.scores.by_category)))].map(name => ({name,count:Math.max(...this.runs().map(run => Number(run.scores.by_category[name]?.['question_count'] ?? 0))),runs:this.runs().filter(run => !!run.scores.by_category[name]).map(run => ({...run,scores:{...run.scores,overall:run.scores.by_category[name]}}))})));
   protected value(run: EvaluationRun, category: string): number | null { return atPath(run.scores.by_category[category],this.metric()); }
   protected fill(run: EvaluationRun, category: string): string {
+    if (isContextMetric(this.metric())) return 'var(--lab-surface)';
     const value = this.value(run,category);
     const ceiling = isRatio(this.metric()) ? 1 : Math.max(1,...this.runs().map(run => this.value(run,category) ?? 0));
     const percent = scaleLinear().domain([0,ceiling]).range([2,40]).clamp(true)(value ?? 0);

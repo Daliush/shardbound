@@ -1,0 +1,33 @@
+@if (columns().length) {
+<section class="pipeline-flow" aria-labelledby="pipeline-flow-title">
+  <h3 id="pipeline-flow-title">How the pipeline found its sources</h3>
+  <p class="flow-intro">Each bar is a chunk at its rank. Cited chunks are joined from stage to stage. The first 10 ranks go into the prompt; the reranker's job is to lift the cited chunks above that line.</p>
+  <div #canvas class="flow-canvas">
+    <svg [attr.viewBox]="'0 0 ' + width() + ' ' + height()" [attr.height]="height()" role="img" [attr.aria-label]="description()">
+      @for (cut of cuts(); track cut.rank) { <line [attr.x1]="gutter" [attr.x2]="width()" [attr.y1]="cut.y" [attr.y2]="cut.y" class="cut" [class.prompt]="cut.rank === 10" /><text [attr.x]="gutter - 6" [attr.y]="cut.y" class="cut-label">{{ cut.rank }}</text> }
+      @for (item of links(); track item.key) { <path [attr.d]="item.path" class="link" [class.lit]="focused() === item.chunk" [class.dim]="focused() !== null && focused() !== item.chunk" data-flow-link /> }
+      @for (item of layout(); track item.column.stage.retriever) {
+        <g data-flow-stage>
+          <text [attr.x]="item.x" y="16" class="stage-label">{{ item.column.stage.label }}</text>
+          <text [attr.x]="item.x" y="33" class="stage-role">{{ subtitle(item.column) }}</text>
+          @for (slot of item.column.slots; track slot.rank) {
+            <rect [attr.x]="item.x" [attr.y]="y(slot.rank)" [attr.width]="columnWidth()" [attr.height]="bar" rx="1" class="slot" [class]="slot.kind" [class.lit]="slot.chunk !== null && focused() === slot.chunk" (pointerenter)="focus(slot.kind === 'cited' ? slot.chunk : null)" (pointerleave)="focus(null)" data-flow-bar><title>{{ slotLabel(slot) }}</title></rect>
+          }
+          @if (item.summary.length) {
+            <g data-flow-summary><rect [attr.x]="item.x" [attr.y]="item.boxY" [attr.width]="columnWidth()" [attr.height]="item.boxHeight" rx="6" class="summary-box" />
+              @for (line of item.summary; track $index) { <text [attr.x]="item.x + columnWidth() / 2" [attr.y]="item.boxY + 17 + $index * 15" class="summary-line" [class.count]="$index === 0">{{ line }}</text> }
+            </g>
+          }
+        </g>
+      }
+    </svg>
+  </div>
+  <div class="flow-legend" aria-hidden="true"><span><i class="cited"></i>Cited in the answer key</span><span><i class="card"></i>Card the question is about</span><span><i class="other"></i>Other chunk</span><span><i class="cut-key"></i>10 · prompt, 20 · handed on</span></div>
+  @if (cited().length) {
+    <div class="rank-table-wrap"><table class="rank-table"><caption>Rank of each cited source at each stage</caption>
+      <thead><tr><th scope="col">Cited source</th>@for (column of columns(); track column.stage.retriever) { <th scope="col">{{ column.stage.label }}</th> }</tr></thead>
+      <tbody>@for (chunk of cited(); track chunk) { <tr [class.lit]="focused() === chunk" (pointerenter)="focus(chunk)" (pointerleave)="focus(null)"><th scope="row"><app-chunk-chip [id]="chunk" /></th>@for (column of columns(); track column.stage.retriever) { <td [class]="rankPlace(column,chunk)">{{ rankText(column,chunk) }}</td> }</tr> }</tbody>
+    </table></div>
+  } @else { <p class="flow-intro">This question cites no source: the Arbiter should say the rules don't cover it, so recall does not apply.</p> }
+</section>
+}

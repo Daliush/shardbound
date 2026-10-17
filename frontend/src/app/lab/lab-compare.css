@@ -1,10 +1,10 @@
-.comparison-pickers { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem; }
-.comparison-picker { padding: 1.2rem 1.4rem; background: var(--lab-subtle); border-radius: 12px; display: grid; gap: .8rem; }
+.comparison-pickers { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2rem; margin-bottom: 2.5rem; }
+.comparison-picker { min-width: 0; padding: 1.2rem 1.4rem; background: var(--lab-subtle); border-radius: 12px; display: grid; gap: .8rem; }
 .comparison-picker > span { display: flex; gap: .6rem; align-items: center; font-size: .78rem; color: var(--muted); }
 .comparison-picker b { color: var(--contender-0); font-size: .8rem; font-weight: 600; }
 .comparison-picker.side-b b { color: var(--contender-1); }
 .comparison-picker select { background: var(--lab-surface); font-size: .9rem; width: 100%; }
-.comparison-picker small { font-size: .7rem; }
+.comparison-picker small { font-size: .7rem; min-width: 0; overflow-wrap: anywhere; }.comparison-picker .run-description { width: 100%; max-width: 100%; }.comparison-picker select { min-width: 0; }
 .comparison-table-head,.comparison-metric { display: grid; grid-template-columns: 1.4fr 1fr 1fr .8fr; align-items: center; gap: 2rem; }
 .comparison-table-head { color: var(--muted); font-size: .7rem; padding-bottom: 1rem; }
 .comparison-table-head > span:last-child { text-align: right; }
@@ -26,3 +26,5 @@
 .detail-body { padding: 1.5rem 0; }
 .detail-body > label { margin-bottom: 1.5rem; }
 
+
+.comparison-metric > * { min-width: 0; }.comparison-metric .delta { overflow-wrap: anywhere; }

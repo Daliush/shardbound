@@ -44,7 +44,7 @@ describe('Lab URL', () => {
     expect(readState(writeState({...state,multiples:true})).multiples).toBe(true);
   });
   it('rejects unknown version, split and tab and caps pins to four', () => {
-    const state = readState({v:'v900',split:'secret',tab:'surprise',pins:'a.b.c.d.e.a'}); expect(state.version).toBe('v1'); expect(state.split).toBe(''); expect(state.tab).toBe('leaderboard'); expect(state.pins).toEqual(['a','b','c','d']);
+    const state = readState({v:'v900',split:'secret',tab:'surprise',pins:'a.b.c.d.e.a'}); expect(state.version).toBe('v2'); expect(state.split).toBe(''); expect(state.tab).toBe('leaderboard'); expect(state.pins).toEqual(['a','b','c','d']);
   });
 });
 

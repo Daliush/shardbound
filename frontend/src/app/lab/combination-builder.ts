@@ -36,7 +36,7 @@ import { Settings } from '../core/settings';
         <div class="results-heading"><app-icon name="chart" /><h3 id="results-title">Your combination</h3></div>
         <div class="recipe">@for (layer of layers(); track layer) { <div><span>{{ layerLabel(layer) }}</span><strong>{{ variant(draft()[layer] ?? null) }}</strong></div> }</div>
         @if (revealed() && match(); as run) {
-          <div class="result-scores" [labMotion]="key(run.layers)" aria-live="polite"><p class="result-status"><app-icon name="check" />Recorded results</p>
+          <div class="result-scores" [labMotion]="key(run.layers)" aria-live="polite"><p class="result-status"><app-icon name="check" />Recorded results</p>@if (run.description) { <p class="sample-size" [title]="run.description">{{ run.description }}</p> }
             @for (metric of metrics(); track metric) { <div class="result-metric"><div><span>{{ metricName(metric) }}</span><strong>{{ format(metric,at(run.scores.overall,metric)) }}</strong></div><p>{{ description(metric) }}</p></div> }
             <p class="sample-size">Measured on {{ run.scores.overall['question_count'] ?? run.questions.length }} questions.</p>
             <button class="primary" (click)="compared.emit(key(run.layers))"><app-icon name="compare" />Compare this combination</button>
@@ -89,6 +89,8 @@ export class CombinationBuilder {
   protected optionDescription(value: string | null, layer: string): string {
     if (value === null) return layer === 'answer' ? 'Retrieval only · no answer generation' : 'Skip this component';
     if (value === 'random') return 'Random selection · reference floor';
+    if (value === 'rrf-bm25-dense-expanded') return 'Hybrid search with named cards and linked references';
+    if (value.startsWith('rrf')) return 'BM25 and dense retrieval fused by rank';
     if (value.startsWith('dense')) return 'Semantic search with embeddings';
     if (value === 'bm25') return 'Keyword search · Lucene scoring';
     if (value === 'bm25l') return 'Keyword search · BM25L scoring';

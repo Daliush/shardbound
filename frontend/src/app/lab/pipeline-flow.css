@@ -1,0 +1,39 @@
+:host { display: block; }
+.pipeline-flow { background: var(--lab-surface); border-radius: 14px; padding: 1.4rem; margin: 1.5rem 0 2rem; }
+h3 { font: 500 1.05rem var(--font-ui); margin: 0 0 .45rem; }
+.flow-intro { margin: 0; font-size: .75rem; line-height: 1.7; color: var(--muted); max-width: 85ch; }
+.flow-canvas { margin-top: 1.2rem; overflow-x: auto; }
+svg { display: block; width: 100%; min-width: 600px; overflow: visible; }
+.stage-label { fill: var(--text); font: 500 13px var(--font-ui); }
+.stage-role { fill: var(--muted); font: 11px var(--font-ui); }
+.slot { fill: color-mix(in srgb, var(--muted) 30%, transparent); }
+.slot.cited { fill: var(--heal); cursor: pointer; }
+.slot.card { fill: var(--lab-accent); }
+.slot.lit { stroke: var(--text); stroke-width: 1; }
+.link { fill: none; stroke: var(--heal); stroke-width: 1; opacity: .45; transition: opacity 160ms ease; }
+.link.lit { opacity: 1; stroke-width: 1.8; }
+.link.dim { opacity: .08; }
+.cut { stroke: var(--muted); stroke-dasharray: 2 5; opacity: .5; }
+.cut.prompt { stroke-dasharray: 5 4; opacity: .85; }
+.cut-label { fill: var(--muted); font: 10px var(--font-ui); text-anchor: end; dominant-baseline: central; }
+.summary-box { fill: color-mix(in srgb, var(--heal) 10%, var(--lab-surface)); stroke: color-mix(in srgb, var(--heal) 40%, transparent); stroke-width: .6; }
+.summary-line { fill: var(--muted); font: 11px var(--font-ui); text-anchor: middle; dominant-baseline: central; }
+.summary-line.count { fill: var(--text); font-weight: 500; }
+.flow-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin-top: 1rem; font-size: .7rem; color: var(--muted); }
+.flow-legend i { display: inline-block; width: 12px; height: 6px; border-radius: 1px; margin-right: .4rem; vertical-align: middle; }
+.flow-legend .cited { background: var(--heal); }.flow-legend .card { background: var(--lab-accent); }.flow-legend .other { background: color-mix(in srgb, var(--muted) 30%, transparent); }
+.flow-legend .cut-key { height: 0; border-top: 1px dashed var(--muted); }
+.rank-table-wrap { overflow-x: auto; margin-top: 1.4rem; }
+.rank-table { width: 100%; border-collapse: collapse; font-size: .74rem; }
+.rank-table caption { text-align: left; color: var(--muted); font-size: .72rem; padding-bottom: .6rem; }
+.rank-table th, .rank-table td { padding: .2rem .5rem; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank-table thead th { color: var(--muted); font-weight: 400; font-size: .7rem; }
+.rank-table th[scope='row'] { text-align: left; font-weight: 400; min-width: 150px; }
+.rank-table th[scope='row'] app-chunk-chip { max-width: 220px; }
+.rank-table thead th:first-child { text-align: left; }
+.rank-table tr.lit { background: var(--lab-subtle); }
+.rank-table .in-prompt { color: var(--heal); font-weight: 500; }
+.rank-table .handed-on { color: var(--text); }
+.rank-table .beyond, .rank-table .missing { color: var(--muted); }
+@media(max-width:750px) { .pipeline-flow { padding: 1rem; } }
+@media(prefers-reduced-motion:reduce) { .link { transition: none; } }

@@ -33,4 +33,6 @@
 .table-footnote { display: flex; justify-content: space-between; gap: 1rem; font-size: .68rem; color: var(--muted); margin-top: 1rem; }
 .empty-search { text-align: center; color: var(--muted); padding: 3rem 1rem !important; }
 .empty-search button { display: flex; margin: .5rem auto 0; color: var(--lab-accent); }
+.run-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-right: .4rem; }
+.run-description { display: block; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
