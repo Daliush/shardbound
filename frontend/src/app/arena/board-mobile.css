@@ -1,0 +1,20 @@
+@media(max-width:700px) {
+  :host { --unit-width: 156px; --card-width: 184px; }.table { padding: 10px 8px 0; }
+  .field { grid-template-columns: 42px minmax(0,1fr) 42px; gap: 3px; min-height: 110px; }
+  .terrain-pile { padding: 0; font-size: 9px; gap: 6px; }.stack, .grave-surface, .stack app-card, .grave-surface app-card { width: 35px; height: 51px; }
+  .stack b, .grave-surface b { font-size: 14px; min-width: 20px; bottom: 1px; right: 1px; }.grave-surface > app-icon { width: 17px; }
+  .units { gap: 12px; padding: 22px 9px 13px; min-height: 110px; }.empty-board { min-height: 75px; font-size: 11px; }
+  .hand-heading { gap: 8px; }.hand-hint { display: none; }.fan { gap: 12px; padding-inline: 10px; }
+  .combat-summary strong { font-size: 11px; }.battle-line .combat-summary { gap: 6px; }.battle-line .combat-summary > span { font-size: 11px; }
+  .relic-piece { font-size: 11px; }.side { gap: 7px; }
+  .unit-piece, .hand-piece { touch-action: pan-x; }
+}
+@media(min-width:1500px) { :host { --unit-width: 180px; --card-width: 210px; }.table { max-width: 1720px; margin-inline: auto; } }
+@media(min-width:901px) {
+  .side, .side.yours { display: grid; grid-template-columns: 166px minmax(0, 1fr); gap: 12px; align-items: center; }
+  .side app-player-hud { grid-column: 1; grid-row: 1; width: 166px; align-self: center; }
+  .side .field { grid-column: 2; grid-row: 1; }
+  .side .relics { grid-column: 2; }
+  .field { grid-template-columns: 66px minmax(0,1fr) 66px; gap: 8px; }
+  .hand { margin-top: 4px; }
+}

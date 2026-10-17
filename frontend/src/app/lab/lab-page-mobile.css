@@ -1,0 +1,77 @@
+@media(max-width:1000px) {
+  .lab-page { padding-inline: 1.75rem; }
+  .report-scope { flex-wrap: wrap; }
+  .scope-count { margin-left: 0; }
+  .view-heading h1 { font-size: 1.8rem; }
+  .leaderboard .metric-cell { min-width: 100px; }
+  .leaderboard tbody td,.leaderboard tbody th { padding-inline: .6rem; }
+  .comparison-table-head,.comparison-metric { gap: 1.2rem; }
+}
+@media(max-width:700px) {
+  .lab-page { padding: 1.4rem 1rem; }
+  .lab-identity { margin-bottom: .9rem; }
+  .lab-wordmark { font-size: 1.2rem; }
+  .benchmark-label { font-size: .78rem; }
+  .lab-nav { gap: 0; justify-content: space-between; }
+  .lab-nav button { font-size: .76rem; gap: .4rem; padding-block: .85rem; }
+  .lab-nav button app-icon { width: 15px; height: 15px; }
+  .report-bar { align-items: flex-start; margin-bottom: 2rem; gap: .5rem; }
+  .report-scope { font-size: .65rem; gap: .4rem; padding-top: .6rem; }
+  .report-scope > span:nth-child(2) { display: none; }
+  .scope-count { margin-left: 0; }
+  .scope-separator { margin-inline: .4rem; }
+  .dataset-controls { gap: 0; }
+  .dataset-controls select { font-size: .66rem; padding-inline: .3rem; }
+  .view-heading { align-items: flex-start; margin-bottom: 1.8rem; }
+  .view-heading h1 { font-size: 1.7rem; }
+  .view-heading p { font-size: .78rem; line-height: 1.7; }
+  .view-heading .build-action { display: none; }
+  .table-toolbar { gap: .75rem; align-items: stretch; }
+  .search-field { flex: 1; min-width: 0; }
+  .search-field input { width: 100%; min-width: 0; font-size: .73rem; padding-right: .5rem; }
+  .sort-control { gap: .4rem; font-size: 0; }
+  .sort-control select { max-width: 155px; font-size: .73rem; padding-inline: .5rem; }
+  .leaderboard { min-width: 640px; }
+  .leaderboard-wrap { margin-inline: -1rem; padding-inline: 1rem; }
+  .leaderboard .rank-cell { width: 40px; min-width: 40px; }
+  .leaderboard .combination-cell { min-width: 200px; }
+  .leaderboard .combination-name { font-size: .78rem; }
+  .leaderboard tbody td,.leaderboard tbody th { padding-block: .85rem; }
+  .leaderboard thead th { padding-inline: .6rem; }
+  .leaderboard .metric-cell { font-size: .8rem; }
+  .baseline-row { flex-wrap: wrap; gap: .4rem; font-size: .68rem; }
+  .baseline-explanation { width: 100%; margin-left: 1.7rem; font-size: .65rem; }
+  .table-footnote { flex-direction: column; gap: .45rem; }
+  .evaluation-info { grid-template-columns: 1fr; gap: 1.2rem; }
+  .evaluation-info select { max-width: 320px; }
+  .lab-footer { flex-direction: column; gap: .5rem; font-size: .65rem; }
+  .comparison-pickers { gap: .75rem; margin-bottom: 1.5rem; }
+  .comparison-picker { padding: 1rem .75rem; gap: .6rem; }
+  .comparison-picker > span { font-size: .7rem; }
+  .comparison-picker select { font-size: .76rem; padding-inline: .55rem; }
+  .comparison-table-head { display: none; }
+  .comparison-metric { grid-template-columns: 1fr 1fr .75fr; gap: .75rem; padding-block: 1.25rem; }
+  .metric-caption { grid-column: 1/-1; }
+  .metric-caption small { max-width: none; margin-top: .2rem; }
+  .compared-score strong { font-size: 1.4rem; }
+  .delta { font-size: .9rem; }
+  .comparison-note { font-size: .7rem; }
+  .question-filters { grid-template-columns: 1fr; }
+  .question-row { grid-template-columns: 1fr 20px; gap: .5rem; }
+  .question-row > .question-category { grid-row: 2; }
+  .question-row app-icon { grid-column: 2; grid-row: 1; }
+}
+@media(max-width:700px) {
+  .leaderboard { min-width: 0; }
+  .leaderboard .metric-cell:not(.sorted) { display: none; }
+  .leaderboard .metric-cell.sorted { min-width: 76px; }
+  .leaderboard .combination-cell { min-width: 0; }
+  .leaderboard .rank-cell { width: 32px; min-width: 32px; }
+  .leaderboard .row-action { width: 36px; padding-inline: 0; }
+  .leaderboard .combination-name { overflow-wrap: anywhere; }
+  .leaderboard { table-layout: fixed; }
+  .leaderboard-wrap { position: relative; }
+  .leaderboard .metric-cell.sorted { width: 90px; }
+  .leaderboard thead th:last-child { width: 36px; }
+  .leaderboard .run-description { max-width: 100%; }
+}

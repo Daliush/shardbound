@@ -1,0 +1,53 @@
+:root {
+  color-scheme: dark;
+  --obsidian-950: #252d3a;
+  --obsidian-900: #2b3544;
+  --obsidian-800: #344052;
+  --obsidian-700: #435168;
+  --ember: #ff8b50;
+  --ember-deep: #c2261b;
+  --ember-light: #ffd29b;
+  --tide: #62e3e8;
+  --tide-deep: #1a4f7f;
+  --tide-light: #e8f4f8;
+  --root: #a1d884;
+  --root-deep: #2f5d3a;
+  --root-light: #e3b04b;
+  --prism: #c5b8ff;
+  --prism-deep: #6959ae;
+  --prism-light: #f0d7ef;
+  --hp: #f8a7be;
+  --heal: #b6ec9b;
+  --damage: #ff8e86;
+  --frost: #b7eaff;
+  --doom: #f396a3;
+  --locked: #e9c38d;
+  --text: #eeeaf2;
+  --muted: #bac5d6;
+  --line: #526177;
+  --panel: var(--obsidian-900);
+  --card: var(--obsidian-800);
+  --accent: var(--prism);
+  --target: var(--ember-light);
+  --alert: var(--damage);
+  --white: #ffffff;
+  --black: #000000;
+  --contender-0: #75d8ff;
+  --contender-1: #ffc780;
+  --contender-2: #d4b4ff;
+  --contender-3: #b9e69d;
+  --foil: linear-gradient(115deg, var(--tide), var(--prism), var(--prism-light));
+  --font-title: 'Cormorant', Georgia, serif;
+  --font-card: 'Spectral SC', Georgia, serif;
+  --font-ui: 'Geist', system-ui, sans-serif;
+  --font-number: 'Geist Mono', ui-monospace, monospace;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-spring: cubic-bezier(.22, 1.3, .36, 1);
+  --motion-short: 180ms;
+  --motion-beat: 460ms;
+  --shadow-raised: 0 18px 38px color-mix(in srgb, var(--black) 35%, transparent);
+}
+[data-faction='ember'] { --faction: var(--ember); --faction-deep: var(--ember-deep); --faction-light: var(--ember-light); }
+[data-faction='tide'] { --faction: var(--tide); --faction-deep: var(--tide-deep); --faction-light: var(--tide-light); }
+[data-faction='root'] { --faction: var(--root); --faction-deep: var(--root-deep); --faction-light: var(--root-light); }
+[data-faction='neutral'] { --faction: var(--prism); --faction-deep: var(--prism-deep); --faction-light: var(--prism-light); }

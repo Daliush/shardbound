@@ -1,0 +1,10 @@
+{
+  "name": "Shardbound",
+  "short_name": "Shardbound",
+  "description": "A card game and a laboratory for AI engineering.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#252d3a",
+  "theme_color": "#252d3a",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

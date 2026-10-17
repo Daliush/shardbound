@@ -1,0 +1,27 @@
+.card-pedestal { --roll: 0deg; --yaw: 0deg; --lift: 0px; --phase: -2.8s; position: relative; flex: 0 0 var(--home-card-width); text-align: center; perspective: 1100px; }
+.card-pedestal:first-child { --roll: -6deg; --yaw: 8deg; --lift: 13px; --phase: -1s; }
+.card-pedestal:last-child { --roll: 6deg; --yaw: -8deg; --lift: 13px; --phase: -4.6s; }
+.portal { --rx: 0deg; --ry: 0deg; position: relative; display: block; min-height: 0; padding: 0; border: 0; border-radius: 10px; color: var(--text); background: transparent; transform-style: preserve-3d; transform: translateY(var(--lift)) rotateZ(var(--roll)) rotateY(var(--yaw)); transition: transform 600ms var(--ease-out); width: var(--home-card-width); }
+.portal:hover:not(:disabled) { background: transparent; border: 0; }
+.portal:focus-visible { outline: 2px solid var(--faction); outline-offset: 8px; }
+.floating-card { display: block; position: relative; isolation: isolate; perspective: 1100px; animation: levitate 7s ease-in-out var(--phase) infinite; }
+.card-surface { display: block; position: relative; aspect-ratio: 5 / 6.2; container-type: inline-size; transform: rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 350ms var(--ease-out), filter 500ms; filter: drop-shadow(0 28px 18px #111a2899); }
+.portal app-card { --card-width: var(--home-card-width); pointer-events: none; }
+.active .portal { transform: translateY(-12px) rotateZ(calc(var(--roll) * .35)) rotateY(0deg); }
+.active .card-surface { filter: drop-shadow(0 38px 22px #101824b3); }
+.card-sheen { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 10px; background: radial-gradient(ellipse at var(--mx, 50%) var(--my, 30%), #ffffff20, transparent 65%); opacity: 0; mix-blend-mode: soft-light; transition: opacity 250ms; }
+.portal:is(:hover, :focus-visible) .card-sheen { opacity: 1; }
+.faction-label { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: 2.3rem; width: 100%; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--text); font: 600 1.7rem/1 var(--font-title); }
+.faction-label > app-icon:first-child { color: var(--faction); width: 22px; height: 22px; }
+.faction-label:hover:not(:disabled) { border: 0; background: transparent; color: var(--faction); }
+.chosen-check { width: 15px; height: 15px; opacity: 0; color: var(--faction); }
+.chosen .chosen-check { opacity: 1; }
+.chosen .faction-label { color: var(--faction); }
+.faction-style { margin: .2rem 0 0; font-size: .72rem; color: var(--text); }
+.card-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; width: var(--home-card-width); aspect-ratio: 5 / 6.2; background: var(--game-surface); color: var(--muted); border: 1px solid var(--line); border-radius: 10px; font-size: .8rem; }
+.card-loading app-icon { color: var(--faction); width: 35px; height: 35px; }
+.catalog-error { display: flex; align-items: center; justify-content: center; gap: 1rem; max-width: none; color: var(--muted); font-size: .8rem; }
+@keyframes levitate { 0%, 100% { translate: 0 5px; rotate: -.8deg; } 50% { translate: 0 -12px; rotate: .8deg; } }
+:host(.motion-off) .card-surface { transform: none; }
+:host(.scene-paused) .floating-card { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .floating-card { animation: none; } }

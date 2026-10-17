@@ -1,33 +1,25 @@
 import { Injectable } from '@angular/core';
 
-/**
- * Seat tokens and invite codes, kept across reloads (spec §14). Every tab of a browser shares them: to play
- * both seats on one machine, use a second browser or a private window.
- */
+/** Seats survive reloads where storage is available; memory keeps private sessions playable. */
 @Injectable({ providedIn: 'root' })
 export class SeatStore {
-  token(gameId: string): string | null {
-    return localStorage.getItem(key(gameId, 'token'));
+  private readonly memory = new Map<string, string>();
+  token(gameId: string): string | null { return this.read(gameId, 'token'); }
+  joinCode(gameId: string): string | null { return this.read(gameId, 'joinCode'); }
+  saveToken(gameId: string, token: string): void { this.write(gameId, 'token', token); }
+  saveJoinCode(gameId: string, code: string): void { this.write(gameId, 'joinCode', code); }
+  private read(game: string, field: string): string | null {
+    const key = 'shardbound.game.' + game + '.' + field;
+    try { return localStorage.getItem(key) ?? this.memory.get(key) ?? null; }
+    catch { return this.memory.get(key) ?? null; }
   }
-
-  saveToken(gameId: string, token: string): void {
-    localStorage.setItem(key(gameId, 'token'), token);
-  }
-
-  joinCode(gameId: string): string | null {
-    return localStorage.getItem(key(gameId, 'joinCode'));
-  }
-
-  saveJoinCode(gameId: string, code: string): void {
-    localStorage.setItem(key(gameId, 'joinCode'), code);
+  private write(game: string, field: string, value: string): void {
+    const key = 'shardbound.game.' + game + '.' + field;
+    this.memory.set(key, value);
+    try { localStorage.setItem(key, value); } catch { /* The current session remains usable. */ }
   }
 }
-
-function key(gameId: string, field: string): string {
-  return `shardbound.game.${gameId}.${field}`;
-}
-
-/** Where the second player joins a game. */
 export function inviteLink(gameId: string, joinCode: string): string {
-  return `${location.origin}/join/${gameId}?code=${encodeURIComponent(joinCode)}`;
+  return location.origin + '/join/' + gameId + '?code=' + encodeURIComponent(joinCode);
 }
+

@@ -49,6 +49,9 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
   ```bash
   uv run python - <old report> <new report> <<'EOF'
   import json, sys
+  def curve_end(scores):
+      curve = scores.get("mean_recall_curve")
+      return f"{curve[-1]:.3f}" if curve else None
   def runs(path):
       return {run["layers"]["retriever"]: run for run in json.load(open(path, encoding="utf-8"))["runs"]}
   old, new = runs(sys.argv[1]), runs(sys.argv[2])
@@ -63,12 +66,12 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
       print(f'{name}: R@10 {before["mean_recall_at"]["10"]:.3f} -> {after["mean_recall_at"]["10"]:.3f}, '
             f'R@20 {before["mean_recall_at"]["20"]:.3f} -> {after["mean_recall_at"]["20"]:.3f}, '
             f'MRR {before["mean_reciprocal_rank"]:.3f} -> {after["mean_reciprocal_rank"]:.3f}, '
-            f'candidate recall {before.get("mean_candidate_recall")} -> {after.get("mean_candidate_recall")}, '
+            f'curve end {curve_end(before)} -> {curve_end(after)}, '
             f'ranked differently: {moved}')
   EOF
   ```
 
-  A question whose id changed shows as ranked differently; a report written before the candidate measures has none (`None`). A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
+  A question whose id changed shows as ranked differently; a report written before the recall curve has no curve end (`None`). A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
 - **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`, or the `api` configuration of `.claude/launch.json`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
 
 ## In a worktree, beside the maintainer's work

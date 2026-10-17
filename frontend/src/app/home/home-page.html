@@ -1,58 +1,93 @@
-<h1>New game</h1>
-
-<form (submit)="$event.preventDefault(); create()">
-  <label>
-    Your deck
-    <select name="deck" (change)="deck.set(value($event))">
-      @for (d of decks(); track d.id) {
-        <option [value]="d.id" [selected]="d.id === deck()">{{ d.name }}</option>
-      }
-    </select>
-  </label>
-
-  <fieldset>
-    <legend>Opponent</legend>
-    <label>
-      <input type="radio" name="opponent" value="bot" [checked]="opponent() === 'bot'" (change)="opponent.set('bot')" />
-      A bot
-    </label>
-    <label>
-      <input type="radio" name="opponent" value="human" [checked]="opponent() === 'human'"
-        (change)="opponent.set('human')" />
-      A human, with an invite link
-    </label>
-
-    @if (opponent() === 'bot') {
-      <label>
-        Bot
-        <select name="bot" (change)="bot.set(value($event))">
-          @for (b of bots(); track b) {
-            <option [value]="b" [selected]="b === bot()">{{ b }}</option>
-          }
-        </select>
-      </label>
-      <label>
-        Its deck
-        <select name="botDeck" (change)="botDeck.set(value($event))">
-          @for (d of decks(); track d.id) {
-            <option [value]="d.id" [selected]="d.id === botDeck()">{{ d.name }}</option>
-          }
-        </select>
-      </label>
+<section class="home" [class.departing]="departing()" [attr.data-destination]="departing()">
+  <div class="world-backdrop" aria-hidden="true">
+    @for (faction of factions; track faction.id) {
+      <img [src]="'/portals/' + faction.id + '.webp'" alt="" class="world-image" [class.visible]="active().id === faction.id" width="1440" height="810" />
     }
-  </fieldset>
-
-  <button type="submit" [disabled]="deck() === ''">Create game</button>
-</form>
-
-@if (error(); as message) {
-  <p class="error">{{ message }}</p>
-}
-
-@if (invitation(); as invitation) {
-  <section class="invitation">
-    <p>Send this link to your opponent:</p>
-    <p><a [href]="invitation.link">{{ invitation.link }}</a></p>
-    <p><a [routerLink]="['/games', invitation.gameId]">Go to the game</a></p>
-  </section>
-}
+    <div class="world-fade"></div>
+  </div>
+  <div class="home-heading">
+    <h1>Shardbound</h1>
+    <p>Choose a faction. Change the game.</p>
+  </div>
+  <div class="portal-stage">
+    <div class="portals" role="group" aria-label="Choose your starter faction" [attr.aria-roledescription]="compact() ? 'carousel' : null"
+      [stepSwipe]="compact() && !sliding()" (stepped)="step($event)">
+      @for (faction of factions; track faction.id; let index = $index) {
+        <div class="card-pedestal" [attr.data-faction]="faction.id" [class.active]="active().id === faction.id" [class.chosen]="selection() === index"
+          [class.carousel-main]="center() === index" [class.recycling]="recycling() === index" [style.--slot]="slot(index)">
+          <button type="button" class="portal" [attr.data-faction]="faction.id"
+            [attr.aria-pressed]="selection() === index" [attr.aria-label]="'Choose ' + faction.name + ': ' + faction.style"
+            [attr.tabindex]="compact() && center() !== index ? -1 : 0"
+            (click)="choose(index)" (keydown)="key($event, index)"
+            (pointerenter)="preview(index)" (focus)="preview(index)" (blur)="unpreview()"
+            (pointermove)="point($event, faction.id)" (pointerleave)="leave($event); unpreview()" (pointercancel)="leave($event); unpreview()">
+            <span class="floating-card">
+              <span class="elemental-aura" aria-hidden="true">
+                <svg class="aura-filaments" viewBox="0 0 300 372" fill="none">
+                  @switch (faction.id) {
+                    @case ('ember') {
+                      <path d="M30 337 C-8 280 44 243 23 198 S7 119 32 78 C15 124 51 145 39 185" />
+                      <path d="M272 304 C306 253 263 215 285 166 S290 94 269 39 C282 99 245 111 269 151" />
+                      <path d="M66 352 C115 373 213 361 242 333" />
+                    }
+                    @case ('tide') {
+                      <path d="M18 237 C-16 174 7 86 78 47 C127 20 199 25 244 45" />
+                      <path d="M282 120 C323 211 284 295 211 332 C151 362 75 348 34 318" />
+                      <path d="M14 273 C49 319 150 328 226 295 C276 274 300 244 295 207" />
+                    }
+                    @case ('root') {
+                      <path d="M38 333 C9 279 30 249 21 210 C9 167 14 127 37 91 M21 210 Q-2 196 3 180 M22 251 Q44 235 41 219" />
+                      <path d="M258 337 C291 294 273 251 283 211 C296 162 287 113 267 73 M283 211 Q304 194 298 177 M280 268 Q259 253 262 238" />
+                      <path d="M82 352 Q150 374 222 346" />
+                    }
+                  }
+                </svg>
+              </span>
+              <span class="card-surface">
+              @if (book.card(faction.card)) {
+                <app-card [cardId]="faction.card" [interactiveTilt]="false" />
+              } @else {
+                <span class="card-loading"><app-icon [name]="faction.id" /><span>{{ book.error() ? 'Card unavailable' : 'Loading card…' }}</span></span>
+              }
+              <span class="card-sheen" aria-hidden="true"></span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="faction-label" [attr.aria-label]="'Select ' + faction.name + ' faction'" (click)="choose(index)"><app-icon [name]="faction.id" /><span>{{ faction.name }}</span><app-icon class="chosen-check" name="check" /></button>
+          <p class="faction-style">{{ faction.style }}</p>
+        </div>
+      }
+    </div>
+    @if (compact()) {
+      <div class="carousel-controls">
+        <button type="button" class="carousel-arrow previous" [attr.aria-label]="'Previous faction: ' + previousFaction().name" [attr.aria-disabled]="sliding()" (click)="step(-1)"><app-icon name="arrow" /></button>
+        <div class="carousel-caption">
+          <p class="carousel-name"><app-icon [name]="selected().id" /><span>{{ selected().name }}</span></p>
+          <p class="carousel-style">{{ selected().style }}</p>
+          <div class="carousel-position" aria-hidden="true">@for (faction of factions; track faction.id; let index = $index) { <span [class.current]="center() === index"></span> }</div>
+        </div>
+        <button type="button" class="carousel-arrow next" [attr.aria-label]="'Next faction: ' + nextFaction().name" [attr.aria-disabled]="sliding()" (click)="step(1)"><app-icon name="arrow" /></button>
+      </div>
+    }
+    <canvas #elements class="elements" aria-hidden="true"></canvas>
+  </div>
+  @if (book.error()) { <p class="catalog-error" role="status">The card catalog could not be loaded. <button type="button" (click)="reloadCards()">Reload cards</button></p> }
+  <div class="faction-detail">
+    <p aria-live="polite"><app-icon [name]="selected().id" /><span><strong>{{ selected().name }}.</strong> {{ selected().description }}</span></p>
+    <button class="inspect-link" type="button" [disabled]="!book.card(selected().card)" (click)="inspectCard()"><app-icon name="eye" /> Meet {{ selected().cardName }}</button>
+  </div>
+  <nav class="doors" aria-label="Enter Shardbound">
+    <a class="door arena-door" [href]="'/play?faction=' + selected().id" (click)="enter($event, 'arena')">
+      <span class="door-emblem" aria-hidden="true"><app-icon name="sword" /></span>
+      <span class="door-copy"><strong>Enter the Arena</strong><span>Play {{ selected().name }} against a bot or a friend</span></span>
+      <span class="door-arrow" aria-hidden="true"><app-icon name="arrow" /></span>
+    </a>
+    <a class="door lab-door" href="/lab" (click)="enter($event, 'lab')">
+      <span class="door-emblem" aria-hidden="true"><app-icon name="lab" /></span>
+      <span class="door-copy"><strong>Explore the Lab</strong><span>Discover the AI behind the game</span></span>
+      <span class="door-arrow" aria-hidden="true"><app-icon name="arrow" /></span>
+    </a>
+  </nav>
+  <footer><p>An invented card game. A real testing ground for AI.</p><a href="https://github.com/Daliush/shardbound" target="_blank" rel="noreferrer">Explore the project <app-icon name="arrow" /></a></footer>
+  <div class="passage" aria-hidden="true"><app-icon [name]="departing() === 'lab' ? 'lab' : selected().id" /></div>
+</section>

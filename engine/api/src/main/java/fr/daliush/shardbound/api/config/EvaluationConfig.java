@@ -1,5 +1,7 @@
 package fr.daliush.shardbound.api.config;
 
+import fr.daliush.shardbound.api.dao.evaluation.DatasetDao;
+import fr.daliush.shardbound.api.dao.evaluation.DatasetDaoFile;
 import fr.daliush.shardbound.api.dao.evaluation.EvaluationDao;
 import fr.daliush.shardbound.api.dao.evaluation.EvaluationDaoFile;
 import fr.daliush.shardbound.core.content.ContentLoader;
@@ -9,21 +11,32 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * The evaluations' store: the reports folder, read at every request, the repository's {@code evals/reports} unless
- * {@code shardbound.reports-dir} says otherwise. A bucket will take its place when the server runs online.
+ * The evaluations' stores, folders read at every request: the reports, the repository's {@code evals/reports} unless
+ * {@code shardbound.reports-dir} says otherwise, and the datasets, its {@code evals/datasets} unless
+ * {@code shardbound.datasets-dir} does. Buckets will take their place when the server runs online.
  */
 @Configuration(proxyBeanMethods = false)
 class EvaluationConfig {
 
     private static final Path REPORTS = Path.of("evals", "reports");
+    private static final Path DATASETS = Path.of("evals", "datasets");
 
     @Bean
     EvaluationDao evaluationDao(ShardboundProperties properties) {
+        return new EvaluationDaoFile(folder(properties.reportsDir(), REPORTS, "shardbound.reports-dir"));
+    }
+
+    @Bean
+    DatasetDao datasetDao(ShardboundProperties properties) {
+        return new DatasetDaoFile(folder(properties.datasetsDir(), DATASETS, "shardbound.datasets-dir"));
+    }
+
+    /** The folder a property names, or else the one at {@code inRepository} in the repository found above. */
+    private static Path folder(Path configured, Path inRepository, String property) {
         Path here = Path.of("").toAbsolutePath();
-        Path reportsDir = Optional.ofNullable(properties.reportsDir())
-                .or(() -> ContentLoader.find(here).map(content -> content.getParent().resolve(REPORTS)))
+        return Optional.ofNullable(configured)
+                .or(() -> ContentLoader.find(here).map(content -> content.getParent().resolve(inRepository)))
                 .orElseThrow(() -> new IllegalStateException("No repository found above " + here
-                        + ": set shardbound.reports-dir to the folder of the evaluations"));
-        return new EvaluationDaoFile(reportsDir);
+                        + ": set " + property + " to the folder of " + inRepository));
     }
 }

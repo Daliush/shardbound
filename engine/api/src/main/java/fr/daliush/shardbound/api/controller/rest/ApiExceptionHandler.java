@@ -29,6 +29,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail refused(EvaluationException exception, HttpServletRequest request) {
         HttpStatus status = switch (exception) {
             case EvaluationException.UnknownEvaluation ignored -> HttpStatus.NOT_FOUND;
+            case EvaluationException.UnknownDataset ignored -> HttpStatus.NOT_FOUND;
         };
         return describeProblem(status, exception, request);
     }

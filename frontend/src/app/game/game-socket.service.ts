@@ -1,5 +1,5 @@
 import { Injectable, InjectionToken, OnDestroy, inject, signal } from '@angular/core';
-import { EMPTY, Observable, Subscription, repeat, retry, timer } from 'rxjs';
+import { EMPTY, Observable, Subject, Subscription, repeat, retry, timer } from 'rxjs';
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 import { ClientMessage, EventView, GameView, ServerMessage } from '../api/protocol';
 
@@ -8,9 +8,6 @@ export const WEB_SOCKET = new InjectionToken<typeof WebSocket>('WEB_SOCKET', {
   factory: () => WebSocket,
 });
 
-/** Time between two queued updates, so a bot's moves can be followed one by one (spec §14). */
-export const UPDATE_PACE_MS = 400;
-
 /** Spec §13.1: another connection took this seat. */
 export const REPLACED = 4409;
 
@@ -18,7 +15,7 @@ const MAX_BACKOFF_MS = 10_000;
 
 export type ConnectionStatus = 'connecting' | 'open' | 'reconnecting' | 'replaced' | 'closed';
 
-type Update = Extract<ServerMessage, { type: 'update' }>;
+export type GameFrame = Exclude<ServerMessage, { type: 'rejected' }> | { type: 'snap' };
 
 /**
  * One seat's connection to a game (spec §13.2). It renders nothing and computes no rule: it keeps the latest
@@ -32,15 +29,18 @@ export class GameSocketService implements OnDestroy {
   readonly log = signal<EventView[]>([]);
   readonly rejection = signal<{ reason: string; message: string } | null>(null);
   readonly status = signal<ConnectionStatus>('connecting');
+  readonly synchronized = signal(false);
+  readonly frames = new Subject<GameFrame>();
 
   private socket?: WebSocketSubject<ServerMessage | ClientMessage>;
   private subscription?: Subscription;
-  private queue: Update[] = [];
-  private pacing?: ReturnType<typeof setTimeout>;
   private failures = 0;
   private requests = 0;
 
   connect(url: string): void {
+    this.subscription?.unsubscribe();
+    this.synchronized.set(false);
+    this.status.set('connecting');
     this.socket = webSocket<ServerMessage | ClientMessage>({
       url,
       WebSocketCtor: this.webSocketCtor,
@@ -63,8 +63,8 @@ export class GameSocketService implements OnDestroy {
   disconnect(): void {
     this.status.set('closed');
     this.subscription?.unsubscribe();
-    clearTimeout(this.pacing);
-    this.pacing = undefined;
+    this.synchronized.set(false);
+    this.frames.next({ type: 'snap' });
   }
 
   ngOnDestroy(): void {
@@ -74,16 +74,14 @@ export class GameSocketService implements OnDestroy {
   private receive(message: ServerMessage): void {
     switch (message.type) {
       case 'state':
-        this.queue = [];
         this.view.set(message.view);
         this.log.set(message.history);
         this.rejection.set(null);
+        this.synchronized.set(true);
+        this.frames.next(message);
         break;
       case 'update':
-        this.queue.push(message);
-        if (this.pacing === undefined) {
-          this.applyNext();
-        }
+        this.applyUpdate(message);
         break;
       case 'rejected':
         this.rejection.set({ reason: message.reason, message: message.message });
@@ -91,28 +89,23 @@ export class GameSocketService implements OnDestroy {
     }
   }
 
-  /** One queued update at a time; a version that is not the next one means a message was missed. */
-  private applyNext(): void {
-    const next = this.queue.shift();
-    if (next === undefined) {
-      this.pacing = undefined;
-      return;
-    }
+  /** Transport validates order immediately; the Director owns presentation pacing. */
+  private applyUpdate(next: Extract<ServerMessage, { type: 'update' }>): void {
+    if (!this.synchronized()) return;
     const current = this.view()?.version ?? -1;
     if (next.view.version <= current) {
-      this.applyNext();
       return;
     }
     if (next.view.version > current + 1) {
-      this.queue = [];
-      this.pacing = undefined;
+      this.synchronized.set(false);
+      this.frames.next({ type: 'snap' });
       this.send({ type: 'sync' });
       return;
     }
     this.view.set(next.view);
     this.log.update((log) => [...log, ...next.events]);
     this.rejection.set(null);
-    this.pacing = setTimeout(() => this.applyNext(), UPDATE_PACE_MS);
+    this.frames.next(next);
   }
 
   private send(message: ClientMessage): void {
@@ -126,6 +119,8 @@ export class GameSocketService implements OnDestroy {
   }
 
   private closed(event: CloseEvent): void {
+    this.synchronized.set(false);
+    this.frames.next({ type: 'snap' });
     if (event.code === REPLACED) {
       this.status.set('replaced');
     }

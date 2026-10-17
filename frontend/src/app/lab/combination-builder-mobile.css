@@ -1,0 +1,5 @@
+@media(max-width:1000px) { .builder-layout { gap: 1.5rem; grid-template-columns: minmax(0,1fr) 290px; } .options { grid-template-columns: 1fr; } }
+@media(max-width:700px) { .builder-layout { grid-template-columns: 1fr; gap: .75rem; } .results { position: static; grid-row: 2; margin-top: 0; } .options { grid-template-columns: 1fr 1fr; } .option { padding: .8rem .6rem; } .option strong { font-size: .74rem; } .option small { font-size: .65rem; } }
+@media(max-width:700px) { .mobile-results { display: flex; width: 100%; justify-content: space-between; margin-bottom: 1.8rem; font-size: .8rem; } .results { scroll-margin-top: 1rem; } }
+@media(max-width:340px) { .options { grid-template-columns: 1fr; } }
+

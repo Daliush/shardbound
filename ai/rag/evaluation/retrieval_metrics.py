@@ -23,15 +23,6 @@ def recall_at_k(relevant_ranks: dict[str, int | None], k: int) -> float:
     return found / len(relevant_ranks)
 
 
-def recall(relevant_ranks: dict[str, int | None]) -> float:
-    """The share of the relevant chunks ranked at all, however far down the ranking."""
-    found = 0
-    for rank in relevant_ranks.values():
-        if rank is not None:
-            found += 1
-    return found / len(relevant_ranks)
-
-
 def reciprocal_rank(relevant_ranks: dict[str, int | None]) -> float:
     """1 / the rank of the first relevant chunk (first: 1.0, third: 0.33), 0.0 when none is ranked."""
     first_rank = None

@@ -1,0 +1,23 @@
+@media (max-width: 800px) {
+  :host { --home-card-width: clamp(220px, 66vw, 290px); --carousel-step: calc(var(--home-card-width) * .8); }
+  .portal-stage { margin-inline: -1rem; padding-top: 1.5rem; }
+  .portals { position: relative; display: block; min-height: calc(var(--home-card-width) * 1.24 + 44px); touch-action: pan-y pinch-zoom; }
+  .card-pedestal { position: absolute; left: 50%; top: 18px; width: var(--home-card-width); margin-left: calc(var(--home-card-width) / -2); z-index: 1; transform: translateX(calc(var(--slot) * var(--carousel-step))) translateY(24px) scale(.76); opacity: .72; transition: transform var(--slide-duration) var(--ease-out), opacity 240ms ease; }
+  .card-pedestal.carousel-main { z-index: 3; transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+  .card-pedestal.recycling { z-index: 0; opacity: 0; transition: transform var(--slide-duration) var(--ease-out), opacity 90ms ease-out; pointer-events: none; }
+  .card-pedestal .portal { width: 100%; transform: none; touch-action: pan-y pinch-zoom; }
+  .card-surface { transform: none; }
+  .card-pedestal .faction-label, .card-pedestal .faction-style { display: none; }
+  .carousel-controls { display: flex; align-items: center; justify-content: space-between; gap: .75rem; width: min(100% - 3rem, 330px); margin: 1.1rem auto 0; }
+  .carousel-arrow { width: 44px; height: 44px; flex: 0 0 44px; padding: .65rem; border-color: color-mix(in srgb, var(--faction) 30%, transparent); background: color-mix(in srgb, var(--obsidian-950) 60%, transparent); color: var(--faction); border-radius: 50%; }
+  .carousel-arrow.previous app-icon { rotate: 180deg; }
+  .carousel-arrow:focus-visible { outline-color: var(--faction); }
+  .carousel-caption { text-align: center; }
+  .carousel-name { display: flex; align-items: center; justify-content: center; gap: .5rem; margin: 0; font: 600 2rem/1 var(--font-title); color: var(--text); }
+  .carousel-name app-icon { width: 22px; height: 22px; color: var(--faction); }
+  .carousel-style { margin: .45rem 0 0; font-size: .72rem; color: var(--text); }
+  .carousel-position { display: flex; justify-content: center; gap: 6px; margin-top: .8rem; }
+  .carousel-position span { width: 14px; height: 2px; background: var(--muted); opacity: .3; transition: opacity 180ms, background 180ms; }
+  .carousel-position .current { background: var(--faction); opacity: 1; }
+  .elements { display: none; }
+}

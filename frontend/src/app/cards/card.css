@@ -1,0 +1,30 @@
+:host { display: block; width: var(--card-width, 204px); aspect-ratio: 5 / 6.2; container-type: inline-size; --faction: var(--prism); --faction-deep: var(--prism-deep); --faction-light: var(--prism-light); text-align: left; }
+:host([data-mode='inspect']) { width: min(86vw, 380px); aspect-ratio: 5 / 7; }
+:host([data-mode='board']) { width: var(--unit-width, 176px); aspect-ratio: 1; }
+:host([data-mode='thumb']) { width: 42px; aspect-ratio: 5 / 7; }
+.perspective { width: 100%; height: 100%; perspective: 900px; position: relative; }
+.artifact { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 1350ms var(--ease-spring); }
+.face, .edge { position: absolute; inset: 0; border-radius: 10px; }
+.edge { background: var(--obsidian-800); transform: translateZ(-2px); }.edge.second { transform: translateZ(-4px); }
+.face { backface-visibility: hidden; background: var(--game-surface); border: 1px solid color-mix(in srgb, var(--faction) 45%, var(--line)); overflow: hidden; }
+.front { padding: 9px; display: flex; flex-direction: column; }
+.nameplate { display: flex; align-items: center; min-height: 30px; padding-left: 39px; font: 600 max(13px, 6.2cqw)/1.12 var(--font-ui); color: var(--text); }
+.nameplate > app-icon { display: none; }.nameplate span { overflow-wrap: anywhere; }
+.cost { position: absolute; left: 8px; top: 9px; display: flex; align-items: center; gap: 2px; color: var(--game-cost); }
+.cost app-icon { width: 12px; height: 17px; }.cost b { font: 600 max(23px, 11cqw)/1 var(--font-ui); font-variant-numeric: tabular-nums; }.cost s { font-size: 10px; }
+.cost.cheaper { color: var(--heal); }.cost.dearer { color: var(--damage); }
+.art-window { position: relative; flex: 0 0 20%; margin-top: 6px; overflow: hidden; border-radius: 5px; background: var(--obsidian-800); }
+.art-window img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.type-line { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font: 500 max(10px, 4.5cqw)/1.1 var(--font-ui); color: var(--faction-light); text-transform: capitalize; }.type-line app-icon { width: 13px; height: 13px; }
+.rules { flex: 1; min-height: 0; padding: 3px 0; overflow-y: auto; scrollbar-width: thin; font: 400 max(12px, 5.6cqw)/1.4 var(--font-ui); color: var(--game-rule-text); }
+.rules p { margin: 0 0 .4em; }.rules [data-kind='keywords'] { font-weight: 600; }.rules .flavor { display: none; }
+.defense { display: flex; justify-content: flex-end; align-items: center; gap: 4px; flex: 0 0 26px; margin-top: 4px; color: var(--game-defense); }
+.defense app-icon { width: 16px; height: 18px; color: var(--game-defense-icon); }.defense b { font: 600 max(23px, 10cqw)/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+.defense small { font: 500 max(12px, 5cqw)/1 var(--font-ui); color: var(--muted); }.defense.damaged, .defense.damaged app-icon { color: var(--damage); }
+.seal, .foil, .glare { display: none; }
+.state-icons { display: flex; gap: 5px; position: absolute; top: 48px; right: 13px; padding: 3px; background: color-mix(in srgb, var(--obsidian-950) 90%, transparent); border-radius: 4px; }
+.state-icons:empty { display: none; }.state-icons app-icon { width: 14px; height: 14px; }.attack-chips { display: none; }
+.modifiers { position: absolute; top: 76px; right: 12px; }.modifiers .badge { background: var(--game-surface); color: var(--heal); font-size: 11px; }
+.fracture-pips { display: flex; gap: 4px; position: absolute; bottom: 10px; left: 10px; }
+.fracture-pips app-icon { width: 12px; height: 12px; }.fracture-pips span { color: var(--muted); }.fracture-pips .lit { color: var(--faction-light); }
+

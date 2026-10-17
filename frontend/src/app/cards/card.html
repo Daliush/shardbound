@@ -1,0 +1,35 @@
+<div class="perspective" [attr.data-faction]="faction()" [attr.data-mark]="mark()" [class.frozen]="unit()?.frozen" [class.doomed]="unit()?.doomed" [class.spent]="unit()?.hasAttackedThisTurn" [class.arrived]="unit()?.arrivedThisTurn" [class.token]="unit()?.token || definition()?.token" [class.anchored]="unit()?.anchorProtected">
+  <article class="artifact" [style.transform]="transform()" [attr.aria-label]="accessibleText()" [style.--glare]="pointer().glare + '%'" [style.--foil-strength]=".05 + (printedCost() ?? 0) * .012">
+    <div class="edge"></div><div class="edge second"></div>
+    <div class="face front" [attr.aria-hidden]="back()">
+      <div class="nameplate"><app-icon [name]="faction()" /><span>{{ book.name(cardId()) }}</span></div>
+      @if (cost() !== undefined) {
+        <div class="cost" [class.cheaper]="hand() && cost()! < printedCost()!" [class.dearer]="hand() && cost()! > printedCost()!">
+          <app-icon name="shard" /><b>{{ cost() }}</b><span class="sr-only">Shards</span>
+          @if (hand() && printedCost() !== cost()) { <s>{{ printedCost() }}</s> }
+        </div>
+      }
+      <div class="art-window" [class.medallion]="definition()?.type === 'relic'"><img [src]="artSource()" alt="" draggable="false" (error)="failedArt.set(cardId())" /><div class="foil"></div></div>
+      <div class="type-line">{{ definition()?.token ? 'Token ' : '' }}{{ definition()?.type }} · {{ faction() }}<app-icon [name]="faction()" /></div>
+      <div class="rules" [class.dense]="(accessibleText().length > 290)">
+        @for (line of displayLines(); track $index) {
+          <p [attr.data-kind]="line.kind"><app-rules-text [text]="line.text" /></p>
+        }
+        @if (definition()?.flavor) { <p class="flavor">{{ definition()?.flavor }}</p> }
+      </div>
+      @if (definition()?.fracture; as steps) {
+        <div class="fracture-pips" aria-label="Fracture steps">@for (step of steps; track step.step) { <span [class.lit]="step.step === hand()?.fractureStep" [title]="'Fracture step ' + step.step"><app-icon name="fracture" /></span> }</div>
+      }
+      @if (unit(); as u) {
+        <div class="state-icons">@for (state of states(); track state.label) { <span [title]="state.label"><app-icon [name]="state.icon" /><span class="sr-only">{{ state.label }}</span></span> }</div>
+        <div class="attack-chips">@for (attack of u.attacks; track attack.index) { <span [class.ready]="readyAttacks().includes(attack.index)" [title]="(attack.name ?? 'Attack') + ': ' + attack.cost + ' Shards, ' + (attack.damage ?? 'effect') + ' damage'"><app-icon name="shard" />{{ attack.cost }}<app-icon name="sword" />{{ attack.damage ?? '—' }}@if (attack.echo !== null) { <app-icon name="echo" /> }</span> }</div>
+        <div class="modifiers">@for (modifier of u.modifiers; track $index) { <span class="badge" [class.temporary]="modifier.duration === 'end_of_turn'" [title]="modifier.duration === 'end_of_turn' ? 'Until end of turn' : 'Permanent'">{{ signed(modifier.attackDamage) }}/{{ signed(modifier.defense) }}</span> }</div>
+      }
+      @if ((unit()?.defense ?? definition()?.defense) !== undefined) {
+        <div class="defense" [class.damaged]="unit() && unit()!.defense < unit()!.maxDefense"><app-icon name="shield" /><b>{{ unit()?.defense ?? definition()?.defense }}</b>@if (unit()) { <small>/{{ unit()!.maxDefense }}</small> }<span class="sr-only">Defense</span></div>
+      } @else { <app-icon class="seal" [name]="definition()?.type === 'spell' ? 'neutral' : faction()" /> }
+      <div class="glare"></div>
+    </div>
+    <div class="face back" [attr.aria-hidden]="!back()"><div class="back-border"></div><div class="back-sigil"><app-icon name="neutral" /><span>Shardbound</span></div></div>
+  </article>
+</div>

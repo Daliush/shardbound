@@ -1,0 +1,10 @@
+<section class="question-detail">
+  <header><div><p class="muted">{{ humanize(category()) }}</p>@if (question(); as asked) { <h2 class="asked">{{ asked.question }}</h2><code class="question-id">{{ id() }}</code> } @else { <h2>{{ id() }}</h2> }</div><button class="quiet" (click)="closed.emit()">Close question</button></header>
+  @if (question(); as asked) {
+    <section class="answer-key" aria-label="Answer key"><h3>Answer key</h3>
+      @if (asked.answerable) { <ul>@for (fact of asked.key_facts; track $index) { <li>{{ fact }}</li> }</ul> }
+      @else { <p>Unanswerable: the rules don't cover it, so the Arbiter should say so rather than answer.</p> }
+    </section>
+  }
+  <app-pipeline-flow [id]="id()" [runs]="runs()" [cards]="question()?.cards ?? []" />
+</section>

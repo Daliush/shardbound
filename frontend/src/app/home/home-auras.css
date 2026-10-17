@@ -1,0 +1,17 @@
+.elemental-aura { position: absolute; inset: -12% -15%; pointer-events: none; color: var(--faction); opacity: .65; transition: opacity 450ms; }
+.elemental-aura::before { content: ''; position: absolute; inset: 7% 10%; border-radius: 38%; background: radial-gradient(ellipse at 15% 65%, color-mix(in srgb, var(--faction) 50%, transparent), transparent 50%), radial-gradient(ellipse at 85% 40%, color-mix(in srgb, var(--faction) 38%, transparent), transparent 55%); filter: blur(18px); }
+.elemental-aura::after { content: ''; position: absolute; bottom: -1%; left: 15%; width: 70%; height: 9%; border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--faction) 38%, transparent), transparent 70%); filter: blur(6px); }
+.aura-filaments { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; stroke: currentColor; stroke-width: .9; stroke-linecap: round; filter: drop-shadow(0 2px 4px var(--faction)); }
+.aura-filaments path { opacity: .5; animation: elemental-breath 6s ease-in-out var(--phase) infinite; transform-origin: center; }
+.aura-filaments path:nth-child(2) { animation-delay: calc(var(--phase) - 2s); opacity: .7; }
+.aura-filaments path:nth-child(3) { animation-delay: calc(var(--phase) - 4s); opacity: .3; }
+[data-faction='ember'] .aura-filaments { stroke-width: 1.3; }
+[data-faction='ember'] .elemental-aura::before { background: radial-gradient(ellipse at 20% 75%, #f676334f, transparent 48%), radial-gradient(ellipse at 80% 55%, #ffb14b42, transparent 53%); }
+[data-faction='tide'] .aura-filaments { transform: rotate(-5deg); }
+[data-faction='root'] .aura-filaments { stroke-width: 1.2; }
+.active .elemental-aura, .chosen .elemental-aura { opacity: 1; }
+@keyframes elemental-breath { 0%, 100% { translate: 0 3px; opacity: .25; } 50% { translate: 0 -5px; opacity: .8; } }
+@media (max-width: 800px) { .elemental-aura { inset: -8% -10%; opacity: .55; } .elemental-aura::before { filter: blur(10px); } }
+:host(.scene-paused) .aura-filaments path { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .aura-filaments path { animation: none; } }
+

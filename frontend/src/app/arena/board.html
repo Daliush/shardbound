@@ -1,0 +1,54 @@
+<div class="table" appAnchor="camera" [attr.data-faction]="view().you.faction" [class.intercept]="combat()">
+  <app-board-links [view]="view()" [combat]="combat()" />
+  @for (row of rows(); track row.side) {
+    @if (row.player; as player) {
+      <section class="side" [class.yours]="row.side === 'you'" [class.theirs]="row.side === 'opponent'" [attr.aria-label]="row.side === 'you' ? 'Your board' : 'Opponent board'" [attr.data-faction]="player.faction">
+        <app-player-hud [player]="player" [side]="row.side" [handCount]="row.side === 'you' ? view().you.hand.length : view().opponent!.handCount" [active]="view().activePlayer === row.side" [mark]="mark('player:' + row.side)" [label]="labels()['player:' + row.side] || ''" (picked)="pick('player:' + row.side)" />
+        <div class="field">
+          <div class="terrain-pile deck-pile" [appAnchor]="'deck:' + row.side" [attr.aria-label]="(row.side === 'you' ? 'Your' : 'Opponent') + ' deck: ' + player.deckCount + ' cards'">
+            <div class="stack" [class.depleted]="player.deckCount === 0"><app-card [back]="true" mode="thumb" /><b>{{ player.deckCount }}</b></div>
+            <span>Deck</span>@if (player.fatigue) { <small class="fatigue">Fatigue {{ player.fatigue }}</small> }
+          </div>
+          <div class="units" [attr.data-key]="row.side === 'you' ? 'board' : null" [appAnchor]="'board:' + row.side">
+            @for (unit of player.units; track unit.id) {
+              <div class="unit-slot" [class.attacker]="isAttacker(unit)" [class.defender]="isDefender(unit)">
+                @if (isAttacker(unit)) { <span class="combat-tag attacking"><app-icon name="sword" />Attacking</span> }
+                @else if (isDefender(unit)) { <span class="combat-tag threatened"><app-icon name="shield" />Under attack</span> }
+                @else if (canIntercept(unit)) { <span class="combat-tag intercept-ready"><app-icon name="shield" />Drag to protect</span> }
+                <button class="unit-piece" [appAnchor]="'unit:' + unit.id" [attr.data-key]="'unit:' + unit.id" [appCardPreview]="{ id: unit.card, unit }" [attr.aria-label]="labels()['unit:' + unit.id] || 'Inspect ' + book.name(unit.card) + ' #' + unit.id" (click)="pick('unit:' + unit.id, unit.card)" (pointerdown)="press.emit({ key: 'unit:' + unit.id, event: $event })" (contextmenu)="$event.preventDefault(); inspect.open({ id: unit.card, unit })">
+                  <app-card [cardId]="unit.card" [unit]="unit" mode="board" [mark]="mark('unit:' + unit.id)" [readyAttacks]="readyAttacks(unit)" />
+                </button>
+                @if (attacks(unit).length) {
+                  <div class="attack-choices">@for (attack of attacks(unit); track attack.attackIndex) {
+                    @let details = attackDetails(unit, attack.attackIndex);
+                    <button [attr.aria-label]="attackLabel(unit, attack.attackIndex) + ': choose a target'" (pointerdown)="press.emit({ key: 'unit:' + unit.id, event: $event, attack: attack.attackIndex })" (click)="action.emit('attack:' + unit.id + ':' + attack.attackIndex)"><app-icon name="sword" /><span>{{ attackLabel(unit, attack.attackIndex) }}</span><span class="attack-cost"><app-icon name="shard" />{{ details?.cost }}</span></button>
+                  }</div>
+                }
+              </div>
+            } @empty { <div class="empty-board"><app-icon [name]="player.faction" /><span>{{ row.side === 'you' ? 'Your units enter here' : 'Opponent’s field' }}</span></div> }
+          </div>
+          <button class="terrain-pile grave-pile" [appAnchor]="'graveyard:' + row.side" [attr.aria-label]="'Open ' + (row.side === 'you' ? 'your' : 'opponent') + ' graveyard, ' + player.graveyard.length + ' cards'" (click)="graveyard.emit(row.side)">
+            <div class="grave-surface">@if (player.graveyard.at(-1); as card) { <app-card [cardId]="card.card" mode="thumb" /> } @else { <app-icon name="graveyard" /> }<b>{{ player.graveyard.length }}</b></div>
+            <span>Graveyard</span>
+          </button>
+        </div>
+        @if (player.relics.length) { <div class="relics">
+          @for (relic of player.relics; track relic.id) { <button class="relic-piece" [appAnchor]="'relic:' + relic.id" [attr.data-key]="'relic:' + relic.id" [appCardPreview]="{ id: relic.card }" [attr.aria-label]="labels()['relic:' + relic.id] || 'Inspect ' + book.name(relic.card)" (click)="pick('relic:' + relic.id, relic.card)"><app-card [cardId]="relic.card" mode="thumb" [mark]="mark('relic:' + relic.id)" /><span>{{ book.name(relic.card) }}</span></button> }
+        </div> }
+      </section>
+    }
+    @if (row.side === 'opponent') {
+      <div class="battle-line" role="status">
+        @if (combat(); as battle) {
+          <p class="combat-summary"><app-icon name="sword" /><strong>{{ book.name(battle.attackerCard) }}</strong><app-icon name="arrow" /><strong>{{ book.name(battle.targetCard) }}</strong><span>{{ view().decision?.kind === 'intercept' ? 'Drag a glowing unit onto the defender to intercept.' : 'Opponent is choosing an interceptor…' }}</span></p>
+        } @else { <p>Turn {{ view().turn }}<b>{{ view().yourTurn ? 'Your turn' : 'Opponent’s turn' }}</b></p> }
+      </div>
+    }
+  }
+  <div class="hand" appAnchor="hand:you" aria-label="Your hand">
+    <div class="hand-heading"><span>Your hand <b>{{ view().you.hand.length }}</b></span><span class="hand-hint">Hover to read · Drag to play</span><button class="open-hand quiet" (click)="handOpened.emit()"><app-icon name="deck" />Browse hand</button></div>
+    <div class="fan">@for (card of view().you.hand; track card.id) {
+      <button class="hand-piece" [appAnchor]="'card:' + card.id" [attr.data-key]="'card:' + card.id" [appCardPreview]="{ id: card.card, hand: card }" [attr.aria-label]="labels()['card:' + card.id] || 'Inspect ' + book.name(card.card)" (click)="pick('card:' + card.id, card.card)" (pointerdown)="press.emit({ key: 'card:' + card.id, event: $event })" (contextmenu)="$event.preventDefault(); inspect.open({ id: card.card, hand: card })"><app-card [cardId]="card.card" [hand]="card" [mark]="mark('card:' + card.id)" /></button>
+    }</div>
+  </div>
+</div>

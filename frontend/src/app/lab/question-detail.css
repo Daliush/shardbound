@@ -1,0 +1,12 @@
+.question-detail { border-top: 1px solid var(--line); margin-top: 2.5rem; padding-top: 2rem; }
+header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+header p { font-size: .75rem; margin-bottom: .7rem; }
+header h2 { font: 500 clamp(.95rem,2vw,1.3rem)/1.5 var(--font-number); overflow-wrap: anywhere; }
+header h2.asked { font: 500 clamp(1rem,2.2vw,1.35rem)/1.5 var(--font-ui); white-space: pre-line; }
+header button { flex-shrink: 0; font-size: .72rem; }
+.question-id { display: block; margin-top: .5rem; font-size: .68rem; color: var(--muted); overflow-wrap: anywhere; }
+.answer-key { margin: 1.4rem 0 0; padding: 1rem 1.2rem; border-left: 2px solid var(--heal); background: var(--lab-surface); }
+.answer-key h3 { font-size: .8rem; font-weight: 500; margin: 0 0 .6rem; }
+.answer-key ul { margin: 0; padding-left: 1.1rem; }
+.answer-key li, .answer-key p { font-size: .78rem; line-height: 1.7; margin: 0; }
+@media(max-width:750px) { header { flex-wrap: wrap; } }

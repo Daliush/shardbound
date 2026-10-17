@@ -4,8 +4,21 @@
   <meta charset="utf-8">
   <title>Shardbound</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#252d3a">
+  <script>
+    // Apply the saved theme before first paint, including on direct deep links.
+    (() => {
+      let theme = 'system';
+      try { theme = JSON.parse(localStorage.getItem('shardbound.preferences') || '{}').theme || 'system'; } catch {}
+      const dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      document.querySelector('meta[name="theme-color"]').content = dark ? '#252d3a' : '#e6e3dc';
+    })();
+  </script>
+  <meta name="description" content="An invented card game built as a testbed for AI engineering: a rules Arbiter evaluated with RAG, AI opponents, and their benchmarks.">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
   <app-root></app-root>

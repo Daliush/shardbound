@@ -1,4 +1,4 @@
-from rag.evaluation.retrieval_metrics import find_relevant_ranks, recall, recall_at_k, reciprocal_rank
+from rag.evaluation.retrieval_metrics import find_relevant_ranks, recall_at_k, reciprocal_rank
 
 RELEVANT = frozenset({"11.3.2", "11.3.3", "11.5.4", "neutral.tempest"})
 """The example we worked through: 11.3.2 first, Tempest third, 11.5.4 twelfth, 11.3.3 not ranked."""
@@ -22,11 +22,6 @@ def test_recall_at_k_is_the_share_of_the_relevant_chunks_among_the_first_k():
     assert recall_at_k(RANKS, 5) == 0.5
     assert recall_at_k(RANKS, 11) == 0.5
     assert recall_at_k(RANKS, 12) == 0.75
-
-
-def test_recall_counts_the_relevant_chunks_however_far_they_are_ranked():
-    assert recall(RANKS) == 0.75
-    assert recall({**RANKS, "11.3.3": 22}) == 1.0
 
 
 def test_reciprocal_rank_reads_the_rank_of_the_first_relevant_chunk_only():

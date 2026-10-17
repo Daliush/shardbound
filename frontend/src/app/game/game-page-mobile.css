@@ -1,0 +1,5 @@
+@media(max-width:700px) {
+ .arena-toolbar { padding-inline: 6px; gap: 5px; }.arena-brand { font-size: 20px; }.chronicle-toggle { font-size: 11px; padding: 5px; }.skip { font-size: 11px; padding: 5px; }.connection { font-size: 10px; }
+ .decision-dock { flex-wrap: wrap; gap: 7px; padding: 9px 12px; }.decision-copy { flex-basis: 100%; font-size: 12px; }.decision-actions { max-width: 100%; width: 100%; justify-content: flex-end; }.decision-actions button { padding: 7px 10px; min-height: 40px; font-size: 11px; }.end-turn { min-width: 120px; }
+ .choice-tray { padding-inline: 10px; max-height: 30dvh; }.result { padding: 24px; }.result h1 { font-size: 52px; }
+}
