@@ -69,7 +69,7 @@ final class RuleChunker {
                 .map(String::strip)
                 .toList());
         String text = buildHeadingPrefix(rule.id(), sectionTitles) + " " + body;
-        return new Chunk(rule.id(), Chunk.Kind.RULE, text, WrittenRefs.findRefsInText(body), source);
+        return Chunk.rule(rule.id(), text, WrittenRefs.findRefsInText(body), source);
     }
 
     /**

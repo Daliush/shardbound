@@ -12,10 +12,10 @@ What each step does and why lives in `docs/design.md` §5.2 and §6, `ai/README.
 | Step | Command, from the root | Needs | Writes |
 |---|---|---|---|
 | Dataset | `bash scripts/build-dataset.sh <version> --base <previous>` | JDK 21, uv, `LUNA_BASE_URL`, `LUNA_MODEL`, `LUNA_API_KEY` | `evals/datasets/<version>/` |
-| Chunks, index, evaluation | `bash scripts/evaluate.sh [retriever…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
+| Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
 | Served | the game server, `GET /api/evaluations/<v>/<split>` then `/<timestamp>` | the server running | nothing |
 
-`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every retriever on the latest dataset's dev split by default. `--split test` is only for the published numbers, never to choose anything.
+`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every retriever on the latest dataset's dev split by default. The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything.
 
 If `docker version` shows no server, ask the maintainer to start Docker Desktop. Do not reset it.
 
@@ -28,6 +28,7 @@ If `docker version` shows no server, ask the maintainer to start Docker Desktop.
 | A card | The chunks and a new dataset version: factual questions and scenarios read the cards. |
 | A recipe, or a written question | A new dataset version. |
 | A retriever or a metric (`ai/rag`) | `evaluate.sh` alone. |
+| An entity (`ai/rag/repository/entities.py`) | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, so the database starts empty and every chunk is embedded again. |
 
 A built dataset version is frozen. A change makes a new version on the previous one (`build-dataset.sh v3 --base v2`): an unchanged question keeps its wording and its side of the split, so only new or changed questions go to Luna. `rag evaluate` reads the version that `ai/rag/__main__.py` names by default; move that default, and `CLAUDE.md`'s status, to the new version.
 
@@ -61,11 +62,13 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
                if old_ranks.get(question["question_id"]) != question["top_chunk_ids"]]
       print(f'{name}: R@10 {before["mean_recall_at"]["10"]:.3f} -> {after["mean_recall_at"]["10"]:.3f}, '
             f'R@20 {before["mean_recall_at"]["20"]:.3f} -> {after["mean_recall_at"]["20"]:.3f}, '
-            f'MRR {before["mean_reciprocal_rank"]:.3f} -> {after["mean_reciprocal_rank"]:.3f}, ranked differently: {moved}')
+            f'MRR {before["mean_reciprocal_rank"]:.3f} -> {after["mean_reciprocal_rank"]:.3f}, '
+            f'candidate recall {before.get("mean_candidate_recall")} -> {after.get("mean_candidate_recall")}, '
+            f'ranked differently: {moved}')
   EOF
   ```
 
-  A question whose id changed shows as ranked differently. A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
+  A question whose id changed shows as ranked differently; a report written before the candidate measures has none (`None`). A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
 - **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`, or the `api` configuration of `.claude/launch.json`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
 
 ## In a worktree, beside the maintainer's work

@@ -20,15 +20,19 @@ class Layers:
 @dataclass(frozen=True)
 class Run:
     layers: Layers
+    description: str
+    """What the layers do, as each describes itself: today the retriever's description."""
     report: Report
 
 
 @dataclass(frozen=True)
 class Evaluation:
-    """One `evaluate` command: when, on which code and dataset split, and the runs it scored."""
+    """One `evaluate` command: when, on which code and dataset split, why, and the runs it scored."""
 
     version: str
     split: str
     evaluated_at: datetime
     code_commit: str
+    description: str
+    """Why it was run, as whoever ran it wrote it: "Step 6: the cards a question names and the refs expansion"."""
     runs: list[Run]

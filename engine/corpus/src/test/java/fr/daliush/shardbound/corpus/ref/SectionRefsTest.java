@@ -38,6 +38,6 @@ class SectionRefsTest {
     }
 
     private static Chunk ruleChunk(String id, List<String> refs) {
-        return new Chunk(id, Chunk.Kind.RULE, "Rule " + id + ".", refs, "r");
+        return Chunk.rule(id, "Rule " + id + ".", refs, "r");
     }
 }

@@ -12,6 +12,10 @@ class RandomRetriever(Retriever):
         self._chunk_ids = list(chunk_ids)
         self._seed = seed
 
+    @property
+    def description(self) -> str:
+        return f"every chunk in a random order (seed {self._seed})"
+
     def rank_chunks(self, question: str) -> list[str]:
         ranked = list(self._chunk_ids)
         random.Random(f"{self._seed}/{question}").shuffle(ranked)

@@ -34,8 +34,7 @@ public final class CardChunker {
 
     static Chunk chunkCard(CardDefinition card, CardTextRenderer renderer) {
         String text = writeStatsLine(card) + "\n" + String.join("\n", renderer.render(card).texts());
-        return new Chunk(card.id().value(), Chunk.Kind.CARD, text, CardRefs.findRefsOfCard(card),
-                sourceFilePath(card));
+        return Chunk.card(card.id().value(), card.name(), text, CardRefs.findRefsOfCard(card), sourceFilePath(card));
     }
 
     /** "Root Sentinel: Root unit, costs 2 Shards, 5 defense." Tokens and Fracture spells have no cost of their own. */

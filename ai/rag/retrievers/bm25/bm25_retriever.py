@@ -34,6 +34,13 @@ class Bm25Retriever(Retriever):
         self._index = bm25s.BM25(method=settings.formula, k1=settings.k1, b=settings.b)
         self._index.index([self._split_into_words(chunk.text) for chunk in chunks], show_progress=False)
 
+    @property
+    def description(self) -> str:
+        settings = self._settings
+        return (f"BM25 ({settings.formula} formula, k1 = {settings.k1}, b = {settings.b}, "
+                f"{'stemmed' if settings.stemming else 'unstemmed'} words, "
+                f"stop words {'removed' if settings.stop_words_removed else 'kept'})")
+
     def rank_chunks(self, question: str) -> list[str]:
         """Only the chunks sharing at least one word with the question: the others score 0, BM25 found nothing."""
         scores = self._index.get_scores(self._split_into_words(question))

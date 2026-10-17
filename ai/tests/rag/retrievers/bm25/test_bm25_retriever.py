@@ -4,10 +4,10 @@ from rag.chunks import Chunk
 from rag.retrievers.bm25.bm25_retriever import Bm25Retriever, Bm25Settings
 
 CHUNKS = [
-    Chunk("8.2", "rule", "[8. Effects] **Destroy**: sends a unit or relic to the graveyard.", (), "r", "h"),
-    Chunk("8.4", "rule", "[8. Effects] **Heal X**: restores X defense to a unit.", (), "r", "h"),
-    Chunk("11.3.4", "rule", "[11.3 Anchor] A unit at 0 defense while protected is **doomed**.", (), "r", "h"),
-    Chunk("7.6", "rule", "[7. Combat] **No retaliation**: the target deals nothing back.", (), "r", "h"),
+    Chunk("8.2", "rule", None, "[8. Effects] **Destroy**: sends a unit or relic to the graveyard.", (), "r", "h"),
+    Chunk("8.4", "rule", None, "[8. Effects] **Heal X**: restores X defense to a unit.", (), "r", "h"),
+    Chunk("11.3.4", "rule", None, "[11.3 Anchor] A unit at 0 defense while protected is **doomed**.", (), "r", "h"),
+    Chunk("7.6", "rule", None, "[7. Combat] **No retaliation**: the target deals nothing back.", (), "r", "h"),
 ]
 
 
@@ -31,6 +31,13 @@ def test_keeps_the_stop_words_unless_told_to_remove_them():
 
     assert Bm25Retriever(CHUNKS).rank_chunks(question)[0] == "7.6"
     assert "7.6" in Bm25Retriever(CHUNKS, Bm25Settings(stop_words_removed=True)).rank_chunks(question)
+
+
+def test_describes_itself_by_its_settings():
+    assert Bm25Retriever(CHUNKS).description == (
+        "BM25 (lucene formula, k1 = 1.5, b = 0.75, stemmed words, stop words kept)")
+    assert Bm25Retriever(CHUNKS, Bm25Settings(stemming=False, stop_words_removed=True)).description == (
+        "BM25 (lucene formula, k1 = 1.5, b = 0.75, unstemmed words, stop words removed)")
 
 
 @pytest.mark.parametrize("formula", ["lucene", "robertson", "atire", "bm25l", "bm25+"])

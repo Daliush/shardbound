@@ -14,12 +14,13 @@ from rag.retrievers import Retriever
 from rag.retrievers.registry import build_retriever
 
 
-def evaluate_all(retriever_names: list[str], root: Path, version: str, split: str,
+def evaluate_all(retriever_names: list[str], root: Path, version: str, split: str, description: str,
                  evaluation_repository: EvaluationRepository) -> Evaluation:
     """
     One run per retriever, its answer layer empty until there is a generator, on the questions of
-    `dataset-<split>.jsonl`; saved by `evaluation_repository` as a new document. Every retriever reads the indexed
-    chunks from the database, never the engine's file: a run can't mix two versions of the corpus.
+    `dataset-<split>.jsonl`; saved by `evaluation_repository` as a new document, with the `description` of why it
+    was run. Every retriever reads the indexed chunks from the database, never the engine's file: a run can't mix
+    two versions of the corpus.
     """
     evaluated_at = datetime.now(timezone.utc)
     code_commit = read_code_commit(root)
@@ -30,9 +31,10 @@ def evaluate_all(retriever_names: list[str], root: Path, version: str, split: st
     runs = []
     for retriever_name in retriever_names:
         retriever = build_retriever(retriever_name, chunks)
-        runs.append(Run(Layers(retriever=retriever_name, answer=None), evaluate(retriever, questions)))
+        runs.append(Run(Layers(retriever=retriever_name, answer=None), retriever.description,
+                        evaluate(retriever, questions)))
     evaluation = Evaluation(version=version, split=split, evaluated_at=evaluated_at, code_commit=code_commit,
-                            runs=runs)
+                            description=description, runs=runs)
     evaluation_repository.save_evaluation(evaluation)
     return evaluation
 

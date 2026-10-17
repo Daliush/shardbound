@@ -7,7 +7,7 @@ The Python side of the project: the code that calls or evaluates models (design 
 uv run pytest                                      # the tests; no model is called
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
 uv run python -m rag index                         # write the chunks and their vectors into the database
-uv run python -m rag evaluate                      # score every retriever on the dev questions (or name some)
+uv run python -m rag evaluate --description "…"    # score every retriever on the dev questions (or name some)
 ```
 
 ## What `dataset/` does
@@ -67,19 +67,23 @@ The Arbiter's RAG (design doc §5.2), one brick at a time, each measured on the 
 
 **The index** lives in Postgres with pgvector (the `db` service of `compose.yaml`): a `chunks` table, and a `chunk_embeddings` table with one vector per chunk and embedding model. `python -m rag index` embeds only the chunks whose text changed since a model last did, so a run where nothing changed loads no model.
 
+The tables are created from the entities when missing, never altered: there are no migrations, since everything in them is rebuilt from the repository. After a change to an entity, drop the database (`docker compose down -v`, from the root) and build the index again: every chunk is embedded again, about a minute on CPU.
+
 **The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
 
 ```text
-random on v1 dev, 61 answerable questions
+retriever random, answer None on v2 dev, 61 answerable questions
 
-| Questions | Count | Recall@10 | Recall@20 | MRR |
-|---|---:|---:|---:|---:|
-| all | 61 | 2.7% | 9.0% | 0.051 |
+| Questions | Count | Recall@10 | Recall@20 | MRR | Candidate recall | Candidates |
+|---|---:|---:|---:|---:|---:|---:|
+| all | 61 | 8.9% | 11.9% | 0.093 | 100.0% | 191.0 |
 | ...
 ```
 
-- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 what the reranker receives. It decides between two retrievers.
+- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
+- **Candidate recall** is the same share among every chunk the retriever returns, however many: the candidates the reranker receives, a ceiling for what it can keep. **Candidates** is their mean number, without which returning every chunk would score 100%, as random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ do; the other BM25 variants return only the chunks sharing a word with the question.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
+- **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), every metric being read from them.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
 
@@ -98,13 +102,14 @@ rag/
 │   ├── embedding_repository.py EmbeddingRepository, EmbeddingRepositoryPostgres: the vectors, ranked by cosine
 │   └── evaluation_repository.py EvaluationRepository, EvaluationRepositoryFile: one file per evaluation
 ├── retrievers/
-│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first
+│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first; its description
 │   ├── registry.py             every retriever by name
 │   ├── random/                 the floor
 │   ├── bm25/                   bm25_retriever.py, bm25_variants.py (the list of BM25 variants)
 │   ├── dense/                  embedding_models.py (the list of models), chunk_embedding.py (a chunk and its vector),
 │   │                           chunk_embedder.py (embed the changed chunks), dense_retriever.py (rank by cosine)
-│   └── fusion/                 rrf_retriever.py (several rankings merged by rank)
+│   ├── fusion/                 rrf_retriever.py (several rankings merged by rank)
+│   └── expansion/              expansion_retriever.py (a retriever's top, plus the named cards and the refs)
 └── evaluation/
     ├── evaluation_service.py   the flow: evaluate_all builds each retriever, evaluate runs it on every question
     ├── questions.py            Question: every question of a split, its relevant chunks, answerable or not
@@ -116,9 +121,9 @@ rag/
     └── report_table.py         the Markdown table
 ```
 
-- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`.
-- The database is the RAG's, not only dense retrieval's: `chunks` (a chunk and its refs, which the refs expansion will read) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), then per run its scores overall and by category and each question's first 20 chunks and metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`; an expansion one naming the retriever it wraps: `rrf-bm25-dense-expanded`.
+- The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), its description (why it was run: `--description` is required and cannot be blank; evaluations written before it have none), then per run its description (what its retriever does, which each retriever writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## Running the RAG on a new machine
@@ -129,9 +134,9 @@ Needs **JDK 21** (the engine writes the chunks), **uv** (Python and its packages
 # from the repository root: chunks, database and vectors, in one go
 scripts/build-index.sh
 # then, from ai/
-uv run python -m rag evaluate random bm25 dense-qwen3-0.6b
+uv run python -m rag evaluate random bm25 dense-qwen3-0.6b --description "A first look"
 # or both, from the root: the index, then the evaluation with these arguments
-scripts/evaluate.sh random bm25 dense-qwen3-0.6b
+scripts/evaluate.sh random bm25 dense-qwen3-0.6b --description "A first look"
 ```
 
 - `uv` installs the exact versions of `uv.lock`, with the **CPU build of torch** on every platform (`pyproject.toml` points uv at PyTorch's CPU index), about 200 MB instead of 2 GB.

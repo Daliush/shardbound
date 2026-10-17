@@ -70,7 +70,7 @@ def embedding_repository() -> EmbeddingRepositoryInMemory:
 @pytest.fixture
 def rule_chunks() -> list[Chunk]:
     return [
-        Chunk("11.3.2", "rule", "[11.3 Anchor] While protected, an anchor unit cannot be destroyed.", (), "r", "h1"),
-        Chunk("8.4", "rule", "[8. Effects] Heal X: restores X defense to a unit.", (), "r", "h2"),
-        Chunk("2.1", "rule", "[2. Deck building] A deck contains exactly 30 cards.", (), "r", "h3"),
+        Chunk("11.3.2", "rule", None, "[11.3 Anchor] A protected anchor unit cannot be destroyed.", (), "r", "h1"),
+        Chunk("8.4", "rule", None, "[8. Effects] Heal X: restores X defense to a unit.", (), "r", "h2"),
+        Chunk("2.1", "rule", None, "[2. Deck building] A deck contains exactly 30 cards.", (), "r", "h3"),
     ]

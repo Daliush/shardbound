@@ -27,6 +27,11 @@ class CardChunkerTest {
     }
 
     @Test
+    void namesTheChunkAfterItsCard() {
+        assertThat(chunkCardById("root.root-sentinel").name()).isEqualTo("Root Sentinel");
+    }
+
+    @Test
     void writesNoCostForATokenOrAFractureSpell() {
         assertThat(chunkCardById("root.sprout").text()).startsWith("Sprout: Root token unit, 2 defense.\n");
         assertThat(chunkCardById("tide.moonpull").text()).startsWith("Moonpull: Tide spell.\nFracture 3.\n");

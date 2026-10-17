@@ -1,17 +1,7 @@
-from rag.retrievers import Retriever
 from rag.retrievers.fusion.rrf_retriever import RrfRetriever
+from tests.rag.retrievers.fixed_ranking import FixedRanking
 
 QUESTION = "Can my anchored unit be destroyed?"
-
-
-class FixedRanking(Retriever):
-    """Ranks the same chunks whatever the question."""
-
-    def __init__(self, ranked_chunk_ids: list[str]) -> None:
-        self._ranked_chunk_ids = ranked_chunk_ids
-
-    def rank_chunks(self, question: str) -> list[str]:
-        return list(self._ranked_chunk_ids)
 
 
 def test_ranks_first_a_chunk_both_retrievers_rank_well_over_one_that_only_one_ranks_first():
@@ -46,3 +36,9 @@ def test_breaks_a_tie_by_the_order_of_the_retrievers():
     ranked = RrfRetriever([FixedRanking(["8.2"]), FixedRanking(["11.3.2"])]).rank_chunks(QUESTION)
 
     assert ranked == ["8.2", "11.3.2"]
+
+
+def test_describes_itself_by_its_k_and_the_retrievers_it_fuses():
+    fusion = RrfRetriever([FixedRanking([], "lexical retrieval"), FixedRanking([], "semantic retrieval")])
+
+    assert fusion.description == "RRF (k = 60) of lexical retrieval and semantic retrieval"

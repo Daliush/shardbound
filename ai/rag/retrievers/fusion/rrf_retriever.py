@@ -17,6 +17,13 @@ class RrfRetriever(Retriever):
         """Damps the top ranks: with 60, the first rank scores 1/61 and the tenth 1/70, close enough that being
         ranked by both retrievers beats being first in one."""
 
+    @property
+    def description(self) -> str:
+        fused = []
+        for retriever in self._retrievers:
+            fused.append(retriever.description)
+        return f"RRF (k = {self._k}) of " + " and ".join(fused)
+
     def rank_chunks(self, question: str) -> list[str]:
         score_by_chunk_id: dict[str, float] = {}
         for retriever in self._retrievers:
