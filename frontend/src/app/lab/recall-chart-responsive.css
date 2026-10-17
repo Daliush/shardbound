@@ -1,7 +1,8 @@
-.curve-readout { align-self: start; }
+.curve-readout { position: relative; align-self: start; }
 .readout-heading { display: flex; justify-content: space-between; padding-bottom: .75rem; margin-bottom: .25rem; border-bottom: 1px solid var(--line); font-size: .73rem; }
 .readout-heading strong { font-weight: 500; }.readout-heading span { color: var(--muted); }
-.readout-row { display: grid; grid-template-columns: 7px minmax(0,1fr) 48px; gap: .55rem; width: 100%; min-height: 30px; padding: .25rem 0; text-align: left; font-size: .68rem; border: 0; }
+.readout-row { position: relative; display: grid; grid-template-columns: 14px 7px minmax(0,1fr) 48px; align-items: center; gap: .55rem; width: 100%; min-height: 30px; padding: .25rem 0; text-align: left; font-size: .68rem; border: 0; background: var(--lab-surface); }
+.readout-rank { font-size: .6rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .readout-row i { width: 7px; height: 7px; border-radius: 50%; }
 .readout-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .readout-row strong { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }

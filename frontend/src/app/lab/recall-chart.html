@@ -27,10 +27,10 @@
         @else { <div class="budget-control"><label><span>Chunk budget <strong>k = {{ k() }}</strong></span><input type="range" aria-label="Chunk budget" [attr.aria-valuetext]="k() + ' chunks'" min="1" [max]="limit()" [value]="k()" (input)="setBudget($event)" /></label><div class="budget-presets"><button [attr.aria-pressed]="k() === 10" (click)="budget.set(10)">10</button><button [attr.aria-pressed]="k() === 20" (click)="budget.set(20)">20</button><button [attr.aria-pressed]="k() === 41" [disabled]="limit() < 41" (click)="budget.set(41)">41</button></div></div> }
         <p class="curve-note">{{ compact() && sample() && sample()! < 10 ? 'Small sample: one question can move this category by about ' + (100 / sample()!).toFixed(0) + ' points. ' : '' }}Dotted tails mean no more candidates. Recall stays flat.</p>
       </div>
-      @if (!compact()) { <aside class="curve-readout" aria-label="Exact recall values at selected budget">
+      @if (!compact()) { <aside #readoutPanel class="curve-readout" aria-label="Exact recall values at selected budget, best first">
         <div class="readout-heading"><strong>At {{ k() }} chunks</strong><span>Recall@{{ k() }}</span></div>
-        @for (item of series(); track item.key) {
-          <button class="readout-row quiet" [class.faded]="focused() && focused() !== item.key" [attr.aria-pressed]="focused() === item.key" [title]="item.description || item.name" (click)="highlight(item.key)"><i [style.background]="item.color"></i><span>{{ item.name }}</span><strong>{{ format('recall_at.' + k(),item.value) }}</strong></button>
+        @for (item of readout(); track item.key) {
+          <button class="readout-row quiet" [attr.data-readout-key]="item.key" [class.faded]="focused() && focused() !== item.key" [attr.aria-pressed]="focused() === item.key" [title]="item.description || item.name" (click)="highlight(item.key)"><small class="readout-rank">{{ item.rank ?? '' }}</small><i [style.background]="item.color"></i><span>{{ item.name }}</span><strong>{{ format('recall_at.' + k(),item.value) }}</strong></button>
         }
         <p class="readout-hint">Select a pipeline to highlight its curve.</p>
       </aside> }

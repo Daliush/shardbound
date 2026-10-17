@@ -1,9 +1,11 @@
-import { Component, ElementRef, OnDestroy, afterRenderEffect, computed, input, model, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, afterRenderEffect, computed, inject, input, model, signal, viewChild } from '@angular/core';
+import { gsap } from 'gsap';
 import { EvaluationRun } from '../api/evaluation';
+import { Settings } from '../core/settings';
 import { runKey } from './layer-model';
 import { atPath, candidateSummary, formatMetric, humanize } from './metrics';
 import { isVariant, pipelineName, runColor } from './presentation';
-import { curvePath, recallAt, recallCurve } from './recall-model';
+import { curvePath, rankAtBudget, recallAt, recallCurve } from './recall-model';
 import { LabMotion } from './lab-motion';
 
 @Component({
@@ -23,6 +25,10 @@ export class RecallChart implements OnDestroy {
   protected readonly ticks = [0,.25,.5,.75,1];
   protected readonly plotWidth = signal(790);
   private readonly canvas = viewChild<ElementRef<HTMLDivElement>>('canvas');
+  private readonly readoutPanel = viewChild<ElementRef<HTMLElement>>('readoutPanel');
+  private readonly settings = inject(Settings);
+  /** Where each readout row sat in the panel after the last render, so that a row the new order moves slides from there. */
+  private readonly rowTops = new Map<string,number>();
   private observer?: ResizeObserver;
   constructor() {
     afterRenderEffect(() => {
@@ -31,6 +37,11 @@ export class RecallChart implements OnDestroy {
       if (!canvas || typeof ResizeObserver === 'undefined') return;
       this.observer = new ResizeObserver(entries => { const width = Math.round(entries[0].contentRect.width); if (width > 0) this.plotWidth.set(Math.max(280,width)); });
       this.observer.observe(canvas);
+    });
+    afterRenderEffect(() => {
+      this.readout();
+      const panel = this.readoutPanel()?.nativeElement;
+      if (panel) this.slideRows(panel); else this.rowTops.clear();
     });
   }
   ngOnDestroy(): void { this.observer?.disconnect(); }
@@ -54,6 +65,8 @@ export class RecallChart implements OnDestroy {
       endX:this.x(last),endY:this.y(ceiling),ended:series.curve.length > 0 && series.curve.length <= this.limit(),value:recallAt(series.curve,this.k())};
   }));
   protected readonly xTicks = computed(() => [...new Set([1,...(this.plotWidth() < 460 ? (this.limit() > 70 ? [50,100,150] : [20,40,60]) : this.limit() > 70 ? [20,50,100,150] : [10,20,30,40,50,60]),this.limit()])].filter(k => k <= this.limit()));
+  /** The pipelines on the right of the chart, ranked by their recall at the budget. */
+  protected readonly readout = computed(() => rankAtBudget(this.series()));
   /** What a small multiple reads out: the focused pipeline, or else the best at the budget and how many tie with it. */
   protected readonly lead = computed(() => {
     const scored = this.series().filter(item => item.value !== null && !item.random);
@@ -77,4 +90,15 @@ export class RecallChart implements OnDestroy {
   }
   protected setBudget(event: Event): void { this.budget.set(Number((event.target as HTMLInputElement).value)); }
   protected highlight(key: string): void { this.focused.update(current => current === key ? null : key); }
+  /** Each row the new order moves glides from where it was seen, a slide in progress included, to its new place; the farther it travels, the higher it passes. */
+  private slideRows(panel: HTMLElement): void {
+    const animate = !this.settings.reducedMotion() && this.settings.preferences().speed !== 0;
+    for (const row of panel.querySelectorAll<HTMLElement>('[data-readout-key]')) {
+      const key = row.dataset['readoutKey']!, top = row.offsetTop, before = this.rowTops.get(key);
+      this.rowTops.set(key,top);
+      if (!animate || before === undefined || before === top) continue;
+      const from = before + Number(gsap.getProperty(row,'y')) - top;
+      gsap.fromTo(row,{y:from,zIndex:1+Math.round(Math.abs(from))},{y:0,duration:.5,ease:'power3.out',overwrite:true,clearProps:'transform,zIndex'});
+    }
+  }
 }

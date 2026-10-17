@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { EvaluationQuestion, EvaluationRun } from '../api/evaluation';
 import { candidateSummary, formatMetric, isContextMetric, metrics, relevantRanks } from './metrics';
 import { rankedRuns, runColor } from './presentation';
-import { recallAt, recallCurve, curvePath } from './recall-model';
+import { rankAtBudget, recallAt, recallCurve, curvePath } from './recall-model';
 import { RecallChart } from './recall-chart';
 
 function run(retriever: string, curve?: number[], count = 191): EvaluationRun {
@@ -54,15 +54,29 @@ describe('Recall at equal budgets', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('input')?.max).toBe('70');
     expect(host.querySelectorAll('.ceiling-line')).toHaveLength(1);
-    expect(host.querySelectorAll('.readout-row')[1].textContent).toContain('95.0%');
+    expect(host.querySelectorAll('.readout-row')[0].textContent).toContain('95.0%');
     expect(host.querySelectorAll('.readout-row')[2].textContent).toContain('—');
     (host.querySelectorAll('.range-toggle button')[1] as HTMLButtonElement).click(); await fixture.whenStable();
     expect(host.querySelector('input')?.max).toBe('191');
     const slider = host.querySelector('input')!; slider.value='41'; slider.dispatchEvent(new Event('input')); await fixture.whenStable();
     expect(host.querySelector('.readout-heading')?.textContent).toContain('At 41 chunks');
-    expect(host.querySelectorAll('.readout-row')[0].textContent).toContain('21.5%');
+    expect(host.querySelectorAll('.readout-row')[1].textContent).toContain('21.5%');
     (host.querySelectorAll('.readout-row')[1] as HTMLButtonElement).click(); await fixture.whenStable();
     expect(host.querySelectorAll('.readout-row')[1].getAttribute('aria-pressed')).toBe('true');
+  });
+  it('ranks the readout best first at the budget, sharing tied ranks, with missing curves then the random floor last', () => {
+    const series = [{key:'random',value:.9,random:true},{key:'old',value:null,random:false},{key:'a',value:.4,random:false},{key:'b',value:.6,random:false},{key:'c',value:.4,random:false}];
+    expect(rankAtBudget(series).map(item => [item.key,item.rank])).toEqual([['b',1],['a',2],['c',2],['old',null],['random',null]]);
+  });
+  it('reorders the readout when the budget changes', async () => {
+    const fixture = TestBed.createComponent(RecallChart);
+    fixture.componentRef.setInput('runs',[run('bm25',[.5,.5,.5]),run('dense-qwen3-0.6b',[.1,.2,.9]),run('random',[.05,.1,.15])]);
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    const order = () => [...host.querySelectorAll('.readout-row')].map(row => row.querySelector('span')?.textContent + ' ' + row.querySelector('.readout-rank')?.textContent);
+    expect(order()).toEqual(['Qwen3 · 0.6B 1','BM25 2','Random baseline ']);
+    const slider = host.querySelector('input')!; slider.value = '1'; slider.dispatchEvent(new Event('input')); await fixture.whenStable();
+    expect(order()).toEqual(['BM25 1','Qwen3 · 0.6B 2','Random baseline ']);
   });
   it('uses category curves and counts rather than the overall result', async () => {
     const fixture = TestBed.createComponent(RecallChart), sample = run('bm25',[.9]);
