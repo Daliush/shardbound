@@ -677,7 +677,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "human" } }` | `201 { gameId, playerToken, joinCode, websocketPath }` |
 | `POST` | `/api/games/{id}/join` | `{ "joinCode": "…", "deck": "root-starter" }` | `200 { gameId, playerToken, websocketPath }` |
 | `GET` | `/api/evaluations/{version}/{split}` | — | `["2026-10-15T09-00-00Z", "2026-10-15T18-00-00Z"]`: the timestamps of a dataset split's evaluations, oldest first (phase 3) |
-| `GET` | `/api/evaluations/{version}/{split}/{timestamp}` | — | the evaluation as the Python evaluation wrote it: `{ dataset, evaluated_at, code, runs: [{ layers: { retriever, answer }, scores, questions }] }` (phase 3) |
+| `GET` | `/api/evaluations/{version}/{split}/{timestamp}` | — | the evaluation as the Python evaluation wrote it: `{ dataset, evaluated_at, code, runs: [{ layers: { retriever, rerank, answer }, scores, questions }] }` (phase 3) |
 | `GET` | `/api/datasets/{version}/{split}` | — | `application/x-ndjson`: the dataset split as written, one question per line, `{ id, category, question, answerable, key_facts, citations, cards, … }` (phase 3) |
 
 - The creator always takes seat P1, and the bot or the joiner seat P2. Who plays first is decided by the RNG (5.1.1).

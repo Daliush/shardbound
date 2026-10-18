@@ -5,11 +5,12 @@
 #      evals/reports/<version>/<split>/<timestamp>.json, which the game server serves (GET /api/evaluations/…).
 #
 # Usage, from anywhere in the repository (on Windows, from Git Bash or with "bash scripts/evaluate.sh"):
-#   scripts/evaluate.sh --description "<why it is run>" [retriever…] [--version <version>] [--split dev|test]
+#   scripts/evaluate.sh --description "<why it is run>" [retriever…] [--expanders expander…] [--rerankers reranker…]
+#                       [--version <version>] [--split dev|test]
 #
-# The arguments go to "python -m rag evaluate": every retriever, on the dev split of the latest dataset, unless they
-# say otherwise; --split test only for the published numbers. The description, which the evaluation keeps, is
-# required. The dataset itself is built by scripts/build-dataset.sh. Needs JDK 21, uv and a running Docker. An
+# The arguments go to "python -m rag evaluate": every pipeline, each retriever expanded or not and reranked or not,
+# on the dev split of the latest dataset, unless they say otherwise; --split test only for the published numbers. The
+# description, which the evaluation keeps, is required. The dataset itself is built by scripts/build-dataset.sh. Needs JDK 21, uv and a running Docker. An
 # evaluation records the commit it scored at, marked dirty when the code has uncommitted changes: commit first to
 # keep its result.
 set -euo pipefail

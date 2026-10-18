@@ -12,10 +12,10 @@ What each step does and why lives in `docs/design.md` §5.2 and §6, `ai/README.
 | Step | Command, from the root | Needs | Writes |
 |---|---|---|---|
 | Dataset | `bash scripts/build-dataset.sh <version> --base <previous>` | JDK 21, uv, `LUNA_BASE_URL`, `LUNA_MODEL`, `LUNA_API_KEY` | `evals/datasets/<version>/` |
-| Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
+| Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--expanders expander…] [--rerankers reranker…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
 | Served | the game server, `GET /api/evaluations/<v>/<split>` then `/<timestamp>` | the server running | nothing |
 
-`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every retriever on the latest dataset's dev split by default. The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything.
+`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every pipeline the techniques make, each retriever expanded or not and reranked or not, on the latest dataset's dev split by default (a flag alone, `--expanders` or `--rerankers`, for none of them; the first run of a reranker downloads its model). The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything.
 
 If `docker version` shows no server, ask the maintainer to start Docker Desktop. Do not reset it.
 
@@ -53,7 +53,9 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
       curve = scores.get("mean_recall_curve")
       return f"{curve[-1]:.3f}" if curve else None
   def runs(path):
-      return {run["layers"]["retriever"]: run for run in json.load(open(path, encoding="utf-8"))["runs"]}
+      # A run is named by the technique of each step it went through.
+      return {" + ".join(name for name in run["layers"].values() if name): run
+              for run in json.load(open(path, encoding="utf-8"))["runs"]}
   old, new = runs(sys.argv[1]), runs(sys.argv[2])
   for name, run in new.items():
       if name not in old:
@@ -71,7 +73,7 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
   EOF
   ```
 
-  A question whose id changed shows as ranked differently; a report written before the recall curve has no curve end (`None`). A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
+  A question whose id changed shows as ranked differently. A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
 - **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`, or the `api` configuration of `.claude/launch.json`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
 
 ## In a worktree, beside the maintainer's work
