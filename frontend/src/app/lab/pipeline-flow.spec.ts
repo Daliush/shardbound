@@ -15,11 +15,12 @@ const runs = [
   run({retriever:'bm25'},bm25Top,{'11.1.1':29,'8.5':3,'8.18':155},156),
   run({retriever:'random'},top,{'11.1.1':1,'8.5':2,'8.18':3},191),
 ];
+const reranked = run({retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'},top,{'11.1.1':2,'8.5':23,'8.18':null},25);
 
 describe('Pipeline stages of a question', () => {
   it('orders the stages, leaves out the ones not evaluated, and draws the top 20 or every candidate', () => {
-    const columns = pipelineColumns(runs,'q',['ember.ash-warden']);
-    expect(columns.map(column => [column.stage.label,column.slots.length,column.total])).toEqual([['BM25',20,156],['RRF + refs',25,25]]);
+    const columns = pipelineColumns([...runs,reranked],'q',['ember.ash-warden']);
+    expect(columns.map(column => [column.stage.label,column.slots.length,column.total])).toEqual([['BM25',20,156],['RRF + refs',25,25],['MiniLM',25,25]]);
     expect(columns[0].slots[6]).toEqual({rank:7,chunk:'ember.ash-warden',kind:'card'});
     expect(columns[0].slots[2]).toEqual({rank:3,chunk:'8.5',kind:'cited'});
     expect(columns[0].slots[3]).toEqual({rank:4,chunk:'chunk-3',kind:'other'});
