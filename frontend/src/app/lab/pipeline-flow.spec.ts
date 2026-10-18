@@ -5,21 +5,22 @@ import { CardBook } from '../game/card-book';
 import { PipelineFlow } from './pipeline-flow';
 import { citedChunks, columnSummary, pipelineColumns } from './pipeline-model';
 
-function run(retriever: string, top: string[], ranks: Record<string,number | null>, count: number): EvaluationRun {
-  return {layers:{retriever,answer:null},scores:{overall:{},by_category:{}},questions:[{question_id:'q',category:'interaction',top_chunk_ids:top,recall_at:{'10':0,'20':0},reciprocal_rank:0,relevant_ranks:ranks,candidate_count:count}]};
+function run(layers: EvaluationRun['layers'], top: string[], ranks: Record<string,number | null>, count: number): EvaluationRun {
+  return {layers,scores:{overall:{},by_category:{}},questions:[{question_id:'q',category:'interaction',top_chunk_ids:top,recall_at:{'10':0,'20':0},reciprocal_rank:0,relevant_ranks:ranks,candidate_count:count}]};
 }
 const top = Array.from({length:20},(_,index) => index === 6 ? 'ember.ash-warden' : 'chunk-' + index);
 const bm25Top = top.map((chunk,index) => index === 2 ? '8.5' : chunk);
 const runs = [
-  run('rrf-bm25-dense-expanded',['ember.ash-warden',...top.filter(chunk => chunk !== 'ember.ash-warden')],{'11.1.1':21,'8.5':24,'8.18':null},25),
-  run('bm25',bm25Top,{'11.1.1':29,'8.5':3,'8.18':155},156),
-  run('random',top,{'11.1.1':1,'8.5':2,'8.18':3},191),
+  run({retriever:'rrf-bm25-dense',expand:'refs'},['ember.ash-warden',...top.filter(chunk => chunk !== 'ember.ash-warden')],{'11.1.1':21,'8.5':24,'8.18':null},25),
+  run({retriever:'bm25'},bm25Top,{'11.1.1':29,'8.5':3,'8.18':155},156),
+  run({retriever:'random'},top,{'11.1.1':1,'8.5':2,'8.18':3},191),
 ];
+const reranked = run({retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'},top,{'11.1.1':2,'8.5':23,'8.18':null},25);
 
 describe('Pipeline stages of a question', () => {
   it('orders the stages, leaves out the ones not evaluated, and draws the top 20 or every candidate', () => {
-    const columns = pipelineColumns(runs,'q',['ember.ash-warden']);
-    expect(columns.map(column => [column.stage.label,column.slots.length,column.total])).toEqual([['BM25',20,156],['RRF + refs',25,25]]);
+    const columns = pipelineColumns([...runs,reranked],'q',['ember.ash-warden']);
+    expect(columns.map(column => [column.stage.label,column.slots.length,column.total])).toEqual([['BM25',20,156],['RRF + refs',25,25],['MiniLM',25,25]]);
     expect(columns[0].slots[6]).toEqual({rank:7,chunk:'ember.ash-warden',kind:'card'});
     expect(columns[0].slots[2]).toEqual({rank:3,chunk:'8.5',kind:'cited'});
     expect(columns[0].slots[3]).toEqual({rank:4,chunk:'chunk-3',kind:'other'});
@@ -58,7 +59,7 @@ describe('Pipeline flow', () => {
   });
   it('explains that an unanswerable question cites nothing', async () => {
     const fixture = TestBed.createComponent(PipelineFlow);
-    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run('bm25',top,{},156)]);
+    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run({retriever:'bm25'},top,{},156)]);
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('.rank-table')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('This question cites no source');

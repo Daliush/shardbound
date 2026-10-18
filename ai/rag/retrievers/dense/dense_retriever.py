@@ -8,7 +8,8 @@ from rag.retrievers.dense.embedding_models import EmbeddingModel
 class DenseRetriever(Retriever):
     """Embeds the question with the model that embedded the chunks; the repository ranks every chunk by cosine."""
 
-    def __init__(self, model: EmbeddingModel, repository: EmbeddingRepository) -> None:
+    def __init__(self, name: str, model: EmbeddingModel, repository: EmbeddingRepository) -> None:
+        super().__init__(name)
         if not repository.find_embedded_hashes(model.name):
             raise LookupError(f"No vectors for {model.name}: build the index with `uv run python -m rag index`")
         self._model = model

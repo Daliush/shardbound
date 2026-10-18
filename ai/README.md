@@ -83,7 +83,7 @@ retriever random, answer None on v2 dev, 61 answerable questions
 - **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
 - **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), from which Recall@k and MRR are read.
-- **Candidates** is the mean number of chunks a retriever returns: the candidates the reranker receives. random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ return all 191; the other BM25 variants return only the chunks sharing a word with the question. The share of the relevant chunks among all of them, the most a reranker could keep, is the last value of the recall curve.
+- **Candidates** is the mean number of chunks a run ranks. Without a reranker, the retriever's whole list: random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ return all 191; the other BM25 variants return only the chunks sharing a word with the question; the expansion 41 on average. After a reranker, the candidates it reordered: 20, or the expansion's whole list. The share of the relevant chunks among all of them is the last value of the recall curve: after the expansion, the most a reranker could keep.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
 
@@ -102,28 +102,40 @@ rag/
 │   ├── embedding_repository.py EmbeddingRepository, EmbeddingRepositoryPostgres: the vectors, ranked by cosine
 │   └── evaluation_repository.py EvaluationRepository, EvaluationRepositoryFile: one file per evaluation
 ├── retrievers/
-│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first; its description
+│   ├── __init__.py             Retriever: rank_chunks(question) → chunk ids, best first; CANDIDATE_COUNT
 │   ├── registry.py             every retriever by name
 │   ├── random/                 the floor
 │   ├── bm25/                   bm25_retriever.py, bm25_variants.py (the list of BM25 variants)
 │   ├── dense/                  embedding_models.py (the list of models), chunk_embedding.py (a chunk and its vector),
 │   │                           chunk_embedder.py (embed the changed chunks), dense_retriever.py (rank by cosine)
-│   ├── fusion/                 rrf_retriever.py (several rankings merged by rank)
-│   └── expansion/              expansion_retriever.py (a retriever's top, plus the named cards and the refs)
+│   └── fusion/                 rrf_retriever.py (several rankings merged by rank)
+├── expanders/
+│   ├── __init__.py             Expander: expand_chunks(question, chunk ids) → them and the chunks it adds
+│   ├── registry.py             every expander by name
+│   └── refs/                   refs_expander.py (the named cards and the refs)
+├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common
+├── rerankers/
+│   ├── __init__.py             Reranker: rerank_chunks(question, candidate ids) → every candidate, reordered
+│   ├── registry.py             every reranker by name
+│   └── minilm/                 minilm_reranker.py (MiniLM-L6, a small cross-encoder)
 └── evaluation/
-    ├── evaluation_service.py   the flow: evaluate_all builds each retriever, evaluate runs it on every question
+    ├── evaluation_service.py   the flow: evaluate_all builds the techniques, evaluate_combinations each retriever's
+    │                           node, continue_with the tree under it, apply a node, score its run
+    ├── stages.py               Stage, a node of the tree: a technique, its parent, what it handed on per question
     ├── questions.py            Question: every question of a split, its relevant chunks, answerable or not
     ├── retrieval_metrics.py    Recall@k and the reciprocal rank of one question (answer_metrics.py will join it)
     ├── scores.py               QuestionResult, Scores, Report
-    ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "answer": null}
+    ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "expand": null, "rerank": null, …}
     ├── evaluation_json.py      an evaluation as the JSON the benchmark explorer reads, and its name
     ├── code_commit.py          the commit evaluated, "-dirty" with uncommitted changes
     └── report_table.py         the Markdown table
 ```
 
-- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`; an expansion one naming the retriever it wraps: `rrf-bm25-dense-expanded`.
+- A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`.
+- **The pipeline is three steps** (`technique.py`): retriever, expand, rerank. Each technique extends `Technique`, through `Retriever`, `Expander` or `Reranker`, and gets its name from its registry: an expander (`refs`, `RefsExpander`) adds to what it is handed the cards the question names and the refs of all of them; a reranker (`minilm-l6`, `MiniLMReranker`, which loads its own model) returns every candidate it is handed, reordered, the prompt keeping the first 10. A retriever hands the next step its first 20 chunks (`CANDIDATE_COUNT`), every other step its whole list.
+- **`evaluate` builds the tree of every pipeline** (`stages.py`): each retriever is a node, and under each node, each technique of the next step makes a child, the step skipped makes none. A `Stage` holds its technique, its parent and what it handed on for each question, so going up the parents gives the run's name and what each step did. Every node is computed once and is a run: 4 per retriever with `refs` and `minilm-l6`, so the benchmark explorer can build any pipeline. A run's list is what its last step handed on: the retriever's whole ranking, the ~41 candidates of the expansion, or the 20 or ~41 a reranker reordered. Each question also keeps how long its pipeline took (`seconds`), and each score block the latency's p50 and p95.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "answer": null}`, and `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), its description (why it was run: `--description` is required and cannot be blank; evaluations written before it have none), then per run its description (what its retriever does, which each retriever writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), its description (why it was run: `--description` is required and cannot be blank), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## Running the RAG on a new machine

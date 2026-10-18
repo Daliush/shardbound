@@ -11,7 +11,8 @@ class RrfRetriever(Retriever):
     nothing from that one. On a tie, the chunk the first rankings met first comes first.
     """
 
-    def __init__(self, retrievers: list[Retriever], k: int = 60) -> None:
+    def __init__(self, name: str, retrievers: list[Retriever], k: int = 60) -> None:
+        super().__init__(name)
         self._retrievers = list(retrievers)
         self._k = k
         """Damps the top ranks: with 60, the first rank scores 1/61 and the tenth 1/70, close enough that being

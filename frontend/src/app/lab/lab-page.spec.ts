@@ -30,9 +30,9 @@ describe('LabPage loading', () => {
     http.expectOne('/api/evaluations/v2/test').flush([]);
     await fixture.whenStable();
     await vi.waitFor(() => http.expectOne('/api/evaluations/v2/dev/new').flush({dataset:{version:'v2',split:'dev'},evaluated_at:'2026-10-14T22:20:30Z',code:'abc',runs:[
-      {layers:{retriever:'random',answer:null},scores:{overall:{mean_recall_at:{'10':.1}},by_category:{}},questions:[]},
-      {layers:{retriever:'bm25',answer:null},scores:{overall:{mean_recall_at:{'10':.5}},by_category:{}},questions:[]},
-      {layers:{retriever:'dense-qwen3-0.6b',answer:null},scores:{overall:{mean_recall_at:{'10':.8}},by_category:{}},questions:[]},
+      {layers:{retriever:'random',answer:null},scores:{overall:{mean_recall_at:{'10':.1},mean_recall_curve:[.1]},by_category:{}},questions:[]},
+      {layers:{retriever:'bm25',answer:null},scores:{overall:{mean_recall_at:{'10':.5},mean_recall_curve:[.5]},by_category:{}},questions:[]},
+      {layers:{retriever:'dense-qwen3-0.6b',answer:null},scores:{overall:{mean_recall_at:{'10':.8},mean_recall_curve:[.8]},by_category:{}},questions:[]},
     ]}));
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('.leaderboard')).not.toBeNull(); });
     http.expectOne('/api/datasets/v2/dev').flush('{"id":"q","category":"rule","question":"How many HP?","answerable":true,"key_facts":[],"citations":[],"cards":[]}\n');

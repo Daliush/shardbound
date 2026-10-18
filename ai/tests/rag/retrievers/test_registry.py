@@ -8,11 +8,13 @@ from rag.retrievers.registry import build_retriever, list_retriever_names
 CHUNKS = [Chunk("8.2", "rule", None, "[8. Effects] **Destroy**: sends a unit to the graveyard.", (), "r", "h")]
 
 
-def test_names_random_then_every_bm25_variant_then_every_dense_model_then_the_fusion_and_its_expansion():
+def test_names_random_then_every_bm25_variant_then_every_dense_model_then_the_fusion():
     assert list_retriever_names() == ["random", *BM25_VARIANTS, *(f"dense-{name}" for name in LOCAL_EMBEDDING_MODELS),
-                                      "rrf-bm25-dense", "rrf-bm25-dense-expanded"]
+                                      "rrf-bm25-dense"]
 
 
-def test_builds_a_retriever_by_its_name():
+def test_builds_a_retriever_by_its_name_and_gives_it_that_name():
     assert isinstance(build_retriever("random", CHUNKS), RandomRetriever)
-    assert isinstance(build_retriever("bm25-no-stemming", CHUNKS), Bm25Retriever)
+    retriever = build_retriever("bm25-no-stemming", CHUNKS)
+    assert isinstance(retriever, Bm25Retriever)
+    assert retriever.name == "bm25-no-stemming"

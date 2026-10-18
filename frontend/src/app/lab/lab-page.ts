@@ -9,7 +9,7 @@ import { CategoryCurves } from './category-curves';
 import { Evaluations } from './evaluations';
 import { HeadToHead } from './head-to-head';
 import { LabHistory } from './history';
-import { decodeRun, runKey } from './layer-model';
+import { decodeRun, isFloor, runKey } from './layer-model';
 import { DECISION_METRIC, atPath, differences, formatMetric, generic, humanize, metricName, metrics, metricDescription, lowerIsBetter, isRatio } from './metrics';
 import { QuestionDetail } from './question-detail';
 import { MetricsGraph } from './metrics-graph';
@@ -18,7 +18,6 @@ import { LabMotion } from './lab-motion';
 import { pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
 import { isContextMetric, candidateSummary } from './metrics';
 import { RecallChart } from './recall-chart';
-import { recallCurve } from './recall-model';
 import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './url-state';
 
 @Component({
@@ -41,7 +40,6 @@ export class LabPage implements OnDestroy {
   protected readonly search = signal('');
   protected readonly copyMessage = signal('');
   protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'metrics',label:'Metrics',icon:'chart'},{id:'compare',label:'Compare',icon:'compare'},{id:'builder',label:'Build',icon:'build'}];
-  protected readonly decisionMetric = DECISION_METRIC;
   protected readonly contextMetric = isContextMetric;
   protected readonly candidateSummary = candidateSummary;
   protected readonly color = runColor;
@@ -49,7 +47,6 @@ export class LabPage implements OnDestroy {
   protected readonly scoreMetrics = computed(() => this.metrics().filter(metric => !isContextMetric(metric)));
   protected readonly tableMetrics = computed(() => this.metrics().filter(metric => metric !== 'mean_candidate_count'));
   protected readonly runs = computed(() => this.report()?.runs ?? []);
-  protected readonly hasRecallCurves = computed(() => this.runs().some(run => recallCurve(run.scores.overall).length > 0));
   protected readonly selected = computed<EvaluationRun | undefined>(() => this.runs().find(run => runKey(run.layers) === this.state().run) ?? this.runs()[0]);
   protected readonly builderLayers = computed(() => decodeRun(this.state().run) ?? this.selected()?.layers ?? {});
   protected readonly metrics = computed(() => metrics(this.runs()));
@@ -61,8 +58,8 @@ export class LabPage implements OnDestroy {
   });
   protected readonly ranked = computed(() => rankedRuns(this.runs(),this.rankingMetric()));
   protected readonly displayed = computed(() => this.ranked().filter(row => pipelineName(row.run).toLowerCase().includes(this.search().toLowerCase()) || JSON.stringify(row.run.layers).toLowerCase().includes(this.search().toLowerCase())));
-  protected readonly baseline = computed(() => this.runs().find(run => run.layers['retriever'] === 'random'));
-  protected readonly graphRuns = computed(() => [...this.runs()].sort((a,b) => Number(a.layers['retriever'] === 'random')-Number(b.layers['retriever'] === 'random')));
+  protected readonly baseline = computed(() => this.runs().find(isFloor));
+  protected readonly graphRuns = computed(() => [...this.runs()].sort((a,b) => Number(isFloor(a))-Number(isFloor(b))));
   protected readonly activeView = computed(() => this.state().tab === 'head-to-head' ? 'compare' : this.state().tab);
   protected readonly title = computed(() => ({leaderboard:'Better retrieval, in perspective.',metrics:'Understand every metric',compare:'Compare combinations',builder:'Build your combination',questions:'Explore the evidence',categories:'Scores by category',history:'Evaluation history'}[this.activeView()] ?? 'Benchmark'));
   protected readonly subtitle = computed(() => ({leaderboard:'Every evaluated combination, ranked on the same questions.',metrics:'See where each combination performs best.',compare:'Two pipelines. The same questions. A clear comparison.',builder:'Choose your pipeline. See how it measures up.',questions:'Inspect the sources retrieved for each question.',categories:'Understand performance across question types.',history:'Follow recorded results over time.'}[this.activeView()] ?? ''));
@@ -106,7 +103,7 @@ export class LabPage implements OnDestroy {
       if (generation !== this.generation) return;
       this.report.set(report);
       void this.loadDataset(state.version,split,generation);
-      const ranked = [...report.runs].filter(run => run.layers['retriever'] !== 'random').sort((a,b) => (atPath(b.scores.overall,DECISION_METRIC) ?? -1)-(atPath(a.scores.overall,DECISION_METRIC) ?? -1));
+      const ranked = [...report.runs].filter(run => !isFloor(run)).sort((a,b) => (atPath(b.scores.overall,DECISION_METRIC) ?? -1)-(atPath(a.scores.overall,DECISION_METRIC) ?? -1));
       const keys = report.runs.map(run => runKey(run.layers));
       const run = keys.includes(state.run) || (state.tab === 'builder' && decodeRun(state.run)) ? state.run : runKey((ranked[0] ?? report.runs[0])?.layers ?? {});
       const pins = defaultPins ? ranked.slice(0,2).map(run => runKey(run.layers)) : state.pins.filter(key => keys.includes(key));

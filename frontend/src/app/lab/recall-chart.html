@@ -1,25 +1,24 @@
 <section class="recall-explorer" [class.compact]="compact()" aria-label="Recall at each chunk budget">
   <header class="curve-heading">
     <div><h2>{{ category() ? humanize(category()) : 'How much context is enough?' }}</h2><p>{{ compact() ? 'Recall at the same chunk budget' : 'Give every pipeline the same number of chunks. See how many cited sources it finds.' }} @if (sample() !== null) { <span>{{ sample() }} questions</span> }</p></div>
-    @if (!compact() && hasCurves() && maximum() > 70) { <div class="range-toggle" aria-label="Chart range"><button [attr.aria-pressed]="!full()" (click)="full.set(false)">1–70</button><button [attr.aria-pressed]="full()" (click)="full.set(true)">1–{{ maximum() }}</button></div> }
+    @if (!compact() && maximum() > 70) { <div class="range-toggle" aria-label="Chart range"><button [attr.aria-pressed]="!full()" (click)="full.set(false)">1–70</button><button [attr.aria-pressed]="full()" (click)="full.set(true)">1–{{ maximum() }}</button></div> }
   </header>
-  @if (hasCurves()) {
-    <div class="curve-layout">
+  <div class="curve-layout">
       <div class="curve-main">
         <div class="axis-heading"><span>Cited sources found</span><span>Recall@k</span></div>
         <div #canvas class="curve-canvas" [labMotion]="motionKey()">
           <svg #plot [attr.viewBox]="'0 0 ' + plotWidth() + ' 314'" role="img" aria-label="Recall curves from 1 to the selected maximum chunk budget. Use the chunk budget slider for exact values." (pointermove)="inspect($event,plot)" (pointerdown)="inspect($event,plot)">
             @for (tick of ticks; track tick) { <line x1="44" [attr.x2]="plotWidth()-16" [attr.y1]="y(tick)" [attr.y2]="y(tick)" class="grid-line" /><text x="35" [attr.y]="y(tick)+4" class="tick y-tick">{{ tick*100 }}%</text> }
             @for (guide of [10,20]; track guide) { @if (guide <= limit()) { <line [attr.x1]="x(guide)" [attr.x2]="x(guide)" y1="37" y2="270" class="budget-guide" /><text [attr.x]="x(guide)" [attr.y]="guide === 10 ? 17 : 32" class="guide-label">{{ guide === 10 ? '10 · prompt' : '20 · expansion' }}</text> } }
-            @for (item of series(); track item.key) { @if (item.curve.length) {
+            @for (item of series(); track item.key) {
               <g [style.color]="item.color" [class.faded]="focused() && focused() !== item.key" [class.highlighted]="focused() === item.key" [class.baseline]="item.random" [class.variant]="item.variant">
                 <path [attr.d]="item.path" class="recall-line" data-score-line />
                 @if (item.extension) { <path [attr.d]="item.extension" class="ceiling-line" /> }
                 @if (item.ended) { <circle [attr.cx]="item.endX" [attr.cy]="item.endY" r="3" class="end-dot" /> }
               </g>
-            } }
+            }
             <line [attr.x1]="x(k())" [attr.x2]="x(k())" y1="43" y2="270" class="inspection-line" />
-            @for (item of series(); track item.key) { @if (item.value !== null) { <circle [attr.cx]="x(k())" [attr.cy]="y(item.value)" r="4" class="inspection-dot" [style.color]="item.color" [class.faded]="focused() && focused() !== item.key" /> } }
+            @for (item of series(); track item.key) { <circle [attr.cx]="x(k())" [attr.cy]="y(item.value)" r="4" class="inspection-dot" [style.color]="item.color" [class.faded]="focused() && focused() !== item.key" /> }
             @for (tick of xTicks(); track tick) { <text [attr.x]="x(tick)" y="293" class="tick x-tick">{{ tick }}</text> }
           </svg>
         </div>
@@ -34,7 +33,5 @@
         }
         <p class="readout-hint">Select a pipeline to highlight its curve.</p>
       </aside> }
-    </div>
-    @if (missing()) { <p class="curve-note">{{ missing() }} {{ missing() === 1 ? 'pipeline has' : 'pipelines have' }} no curve in this report. Missing values show —.</p> }
-  } @else { <div class="curve-empty"><h3>No recall curves in this report</h3><p>Older evaluations still have scores below. Choose a more recent evaluation to explore every chunk budget.</p></div> }
+  </div>
 </section>

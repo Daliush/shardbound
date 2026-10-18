@@ -8,7 +8,8 @@ from rag.retrievers import Retriever
 class RandomRetriever(Retriever):
     """Every chunk in a random order, the same order for a question at every run."""
 
-    def __init__(self, chunk_ids: list[str], seed: int = 1) -> None:
+    def __init__(self, name: str, chunk_ids: list[str], seed: int = 1) -> None:
+        super().__init__(name)
         self._chunk_ids = list(chunk_ids)
         self._seed = seed
 

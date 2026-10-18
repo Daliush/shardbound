@@ -80,16 +80,19 @@ export class CombinationBuilder {
     panel.focus({preventScroll:true});
     panel.scrollIntoView({behavior:this.settings.reducedMotion() ? 'instant' : 'smooth',block:'start'});
   }
-  protected layerLabel(layer: string): string { return layer === 'answer' ? 'Answer model' : layer[0].toUpperCase() + layer.slice(1); }
+  protected layerLabel(layer: string): string { return layer === 'answer' ? 'Answer model' : layer === 'rerank' ? 'Reranker' : layer === 'expand' ? 'Expansion' : layer[0].toUpperCase() + layer.slice(1); }
   protected layerDescription(layer: string): string {
     if (layer === 'retriever') return 'How should your pipeline find the relevant rules?';
+    if (layer === 'expand') return 'Should your pipeline add the cards the question names and the rules they refer to?';
+    if (layer === 'rerank') return 'How should your pipeline reorder the candidates it found?';
     if (layer === 'answer') return 'The model that answers using the retrieved sources.';
     return 'Choose the ' + layer + ' used in your combination.';
   }
   protected optionDescription(value: string | null, layer: string): string {
-    if (value === null) return layer === 'answer' ? 'Retrieval only · no answer generation' : 'Skip this component';
+    if (value === null) return layer === 'answer' ? 'Retrieval only · no answer generation' : layer === 'rerank' ? 'No reranking · in retrieval order' : layer === 'expand' ? 'No expansion · the retrieved chunks only' : 'Skip this component';
     if (value === 'random') return 'Random selection · reference floor';
-    if (value === 'rrf-bm25-dense-expanded') return 'Hybrid search with named cards and linked references';
+    if (value === 'minilm-l6') return 'Cross-encoder · reads the question with each candidate';
+    if (value === 'refs') return 'The cards the question names and the rules every chunk refers to';
     if (value.startsWith('rrf')) return 'BM25 and dense retrieval fused by rank';
     if (value.startsWith('dense')) return 'Semantic search with embeddings';
     if (value === 'bm25') return 'Keyword search · Lucene scoring';

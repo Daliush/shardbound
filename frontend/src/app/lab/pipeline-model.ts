@@ -1,14 +1,15 @@
-import { EvaluationRun } from '../api/evaluation';
-import { relevantRanks } from './metrics';
+import { EvaluationRun, Layers } from '../api/evaluation';
+import { matchingRun } from './presentation';
 
-/** A stage of the retrieval pipeline, a run of the report. `depth` is how many ranks it hands on, or every candidate the next layer reads. */
-export interface PipelineStage { retriever: string; label: string; role: string; depth: number | 'all'; }
-/** The stages in the order chunks flow through them; the reranker joins at step 7 as one more stage. */
+/** A stage of the retrieval pipeline, a run of the report found by its layers. `depth` is how many ranks it hands on, or every candidate the next layer reads. */
+export interface PipelineStage { layers: Layers; label: string; role: string; depth: number | 'all'; }
+/** The stages in the order chunks flow through them: the reranker draws every candidate it reordered, the prompt reading its first 10. */
 export const PIPELINE_STAGES: PipelineStage[] = [
-  {retriever:'bm25',label:'BM25',role:'Words',depth:20},
-  {retriever:'dense-qwen3-0.6b',label:'Dense',role:'Meaning',depth:20},
-  {retriever:'rrf-bm25-dense',label:'RRF',role:'Both fused',depth:20},
-  {retriever:'rrf-bm25-dense-expanded',label:'RRF + refs',role:'Candidates',depth:'all'},
+  {layers:{retriever:'bm25'},label:'BM25',role:'Words',depth:20},
+  {layers:{retriever:'dense-qwen3-0.6b'},label:'Dense',role:'Meaning',depth:20},
+  {layers:{retriever:'rrf-bm25-dense'},label:'RRF',role:'Both fused',depth:20},
+  {layers:{retriever:'rrf-bm25-dense',expand:'refs'},label:'RRF + refs',role:'Candidates',depth:'all'},
+  {layers:{retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'},label:'MiniLM',role:'Reranked',depth:'all'},
 ];
 export type SlotKind = 'cited' | 'card' | 'other';
 /** A rank of a stage. Past the 20 ids a report keeps, only cited chunks are known by name. */
@@ -23,10 +24,9 @@ export interface PipelineColumn {
 export function pipelineColumns(runs: EvaluationRun[], id: string, cards: readonly string[]): PipelineColumn[] {
   const named = new Set(cards);
   return PIPELINE_STAGES.flatMap(stage => {
-    const question = runs.find(run => run.layers['retriever'] === stage.retriever)?.questions.find(question => question.question_id === id);
-    const ranks = relevantRanks(question);
-    if (!question || !ranks) return [];
-    const total = Math.max(question.top_chunk_ids.length,Number(question['candidate_count'] ?? 0));
+    const question = matchingRun(runs,stage.layers)?.questions.find(question => question.question_id === id);
+    if (!question) return [];
+    const ranks = question.relevant_ranks, total = question.candidate_count;
     const depth = stage.depth === 'all' ? total : Math.min(total,stage.depth);
     const citedAt = new Map(Object.entries(ranks).flatMap(([chunk,rank]) => rank === null ? [] : [[rank,chunk] as const]));
     const slots = Array.from({length:depth},(_,index): PipelineSlot => {

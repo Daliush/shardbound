@@ -26,7 +26,8 @@ class Bm25Settings:
 class Bm25Retriever(Retriever):
     """Indexes the chunks once; each question then only reads the index."""
 
-    def __init__(self, chunks: list[Chunk], settings: Bm25Settings = Bm25Settings()) -> None:
+    def __init__(self, name: str, chunks: list[Chunk], settings: Bm25Settings = Bm25Settings()) -> None:
+        super().__init__(name)
         self._settings = settings
         self._stemmer = Stemmer.Stemmer("english") if settings.stemming else None
         self._indexed_chunk_ids = [chunk.id for chunk in chunks]

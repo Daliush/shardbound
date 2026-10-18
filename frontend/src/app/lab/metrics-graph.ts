@@ -3,7 +3,7 @@ import { scaleLinear } from 'd3-scale';
 import { EvaluationRun } from '../api/evaluation';
 import { atPath, formatMetric, humanize, isRatio, isContextMetric, metricDescription, metricName, metrics, lowerIsBetter } from './metrics';
 import { isVariant, pipelineName, runColor } from './presentation';
-import { runKey } from './layer-model';
+import { isFloor, runKey } from './layer-model';
 import { LabMotion } from './lab-motion';
 
 /**
@@ -50,7 +50,7 @@ export class MetricsGraph {
   protected readonly humanize = humanize; protected readonly lower = lowerIsBetter; protected readonly at = atPath;
   protected readonly categories = computed(() => [...new Set(this.runs().flatMap(run => Object.keys(run.scores.by_category)))]);
   protected readonly allMetrics = computed(() => metrics(this.runs()));
-  protected readonly rows = computed(() => this.runs().map(run => ({key:runKey(run.layers),name:pipelineName(run),color:runColor(run),description:run.description,variant:isVariant(run),random:run.layers['retriever'] === 'random',scores:this.category() ? run.scores.by_category[this.category()] : run.scores.overall})));
+  protected readonly rows = computed(() => this.runs().map(run => ({key:runKey(run.layers),name:pipelineName(run),color:runColor(run),description:run.description,variant:isVariant(run),random:isFloor(run),scores:this.category() ? run.scores.by_category[this.category()] : run.scores.overall})));
   /** One dot plot per score, best first; the random floor is a reference line, not a row. */
   protected readonly axes = computed(() => this.allMetrics().filter(key => !isContextMetric(key)).flatMap(key => {
     const pipelines = this.rows().filter(row => !row.random).map(row => ({...row,value:atPath(row.scores,key)}));

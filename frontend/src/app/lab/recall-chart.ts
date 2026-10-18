@@ -2,7 +2,7 @@ import { Component, ElementRef, OnDestroy, afterRenderEffect, computed, inject, 
 import { gsap } from 'gsap';
 import { EvaluationRun } from '../api/evaluation';
 import { Settings } from '../core/settings';
-import { runKey } from './layer-model';
+import { isFloor, runKey } from './layer-model';
 import { atPath, candidateSummary, formatMetric, humanize } from './metrics';
 import { isVariant, pipelineName, runColor } from './presentation';
 import { curvePath, rankAtBudget, recallAt, recallCurve } from './recall-model';
@@ -47,7 +47,7 @@ export class RecallChart implements OnDestroy {
   ngOnDestroy(): void { this.observer?.disconnect(); }
   protected readonly all = computed(() => this.runs().map(run => {
     const scores = this.category() ? run.scores.by_category[this.category()] : run.scores.overall;
-    return {key:runKey(run.layers),name:pipelineName(run),color:runColor(run),curve:recallCurve(scores),summary:candidateSummary(scores),description:run.description,random:run.layers['retriever'] === 'random',variant:isVariant(run)};
+    return {key:runKey(run.layers),name:pipelineName(run),color:runColor(run),curve:recallCurve(scores),summary:candidateSummary(scores),description:run.description,random:isFloor(run),variant:isVariant(run)};
   }));
   protected readonly maximum = computed(() => Math.max(1,...this.all().map(series => series.curve.length)));
   protected readonly limit = computed(() => this.full() ? this.maximum() : Math.min(70,this.maximum()));
@@ -56,23 +56,21 @@ export class RecallChart implements OnDestroy {
     const scores = this.category() ? this.runs()[0]?.scores.by_category[this.category()] : this.runs()[0]?.scores.overall;
     return atPath(scores,'question_count');
   });
-  protected readonly hasCurves = computed(() => this.all().some(series => series.curve.length));
-  protected readonly missing = computed(() => this.all().filter(series => !series.curve.length).length);
   protected readonly series = computed(() => this.all().map(series => {
     const last = Math.min(this.limit(),series.curve.length), ceiling = series.curve.at(-1) ?? 0;
     return {...series,path:curvePath(series.curve,this.limit(),k => this.x(k),value => this.y(value)),
-      extension:series.curve.length && last < this.limit() ? `M${this.x(last)},${this.y(ceiling)}L${this.x(this.limit())},${this.y(ceiling)}` : '',
-      endX:this.x(last),endY:this.y(ceiling),ended:series.curve.length > 0 && series.curve.length <= this.limit(),value:recallAt(series.curve,this.k())};
+      extension:last < this.limit() ? `M${this.x(last)},${this.y(ceiling)}L${this.x(this.limit())},${this.y(ceiling)}` : '',
+      endX:this.x(last),endY:this.y(ceiling),ended:series.curve.length <= this.limit(),value:recallAt(series.curve,this.k())};
   }));
   protected readonly xTicks = computed(() => [...new Set([1,...(this.plotWidth() < 460 ? (this.limit() > 70 ? [50,100,150] : [20,40,60]) : this.limit() > 70 ? [20,50,100,150] : [10,20,30,40,50,60]),this.limit()])].filter(k => k <= this.limit()));
   /** The pipelines on the right of the chart, ranked by their recall at the budget. */
   protected readonly readout = computed(() => rankAtBudget(this.series()));
   /** What a small multiple reads out: the focused pipeline, or else the best at the budget and how many tie with it. */
   protected readonly lead = computed(() => {
-    const scored = this.series().filter(item => item.value !== null && !item.random);
+    const scored = this.series().filter(item => !item.random);
     const focused = scored.find(item => item.key === this.focused());
     if (focused) return {item:focused,label:focused.name};
-    const best = [...scored].sort((a,b) => b.value!-a.value!)[0];
+    const best = [...scored].sort((a,b) => b.value-a.value)[0];
     if (!best) return null;
     const tied = scored.filter(item => item.value === best.value).length - 1;
     return {item:best,label:'Best: ' + best.name + (tied ? ' and ' + tied + ' tied' : '')};
