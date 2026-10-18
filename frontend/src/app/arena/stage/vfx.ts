@@ -16,24 +16,24 @@ export class VfxCanvas {
     if (!context) return;
     const dpr = Math.min(devicePixelRatio || 1,2);
     this.canvas.width = innerWidth*dpr; this.canvas.height = innerHeight*dpr; context.scale(dpr,dpr);
-    const count = innerWidth < 700 ? 22 : 40, rising = preset === 'heal' || preset === 'root';
+    const count = innerWidth < 700 ? 22 : 40, rising = preset === 'heal' || preset === 'root', speed = preset === 'impact' ? 2.4 : 1, life = preset === 'impact' ? .45 : .7;
     for (let i=0;i<count;i++) {
       const angle = i/count*Math.PI*2, mote = this.motes[i];
-      mote.x = origin.x; mote.y = origin.y; mote.vx = Math.cos(angle)*(30+i%5*11); mote.vy = rising ? -45-i%7*10 : Math.sin(angle)*65; mote.size=1.5+i%3;
+      mote.x = origin.x; mote.y = origin.y; mote.vx = Math.cos(angle)*(30+i%5*11)*speed; mote.vy = rising ? -45-i%7*10 : Math.sin(angle)*65*speed; mote.size=1.5+i%3;
     }
     const start = performance.now();
     const draw = (now:number) => {
       if (document.hidden) { this.clear(); return; }
       const t=(now-start)/1000/pace;
-      context.clearRect(0,0,innerWidth,innerHeight); context.globalCompositeOperation='lighter'; context.fillStyle=color; context.globalAlpha=Math.max(0,1-t/.7);
+      context.clearRect(0,0,innerWidth,innerHeight); context.globalCompositeOperation='lighter'; context.fillStyle=color; context.globalAlpha=Math.max(0,1-t/life);
       for (let i=0;i<count;i++) {
         const p=this.motes[i]; context.save(); context.translate(p.x+p.vx*t,p.y+p.vy*t+(rising?0:35*t*t)); context.rotate(t+i);
         if (preset === 'tide' || preset === 'heal') { context.beginPath(); context.ellipse(0,0,p.size,p.size*1.6,0,0,Math.PI*2); context.fill(); }
         else if (preset === 'root') { context.beginPath(); context.ellipse(0,0,p.size*2,p.size,0,0,Math.PI*2); context.fill(); }
-        else context.fillRect(-p.size/2,-p.size/2,p.size,preset === 'ember'?p.size*2.5:p.size);
+        else context.fillRect(-p.size/2,-p.size/2,p.size,preset === 'ember' || preset === 'impact'?p.size*2.5:p.size);
         context.restore();
       }
-      if(t<.7) this.frame=requestAnimationFrame(draw); else this.clear();
+      if(t<life) this.frame=requestAnimationFrame(draw); else this.clear();
     };
     this.frame=requestAnimationFrame(draw);
   }

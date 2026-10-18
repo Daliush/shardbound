@@ -105,7 +105,7 @@ export function choreograph(old: GameView, events: EventView[], next: GameView):
     if (kind === 'shards') key = 'shards:' + side;
     if (kind === 'draw') key = 'deck:' + side;
     const target = targetOf(event['target'] ?? event['originalTarget'] ?? event['second'] ?? event['to'] ?? event['partner']);
-    const duration = ({ shatter: 650, victory: 1100, play: side === 'opponent' ? 850 : 520, attack: 450, intercept: 650, draw: 380, turn: 500, echo: 550, cast: 480, damage: 350, heal: 350, log: 80 } as Partial<Record<BeatKind, number>>)[kind] ?? 260;
+    const duration = ({ shatter: 650, victory: 1100, play: side === 'opponent' ? 900 : 480, attack: 480, intercept: 650, draw: 300, turn: 760, echo: 550, cast: 480, damage: 440, heal: 380, arrive: 360, summon: 360, shards: 200, end: 200, log: 80 } as Partial<Record<BeatKind, number>>)[kind] ?? 260;
     const counters: Beat['counters'] = [];
     if (side && next[side]) {
       if (['damage', 'heal', 'victory'].includes(kind) && !card) counters.push({ key: 'hp:' + side, value: next[side]!.hp });

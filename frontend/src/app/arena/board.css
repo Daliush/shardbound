@@ -1,34 +1,45 @@
-:host { display: block; min-width: 0; min-height: 0; --unit-width: 166px; --card-width: 196px; }
-.table { min-height: 100%; position: relative; padding: 14px 24px 0; isolation: isolate; touch-action: manipulation; }
-.side { display: flex; flex-direction: column; gap: 10px; position: relative; }
-.side.yours { flex-direction: column-reverse; }
-app-player-hud { align-self: center; width: min(100%, 760px); }
-.field { display: grid; grid-template-columns: 86px minmax(0, 1fr) 86px; gap: 14px; align-items: center; min-height: 142px; }
-.units { display: flex; align-items: flex-start; gap: 14px; padding: 20px 14px 10px; overflow-x: auto; min-height: 140px; scrollbar-width: thin; }
-.unit-slot:first-child { margin-left: auto; }.unit-slot:last-child { margin-right: auto; }
-.unit-slot { position: relative; flex: 0 0 auto; width: var(--unit-width); }
-.unit-piece, .hand-piece { border: 0; padding: 0; background: transparent !important; min-height: 0; border-radius: 10px; display: block; touch-action: none; }
-.unit-piece:focus-visible, .hand-piece:focus-visible { outline: 2px solid var(--white); outline-offset: 5px; }
-.attack-choices { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.attack-choices button { flex: 1; min-width: 0; padding: 6px 8px; min-height: 34px; font-size: 11px; color: var(--game-ready); background: var(--game-ready-surface); border-color: #96d3a460; box-shadow: 0 3px 14px #8fe5a126; }
-.attack-choices button > span:first-of-type { flex: 1; text-align: left; }.attack-choices app-icon { width: 13px; }.attack-cost { display: inline-flex; align-items: center; gap: 2px; color: var(--game-cost); }
-.empty-board { width: 100%; color: var(--muted); display: grid; place-content: center; justify-items: center; gap: 8px; font-size: 12px; min-height: 108px; }
-.empty-board app-icon { width: 28px; height: 28px; color: var(--faction); opacity: .65; }
-.terrain-pile { display: flex; align-items: center; flex-direction: column; gap: 9px; color: var(--muted); font-size: 11px; border: 0; background: transparent !important; padding: 6px; min-width: 0; }
-.stack, .grave-surface { width: 66px; height: 88px; position: relative; border-radius: 7px; background: var(--game-stack); }
-.stack { box-shadow: 3px 3px 0 #323c4d, 6px 6px 0 #1f2836, 9px 11px 15px #0005; transform: rotate(-5deg); }
-.stack app-card, .grave-surface app-card { width: 66px; height: 88px; }.stack.depleted { opacity: .5; }
-.stack b, .grave-surface b { position: absolute; bottom: 5px; right: 5px; background: var(--game-counter); color: var(--text); min-width: 26px; padding: 2px 4px; border-radius: 4px; font: 600 19px/1.2 var(--font-ui); text-align: center; }
-.grave-surface { display: grid; place-items: center; border: 1px dashed #52596b; }.grave-surface > app-icon { width: 27px; height: 32px; opacity: .7; }
-.fatigue { color: var(--damage); }.grave-pile:focus-visible { outline-offset: 0; }
-.relics { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding-bottom: 5px; }
-.relic-piece { padding: 3px 8px; font-size: 12px; background: var(--game-relic); }.relic-piece app-card { width: 28px; }
-.battle-line { min-height: 35px; display: grid; place-items: center; margin-block: 7px; border-block: 1px solid color-mix(in srgb, var(--faction) 18%, transparent); }
-.battle-line p { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; font-size: 12px; margin: 0; padding: 7px; color: var(--muted); max-width: none; }.battle-line b { color: var(--faction-light); font-weight: 500; }
-.battle-line .combat-summary { color: var(--game-attack); background: var(--game-attack-surface); width: 100%; }.combat-summary > span { width: 100%; text-align: center; color: var(--text); font-size: 12px; }
-.hand { margin-top: 12px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--faction) 22%, transparent); }
-.hand-heading { display: flex; align-items: center; gap: 18px; color: var(--text); font-size: 12px; padding: 0 4px; }.hand-heading b { margin-left: 6px; color: var(--faction-light); }.hand-hint { color: var(--muted); }.open-hand { margin-left: auto; font-size: 11px; min-height: 30px; padding: 3px 7px; }
-.fan { display: flex; gap: 14px; overflow-x: auto; padding: 12px 14px 14px; scrollbar-width: thin; }
-.hand-piece { flex: 0 0 auto; transition: translate 180ms ease; }.hand-piece:first-child { margin-left: auto; }.hand-piece:last-child { margin-right: auto; }
-.hand-piece:hover, .hand-piece:focus-visible { translate: 0 -5px; }
+:host { display: block; height: 100%; min-height: 0; --gap: 14px; --token-max: 148px; --card-w: 150px; }
+.table {
+  position: relative; isolation: isolate; height: 100%; min-height: 560px;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto calc(var(--card-w) * 1.24 * .74);
+  justify-items: center; row-gap: 10px; padding: 14px 24px 0; touch-action: manipulation; overflow: clip;
+}
+.table {
+  --their: var(--prism);
+  background:
+    radial-gradient(ellipse 70% 38% at 50% 0%, color-mix(in srgb, var(--their) 9%, transparent), transparent 70%),
+    radial-gradient(ellipse 70% 42% at 50% 100%, color-mix(in srgb, var(--faction) 11%, transparent), transparent 72%);
+}
+.table[data-their='ember'] { --their: var(--ember); }
+.table[data-their='tide'] { --their: var(--tide); }
+.table[data-their='root'] { --their: var(--root); }
+.hud { max-width: 100%; z-index: 3; }
+.row {
+  width: 100%; height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; gap: var(--gap);
+  container-type: size; padding: 14px 0 6px;
+}
+.unit {
+  flex: 0 0 auto; min-height: 0; padding: 0; border: 0; border-radius: 12px; background: none !important; display: block;
+  width: min(var(--token-max), calc((100cqw - (var(--count) - 1) * var(--gap)) / var(--count)), calc((100cqh - 20px) * .8));
+}
+.unit app-unit-token { --token-w: 100%; }
+.unit:focus-visible { outline: 2px solid var(--game-selected); outline-offset: 5px; }
+.unit:hover > app-unit-token[data-mark='targetable'], .unit:focus-visible > app-unit-token[data-mark='targetable'] { scale: 1.05; }
+@media (hover: hover) { .unit:hover > app-unit-token[data-mark='selectable'] { translate: 0 -3px; } }
+.row.yours .unit { touch-action: none; }
+.empty-row { display: flex; align-items: center; gap: 10px; margin: 0; padding: 14px 20px; border-radius: 14px; font-size: 13px; color: var(--muted); border: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); }
+.empty-row app-icon { width: 18px; height: 18px; color: var(--faction); opacity: .7; }
 
+/* The battle line: one band where the game always says what is happening, on a seam of light across the table. */
+.battle {
+  position: relative; z-index: 4; width: min(100%, 1120px); border-radius: 18px;
+  background: color-mix(in srgb, var(--game-dock) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--faction) 20%, var(--line));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--white) 5%, transparent) inset, 0 18px 40px -26px color-mix(in srgb, var(--black) 90%, transparent);
+}
+.battle::before, .battle::after { content: ''; position: absolute; top: 50%; width: 50vw; height: 1px; pointer-events: none; }
+.battle::before { right: 100%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--faction) 45%, transparent)); }
+.battle::after { left: 100%; background: linear-gradient(90deg, color-mix(in srgb, var(--faction) 45%, transparent), transparent); }
+
+@media (min-width: 1500px) { :host { --token-max: 164px; --card-w: 164px; } }
+@media (max-height: 820px) and (min-width: 761px) { :host { --card-w: 136px; } .table { row-gap: 6px; padding-top: 10px; } }

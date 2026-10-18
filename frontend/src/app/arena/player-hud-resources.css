@@ -1,0 +1,28 @@
+.shards { display: grid; gap: 6px; color: var(--game-cost); }
+.shard-numbers { display: flex; align-items: baseline; gap: 5px; }
+.shard-numbers app-icon { width: 17px; height: 17px; align-self: center; }
+.shard-numbers b { font: 700 26px/1 var(--font-ui); }
+.shard-numbers small { font-size: 12px; color: var(--muted); }
+.pips { display: flex; gap: 4px; height: 10px; }
+.pips i { width: 8px; height: 10px; clip-path: polygon(50% 0, 100% 35%, 80% 100%, 20% 100%, 0 35%); background: color-mix(in srgb, var(--game-cost) 18%, transparent); transition: background 240ms ease, filter 240ms ease; }
+.pips i.lit { background: var(--game-cost); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--game-cost) 70%, transparent)); }
+.locked { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--locked); }
+.locked app-icon { width: 12px; height: 12px; }
+
+.piles { display: flex; gap: 4px; }
+.pile { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 5px; min-height: 0; padding: 4px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: inherit; }
+.pile app-icon { width: 16px; height: 16px; color: var(--muted); }
+.pile b { font: 600 16px/1 var(--font-ui); }
+.pile-name { grid-column: 1 / -1; font-size: 10px; color: var(--muted); letter-spacing: .02em; }
+.pile.empty b, .pile.empty .pile-name { color: var(--damage); }
+button.pile:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 6%, transparent); }
+
+.relics { display: flex; gap: 6px; }
+.relic { display: inline-flex; align-items: center; gap: 6px; min-height: 0; padding: 4px 10px 4px 4px; border-radius: 999px; font-size: 11px; background: color-mix(in srgb, var(--text) 5%, transparent); border: 1px solid color-mix(in srgb, var(--faction) 30%, transparent); }
+.relic app-card { width: 22px; border-radius: 50%; overflow: hidden; aspect-ratio: 1; }
+.relic[data-mark='targetable'] { border-color: var(--target); box-shadow: 0 0 0 1px var(--target), 0 0 16px -2px color-mix(in srgb, var(--target) 60%, transparent); }
+.relic[data-mark='selectable'] { border-color: var(--game-selectable); box-shadow: 0 0 0 1px var(--game-selectable); }
+
+@keyframes turn-halo { from { opacity: .9; scale: .92; } to { opacity: 0; scale: 1.25; } }
+@keyframes target-pulse { 50% { box-shadow: 0 0 0 2px var(--target), 0 0 18px var(--target); } }
+@keyframes incoming { from { opacity: .55; } }

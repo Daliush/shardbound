@@ -1,0 +1,11 @@
+.role { position: absolute; left: 50%; top: 0; translate: -50% -55%; z-index: 2; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; white-space: nowrap; font: 600 10px/1.2 var(--font-ui); letter-spacing: .02em; color: var(--game-on-accent); background: var(--game-attack); box-shadow: 0 4px 10px -4px color-mix(in srgb, var(--black) 60%, transparent); }
+.role app-icon { width: 11px; height: 11px; }
+:host([data-role='interceptor']) .role { background: var(--game-selectable); }
+
+.projection { position: absolute; inset: 22% 6cqw auto; display: flex; flex-direction: column; align-items: center; gap: 2cqw; pointer-events: none; animation: project-in 220ms var(--ease-out) both; }
+.amount { font: 700 max(15px, 20cqw)/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--damage); text-shadow: 0 2px 8px color-mix(in srgb, var(--black) 70%, transparent); }
+.result { display: inline-flex; align-items: center; gap: 2cqw; padding: 2cqw 5cqw; border-radius: 999px; font: 600 max(10px, 9.5cqw)/1.1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--text); background: color-mix(in srgb, var(--obsidian-950) 88%, transparent); white-space: nowrap; }
+.result app-icon { width: 9cqw; height: 9cqw; }
+.projection[data-outcome='lethal'] .result { color: var(--game-on-accent); background: var(--damage); }
+.projection[data-outcome='anchored'] .result, .projection[data-outcome='linked'] .result { color: var(--game-effect); }
+@keyframes project-in { from { opacity: 0; translate: 0 6px; } }

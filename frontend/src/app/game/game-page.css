@@ -1,28 +1,47 @@
 :host { display: block; }
-.arena { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background: radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--faction-deep) 8%, transparent), transparent 75%); }
-.arena-toolbar { flex: 0 0 48px; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid var(--line); background: var(--game-toolbar); }
-.arena-brand { font: 600 1.45rem var(--font-title); color: var(--text); text-decoration: none; }
-.connection { font-size: 12px; color: var(--muted); }.connection:empty { display: none; }
-.chronicle-toggle { margin-left: auto; font-size: 12px; }.skip { font-size: 12px; }
-.arena-main { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
-.decision-dock { z-index: 20; flex: 0 0 auto; min-height: 66px; padding: 10px 22px; background: var(--game-dock); border-top: 1px solid color-mix(in srgb, var(--faction) 30%, var(--line)); display: flex; align-items: center; gap: 16px; }
-.decision-copy { flex: 1; font-size: 13px; }.decision-copy p { margin: 0; }
-.decision-actions { display: flex; align-items: center; gap: 8px; max-height: 24dvh; overflow: auto; flex-wrap: wrap; max-width: 65%; }
-.decision-actions button { font-size: 12px; }.end-turn { background: var(--faction); color: var(--game-on-accent); border-color: var(--faction); font-weight: 600; min-width: 140px; }
-.log-peek { display: none; }
-.waiting,.result { position: fixed; left: 50%; top: 50%; translate: -50% -50%; z-index: 30; text-align: center; background: var(--obsidian-950); padding: 2rem; border: 1px solid var(--line); width: min(90vw, 540px); }
-.waiting a { display: block; overflow-wrap: anywhere; margin-bottom: 1rem; }
-.result { padding: 3rem; }.result > app-icon { width: 56px; height: 56px; color: var(--prism); margin: auto auto 1.5rem; }.result h1 { font-size: 5rem; margin-bottom: .4rem; }.result p { color: var(--muted); text-transform: capitalize; }.result > div { display: flex; justify-content: center; gap: .75rem; }
-.menu-links { display: flex; align-items: center; gap: 1rem; }
-.grave-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-.hand-sheet { inset: auto 0 0; width: min(100%, 980px); max-width: 100%; margin: auto auto 0; background: var(--obsidian-900); padding: .5rem 1rem 1rem; }
-.hand-actions { display: grid; gap: .5rem; width: min(60vw, 260px); max-height: 20dvh; overflow: auto; }.hand-actions button { text-align: left; font-size: 12px; }
-.chronicle-sheet { height: min(75dvh, 800px); }.chronicle-sheet[open] { display: flex; flex-direction: column; }.chronicle-sheet app-game-log { min-height: 0; flex: 1; }
-.hand-sheet-heading { display: flex; align-items: center; justify-content: space-between; }
-.hand-carousel { display: flex; gap: 1.25rem; overflow-x: auto; padding: 1rem; scroll-snap-type: x mandatory; }
-.hand-option { scroll-snap-align: center; flex: 0 0 auto; display: grid; justify-items: center; gap: .5rem; }
-.hand-card { padding: 0; border: 0; background: transparent; touch-action: pan-x; }.hand-card app-card { --card-width: min(60vw, 240px); }
-.drag-arrow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; color: var(--heal); }.drag-arrow path { fill: none; stroke: currentColor; stroke-width: 4; }.drag-arrow circle { fill: currentColor; }
-.choice-tray { flex: 0 0 auto; max-height: 34dvh; overflow: auto; padding: 0 24px; background: var(--obsidian-900); border-top: 1px solid var(--line); }
-.choice-tray app-choice-editor { max-width: 760px; margin: 12px auto; }
+.arena {
+  position: relative; height: 100dvh; overflow: hidden;
+  display: grid; grid-template-columns: minmax(0, 1fr) 0; grid-template-rows: 52px minmax(0, 1fr);
+  background: var(--obsidian-950); transition: grid-template-columns 320ms var(--ease-out);
+}
+.topbar {
+  grid-column: 1 / -1; z-index: 30; display: flex; align-items: center; gap: 10px; padding: 0 14px;
+  background: var(--game-toolbar); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.icon-button { width: 40px; min-height: 40px; padding: 0; }
+.brand { font: 600 1.4rem/1 var(--font-title); color: var(--text); text-decoration: none; margin-right: 6px; }
+.turn { position: absolute; left: 50%; translate: -50% 0; display: inline-flex; align-items: baseline; gap: 10px; padding: 7px 16px; border-radius: 999px; font-size: 12px; color: var(--muted); background: color-mix(in srgb, var(--text) 5%, transparent); white-space: nowrap; }
+.turn b { font: 600 13px/1 var(--font-ui); color: var(--text); }
+.turn.mine b { color: var(--faction-light); }
+.turn-number { font-variant-numeric: tabular-nums; }
+.spacer { flex: 1; }
+.connection { font-size: 12px; color: var(--locked); }
+.connection:empty { display: none; }
+.skip, .chronicle-toggle { min-height: 36px; padding: 6px 12px; font-size: 12.5px; gap: 6px; }
+.skip app-icon, .chronicle-toggle app-icon { width: 14px; }
+.chronicle-toggle.on { color: var(--faction-light); background: color-mix(in srgb, var(--faction) 12%, transparent); }
 
+.stage {
+  grid-column: 1; grid-row: 2; position: relative; min-height: 0; overflow: auto; scrollbar-width: thin;
+}
+.toast { position: absolute; left: 50%; bottom: 24px; translate: -50% 0; z-index: 40; margin: 0; padding: 10px 16px; border-radius: 10px; font-size: 13px; background: var(--obsidian-800); box-shadow: var(--shadow-raised); animation: rise 260ms var(--ease-out); }
+
+/* The Chronicle: a column on wide screens, a drawer elsewhere. */
+.chronicle {
+  --chronicle-surface: var(--obsidian-900);
+  grid-column: 2; grid-row: 2; z-index: 20; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--chronicle-surface); border-left: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.chronicle-heading { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 6px 16px; }
+.chronicle-heading h2 { margin: 0; font-size: 1.5rem; }
+.chronicle app-game-log { flex: 1; min-height: 0; }
+.chronicle-scrim { display: none; }
+@media (min-width: 1280px) {
+  .arena.with-chronicle { grid-template-columns: minmax(0, 1fr) 320px; }
+  .arena:not(.with-chronicle) .chronicle { visibility: hidden; }
+}
+@media (max-width: 1279px) {
+  .chronicle { position: fixed; top: 52px; right: 0; bottom: 0; width: min(380px, 92vw); box-shadow: -24px 0 48px -24px color-mix(in srgb, var(--black) 70%, transparent); translate: 100% 0; visibility: hidden; transition: translate 300ms var(--ease-out), visibility 0s 300ms; }
+  .with-chronicle .chronicle { translate: 0; visibility: visible; transition: translate 300ms var(--ease-out); }
+  .with-chronicle .chronicle-scrim { display: block; position: fixed; inset: 52px 0 0; z-index: 19; min-height: 0; padding: 0; border: 0; border-radius: 0; background: color-mix(in srgb, var(--obsidian-950) 55%, transparent); cursor: default; }
+}

@@ -1,0 +1,34 @@
+@let p = player();
+<button class="vitals" [attr.data-mark]="mark()" [class.low]="p.hp <= p.maxHp * .3" [appAnchor]="key()" [attr.data-key]="key()"
+  [attr.aria-label]="labels()[key()] || name() + ': ' + p.hp + ' of ' + p.maxHp + ' HP'" (click)="pick.emit(key())">
+  <span class="portrait"><app-icon [name]="p.faction" /></span>
+  <span class="identity"><strong>{{ name() }}</strong><span>{{ p.faction }}</span></span>
+  <span class="hp">
+    <span class="hp-numbers"><app-icon name="heart" /><b>{{ p.hp }}</b><small>/ {{ p.maxHp }}</small>
+      @if (projection(); as hit) { @if (hit.amount !== null) { <em class="incoming" [class.lethal]="hit.outcome === 'lethal'">−{{ hit.amount }}@if (hit.outcome === 'lethal') { · Lethal }</em> } }
+    </span>
+    <span class="hp-track"><span class="lag" [style.transform]="'scaleX(' + health() + ')'"></span><span class="fill" [style.transform]="'scaleX(' + health() + ')'"></span>
+      @if (after() !== null) { <span class="cut" [style.left.%]="after()! * 100" [style.width.%]="(health() - after()!) * 100"></span> }
+    </span>
+  </span>
+</button>
+<div class="shards" [appAnchor]="'shards:' + side()" [attr.aria-label]="p.shards + ' of ' + p.maxShards + ' Shards' + (p.lockedNextTurn ? ', ' + p.lockedNextTurn + ' locked next turn' : '')">
+  <span class="shard-numbers"><app-icon name="shard" /><b>{{ p.shards }}</b><small>/ {{ p.maxShards }}</small></span>
+  <span class="pips" aria-hidden="true">@for (lit of pips(); track $index) { <i [class.lit]="lit"></i> }</span>
+  @if (p.lockedNextTurn) { <span class="locked" title="Overcharge: Shards locked next turn"><app-icon name="lock" />{{ p.lockedNextTurn }} next turn</span> }
+</div>
+<div class="piles">
+  <span class="pile" [appAnchor]="side() === 'you' ? 'hand-count:you' : 'hand:opponent'" [title]="(side() === 'you' ? 'Your hand: ' : 'Opponent hand: ') + handCount() + ' cards'"><app-icon name="hand" /><b>{{ handCount() }}</b><span class="pile-name">Hand</span></span>
+  <span class="pile" [class.empty]="p.deckCount === 0" [appAnchor]="'deck:' + side()" [title]="p.deckCount + ' cards in the deck' + (p.fatigue ? '; fatigue ' + p.fatigue : '')"><app-icon name="deck" /><b>{{ p.deckCount }}</b><span class="pile-name">@if (p.fatigue) { Fatigue {{ p.fatigue }} } @else { Deck }</span></span>
+  <button class="pile quiet" [appAnchor]="'graveyard:' + side()" [attr.aria-label]="'Open ' + (side() === 'you' ? 'your' : 'opponent') + ' graveyard, ' + p.graveyard.length + ' cards'" (click)="graveyard.emit()"><app-icon name="graveyard" /><b>{{ p.graveyard.length }}</b><span class="pile-name">Grave</span></button>
+</div>
+@if (p.relics.length) {
+  <div class="relics">
+    @for (relic of p.relics; track relic.id) {
+      <button class="relic" [attr.data-mark]="marks()['relic:' + relic.id] ?? null" [appAnchor]="'relic:' + relic.id" [attr.data-key]="'relic:' + relic.id" [appCardPreview]="{ id: relic.card }"
+        [attr.aria-label]="labels()['relic:' + relic.id] || 'Relic: ' + book.name(relic.card)" (click)="pick.emit('relic:' + relic.id)">
+        <app-card [cardId]="relic.card" mode="thumb" [interactiveTilt]="false" /><span>{{ book.name(relic.card) }}</span>
+      </button>
+    }
+  </div>
+}

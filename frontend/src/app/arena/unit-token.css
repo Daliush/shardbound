@@ -1,0 +1,38 @@
+:host {
+  --ring: transparent;
+  position: relative; display: block; width: var(--token-w, 128px); aspect-ratio: 4 / 5;
+  container-type: inline-size; text-align: left; transition: translate 220ms var(--ease-out), scale 220ms var(--ease-out), opacity 200ms ease, filter 200ms ease;
+}
+.frame {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 9cqw;
+  background: var(--game-surface);
+  border: 1px solid color-mix(in srgb, var(--faction) 40%, var(--line));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--white) 6%, transparent) inset, 0 10px 22px -12px color-mix(in srgb, var(--black) 70%, transparent), 0 0 0 0 var(--ring);
+  transition: box-shadow 220ms ease, border-color 220ms ease;
+}
+.art { position: absolute; inset: 0 0 30%; width: 100%; height: 70%; object-fit: cover; transition: filter 300ms ease; }
+.shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 0 34%, color-mix(in srgb, var(--game-surface) 72%, transparent) 56%, var(--game-surface) 72%); }
+
+.states { position: absolute; top: 5cqw; left: 5cqw; display: flex; gap: 3cqw; }
+.states > span { display: grid; place-items: center; width: 17cqw; height: 17cqw; border-radius: 50%; color: var(--text); background: color-mix(in srgb, var(--obsidian-950) 82%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
+.states app-icon { width: 10cqw; height: 10cqw; }
+.modifier, .token-tag { position: absolute; top: 5cqw; right: 5cqw; padding: 1.5cqw 4cqw; border-radius: 5cqw; font: 600 max(9px, 8.5cqw)/1.2 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--game-ready); background: color-mix(in srgb, var(--obsidian-950) 84%, transparent); }
+.modifier.temporary { outline: 1px dashed color-mix(in srgb, var(--game-ready) 60%, transparent); outline-offset: -1px; }
+.token-tag { top: auto; bottom: 33%; right: 5cqw; color: var(--root); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; font-size: max(8px, 7cqw); }
+.modifier + .token-tag { display: none; }
+
+.foot { position: absolute; inset: auto 0 0; padding: 0 6cqw 6cqw; display: grid; gap: 3cqw; }
+.name { display: block; font: 600 max(10px, 10cqw)/1.15 var(--font-ui); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: var(--game-label-shadow); }
+.stats { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
+.attacks { display: flex; flex-direction: column; gap: 2cqw; min-width: 0; }
+.attack { display: inline-flex; align-items: center; gap: 1.5cqw; color: var(--game-attack); font: 600 max(10px, 10.5cqw)/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.attack app-icon { width: 9cqw; height: 9cqw; }
+.attack small { display: inline-flex; align-items: center; gap: .5cqw; margin-left: 1.5cqw; color: var(--game-cost); font: 500 max(9px, 8.5cqw)/1 var(--font-ui); }
+.attack small app-icon { width: 7.5cqw; height: 7.5cqw; }
+.attack.chosen { color: var(--target); }
+.defense { position: relative; display: grid; place-items: center; width: 27cqw; height: 30cqw; flex: 0 0 auto; color: var(--game-defense); }
+.defense app-icon { position: absolute; inset: 0; width: 100%; height: 100%; color: color-mix(in srgb, var(--game-defense-icon) 70%, transparent); }
+.defense b { position: relative; font: 700 max(13px, 14cqw)/1 var(--font-ui); font-variant-numeric: tabular-nums; margin-top: -2cqw; }
+.defense.damaged { color: var(--damage); }
+/* A small token keeps its name readable; the token tag is one hover or long press away. */
+@container (max-width: 84px) { .token-tag { display: none; } }
