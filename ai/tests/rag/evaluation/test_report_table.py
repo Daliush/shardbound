@@ -5,7 +5,7 @@ from rag.evaluation.scores import Report, Scores
 def build_scores(question_count: int, recall: float, reciprocal_rank: float, candidate_count: float) -> Scores:
     return Scores(question_count=question_count, mean_recall_at={10: recall, 20: recall},
                   mean_reciprocal_rank=reciprocal_rank, mean_candidate_count=candidate_count,
-                  mean_recall_curve=[recall])
+                  mean_recall_curve=[recall], latency_p50_seconds=0.0, latency_p95_seconds=0.0)
 
 
 def test_formats_one_row_for_all_the_questions_then_one_per_category():

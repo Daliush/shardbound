@@ -3,22 +3,18 @@
 import re
 
 from rag.chunks import Chunk
-from rag.retrievers import Retriever
+from rag.expanders import Expander
 
 
-class ExpansionRetriever(Retriever):
+class RefsExpander(Expander):
     """
-    Wraps a retriever of the same chunks. The candidates are the chunks of the cards the question names, then the
-    first `top_k` chunks the retriever ranks, then the chunks all of these refer to, one level deep, each chunk once.
-    A question that names a card shares no word with the rules the card relies on: the card's refs bring them. Only
-    cards are found by name: a term's name ("destroy", "die") is in most questions.
+    The chunks of the cards the question names, then the chunks it is handed, then the chunks all of these refer to,
+    one level deep, each chunk once. A question that names a card shares no word with the rules the card relies on:
+    the card's refs bring them. Only cards are found by name: a term's name ("destroy", "die") is in most questions.
     """
 
-    def __init__(self, retriever: Retriever, chunks: list[Chunk], top_k: int = 20) -> None:
-        self._retriever = retriever
-        self._top_k = top_k
-        """How many chunks of the wrapped retriever's ranking become candidates, before the cards and the refs join
-        them."""
+    def __init__(self, name: str, chunks: list[Chunk]) -> None:
+        super().__init__(name)
         self._refs_by_chunk_id: dict[str, tuple[str, ...]] = {}
         self._card_id_by_lowercase_name: dict[str, str] = {}
         for chunk in chunks:
@@ -32,11 +28,10 @@ class ExpansionRetriever(Retriever):
 
     @property
     def description(self) -> str:
-        return (f"refs expansion, one level deep, of the cards the question names and the top {self._top_k} of "
-                f"{self._retriever.description}")
+        return "expanded with the cards the question names and the refs of all of them, one level deep"
 
-    def rank_chunks(self, question: str) -> list[str]:
-        retrieved = self._find_named_cards(question) + self._retriever.rank_chunks(question)[:self._top_k]
+    def expand_chunks(self, question: str, chunk_ids: list[str]) -> list[str]:
+        retrieved = self._find_named_cards(question) + chunk_ids
         return list(dict.fromkeys(retrieved + self._follow_refs(retrieved)))
 
     def _compile_card_name_pattern(self) -> re.Pattern[str]:

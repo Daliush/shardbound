@@ -9,11 +9,15 @@ from rag.evaluation.scores import Report
 @dataclass(frozen=True)
 class Layers:
     """
-    What a run evaluates, one name per layer of the Arbiter: the frontend switches between runs by them. `answer`
-    names the generator that answers from the retrieved chunks: None until there is one.
+    What a run evaluates, one name per layer of the Arbiter, in the order a question goes through them: the frontend
+    switches between runs by them. Each optional layer is None when the run skipped it: `expand` names the expander
+    that adds chunks to the retriever's top, `rerank` the reranker that reorders the candidates, `answer` the
+    generator that answers from them (none yet).
     """
 
     retriever: str
+    expand: str | None = None
+    rerank: str | None = None
     answer: str | None = None
 
 
@@ -21,7 +25,7 @@ class Layers:
 class Run:
     layers: Layers
     description: str
-    """What the layers do, as each describes itself: today the retriever's description."""
+    """What the layers do, as each describes itself, the retriever's first."""
     report: Report
 
 
