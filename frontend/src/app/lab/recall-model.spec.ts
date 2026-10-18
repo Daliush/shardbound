@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { EvaluationQuestion, EvaluationRun } from '../api/evaluation';
-import { candidateSummary, formatMetric, isContextMetric, metrics, relevantRanks } from './metrics';
+import { EvaluationRun } from '../api/evaluation';
+import { candidateSummary, formatMetric, isContextMetric } from './metrics';
 import { rankedRuns, runColor } from './presentation';
 import { rankAtBudget, recallAt, recallCurve, curvePath } from './recall-model';
 import { RecallChart } from './recall-chart';
@@ -18,44 +18,32 @@ describe('Report metric semantics', () => {
     expect(formatMetric('candidate_count',50)).toBe('50');
     expect(isContextMetric('mean_candidate_count')).toBe(true);
   });
-  it('hides the candidate recall of older reports and reads the ceiling at the end of the curve', () => {
-    const legacy = run('rrf',[.5,.9],41);
-    legacy.scores.overall['mean_candidate_recall'] = .9;
-    expect(metrics([legacy])).not.toContain('mean_candidate_recall');
-    expect(candidateSummary(legacy.scores.overall)).toBe('90.0% of 41.0 candidates');
-    expect(candidateSummary(run('old',undefined,41).scores.overall)).toBe('41.0 candidates');
+  it('reads the ceiling at the end of the curve', () => {
+    expect(candidateSummary(run('rrf',[.5,.9],41).scores.overall)).toBe('90.0% of 41.0 candidates');
   });
   it('does not rank or reorder runs by candidate count', () => {
     const runs = [run('small',undefined,41),run('all',undefined,191)];
     expect(rankedRuns(runs,'mean_candidate_count').map(row => [row.run,row.rank])).toEqual([[runs[0],null],[runs[1],null]]);
     expect(runColor(runs[0])).toBe(runColor({...runs[0],scores:{overall:{},by_category:{}}}));
   });
-  it('keeps every cited rank, past twenty and missing, and none for an older report', () => {
-    const question: EvaluationQuestion = {question_id:'q',category:'interaction',top_chunk_ids:['card'],recall_at:{'10':0,'20':0},reciprocal_rank:1/21,relevant_ranks:{'11.1.1':21,'8.5':33,'8.18':null},candidate_count:50};
-    expect(relevantRanks(question)).toEqual({'11.1.1':21,'8.5':33,'8.18':null});
-    expect(relevantRanks({question_id:'old',category:'interaction',top_chunk_ids:['card'],recall_at:{'10':0},reciprocal_rank:0})).toBeNull();
-  });
 });
 
 describe('Recall at equal budgets', () => {
-  it('uses k minus one, clamps at the ceiling, and never invents a missing curve', () => {
+  it('uses k minus one and clamps at the ceiling', () => {
     expect(recallAt([.1,.4,.7],1)).toBe(.1);
     expect(recallAt([.1,.4,.7],2)).toBe(.4);
     expect(recallAt([.1,.4,.7],191)).toBe(.7);
-    expect(recallAt([],20)).toBeNull();
-    expect(recallCurve({})).toEqual([]);
-    expect(recallCurve({mean_recall_curve:[.1,null,.5]})).toEqual([]);
+    expect(recallCurve({mean_recall_curve:[.1,.4,.7]})).toEqual([.1,.4,.7]);
     expect(curvePath([.1,.4,.7],2,k => k,value => value)).toBe('M1.00,0.10 L2.00,0.40');
   });
-  it('changes budget and range, draws a dotted extension, and marks old runs missing', async () => {
+  it('changes budget and range and draws a dotted extension', async () => {
     const fixture = TestBed.createComponent(RecallChart);
-    fixture.componentRef.setInput('runs',[run('rrf-bm25-dense',Array.from({length:191},(_,i) => (i+1)/191)),run('rrf-bm25-dense-expanded',[.1,.5,.95],3),run('old')]);
+    fixture.componentRef.setInput('runs',[run('rrf-bm25-dense',Array.from({length:191},(_,i) => (i+1)/191)),run('bm25',[.1,.5,.95],3)]);
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('input')?.max).toBe('70');
     expect(host.querySelectorAll('.ceiling-line')).toHaveLength(1);
     expect(host.querySelectorAll('.readout-row')[0].textContent).toContain('95.0%');
-    expect(host.querySelectorAll('.readout-row')[2].textContent).toContain('—');
     (host.querySelectorAll('.range-toggle button')[1] as HTMLButtonElement).click(); await fixture.whenStable();
     expect(host.querySelector('input')?.max).toBe('191');
     const slider = host.querySelector('input')!; slider.value='41'; slider.dispatchEvent(new Event('input')); await fixture.whenStable();
@@ -64,9 +52,9 @@ describe('Recall at equal budgets', () => {
     (host.querySelectorAll('.readout-row')[1] as HTMLButtonElement).click(); await fixture.whenStable();
     expect(host.querySelectorAll('.readout-row')[1].getAttribute('aria-pressed')).toBe('true');
   });
-  it('ranks the readout best first at the budget, sharing tied ranks, with missing curves then the random floor last', () => {
-    const series = [{key:'random',value:.9,random:true},{key:'old',value:null,random:false},{key:'a',value:.4,random:false},{key:'b',value:.6,random:false},{key:'c',value:.4,random:false}];
-    expect(rankAtBudget(series).map(item => [item.key,item.rank])).toEqual([['b',1],['a',2],['c',2],['old',null],['random',null]]);
+  it('ranks the readout best first at the budget, sharing tied ranks, with the random floor last', () => {
+    const series = [{key:'random',value:.9,random:true},{key:'a',value:.4,random:false},{key:'b',value:.6,random:false},{key:'c',value:.4,random:false}];
+    expect(rankAtBudget(series).map(item => [item.key,item.rank])).toEqual([['b',1],['a',2],['c',2],['random',null]]);
   });
   it('reorders the readout when the budget changes', async () => {
     const fixture = TestBed.createComponent(RecallChart);

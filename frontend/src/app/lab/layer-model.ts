@@ -12,8 +12,9 @@ export function decodeRun(key: string): Layers | null {
 }
 export function layerNames(runs: EvaluationRun[]): string[] { return [...new Set(runs.flatMap(run => Object.keys(run.layers)))]; }
 export function variants(runs: EvaluationRun[], layer: string): (string | null)[] { return [...new Set(runs.map(run => run.layers[layer] ?? null))]; }
-export function combination(runs: EvaluationRun[], selected: Layers, layer: string, value: string | null): EvaluationRun | undefined {
-  return runs.find(run => layerNames(runs).every(name => (run.layers[name] ?? null) === (name === layer ? value : selected[name] ?? null)));
+/** The random floor: the random retriever alone. Followed by a reranker, it is a pipeline like the others. */
+export function isFloor(run: EvaluationRun): boolean {
+  return Object.entries(run.layers).every(([layer,value]) => layer === 'retriever' ? value === 'random' : value === null);
 }
 export function runName(run: EvaluationRun): string {
   return Object.entries(run.layers).map(([layer,value]) => value === null ? layer + ': none' : value).join(' / ');

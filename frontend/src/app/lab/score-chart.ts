@@ -3,7 +3,7 @@ import { rankedRuns, runColor } from './presentation';
 import { max } from 'd3-array';
 import { scaleLinear } from 'd3-scale';
 import { EvaluationRun } from '../api/evaluation';
-import { runKey, runName } from './layer-model';
+import { isFloor, runKey, runName } from './layer-model';
 import { atPath, formatMetric, isRatio, metricName, metricUnit } from './metrics';
 @Component({
   selector:'app-score-chart',
@@ -27,7 +27,7 @@ export class ScoreChart {
   readonly selected = output<string>(); readonly pinned = output<string>();
   protected readonly format = formatMetric; protected readonly metricName = metricName; protected readonly metricUnit = metricUnit;
   protected readonly rows = computed(() => rankedRuns(this.runs(),this.metric()).map(row => ({key:row.key,name:runName(row.run),value:row.value})));
-  protected readonly floor = computed(() => atPath(this.runs().find(run => run.layers['retriever'] === 'random')?.scores.overall,this.metric()));
+  protected readonly floor = computed(() => atPath(this.runs().find(isFloor)?.scores.overall,this.metric()));
   protected readonly ceiling = computed(() => isRatio(this.metric()) ? 1 : Math.max(1,max(this.rows(),row => row.value ?? 0) ?? 1,this.floor() ?? 0));
   protected width(value: number | null): number { return scaleLinear().domain([0,this.ceiling()]).range([0,600]).clamp(true)(value ?? 0); }
   protected color(key: string): string { const run = this.runs().find(run => runKey(run.layers) === key); return run ? runColor(run) : 'var(--lab-accent)'; }

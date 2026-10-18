@@ -6,7 +6,7 @@
     <svg [attr.viewBox]="'0 0 ' + width() + ' ' + height()" [attr.height]="height()" role="img" [attr.aria-label]="description()">
       @for (cut of cuts(); track cut.rank) { <line [attr.x1]="gutter" [attr.x2]="width()" [attr.y1]="cut.y" [attr.y2]="cut.y" class="cut" [class.prompt]="cut.rank === 10" /><text [attr.x]="gutter - 6" [attr.y]="cut.y" class="cut-label">{{ cut.rank }}</text> }
       @for (item of links(); track item.key) { <path [attr.d]="item.path" class="link" [class.lit]="focused() === item.chunk" [class.dim]="focused() !== null && focused() !== item.chunk" data-flow-link /> }
-      @for (item of layout(); track item.column.stage.retriever) {
+      @for (item of layout(); track item.column.stage.label) {
         <g data-flow-stage>
           <text [attr.x]="item.x" y="16" class="stage-label">{{ item.column.stage.label }}</text>
           <text [attr.x]="item.x" y="33" class="stage-role">{{ subtitle(item.column) }}</text>
@@ -25,9 +25,9 @@
   <div class="flow-legend" aria-hidden="true"><span><i class="cited"></i>Required for the answer (cited)</span><span><i class="card"></i>Card the question involves, not required</span><span><i class="other"></i>Other chunk</span><span><i class="cut-key"></i>10 · prompt, 20 · handed on</span></div>
   @if (cited().length) {
     <div class="rank-table-wrap"><table class="rank-table"><caption>Rank of each cited source at each stage</caption>
-      <thead><tr><th scope="col">Cited source</th>@for (column of columns(); track column.stage.retriever) { <th scope="col">{{ column.stage.label }}</th> }</tr></thead>
-      <tbody>@for (chunk of cited(); track chunk) { <tr [class.lit]="focused() === chunk" (pointerenter)="focus(chunk)" (pointerleave)="focus(null)"><th scope="row"><app-chunk-chip [id]="chunk" /></th>@for (column of columns(); track column.stage.retriever) { <td [class]="rankPlace(column,chunk)">{{ rankText(column,chunk) }}</td> }</tr> }</tbody>
+      <thead><tr><th scope="col">Cited source</th>@for (column of columns(); track column.stage.label) { <th scope="col">{{ column.stage.label }}</th> }</tr></thead>
+      <tbody>@for (chunk of cited(); track chunk) { <tr [class.lit]="focused() === chunk" (pointerenter)="focus(chunk)" (pointerleave)="focus(null)"><th scope="row"><app-chunk-chip [id]="chunk" /></th>@for (column of columns(); track column.stage.label) { <td [class]="rankPlace(column,chunk)">{{ rankText(column,chunk) }}</td> }</tr> }</tbody>
     </table></div>
   } @else { <p class="flow-intro">This question cites no source: the Arbiter should say the rules don't cover it, so recall does not apply.</p> }
 </section>
-} @else { <p class="no-ranks">This report keeps no cited ranks for this question. Choose a more recent evaluation to see how the pipeline ranked its sources.</p> }
+} @else { <p class="no-ranks">This evaluation ran none of the pipeline's stages: run every retriever to see how the pipeline ranked this question's sources.</p> }

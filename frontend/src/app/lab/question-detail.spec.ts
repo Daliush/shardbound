@@ -4,8 +4,8 @@ import { EvaluationRun } from '../api/evaluation';
 import { CardBook } from '../game/card-book';
 import { QuestionDetail } from './question-detail';
 
-function run(retriever: string, ranks?: Record<string,number | null>): EvaluationRun {
-  return {layers:{retriever,answer:null},scores:{overall:{},by_category:{}},questions:[{question_id:'q',category:'simple-rule',top_chunk_ids:['1.1'],recall_at:{'10':1,'20':1},reciprocal_rank:1,...(ranks ? {relevant_ranks:ranks} : {})}]};
+function run(retriever: string): EvaluationRun {
+  return {layers:{retriever,answer:null},scores:{overall:{},by_category:{}},questions:[{question_id:'q',category:'simple-rule',top_chunk_ids:['1.1'],recall_at:{'10':1,'20':1},reciprocal_rank:1,relevant_ranks:{'1.1':1},candidate_count:1}]};
 }
 
 describe('Question detail', () => {
@@ -25,7 +25,7 @@ describe('Question detail', () => {
   });
   it('falls back on the id and the report category without the dataset, and opens on the pipeline flow', async () => {
     const fixture = TestBed.createComponent(QuestionDetail);
-    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run('bm25',{'1.1':1})]);
+    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run('bm25')]);
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h2')?.textContent).toBe('q');
@@ -33,10 +33,10 @@ describe('Question detail', () => {
     expect(host.querySelector('.answer-key')).toBeNull();
     expect(host.querySelectorAll('[data-flow-stage]')).toHaveLength(1);
   });
-  it('says when an older report keeps no cited ranks', async () => {
+  it('says when the evaluation ran none of the pipeline stages', async () => {
     const fixture = TestBed.createComponent(QuestionDetail);
-    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run('bm25')]);
+    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run('random')]);
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('.no-ranks')?.textContent).toContain('This report keeps no cited ranks');
+    expect(fixture.nativeElement.querySelector('.no-ranks')?.textContent).toContain('ran none of the pipeline'); 
   });
 });

@@ -25,4 +25,18 @@ describe('Combination builder', () => {
     fixture.nativeElement.querySelector('.reveal-button').click(); await fixture.whenStable();
     expect(fixture.nativeElement.textContent).toContain('50.0%');
   });
+  it('builds a pipeline with or without its reranker', async () => {
+    const reranked: EvaluationRun[] = [
+      {layers:{retriever:'bm25',rerank:null,answer:null},scores:{overall:{accuracy:.5,question_count:10},by_category:{}},questions:[]},
+      {layers:{retriever:'bm25',rerank:'minilm-l6',answer:null},scores:{overall:{accuracy:.7,question_count:10},by_category:{}},questions:[]},
+    ];
+    const fixture = TestBed.createComponent(CombinationBuilder);
+    fixture.componentRef.setInput('runs',reranked); fixture.componentRef.setInput('initial',reranked[0].layers);
+    await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).toContain('Reranker');
+    expect(fixture.nativeElement.textContent).toContain('No reranking · in retrieval order');
+    (fixture.nativeElement.querySelector('input[name="builder-rerank"][value="minilm-l6"]') as HTMLInputElement).click(); await fixture.whenStable();
+    fixture.nativeElement.querySelector('.reveal-button').click(); await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).toContain('70.0%');
+  });
 });

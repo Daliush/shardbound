@@ -7,6 +7,9 @@ export interface EvaluationQuestion extends Fields {
   top_chunk_ids: string[];
   recall_at: { [key: string]: number };
   reciprocal_rank: number;
+  /** Where each cited chunk landed in the run's whole list, null when the run never returned it. */
+  relevant_ranks: Record<string, number | null>;
+  candidate_count: number;
 }
 export interface EvaluationRun {
   description?: string;
