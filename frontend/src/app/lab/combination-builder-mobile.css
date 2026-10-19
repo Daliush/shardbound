@@ -1,5 +1,26 @@
 @media(max-width:1000px) { .builder-layout { gap: 1.5rem; grid-template-columns: minmax(0,1fr) 290px; } .options { grid-template-columns: 1fr; } }
-@media(max-width:700px) { .builder-layout { grid-template-columns: 1fr; gap: .75rem; } .results { position: static; grid-row: 2; margin-top: 0; } .options { grid-template-columns: 1fr 1fr; } .option { padding: .8rem .6rem; } .option strong { font-size: .74rem; } .option small { font-size: .65rem; } }
-@media(max-width:700px) { .mobile-results { display: flex; width: 100%; justify-content: space-between; margin-bottom: 1.8rem; font-size: .8rem; } .results { scroll-margin-top: 1rem; } }
+@media(max-width:700px) { .options { grid-template-columns: 1fr 1fr; } .option { min-height: 0; padding: .8rem .6rem; } .option strong { font-size: .74rem; } .option small { font-size: .65rem; } }
 @media(max-width:340px) { .options { grid-template-columns: 1fr; } }
 
+/* On a phone, the results stay pinned to the bottom of the screen while the options scroll: each choice shows its
+   effect in place. The bar keeps the essentials; the pipeline preview above already shows the recipe. */
+@media(max-width:700px) {
+  .builder-layout { display: flex; flex-direction: column; align-items: stretch; gap: .75rem; }
+  .pipeline-preview { padding: .4rem 0 1.6rem; }
+  .results {
+    position: sticky; top: auto; bottom: 0; z-index: 5; margin-top: 0; padding: .8rem 1rem calc(.8rem + env(safe-area-inset-bottom));
+    display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; border: 1px solid var(--line); border-radius: 14px 14px 0 0;
+    box-shadow: 0 -14px 28px -20px var(--black);
+  }
+  .results-heading, .recipe, .result-placeholder > app-icon, .result-placeholder p, .precomputed, .sample-size, .result-metric p { display: none; }
+  .result-placeholder { flex: 1; min-width: 0; padding: 0; text-align: left; }
+  .result-placeholder h4 { margin: 0; font-size: .8rem; }
+  .results .reveal-button { width: auto; flex: none; gap: .5rem; }
+  .result-scores { flex: 1 1 100%; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .55rem .75rem; }
+  .result-status { grid-column: 1 / -1; margin: 0; }
+  .result-metric { padding: 0; border: 0; }
+  .result-metric > div { flex-direction: column; align-items: flex-start; gap: .1rem; }
+  .result-metric span { font-size: .66rem; color: var(--muted); }
+  .result-metric strong { font-size: 1.1rem; }
+  .result-scores button { grid-column: 1 / -1; }
+}

@@ -1,11 +1,10 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { EvaluationRun, Layers } from '../api/evaluation';
 import { Icon } from '../core/icon';
 import { layerNames, runKey, variants } from './layer-model';
 import { atPath, formatMetric, metricDescription, metricName, metrics } from './metrics';
 import { matchingRun, pipelineName, variantName } from './presentation';
 import { LabMotion } from './lab-motion';
-import { Settings } from '../core/settings';
 
 @Component({
   selector: 'app-combination-builder', imports: [Icon, LabMotion],
@@ -16,7 +15,6 @@ import { Settings } from '../core/settings';
           <span class="source-node"><app-icon name="search" />Question</span>
           @for (layer of layers(); track layer) { <app-icon name="arrow" /><span class="pipeline-node" [class.inactive]="draft()[layer] === null"><small>{{ layerLabel(layer) }}</small>{{ variant(draft()[layer] ?? null) }}</span> }
         </div>
-        <button class="primary mobile-results" [disabled]="!match()" (click)="showResults(results)">See results<app-icon name="arrow" /></button>
         @for (layer of layers(); track layer; let i = $index) {
           <fieldset><legend><span class="step">{{ i + 1 }}</span>{{ layerLabel(layer) }}</legend><p class="step-description">{{ layerDescription(layer) }}</p>
             <div class="options" role="radiogroup" [attr.aria-label]="layerLabel(layer)">
@@ -32,7 +30,7 @@ import { Settings } from '../core/settings';
         }
         <p class="builder-note"><app-icon name="info" />Options come from recorded evaluations. New experiments are run offline.</p>
       </div>
-      <aside #results class="results" aria-labelledby="results-title" tabindex="-1">
+      <aside class="results" aria-labelledby="results-title">
         <div class="results-heading"><app-icon name="chart" /><h3 id="results-title">Your combination</h3></div>
         <div class="recipe">@for (layer of layers(); track layer) { <div><span>{{ layerLabel(layer) }}</span><strong>{{ variant(draft()[layer] ?? null) }}</strong></div> }</div>
         @if (revealed() && match(); as run) {
@@ -52,7 +50,6 @@ import { Settings } from '../core/settings';
   styleUrls: ['./combination-builder.css', './combination-builder-mobile.css'],
 })
 export class CombinationBuilder {
-  private readonly settings = inject(Settings);
   readonly runs = input<EvaluationRun[]>([]);
   readonly initial = input<Layers>({});
   readonly changed = output<Layers>();
@@ -74,11 +71,6 @@ export class CombinationBuilder {
   protected choose(layer: string, value: string | null): void {
     const draft = {...this.draft(),[layer]:value};
     this.draft.set(draft); this.revealed.set(false); this.changed.emit(draft);
-  }
-  protected showResults(panel: HTMLElement): void {
-    this.revealed.set(true);
-    panel.focus({preventScroll:true});
-    panel.scrollIntoView({behavior:this.settings.reducedMotion() ? 'instant' : 'smooth',block:'start'});
   }
   protected layerLabel(layer: string): string { return layer === 'answer' ? 'Answer model' : layer === 'rerank' ? 'Reranker' : layer === 'expand' ? 'Expansion' : layer[0].toUpperCase() + layer.slice(1); }
   protected layerDescription(layer: string): string {
