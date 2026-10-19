@@ -143,4 +143,4 @@ Open, to raise when the step comes:
 
 ## Docs to keep in sync
 
-`docs/design.md` §5.2, §6.2, §6.3 and its changelog; `CLAUDE.md` (status, commands); `ai/README.md`; `engine/corpus/README.md`; this skill's plan table and numbers.
+`docs/design.md` §5.2, §6.2, §6.3 and its changelog; `AGENTS.md` (status, commands); `ai/README.md`; `engine/corpus/README.md`; this skill's plan table and numbers.

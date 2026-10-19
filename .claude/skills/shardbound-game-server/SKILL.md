@@ -116,4 +116,4 @@ To check a change in the real client, run `docker compose up --build` from the r
 
 ## Docs to keep in sync
 
-A protocol or session change updates spec §12–§14 and, when payloads move, `specs/phase-2-examples.md`. The end of a slice updates the `docs/design.md` changelog, `CLAUDE.md` and the `shardbound-project` skill. This skill changes with the server.
+A protocol or session change updates spec §12–§14 and, when payloads move, `specs/phase-2-examples.md`. The end of a slice updates the `docs/design.md` changelog, `AGENTS.md` and the `shardbound-project` skill. This skill changes with the server.
