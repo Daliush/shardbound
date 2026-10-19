@@ -27,7 +27,11 @@ Tests: `cd engine && ./mvnw verify`, `cd frontend && npm test`. Bot reports, on 
 | `content/` | Cards and decks as JSON, with their schemas and tests |
 | `engine/core` | The rules engine: Java 21, no framework ([entry points and scenario service](engine/core/README.md)) |
 | `engine/api` | The game server: Spring Boot, REST and WebSocket |
-| `frontend/` | The test client: Angular |
+| `engine/dataset`, `engine/corpus` | The Arbiter's evaluation questions with their answer keys, and its RAG chunks |
+| `ai/` | The AI layer: Python, the dataset's wording and the RAG ([`ai/README.md`](ai/README.md)) |
+| `evals/` | The evaluation datasets and every saved evaluation |
+| `frontend/` | The client: Angular, with the game and the benchmark lab |
+| `AGENTS.md`, `.claude/` | What coding agents read: instructions, skills, hooks, review agents |
 
 ## Backend architecture
 
@@ -45,6 +49,12 @@ flowchart LR
 
 The domain knows neither persistence nor transport. No server instance keeps a game in memory: every move is saved with an optimistic lock, and a small notification tells the other instances that the game moved, so it can run on several instances.
 
+## Built with coding agents
+
+Most of the code is written by coding agents, mostly Claude Code, and I make the decisions. Agents read `AGENTS.md` and the project's skills. Hooks, review agents and CI catch their mistakes: a command on the test split is refused, failing tests send the agent back, and a pull request that lowers retrieval recall is blocked. How it works, with real examples: [`docs/dev-workflow.md`](docs/dev-workflow.md).
+
 ## Status
 
-Rules, 47 cards and three decks, the engine with every rule, effect and keyword, a random and a greedy bot that never see hidden cards (they determinize a game from their own view), the scenario service, the game server and the client are done: phase 2 is over. Phase 3, the RAG Arbiter, has started with its evaluation scenarios: 25 rules interactions played by the engine, 177 questions with answer keys nobody wrote by hand ([`engine/dataset`](engine/dataset/README.md), [roadmap](docs/design.md)).
+Phase 2 is done: the rules, 47 cards and three decks, an engine that plays every rule, effect and keyword, two bots that never see hidden cards, the game server and the client.
+
+Phase 3, the RAG Arbiter, is in progress. Its evaluation dataset has 668 questions, and the engine writes every answer key. Its retrieval (BM25 and embeddings fused by RRF, the cards' cross-references, a cross-encoder reranker) puts 72.7% of the rules and cards a question must cite in its top 10, on the dev questions (October 2026). Generating the answers and grading them come next. Details: the Status of [`AGENTS.md`](AGENTS.md), and the [roadmap](docs/design.md).
