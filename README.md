@@ -19,6 +19,8 @@ cd frontend && npm install && npm start           # client, http://localhost:420
 
 Tests: `cd engine && ./mvnw verify`, `cd frontend && npm test`. Bot reports, on demand: `cd engine && ./mvnw -pl core test -Preports`.
 
+To host it on Google Cloud Run: [`engine/README.md`](engine/README.md), then [`frontend/README.md`](frontend/README.md).
+
 ## Repository
 
 | Path | What |
@@ -47,7 +49,7 @@ flowchart LR
     D --> E["engine/core"]
 ```
 
-The domain knows neither persistence nor transport. No server instance keeps a game in memory: every move is saved with an optimistic lock, and a small notification tells the other instances that the game moved, so it can run on several instances.
+The domain knows neither persistence nor transport. No server instance keeps a game in memory: every move is saved with an optimistic lock, and a small notification tells the other instances that the game moved, so it can run on several instances. For now the games are saved in memory, so it runs as one instance until a shared database replaces it.
 
 ## Built with coding agents
 

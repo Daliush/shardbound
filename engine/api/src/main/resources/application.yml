@@ -5,6 +5,10 @@ spring:
     virtual:
       enabled: true
 
+# Cloud Run gives the port in PORT.
+server:
+  port: ${PORT:8080}
+
 # See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set, and
 # shardbound.reports-dir and shardbound.datasets-dir, the Arbiter's evaluations and their datasets, are then the
 # repository's evals/reports and evals/datasets.

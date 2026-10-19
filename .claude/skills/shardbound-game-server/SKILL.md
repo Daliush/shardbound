@@ -62,6 +62,10 @@ controller ──▶ domain ◀── adapter ──▶ dao
 - The battle line (`arena/intent-bar.ts`, filled by `GamePage.intent`) is the one place that says what is happening: the engine's prompt when nothing is selected, the selection in progress (with the card's text or the attack's damage and cost), the engine's label of the action a hovered target would pick, the action buttons and End turn; during a resolution, the text of each event. While the player aims, everything that is neither a target nor the selection dims.
 - Attack previews (`arena/combat.ts`) are display only: `projectAttack` sets the engine's `AttackView.damage` against each target's defense or HP and names the outcome (`hit`, `lethal`, `anchored` for 11.3.4, `linked` for 11.5.2, `effect` without damage); the server still decides, and the defender may intercept. Under attack, `pendingCombat` (from the last `attack_declared`) projects the strike on the threatened unit and on every unit that can intercept.
 - The Chronicle (`game/game-log.ts`) groups the events by turn and links each rule ID to its section of the rulebook on GitHub (`game/rulebook.ts`, one entry per rulebook file).
+- `arena/stage/` plays each event over the board the player still sees, then lets the new board slide in. Skip and the speed setting apply to all of it.
+- Motion: every animation respects reduced motion and the instant setting, and GSAP animations stop when their component is destroyed. The home's Three.js scene runs only on a fine pointer above 800px and stops at rest or when hidden; the page works without WebGL.
+- The lab (`/lab`) only shows recorded evaluations (`/api/evaluations/`, with the questions from `/api/datasets/`). It never runs a model and never estimates a score for a combination that was not run: the builder shows only an exact matching run. The random retriever is a separate floor, and the selection lives in the URL. A new pipeline step or variant needs one entry in `lab/pipeline-model.ts` (`PIPELINE_STAGES`) to be drawn in a question's pipeline flow.
+- `public/portals/` holds the home's generated landscapes, with their exact prompts (`prompts.json`) and one provenance file per image (`*.webp.json`).
 - Tokens live in `localStorage` (`shardbound.game.<id>.token`), so a reload resumes the game. Two seats on one machine need two browsers, a private window, or a second dev server (`npm start -- --port 4201`).
 
 ## Changing it
@@ -116,4 +120,4 @@ To check a change in the real client, run `docker compose up --build` from the r
 
 ## Docs to keep in sync
 
-A protocol or session change updates spec §12–§14 and, when payloads move, `specs/phase-2-examples.md`. The end of a slice updates the `docs/design.md` changelog and the status of `AGENTS.md`. This skill changes with the server.
+A protocol or session change updates spec §12–§14 and, when payloads move, `specs/phase-2-examples.md`. The end of a slice updates the `docs/design.md` changelog and the status of `AGENTS.md`. A new environment variable or a change to an image updates `engine/README.md` or `frontend/README.md`. This skill changes with the server.

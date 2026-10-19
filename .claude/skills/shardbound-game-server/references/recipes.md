@@ -54,6 +54,7 @@ Phase 8 (`docs/design.md` §8.2). Neither the domain nor the adapters change.
 2. `dao/notification/GameNotificationDaoDatabase implements GameNotificationDao`: for example Postgres `NOTIFY game, version` and a thread that `LISTEN`s and calls this instance's listeners. Notifications stay tiny (8 KB cap): never put a message in them. Catch and log each listener's failure, as the in-memory one does.
 3. Select them instead of the in-memory ones, behind a profile, in `config/`.
 4. Run `controller/ws/TwoInstancesTest`'s scenarios against them.
+5. Remove `--max-instances 1` from the Cloud Run steps of `engine/README.md`: the server can then run on several instances.
 
 ## 7. Change the client
 

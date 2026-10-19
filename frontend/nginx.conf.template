@@ -1,18 +1,21 @@
 # Serves the client, and passes the API and the game sockets to the server, like the dev proxy does.
+# nginx fills ${PORT} and ${API_URL} from the environment at startup (frontend/README.md).
 server {
-    listen 80;
+    listen ${PORT};
     root /usr/share/nginx/html;
 
+    # The server's own host name goes upstream (proxy_pass's default): Cloud Run routes a request by it.
     location /api/ {
-        proxy_pass http://api:8080;
+        proxy_pass ${API_URL};
+        proxy_ssl_server_name on;
     }
 
     location /ws/ {
-        proxy_pass http://api:8080;
+        proxy_pass ${API_URL};
+        proxy_ssl_server_name on;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
         proxy_read_timeout 1h;
     }
 
