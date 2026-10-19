@@ -4,14 +4,20 @@ server {
     listen ${PORT};
     root /usr/share/nginx/html;
 
+    # The server's name is looked up when a request needs it, then kept 30 s, rather than once at startup: nginx starts
+    # even when the server cannot be reached, and follows it when its address changes. NGINX_LOCAL_RESOLVERS comes
+    # from /etc/resolv.conf.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=30s ipv6=off;
+    set $api ${API_URL};
+
     # The server's own host name goes upstream (proxy_pass's default): Cloud Run routes a request by it.
     location /api/ {
-        proxy_pass ${API_URL};
+        proxy_pass $api;
         proxy_ssl_server_name on;
     }
 
     location /ws/ {
-        proxy_pass ${API_URL};
+        proxy_pass $api;
         proxy_ssl_server_name on;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
