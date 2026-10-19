@@ -30,7 +30,7 @@ If `docker version` shows no server, ask the maintainer to start Docker Desktop.
 | A retriever or a metric (`ai/rag`) | `evaluate.sh` alone. |
 | An entity (`ai/rag/repository/entities.py`) | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, so the database starts empty and every chunk is embedded again. |
 
-A built dataset version is frozen. A change makes a new version on the previous one (`build-dataset.sh v3 --base v2`): an unchanged question keeps its wording and its side of the split, so only new or changed questions go to Luna. `rag evaluate` reads the version that `ai/rag/__main__.py` names by default; move that default, and `CLAUDE.md`'s status, to the new version.
+A built dataset version is frozen. A change makes a new version on the previous one (`build-dataset.sh v3 --base v2`): an unchanged question keeps its wording and its side of the split, so only new or changed questions go to Luna. `rag evaluate` reads the version that `ai/rag/__main__.py` names by default; move that default, and `AGENTS.md`'s status, to the new version.
 
 ## The order that keeps results clean
 
@@ -38,7 +38,7 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
 
 1. Commit the change: rules, engine, tests, docs.
 2. Build the dataset; commit it, with the CLI's new default version.
-3. Run `evaluate.sh`; commit the report, and the numbers of the `shardbound-rag` skill if they moved.
+3. Run `evaluate.sh`; commit the report, and the status of `AGENTS.md` if its numbers moved.
 
 ## Checking a run
 
@@ -74,7 +74,7 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
   ```
 
   A question whose id changed shows as ranked differently. A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
-- **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`, or the `api` configuration of `.claude/launch.json`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
+- **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
 
 ## In a worktree, beside the maintainer's work
 

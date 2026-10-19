@@ -65,7 +65,7 @@ Player HP is 20 (rule 1.1). Follow the number scale in `content/cards/README.md`
 - Overcharge: it should sometimes be worth spamming. Check how stacked Shard locks play out.
 - Fracture with self-drawbacks: it separates planning bots from greedy ones, which is valuable for the bot evaluation. Keep it rare.
 
-Once the engine exists, validate new cards with `simulate_matches` (MCTS by default) rather than by intuition.
+Check a new card's balance with the bot reports rather than by intuition: `./mvnw -pl core test -Preports` from `engine/` plays the decks against each other. `simulate_matches` (MCTS) comes later, with the coach.
 
 ## Names and card text
 

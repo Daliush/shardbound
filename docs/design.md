@@ -70,6 +70,8 @@
 > **v2.26 (October 2026)** — the explorer shows the questions themselves: the game server serves each dataset split as written (`GET /api/datasets/{version}/{split}`), so a question opens with its wording, its answer key and how each stage of the pipeline ranked its cited chunks (§8.2).
 >
 > **v2.27 (October 2026)** — the RAG pipeline is three steps, each with its techniques: the retriever, the refs expansion (no longer a retriever wrapping the fusion) and the reranker, a cross-encoder (MiniLM-L6) first. A run is named by its `retriever`, `expand`, `rerank` and `answer`. The evaluation builds the tree of every pipeline they make, each node computed once and knowing its parent: a retriever hands on its top 20, the expansion its whole list, and the reranker returns every candidate reordered, the prompt keeping the first 10. On v2 dev, reranking the expansion's candidates raises Recall@10 from 56.3% to 72.7%. Each run also records its latency. The stored evaluations start again from this format: the earlier ones are removed rather than converted (§5.2, §6.2, §8.2).
+>
+> **v2.28 (October 2026)** — the agents' instructions: `AGENTS.md` holds what every coding agent reads, and `CLAUDE.md` imports it; the status is written there only, since it had drifted between three files; the RAG skill keeps how to work and the rules to keep, and its decisions move to `docs/decisions/rag.md`; CI checks that every path the instructions cite exists (§9, §10).
 
 ---
 
@@ -803,11 +805,12 @@ If the LoRA Arbiter ever has to be queryable online:
 
 Documented in `docs/dev-workflow.md`, with screenshots and real examples.
 
-- `CLAUDE.md` / `AGENTS.md` at the root, plus one per sub-project (`engine/`, `ai/`, `frontend/`) with each ecosystem's commands and conventions.
-- **Project knowledge as skills** in `.claude/skills/`: how the rules work, how cards are written, how the architecture fits together. Any contributor using Claude Code gets the same context.
+- `AGENTS.md` at the root holds the instructions every coding agent reads (language, where things are, commands, commits, working agreements, and the status, written there only); `CLAUDE.md` imports it for Claude Code. Later, one per sub-project (`engine/`, `ai/`, `frontend/`) with each ecosystem's commands and conventions.
+- **Project knowledge as skills** in `.claude/skills/`: how the rules work, how cards are written, how the architecture fits together. Any contributor using Claude Code gets the same context. A skill keeps how to work and the rules to keep; the reasons behind the decisions go to `docs/decisions/` (the RAG's in `docs/decisions/rag.md`), the numbers to the evaluation reports.
 - **Spec-driven**: each feature starts with a spec in `specs/`, implemented by a coding agent, reviewed by a human.
 - **PR review agent** in GitHub Actions.
 - **Per-ecosystem CI**, triggered by changed paths:
+  - Agents' instructions (in place): every path that `AGENTS.md`, `CLAUDE.md` and `.claude/` cite exists, on every push or PR (`scripts/check-doc-paths.py`, `.github/workflows/docs.yml`);
   - Content (in place): card and deck schemas, card and deck rules, text templates (`content/tests/`) on every push or PR touching `content/` (`.github/workflows/content.yml`);
   - Java: Maven build, engine JUnit tests (rules, interactions, **one test per ruling**), backend integration tests;
   - Python: lint, pytest, RAG "smoke" eval (≈ 50 questions, no GPU) on every PR touching `ai/rag/`, `docs/` or `content/` → PR blocked if accuracy drops by more than X points;
@@ -823,7 +826,8 @@ Documented in `docs/dev-workflow.md`, with screenshots and real examples.
 
 ```
 shardbound/
-├── CLAUDE.md
+├── AGENTS.md                   # instructions for every coding agent
+├── CLAUDE.md                   # imports AGENTS.md for Claude Code
 ├── README.md
 ├── docker-compose.yml          # profiles: dev, demo (no GPU)
 ├── .claude/
