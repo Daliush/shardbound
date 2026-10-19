@@ -9,7 +9,7 @@ description: How Shardbound's game rules are organized and how to work with them
 
 The rulebook in `docs/rules/` is the written source of truth: one file per section, indexed by `docs/rules/README.md`. Read the relevant files before answering or changing anything: this skill explains how the rulebook works, it does not replace it, and the rules still move.
 
-Once the engine exists, it becomes the executable specification and the rulebook is checked against it by tests. If the two disagree, that is a bug to raise, not something to paper over.
+The engine is the executable specification: its rule tests carry the rule IDs, and `RulebookCoverageTest` fails when a rule has no test. If the engine and the rulebook disagree, that is a bug to raise, not something to paper over.
 
 `docs/design.md` §2 holds a short summary for readers of the design doc. When they disagree, the rulebook wins.
 
@@ -87,7 +87,7 @@ Game design decisions belong to the maintainer. They like to go point by point a
 2. If a gap must be filled to keep the book complete, write the rule, mark it *(proposed)* and tell the maintainer.
 3. In the same change, update the rule's file, `12-open-points.md`, and `docs/design.md` §2 if the summary is affected.
 4. Turn the edge case into a ruling in `docs/rulings/`. Each ruling becomes documentation, a JUnit test and an eval question.
-5. Update the engine: the test that carries the rule ID, then the code, following the `shardbound-engine-dev` skill. Once the evals exist, regenerate their answer keys.
+5. Update the engine: the test that carries the rule ID, then the code, following the `shardbound-engine-dev` skill. Then build a new dataset version, so that the answer keys follow (`shardbound-pipeline-run` skill).
 
 ## Design decisions and why (don't undo them by accident)
 

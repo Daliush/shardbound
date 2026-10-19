@@ -38,7 +38,7 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
 
 1. Commit the change: rules, engine, tests, docs.
 2. Build the dataset; commit it, with the CLI's new default version.
-3. Run `evaluate.sh`; commit the report, and the numbers of the `shardbound-rag` skill if they moved.
+3. Run `evaluate.sh`; commit the report, and the status of `AGENTS.md` if its numbers moved.
 
 ## Checking a run
 

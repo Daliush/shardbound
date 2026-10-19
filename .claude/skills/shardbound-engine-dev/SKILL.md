@@ -108,5 +108,5 @@ The same trick finds a seed for a demo or a play-test: loop over seeds, call `en
 - [ ] `RulebookCoverageTest` green: every new rule has its test.
 - [ ] `specs/phase-2-engine.md` matches what you built (§8 notes, §6.4 event table, §13 if the protocol moved).
 - [ ] Rulebook untouched, unless the maintainer decided a rule. In that case: new IDs at the end of the section, `12-open-points.md` updated, and the change committed as `docs(rules)`.
-- [ ] End of a slice: the `docs/design.md` changelog, `AGENTS.md` status and commands, the `shardbound-project` skill status, and this skill or `shardbound-engine` if a convention or the model changed.
+- [ ] End of a slice: the `docs/design.md` changelog, `AGENTS.md` status and commands, and this skill or `shardbound-engine` if a convention or the model changed.
 - [ ] Conventional commit (`feat(engine): …`), imperative, a body that explains why, tests in the same commit, `Co-Authored-By` trailer. One branch and one PR per slice; never force-push.
