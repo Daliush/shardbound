@@ -69,7 +69,7 @@ MCTS, gRPC and Python clients, any database or `repository` module, user account
 | Identity | A random seat token per game and seat, no accounts | Reconnection to the same seat without accounts; accounts come later. |
 | First version | Human vs bot, but the server supports two humans from day one (join code) | Lets the maintainer test intercepts with two browsers. |
 | Determinism | Seed + decks + actions reproduce a game exactly | Debugging, replays, evaluations. |
-| Several instances | No instance owns a game: sessions behind a port with versioned saves, notifications through another port; in-memory DAOs in phase 2, a shared store at deployment (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
+| Several instances | No instance owns a game: sessions behind a port with versioned saves, notifications through another port; in-memory DAOs for now, so one instance on Cloud Run, and a shared store when several are needed (section 13.4) | Cloud Run can run several instances and does not guarantee that a game's messages reach the same one. |
 
 ---
 
@@ -785,7 +785,7 @@ Settled on 2026-10-06, for slice 2:
 
 ### 13.4 Session server (`api/domain`, `api/adapter`, `api/dao`)
 
-**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions are kept through a port, notifications travel through another, and any instance can process any message. Phase 2 runs locally, in a single process, on in-memory DAOs: they are for local runs and tests only, and must never be deployed with more than one instance. The shared store comes with deployment (`docs/design.md` §8.2, roadmap phase 8), as new DAOs, without touching the domain.
+**No instance owns a game.** The server will run on Cloud Run, which can start several instances and does not guarantee that two messages of a game, or the two players' connections, reach the same instance. So nothing about a game stays in an instance's memory between two messages: sessions are kept through a port, notifications travel through another, and any instance can process any message. Phase 2 runs locally, in a single process, on in-memory DAOs: they are for local runs, tests and, for now, a single Cloud Run instance (`--max-instances 1`), and must never run with more than one instance. The shared store comes when the server needs several instances (`docs/design.md` §8.2), as new DAOs, without touching the domain.
 
 - `GameSession`, a business object: game id; status; the seed; two `Seat`s (a human: deck and SHA-256 hash of the seat token; a bot: deck, name and RNG state; an open seat: the join code's hash); the current `GameState`; `version`; the event log (unredacted, in order); the action log; the outbox; last activity time. The adapter maps it to a `GameEntity` (plain values and engine types) that the DAO stores. The state is a snapshot for fast loading; the action log, with the setup, rebuilds it exactly (determinism), for replays and debugging.
 - **Layers**: the domain owns its ports (`GameSessionPort`, `GameNotificationPort`); the adapter layer implements them (`GameSessionAdapter`, `GameNotificationAdapter`) and maps entities to business objects; the DAO layer is pure data. Each DAO is an interface, and each implementation adds a suffix: `GameDaoInMemory` now, `GameDaoDatabase` later.
