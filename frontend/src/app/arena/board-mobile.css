@@ -1,20 +1,19 @@
-@media(max-width:700px) {
-  :host { --unit-width: 156px; --card-width: 184px; }.table { padding: 10px 8px 0; }
-  .field { grid-template-columns: 42px minmax(0,1fr) 42px; gap: 3px; min-height: 110px; }
-  .terrain-pile { padding: 0; font-size: 9px; gap: 6px; }.stack, .grave-surface, .stack app-card, .grave-surface app-card { width: 35px; height: 51px; }
-  .stack b, .grave-surface b { font-size: 14px; min-width: 20px; bottom: 1px; right: 1px; }.grave-surface > app-icon { width: 17px; }
-  .units { gap: 12px; padding: 22px 9px 13px; min-height: 110px; }.empty-board { min-height: 75px; font-size: 11px; }
-  .hand-heading { gap: 8px; }.hand-hint { display: none; }.fan { gap: 12px; padding-inline: 10px; }
-  .combat-summary strong { font-size: 11px; }.battle-line .combat-summary { gap: 6px; }.battle-line .combat-summary > span { font-size: 11px; }
-  .relic-piece { font-size: 11px; }.side { gap: 7px; }
-  .unit-piece, .hand-piece { touch-action: pan-x; }
+@media (max-width: 760px) {
+  :host { --gap: 6px; --token-max: 112px; --card-w: 98px; }
+  .table { min-height: 500px; row-gap: 6px; padding: 8px 8px 0; grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto calc(var(--card-w) * 1.24 * .7); }
+  .hud { width: 100%; }
+  .row { padding: 12px 0 2px; }
+  .battle { border-radius: 14px; }
+  .empty-row { padding: 10px 14px; font-size: 12px; text-align: center; }
+  .hand { padding: 0 6px; }
+  .hand-card { rotate: calc(var(--d) * 2.4deg); translate: 0 calc(var(--d) * var(--d) * 2px); }
+  .hand-card[data-mark='selectable'] { translate: 0 calc(var(--d) * var(--d) * 2px - 8px); }
+  .hand-card[data-mark='selected'] { translate: 0 -62%; scale: 1.28; }
 }
-@media(min-width:1500px) { :host { --unit-width: 180px; --card-width: 210px; }.table { max-width: 1720px; margin-inline: auto; } }
-@media(min-width:901px) {
-  .side, .side.yours { display: grid; grid-template-columns: 166px minmax(0, 1fr); gap: 12px; align-items: center; }
-  .side app-player-hud { grid-column: 1; grid-row: 1; width: 166px; align-self: center; }
-  .side .field { grid-column: 2; grid-row: 1; }
-  .side .relics { grid-column: 2; }
-  .field { grid-template-columns: 66px minmax(0,1fr) 66px; gap: 8px; }
-  .hand { margin-top: 4px; }
+@media (max-width: 760px) and (max-height: 700px) {
+  :host { --token-max: 84px; --card-w: 88px; }
+}
+/* Phones held sideways: the table scrolls instead of crushing the units. */
+@media (max-height: 520px) {
+  .table { min-height: 620px; }
 }

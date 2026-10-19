@@ -1,32 +1,33 @@
-:host { display: flex; align-items: center; justify-content: center; gap: 28px; min-width: 0; padding: 10px 16px; background: color-mix(in srgb, var(--faction-deep) 13%, var(--game-hud)); border-radius: 10px; }
-.identity { display: flex; align-items: center; gap: 10px; min-width: 130px; }
-.identity > app-icon { width: 27px; height: 27px; color: var(--faction); }
-.identity div { display: grid; }.identity strong { font-size: 14px; font-weight: 600; }.identity span { color: var(--muted); text-transform: capitalize; font-size: 11px; }
-.health { display: grid; gap: 7px; border: 0; background: transparent; border-radius: 5px; padding: 0; min-width: 150px; }
-.health-numbers, .shard-numbers { display: flex; align-items: center; gap: 8px; }
-.health-numbers { color: var(--game-health); }.health-numbers > app-icon { width: 20px; height: 20px; }
-.health strong, .resources strong { font: 600 32px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-.health-numbers > span, .shard-numbers > span { font-size: 13px; color: var(--muted); }
-.health b, .resources b { font-weight: 500; margin-left: 5px; color: var(--text); }
-.health-track { height: 5px; background: color-mix(in srgb, var(--game-health) 13%, transparent); width: 100%; border-radius: 3px; overflow: hidden; }
-.health-track > span { display: block; width: 100%; height: 100%; background: var(--game-health); transform-origin: left; transition: transform 600ms ease; }
-.health.low { color: var(--damage); }.health.low .health-track > span { background: var(--damage); }
-.resources { display: grid; gap: 7px; min-width: 170px; }
-.shard-numbers { color: var(--game-cost); }.shard-numbers > app-icon { width: 22px; height: 25px; }
-.shard-track { display: flex; gap: 4px; height: 5px; }.shard-track > span { height: 100%; flex: 1; min-width: 5px; max-width: 32px; border-radius: 2px; background: color-mix(in srgb, var(--game-cost) 13%, transparent); }.shard-track > span.lit { background: var(--game-cost); }
-.shard-numbers .lock-count { color: var(--locked); font-size: 10px; margin-left: 7px; }.lock-count app-icon { width: 11px; }
-.health.targetable { outline: 2px solid var(--target); outline-offset: 6px; box-shadow: 0 0 25px #ffd29b55; }
-@media(max-width:700px) {
-  :host { gap: 12px; padding: 9px 10px; justify-content: space-between; }
-  .identity { min-width: 0; gap: 5px; }.identity > app-icon { width: 18px; }.identity strong { font-size: 12px; }.identity span { font-size: 10px; }.identity .hand-count { display: none; }
-  .health { min-width: 83px; }.resources { min-width: 98px; }.health strong, .resources strong { font-size: 27px; }
-  .health-numbers, .shard-numbers { gap: 4px; }.health-numbers > app-icon, .shard-numbers > app-icon { width: 14px; }
-  .health-numbers > span, .shard-numbers > span { font-size: 11px; }.health b, .resources b { display: block; font-size: 9px; margin: 0; }
-  .shard-numbers .lock-count { font-size: 9px; margin: 0; max-width: 42px; }
+:host {
+  display: flex; align-items: center; gap: 22px; min-width: 0; padding: 8px 18px 8px 8px;
+  border-radius: 16px; background: color-mix(in srgb, var(--faction-deep) 10%, var(--game-hud));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--white) 5%, transparent) inset, 0 12px 26px -18px color-mix(in srgb, var(--black) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--faction) 16%, transparent);
 }
-@media(min-width:901px) {
-  :host { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
-  .identity { min-width: 0; }.health { min-width: 0; }.resources { min-width: 0; }
-  .health strong, .resources strong { font-size: 34px; }
-  .shard-numbers { flex-wrap: wrap; }.shard-numbers .lock-count { width: 100%; margin-left: 0; }
-}
+b, small { font-variant-numeric: tabular-nums; }
+
+.vitals { display: flex; align-items: center; gap: 12px; min-height: 0; padding: 4px 10px 4px 4px; border: 0; border-radius: 12px; background: transparent; color: var(--text); text-align: left; transition: box-shadow 200ms ease, background 200ms ease; }
+.vitals:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 4%, transparent); border-color: transparent; }
+.portrait { position: relative; display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 auto; border-radius: 50%; color: var(--faction); background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--faction) 26%, var(--obsidian-800)), var(--obsidian-950)); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--faction) 55%, transparent); }
+.portrait app-icon { width: 24px; height: 24px; }
+:host(.active) .portrait { box-shadow: 0 0 0 2px var(--faction), 0 0 20px color-mix(in srgb, var(--faction) 55%, transparent); }
+:host(.active) .portrait::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--faction) 60%, transparent); animation: turn-halo 2.6s var(--ease-out) infinite; }
+.identity { display: grid; gap: 1px; min-width: 64px; }
+.identity strong { font: 600 14px/1.15 var(--font-ui); }
+.identity span { font-size: 11px; color: var(--muted); text-transform: capitalize; }
+.hp { display: grid; gap: 6px; width: 150px; }
+.hp-numbers { display: flex; align-items: baseline; gap: 5px; color: var(--game-health); white-space: nowrap; }
+.hp-numbers app-icon { width: 16px; height: 16px; align-self: center; }
+.hp-numbers b { font: 700 26px/1 var(--font-ui); }
+.hp-numbers small { font-size: 12px; color: var(--muted); }
+.incoming { margin-left: auto; font: 700 12px/1 var(--font-ui); font-style: normal; color: var(--damage); animation: incoming 1.2s ease-in-out infinite alternate; }
+.incoming.lethal { padding: 3px 6px; border-radius: 999px; color: var(--game-on-accent); background: var(--damage); }
+.hp-track { position: relative; height: 6px; overflow: hidden; border-radius: 3px; background: color-mix(in srgb, var(--game-health) 14%, transparent); }
+.hp-track > span { position: absolute; inset: 0; transform-origin: left; }
+.fill { background: var(--game-health); transition: transform 380ms var(--ease-out); }
+.lag { background: color-mix(in srgb, var(--damage) 70%, var(--white)); transition: transform 700ms 420ms var(--ease-out); }
+.cut { position: absolute; inset: 0 auto; background: repeating-linear-gradient(-45deg, var(--damage) 0 3px, color-mix(in srgb, var(--damage) 40%, transparent) 3px 6px) !important; transform: none !important; animation: incoming 1.2s ease-in-out infinite alternate; }
+.vitals.low .hp-numbers, .vitals.low .hp-numbers small { color: var(--damage); }
+.vitals.low .fill { background: var(--damage); }
+.vitals[data-mark='targetable'] { background: color-mix(in srgb, var(--target) 10%, transparent); box-shadow: 0 0 0 2px var(--target), 0 0 26px -4px color-mix(in srgb, var(--target) 60%, transparent); }
+.vitals[data-mark='targetable'] .portrait { animation: target-pulse 1.4s ease-in-out infinite; }

@@ -1,0 +1,24 @@
+/* Light is possibility: only what the player can act on glows. */
+:host([data-mark='selectable']) { --ring: var(--game-selectable); }
+:host([data-mark='selectable']) .frame { border-color: var(--game-selectable); box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--black) 70%, transparent), 0 0 0 2px var(--game-selectable), 0 0 22px -2px color-mix(in srgb, var(--game-selectable) 55%, transparent); animation: breathe 2.4s ease-in-out infinite; }
+:host([data-mark='selected']) { translate: 0 -6px; scale: 1.04; }
+:host([data-mark='selected']) .frame { border-color: var(--game-selected); box-shadow: 0 16px 28px -14px color-mix(in srgb, var(--black) 80%, transparent), 0 0 0 2px var(--game-selected), 0 0 30px color-mix(in srgb, var(--game-selected) 45%, transparent); }
+:host([data-mark='targetable']) .frame { border-color: var(--target); box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--black) 70%, transparent), 0 0 0 2px var(--target), 0 0 24px -2px color-mix(in srgb, var(--target) 55%, transparent); }
+:host([data-mark='targetable'])::after { content: ''; position: absolute; inset: -5px; pointer-events: none; border-radius: calc(9cqw + 6px); background:
+  linear-gradient(var(--target), var(--target)) 0 0 / 14px 2px, linear-gradient(var(--target), var(--target)) 0 0 / 2px 14px,
+  linear-gradient(var(--target), var(--target)) 100% 0 / 14px 2px, linear-gradient(var(--target), var(--target)) 100% 0 / 2px 14px,
+  linear-gradient(var(--target), var(--target)) 0 100% / 14px 2px, linear-gradient(var(--target), var(--target)) 0 100% / 2px 14px,
+  linear-gradient(var(--target), var(--target)) 100% 100% / 14px 2px, linear-gradient(var(--target), var(--target)) 100% 100% / 2px 14px;
+  background-repeat: no-repeat; animation: lock-on 1.6s var(--ease-out) infinite; }
+:host([data-role='defender']) .frame { border-color: var(--game-attack); box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--black) 70%, transparent), 0 0 0 2px var(--game-attack), 0 0 26px color-mix(in srgb, var(--game-attack) 45%, transparent); }
+:host([data-role='attacker']) .frame { border-color: var(--game-attack); }
+:host(.dim) { opacity: .42; filter: saturate(.55); }
+:host(.spent) .art, :host(.fresh) .art { filter: saturate(.5) brightness(.85); }
+:host(.frozen) .frame { border-color: var(--frost); }
+:host(.frozen) .art { filter: saturate(.25) brightness(1.05) hue-rotate(160deg); }
+:host(.frozen) .shade { background: linear-gradient(180deg, color-mix(in srgb, var(--frost) 16%, transparent) 0 34%, color-mix(in srgb, var(--game-surface) 72%, transparent) 56%, var(--game-surface) 72%); }
+:host(.doomed) .frame { border-color: var(--doom); }
+:host(.doomed) .art { filter: grayscale(.7) contrast(1.1); }
+
+@keyframes breathe { 50% { box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--black) 70%, transparent), 0 0 0 2px var(--game-selectable), 0 0 30px 2px color-mix(in srgb, var(--game-selectable) 70%, transparent); } }
+@keyframes lock-on { from { inset: -11px; opacity: 0; } 35% { inset: -5px; opacity: 1; } }

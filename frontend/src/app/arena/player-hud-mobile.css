@@ -1,0 +1,24 @@
+@media (max-width: 760px) {
+  :host { gap: 10px; padding: 5px 8px 5px 5px; border-radius: 13px; justify-content: space-between; flex-wrap: wrap; row-gap: 4px; }
+  .vitals { gap: 8px; padding: 2px 4px 2px 2px; flex: 1 1 auto; min-width: 0; }
+  .portrait { width: 36px; height: 36px; }
+  .portrait app-icon { width: 19px; height: 19px; }
+  .identity { display: none; }
+  .hp { width: auto; flex: 1; min-width: 70px; max-width: 150px; gap: 4px; }
+  .hp-numbers b, .shard-numbers b { font-size: 21px; }
+  .hp-numbers app-icon, .shard-numbers app-icon { width: 13px; height: 13px; }
+  .hp-numbers small, .shard-numbers small { font-size: 10.5px; }
+  .hp-track { height: 4px; }
+  .shards { gap: 4px; }
+  .pips { gap: 2px; height: 8px; }
+  .pips i { width: 6px; height: 8px; }
+  .locked { font-size: 9.5px; }
+  .piles { gap: 0; }
+  .pile { padding: 3px 5px; column-gap: 3px; }
+  .pile b { font-size: 13px; }
+  .pile app-icon { width: 13px; height: 13px; }
+  .pile-name { display: none; }
+  .relics { flex-basis: 100%; justify-content: center; }
+  .relic { font-size: 10px; padding: 2px 8px 2px 2px; }
+  .relic app-card { width: 18px; }
+}

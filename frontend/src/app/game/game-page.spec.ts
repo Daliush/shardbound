@@ -54,21 +54,34 @@ describe('GamePage', () => {
     socket.receive({type:'state',view:aView(15),history:[]}); await fixture.whenStable();
     expect((fixture.nativeElement.querySelector('.end-turn') as HTMLButtonElement).disabled).toBe(false);
   });
-  it('intercepts by selecting an eligible ally then the threatened unit, without a global action menu', async () => {
+  it('intercepts by selecting an eligible ally, then confirming or tapping the threatened unit', async () => {
     const base = aView(20);
-    const view = {...base, you: {...base.you, units: [...base.you.units, {...base.you.units[0], id: 2}]}, decision: {id: 'd-21', kind: 'intercept' as const, prompt: 'Intercept?', actions: [
+    const view = {...base, you: {...base.you, units: [...base.you.units, {...base.you.units[0], id: 2}]}, decision: {id: 'd-21', kind: 'intercept' as const, prompt: 'Sprout #61 attacks your Cinderling #1 with Flick (3 damage). Intercept with another unit?', actions: [
       {index: 7, type: 'intercept' as const, interceptor: 2, label: 'Intercept with ally'},
       {index: 8, type: 'decline_intercept' as const, label: 'Let the attack through'},
     ]}};
     const fixture = await open(true, view, [{type: 'attack_declared', rules: [], text: 'Declared attack', attacker: {id: 61, card: 'root.sprout'}, target: {kind: 'unit', id: 1}, attackIndex: 0}]);
     const page = fixture.nativeElement as HTMLElement;
-    expect([...page.querySelectorAll('button')].some(button => button.textContent?.trim() === 'Actions')).toBe(false);
-    expect(page.querySelector('.combat-summary')?.textContent).toContain('Drag a glowing unit');
+    expect(page.querySelector('app-intent-bar')?.textContent).toContain('Intercept with another unit?');
+    expect(page.querySelector('app-intent-bar')?.textContent).toContain('Tap a glowing ally to intercept');
+    expect(page.querySelector('[data-key="unit:1"] app-unit-token')?.textContent).toContain('Under attack');
+    expect(page.querySelector('[data-key="unit:1"] .projection')?.textContent).toContain('Lethal');
     (page.querySelector('[data-key="unit:2"]') as HTMLButtonElement).click();
     await fixture.whenStable();
     expect(page.querySelector('[data-key="unit:1"] [data-mark]')?.getAttribute('data-mark')).toBe('targetable');
+    expect([...page.querySelectorAll('app-intent-bar button')].map(button => button.textContent?.trim())).toContain('Intercept with ally');
     (page.querySelector('[data-key="unit:1"]') as HTMLButtonElement).click();
     expect(FakeWebSocket.latest().sent).toEqual([{type:'act',requestId:'c-1',decisionId:'d-21',action:7}]);
+  });
+  it('writes the outcome of the selected attack on each target before it is sent', async () => {
+    const fixture = await open(); const page = fixture.nativeElement as HTMLElement;
+    (page.querySelector('[data-key="unit:1"]') as HTMLButtonElement).click(); await fixture.whenStable();
+    expect(page.querySelector('app-intent-bar')?.textContent).toContain('choose a target');
+    expect(page.querySelector('[data-key="unit:61"] .projection')?.textContent).toContain('Lethal');
+    expect(page.querySelector('[data-key="card:3"]')?.classList).toContain('dim');
+    expect(FakeWebSocket.latest().sent).toHaveLength(0);
+    (page.querySelector('[data-key="unit:61"]') as HTMLButtonElement).click();
+    expect(FakeWebSocket.latest().sent).toEqual([{type:'act',requestId:'c-1',decisionId:'d-13',action:4}]);
   });
   it('submits an interception only after a pointer drag reaches the defender', async () => {
     const base = aView(20);

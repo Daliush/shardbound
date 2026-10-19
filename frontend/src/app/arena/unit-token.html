@@ -1,0 +1,36 @@
+@let u = unit();
+<div class="frame">
+  <img class="art" [src]="artSource()" alt="" draggable="false" (error)="failed()" />
+  <div class="shade"></div>
+  @if (states().length) {
+    <div class="states">@for (state of states(); track state.icon) { <span [title]="state.label"><app-icon [name]="state.icon" /><span class="sr-only">{{ state.label }}</span></span> }</div>
+  }
+  @if (modifier(); as mod) { <span class="modifier" [class.temporary]="mod.temporary" [title]="mod.temporary ? 'Until end of turn' : 'Permanent'">{{ mod.text }}</span> }
+  @if (u.token) { <span class="token-tag">Token</span> }
+  <div class="foot">
+    <strong class="name">{{ book.name(u.card) }}</strong>
+    <div class="stats">
+      <div class="attacks">
+        @for (attack of u.attacks; track attack.index) {
+          <span class="attack" [class.chosen]="attackIndex() === attack.index" [title]="(attack.name ?? 'Attack') + ': ' + attack.cost + ' Shards' + (attack.damage === null ? '' : ', ' + attack.damage + ' damage')">
+            <app-icon name="sword" /><b>{{ attack.damage ?? '—' }}</b><small><app-icon name="shard" />{{ attack.cost }}</small>
+          </span>
+        }
+      </div>
+      <div class="defense" [class.damaged]="damaged()" [title]="u.defense + ' of ' + u.maxDefense + ' defense'"><app-icon name="shield-plain" /><b>{{ u.defense }}</b></div>
+    </div>
+  </div>
+  @if (projection(); as p) {
+    <div class="projection" [attr.data-outcome]="p.outcome" aria-hidden="true">
+      @if (p.amount !== null) { <span class="amount">−{{ p.amount }}</span> }
+      @switch (p.outcome) {
+        @case ('lethal') { <span class="result"><app-icon name="fracture" />Lethal</span> }
+        @case ('anchored') { <span class="result"><app-icon name="anchor" />Survives at 0</span> }
+        @case ('linked') { <span class="result"><app-icon name="link" />Shared</span> }
+        @case ('effect') { <span class="result">Effect</span> }
+        @default { <span class="result">{{ p.before }}<app-icon name="arrow" />{{ p.after }}</span> }
+      }
+    </div>
+  }
+</div>
+@if (roleLabel(); as label) { <span class="role"><app-icon [name]="role() === 'attacker' ? 'sword' : 'shield'" />{{ label }}</span> }

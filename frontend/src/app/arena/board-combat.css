@@ -1,4 +1,0 @@
-.combat-tag { position: absolute; left: 0; top: -19px; font-size: 11px; display: flex; align-items: center; gap: 4px; z-index: 4; white-space: nowrap; }
-.combat-tag app-icon { width: 12px; }.attacking, .threatened { color: var(--game-attack); }.intercept-ready { color: var(--heal); }
-.attacker .unit-piece, .defender .unit-piece { outline: 2px solid var(--game-attack); outline-offset: 3px; }
-

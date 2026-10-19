@@ -1,8 +1,12 @@
-[data-mark='selectable'] { --ready: var(--game-selectable); }
-[data-mark='selectable']::before, [data-mark='selected']::before, [data-mark='targetable']::before { content: ''; position: absolute; inset: -7px; border-radius: 16px; pointer-events: none; background: var(--ready, var(--heal)); filter: blur(13px); opacity: .38; }
-[data-mark='selectable'] .face { border-color: var(--game-selectable); box-shadow: 0 0 12px #8fe5a137, 0 5px 24px #8fe5a126; }
-[data-mark='selected']::before { background: var(--game-selected); opacity: .5; }[data-mark='selected'] .face { border-color: var(--game-selected); box-shadow: 0 0 18px #c6edff55; }
-[data-mark='targetable']::before { background: var(--target); opacity: .5; }[data-mark='targetable'] .face { border-color: var(--target); box-shadow: 0 0 14px #ffd29b55; }
+/* Light is possibility: a card the player can use breathes in the ready color, the selection is ice, a target is amber. */
+[data-mark]::before { content: ''; position: absolute; inset: -6px; border-radius: 16px; pointer-events: none; opacity: 0; transition: opacity 220ms ease; }
+[data-mark='selectable']::before { background: var(--game-selectable); filter: blur(14px); opacity: .32; animation: card-breathe 2.4s ease-in-out infinite; }
+[data-mark='selectable'] .face { border-color: var(--game-selectable); box-shadow: 0 0 0 1.5px var(--game-selectable), 0 10px 26px -14px color-mix(in srgb, var(--black) 70%, transparent); }
+[data-mark='selected']::before { background: var(--game-selected); filter: blur(16px); opacity: .5; }
+[data-mark='selected'] .face { border-color: var(--game-selected); box-shadow: 0 0 0 2px var(--game-selected), 0 22px 40px -18px color-mix(in srgb, var(--black) 80%, transparent); }
+[data-mark='targetable']::before { background: var(--target); filter: blur(14px); opacity: .45; }
+[data-mark='targetable'] .face { border-color: var(--target); box-shadow: 0 0 0 2px var(--target); }
 .frozen .art-window { filter: saturate(.3); }.frozen .face { border-color: var(--frost); }
 .doomed .face { border-color: var(--doom); }.doomed .art-window { filter: saturate(.5); }
 .spent .art-window { filter: brightness(.7) saturate(.6); }.anchored .state-icons { color: var(--heal); }.token .type-line { color: var(--root); }
+@keyframes card-breathe { 50% { opacity: .55; } }

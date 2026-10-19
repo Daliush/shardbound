@@ -1,57 +1,76 @@
 @if (token() === null) {
   <section class="empty-state"><h1>No seat in this game</h1><p>This browser holds no seat in this game.</p><a class="button" routerLink="/play">Start a game</a></section>
 } @else {
-  <div class="arena" [attr.data-faction]="view()?.you?.faction || 'neutral'">
-    <header class="arena-toolbar">
-      <button class="quiet" aria-label="Game menu" (click)="menu.showModal()"><app-icon name="menu" /></button>
-      <a class="arena-brand" routerLink="/">Shardbound</a>
-      <app-theme-toggle />
-      <button class="quiet chronicle-toggle" (click)="openChronicle()"><app-icon name="hourglass" />Chronicle</button><span class="connection" role="status">@if (socket.status() === 'reconnecting') { Reconnecting… } @else if (socket.status() === 'replaced') { Open in another tab } @else if (!socket.synchronized()) { Connecting… }</span>
-      @if (director.busy()) { <button class="quiet skip" (click)="director.skip()">Skip animations <app-icon name="chevron" /></button> }
-    </header>
-    @if (view(); as view) {
-      <div class="arena-main">
-        <app-arena-board [view]="view" [marks]="marks()" [labels]="labels()" [selected]="selected()" [locked]="!ready() || sent()" [combat]="combat()" (action)="click($event)" (press)="press($event)" (handOpened)="handOpen.set(true)" (graveyard)="graveSide.set($event); grave.showModal()" />
-      </div>
-      @if (view.status === 'waiting_for_opponent') {
-        <section class="waiting"><h2>Your seat is ready.</h2><p>Invite a friend to the other side of the table.</p>@if (invite(); as link) { <a [href]="link">{{ link }}</a><button (click)="copyInvite()">{{ copied() ? 'Copied' : 'Copy invite' }}</button> }</section>
+  <div class="arena" [attr.data-faction]="view()?.you?.faction || 'neutral'" [class.with-chronicle]="chronicleOpen()">
+    <header class="topbar">
+      <button class="quiet icon-button" aria-label="Game menu" (click)="menu.showModal()"><app-icon name="menu" /></button>
+      <a class="brand" routerLink="/">Shardbound</a>
+      @if (view(); as v) {
+        <div class="turn" [class.mine]="v.activePlayer === 'you'" role="status">
+          @if (v.status === 'in_progress' && v.turn > 0) { <span class="turn-number">Turn {{ v.turn }}</span><b>{{ v.activePlayer === 'you' ? 'Your turn' : 'Opponent’s turn' }}</b> }
+          @else if (v.status === 'waiting_for_opponent') { <b>Waiting for an opponent</b> }
+          @else if (v.status === 'finished') { <b>Game over</b> }
+          @else { <b>Opening hands</b> }
+        </div>
       }
-      @if (decision(); as choice) { @if (choice.kind === 'choose_cards' || choice.kind === 'choose_order') { <section class="choice-tray"><app-choice-editor [decision]="choice" [view]="view" [disabled]="sent() || !ready()" (chosen)="choose($event)" /></section> } }
-      <footer class="decision-dock" [class.has-choices]="buttons().length > 0">
-        <div class="decision-copy" aria-live="polite">
-          @if (decision(); as decision) { <p>{{ decision.kind === 'intercept' ? 'Protect the unit under attack: drag a glowing ally onto it, or select the ally then the defender.' : decision.prompt }}</p> }
-          @else if (director.busy()) { <p>Resolving the turn…</p> }
-          @else if (view.waitingFor) { <p>Waiting for your opponent ({{ view.waitingFor.kind.replace('_', ' ') }})…</p> }
-          @if (socket.rejection(); as rejection) { <p class="error" role="alert">{{ rejection.message }}</p> }
-          @if (director.error()) { <p role="status">{{ director.error() }}</p> }
-        </div>
-        <div class="decision-actions">
+      <span class="spacer"></span>
+      <span class="connection" role="status">@if (socket.status() === 'reconnecting') { Reconnecting… } @else if (socket.status() === 'replaced') { Open in another tab } @else if (!socket.synchronized()) { Connecting… }</span>
+      @if (director.busy()) { <button class="quiet skip" (click)="director.skip()">Skip<app-icon name="chevron" /></button> }
+      <button class="quiet chronicle-toggle" [class.on]="chronicleOpen()" [attr.aria-expanded]="chronicleOpen()" aria-controls="chronicle" (click)="chronicleOpen.set(!chronicleOpen())"><app-icon name="hourglass" /><span>Chronicle</span></button>
+      <app-theme-toggle />
+    </header>
 
-          @for (action of buttons(); track action.index) { <button [class.primary]="action.type === 'keep_hand'" [disabled]="sent() || !ready()" (click)="choose(action)"><app-rules-text [text]="action.label" /></button> }
-          @if (selected()) { <button class="quiet" (click)="cancel()">Cancel</button> }
-          @if (endTurn(); as action) { <button class="end-turn" [disabled]="sent() || !ready()" (click)="choose(action)"><app-icon name="shard" /><app-rules-text [text]="action.label" /></button> }
-        </div>
-        <button class="log-peek quiet" (click)="chronicleSheet.showModal()"><span>{{ lastEvent() }}</span><app-icon name="chevron" /></button>
-      </footer>
+    @if (view(); as view) {
+      <main class="stage">
+        <app-arena-board [view]="view" [marks]="marks()" [labels]="labels()" [projections]="projections()" [selected]="selected()" [attackIndex]="attackIndex()"
+          [locked]="!ready() || sent()" [focus]="focus()" [combat]="combat()" [aim]="aim()"
+          (action)="click($event)" (press)="press($event)" (hover)="hovered.set($event)" (graveyard)="graveSide.set($event); grave.showModal()">
+          <app-intent-bar [intent]="intent()" [buttons]="buttons()" [options]="options()" [cancellable]="selected() !== null || candidates() !== null"
+            [endTurn]="endTurn()" [hot]="idle()" [disabled]="sent() || !ready()"
+            (choose)="choose($event)" (pickOption)="chooseAttack($event)" (cancel)="cancel()" />
+        </app-arena-board>
+        @if (socket.rejection(); as rejection) { <p class="toast error" role="alert">{{ rejection.message }}</p> }
+        @else if (director.error()) { <p class="toast" role="status">{{ director.error() }}</p> }
+      </main>
+
+      <aside id="chronicle" class="chronicle" aria-label="Chronicle" [attr.inert]="chronicleOpen() ? null : ''">
+        <div class="chronicle-heading"><h2>Chronicle</h2><button class="quiet icon-button" aria-label="Close the Chronicle" (click)="chronicleOpen.set(false)"><app-icon name="close" /></button></div>
+        <app-game-log [events]="director.history()" />
+      </aside>
+      <button class="chronicle-scrim" tabindex="-1" aria-hidden="true" (click)="chronicleOpen.set(false)"></button>
+
+      @if (opening().length) {
+        <section class="opening" aria-labelledby="opening-title">
+          <h2 id="opening-title">Your opening hand</h2>
+          <p>{{ decision()?.prompt }}</p>
+          <div class="opening-cards">@for (card of view.you.hand; track card.id) { <app-card [cardId]="card.card" [hand]="card" [appCardPreview]="{ id: card.card, hand: card }" [style.--i]="$index" /> }</div>
+          <div class="opening-actions">@for (action of opening(); track action.index) { <button [class.primary]="action.type === 'keep_hand'" [disabled]="sent() || !ready()" (click)="choose(action)">{{ action.label }}</button> }</div>
+        </section>
+      } @else if (view.decision === null && view.waitingFor?.kind === 'mulligan' && !view.result) {
+        <section class="opening waiting-opening" role="status"><h2>Your opponent is choosing their hand</h2><p>The game starts as soon as both hands are kept.</p></section>
+      }
+      @if (decision(); as choice) { @if (choice.kind === 'choose_cards' || choice.kind === 'choose_order') {
+        <section class="choice-tray" aria-label="Choice"><h2>{{ choice.prompt }}</h2><app-choice-editor [decision]="choice" [view]="view" [disabled]="sent() || !ready()" (chosen)="choose($event)" /></section>
+      } }
+      @if (view.status === 'waiting_for_opponent') {
+        <section class="overlay-card waiting"><h2>Your seat is ready</h2><p>Invite a friend to the other side of the table.</p>@if (invite(); as link) { <a [href]="link">{{ link }}</a><button class="primary" (click)="copyInvite()">{{ copied() ? 'Copied' : 'Copy invite' }}</button> }</section>
+      }
+      @if (view.result && !director.busy()) {
+        <section class="result" [attr.data-outcome]="view.result.outcome" aria-label="Game result">
+          <div class="result-card">
+            <app-icon [name]="view.result.outcome === 'win' ? view.you.faction : 'neutral'" />
+            <h1>{{ view.result.outcome === 'win' ? 'Victory' : view.result.outcome === 'loss' ? 'Defeat' : 'Draw' }}</h1>
+            <p>{{ view.result.reason === 'hp' ? (view.result.outcome === 'win' ? 'Your opponent fell to 0 HP.' : 'You fell to 0 HP.') : view.result.reason === 'double_ko' ? 'Both players fell at once.' : 'The turn limit was reached.' }}</p>
+            <div><a class="button primary" routerLink="/play">Play again</a><button (click)="chronicleOpen.set(true)">Read the Chronicle</button><a class="button quiet" routerLink="/">Home</a></div>
+          </div>
+        </section>
+      }
       <dialog #grave aria-labelledby="grave-title"><div class="dialog-heading"><h2 id="grave-title">{{ graveSide() === 'you' ? 'Your' : 'Opponent’s' }} graveyard</h2><button class="quiet" aria-label="Close graveyard" (click)="grave.close()"><app-icon name="close" /></button></div><div class="grave-cards">
         @for (card of view[graveSide()]?.graveyard; track card.id) { <app-card [cardId]="card.card" [appCardPreview]="{id: card.card}" /> } @empty { <p class="muted">No cards here yet.</p> }
       </div></dialog>
-        <dialog #handSheet class="hand-sheet" aria-label="Your hand" (close)="handOpen.set(false)"><div class="hand-sheet-heading"><span>Your hand · {{ view.you.hand.length }}</span><button class="quiet" aria-label="Close hand" (click)="handOpen.set(false)"><app-icon name="close" /></button></div>
-          <div class="hand-carousel">@for (card of view.you.hand; track card.id) {
-            <div class="hand-option"><button class="hand-card" [attr.data-key]="'card:' + card.id" [attr.aria-label]="labels()['card:' + card.id] || 'Inspect ' + card.card" (click)="marks()['card:' + card.id] ? selectFromHand('card:' + card.id) : inspectKey('card:' + card.id)" (pointerdown)="press({key: 'card:' + card.id, event: $event})"><app-card [cardId]="card.card" [hand]="card" [mark]="marks()['card:' + card.id]" /></button><button class="quiet" (click)="inspectKey('card:' + card.id)">Inspect</button><div class="hand-actions">@for (action of handActions(card.id); track action.index) { <button [disabled]="sent() || !ready()" (click)="choose(action)"><app-rules-text [text]="action.label" /></button> }</div></div>
-          }</div>
-        </dialog>
-      <dialog #chronicleSheet class="chronicle-sheet" aria-labelledby="chronicle-title"><div class="dialog-heading"><h2 id="chronicle-title">Chronicle</h2><button class="quiet" aria-label="Close Chronicle" (click)="chronicleSheet.close()"><app-icon name="close" /></button></div><app-game-log [events]="director.history()" /></dialog>
-      @if (view.result; as result) {
-        <section class="result" aria-label="Game result"><app-icon name="neutral" /><h1>{{ result.outcome === 'win' ? 'Victory' : result.outcome === 'loss' ? 'Defeat' : 'Draw' }}</h1><p>{{ result.reason.replaceAll('_', ' ') }}</p><div><a class="button primary" routerLink="/play">Play again</a><a class="button" routerLink="/">Back home</a></div></section>
-      }
     } @else { <div class="empty-state" role="status"><p>{{ socket.status() === 'reconnecting' ? 'The game is unavailable. Reconnecting…' : 'Finding your seat at the table…' }}</p>@if (socket.status() === 'reconnecting') { <a class="button" routerLink="/play">Start a new game</a> }</div> }
   </div>
   <dialog #menu aria-labelledby="menu-title"><div class="dialog-heading"><h2 id="menu-title">At the table</h2><button class="quiet" aria-label="Close menu" (click)="menu.close()"><app-icon name="close" /></button></div><div class="menu-links"><app-settings-panel /><a class="button" routerLink="/play">New game</a><a class="button" routerLink="/">Home</a></div></dialog>
-  <app-stage-overlay />
-  @if (drag(); as drag) { <svg class="drag-arrow" aria-hidden="true"><path [attr.d]="'M' + drag.fromX + ',' + drag.fromY + ' Q' + drag.fromX + ',' + drag.y + ' ' + drag.x + ',' + drag.y" /><circle [attr.cx]="drag.x" [attr.cy]="drag.y" r="7" /></svg> }
+  <app-stage-overlay [attr.data-faction]="view()?.you?.faction || 'neutral'" />
+  @if (drag(); as drag) { <svg class="drag-arrow" aria-hidden="true"><path [attr.d]="'M' + drag.fromX + ',' + drag.fromY + ' Q' + drag.fromX + ',' + drag.y + ' ' + drag.x + ',' + drag.y" /><circle [attr.cx]="drag.x" [attr.cy]="drag.y" r="10" /><circle class="core" [attr.cx]="drag.x" [attr.cy]="drag.y" r="3.5" /></svg> }
 }
-
-
-
-
