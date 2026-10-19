@@ -1,0 +1,13 @@
+:host {
+  position: fixed; top: calc(76px + .75rem); left: 50%; z-index: 30; translate: -50% 0; max-width: calc(100vw - 2rem);
+  display: flex; align-items: center; gap: .65rem; padding: .45rem .45rem .45rem 1rem; border: 1px solid var(--lab-accent); border-radius: 999px;
+  background: var(--lab-surface); box-shadow: 0 14px 34px -18px var(--black); animation: coming-soon-in 420ms var(--ease-out);
+}
+:host([hidden]) { display: none; }
+:host > app-icon { color: var(--lab-accent); width: 17px; height: 17px; flex: none; }
+p { margin: 0; font-size: .82rem; white-space: nowrap; }
+strong { font-weight: 600; color: var(--lab-accent); }
+button { min-height: 0; padding: .35rem; border-radius: 50%; }
+button app-icon { width: 14px; height: 14px; }
+@keyframes coming-soon-in { from { opacity: 0; translate: -50% -12px; } }
+@media (max-width: 500px) { :host { top: calc(64px + .5rem); } }

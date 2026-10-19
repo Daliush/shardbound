@@ -7,13 +7,13 @@ import {
 import { elementalMaterial } from './elemental-materials';
 
 export type ElementKind = 'ember' | 'tide' | 'root';
-type Shape = 'heat' | 'spark' | 'grass' | 'current';
+type Shape = 'trail' | 'spark' | 'grass' | 'current';
 interface Particle {
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
   born: number; life: number; size: number; rotation: number; active: boolean; released: number;
 }
 interface Pool { mesh: InstancedMesh; particles: Particle[]; cursor: number; }
-const CAPACITY: Record<Shape, number> = { heat: 6, spark: 8, grass: 14, current: 5 };
+const CAPACITY: Record<Shape, number> = { trail: 128, spark: 8, grass: 32, current: 5 };
 
 /** One lazy WebGL context for all three cards. Geometry is shared, never allocated per frame. */
 export class ElementalScene {
@@ -25,6 +25,7 @@ export class ElementalScene {
   private readonly ndc = new Vector2();
   private readonly hit = new Vector3();
   private readonly pointer = new Vector3();
+  private readonly last = new Vector3();
   private readonly transform = new Object3D();
   private readonly fadeColor = new Color();
   private readonly pools: Record<Shape, Pool>;
@@ -34,6 +35,7 @@ export class ElementalScene {
   private previous = 0;
   private nextRender = 0;
   private emitted = 0;
+  private sparked = 0;
   private frames = 0;
   private sampleStarted = 0;
   private disposed = false;
@@ -55,9 +57,9 @@ export class ElementalScene {
     this.world.add(light, new AmbientLight(0xd9edff, 2));
 
     this.pools = {
-      heat: this.pool('heat', new PlaneGeometry(2, 2), elementalMaterial('heat')),
-      spark: this.pool('spark', new SphereGeometry(1, 5, 4), new MeshBasicMaterial({ color: 0xffd589, blending: AdditiveBlending, transparent: true, opacity: .65, depthWrite: false })),
-      grass: this.pool('grass', grassGeometry(), new MeshStandardMaterial({ color: 0xa8c78a, roughness: .8, metalness: 0, side: DoubleSide, vertexColors: true, transparent: true, opacity: .85, depthWrite: false })),
+      trail: this.pool('trail', new PlaneGeometry(2, 2), elementalMaterial('trail')),
+      spark: this.pool('spark', new SphereGeometry(1, 5, 4), new MeshBasicMaterial({ color: 0xffa04d, blending: AdditiveBlending, transparent: true, opacity: .75, depthWrite: false })),
+      grass: this.pool('grass', grassGeometry(), new MeshStandardMaterial({ color: 0xbfe09a, roughness: .8, metalness: 0, side: DoubleSide, vertexColors: true, transparent: true, opacity: .95, depthWrite: false })),
       current: this.pool('current', new PlaneGeometry(2, 2), elementalMaterial('current')),
     };
     this.resize = new ResizeObserver(() => this.measure());
@@ -79,13 +81,9 @@ export class ElementalScene {
     this.ray.setFromCamera(this.ndc, this.camera);
     if (!this.ray.ray.intersectPlane(this.surface, this.hit)) return;
     if (this.kind && kind !== this.kind) this.leave();
+    if (!this.kind) this.last.copy(this.hit);
     this.kind = kind;
     this.pointer.copy(this.hit);
-    // Blades behind the moving cursor retract instead of accumulating into a lawn.
-    const now = performance.now();
-    for (const p of this.pools.grass.particles) {
-      if (p.active && p.released < 0 && Math.hypot(p.x - this.hit.x, p.y - this.hit.y) > 24) p.released = now;
-    }
     this.canvas.dataset['element'] = kind;
     if (!this.frame) {
       this.previous = performance.now(); this.sampleStarted = this.previous; this.frames = 0;
@@ -153,12 +151,12 @@ export class ElementalScene {
     return { mesh, cursor: 0, particles: Array.from({ length: CAPACITY[shape] }, () => ({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, born: 0, life: 1, size: 1, rotation: 0, active: false, released: -1 })) };
   }
 
-  private spawn(shape: Shape, now: number, size: number, life: number, spread: number): void {
+  private spawn(shape: Shape, now: number, size: number, life: number, spread: number, x = this.pointer.x, y = this.pointer.y): void {
     const pool = this.pools[shape];
     const p = pool.particles[pool.cursor++ % pool.particles.length];
     Object.assign(p, {
-      x: this.pointer.x + (Math.random() - .5) * spread,
-      y: this.pointer.y + (Math.random() - .5) * spread * .5,
+      x: x + (Math.random() - .5) * spread,
+      y: y + (Math.random() - .5) * spread * .5,
       z: 5 + Math.random() * 4, vx: (Math.random() - .5) * 12,
       vy: 14 + Math.random() * 12, vz: 0,
       born: now, life, size: size * (.8 + Math.random() * .4), rotation: (Math.random() - .5) * .7, active: true, released: -1,
@@ -166,17 +164,31 @@ export class ElementalScene {
   }
 
   private emit(now: number): void {
-    if (!this.kind || now - this.emitted < (this.kind === 'root' ? 90 : 240)) return;
-    this.emitted = now;
-    if (this.kind === 'ember') {
-      this.spawn('heat', now, 43, .85, 12);
-      this.spawn('spark', now, .75, .7, 25);
-    } else if (this.kind === 'root') {
-      this.spawn('grass', now, 12, .36, 20);
-      this.spawn('grass', now, 8, .3, 18);
-    } else {
+    if (this.kind === 'ember') this.burn(now);
+    else if (this.kind === 'root') this.grow(now);
+    else if (this.kind === 'tide' && now - this.emitted >= 240) {
+      this.emitted = now;
       this.spawn('current', now, 48, 1.05, 6);
     }
+  }
+
+  /** Embers laid along the cursor's path make a glowing trail; a resting cursor keeps a small flicker. */
+  private burn(now: number): void {
+    const dx = this.pointer.x - this.last.x, dy = this.pointer.y - this.last.y;
+    const steps = Math.min(16, Math.floor(Math.hypot(dx, dy) / 4));
+    for (let step = 1; step <= steps; step++) this.spawn('trail', now, 13, .55, 2, this.last.x + dx * step / steps, this.last.y + dy * step / steps);
+    if (steps) this.last.copy(this.pointer);
+    else if (now - this.emitted >= 50) { this.emitted = now; this.spawn('trail', now, 12, .45, 6); }
+    if (now - this.sparked >= 160) { this.sparked = now; this.spawn('spark', now, .9, .7, 16); }
+  }
+
+  /** Grass grows along the cursor's path and stays a moment; a resting cursor grows a small tuft. */
+  private grow(now: number): void {
+    const moved = Math.hypot(this.pointer.x - this.last.x, this.pointer.y - this.last.y) >= 14;
+    if (now - this.emitted < (moved ? 60 : 320)) return;
+    this.emitted = now; this.last.copy(this.pointer);
+    this.spawn('grass', now, 26, .85, 30);
+    this.spawn('grass', now, 18, .7, 26);
   }
 
   private readonly tick = (now: number): void => {
@@ -189,37 +201,38 @@ export class ElementalScene {
     this.nextRender = now + interval - ((now - this.nextRender) % interval);
     this.previous = now;
     this.emit(now);
-    for (const shape of ['heat', 'current'] as const) (this.pools[shape].mesh.material as ShaderMaterial).uniforms['time'].value = now / 1000;
+    for (const shape of ['trail', 'current'] as const) (this.pools[shape].mesh.material as ShaderMaterial).uniforms['time'].value = now / 1000;
     let alive = 0;
     for (const [shape, pool] of Object.entries(this.pools) as [Shape, Pool][]) {
       let count = 0;
       for (const p of pool.particles) {
         if (!p.active) continue;
         const age = (now - p.born) / 1000, progress = age / p.life;
-        const release = p.released < 0 ? 1 : Math.max(0, 1 - (now - p.released) / (shape === 'grass' ? 85 : 220));
+        const release = p.released < 0 ? 1 : Math.max(0, 1 - (now - p.released) / (shape === 'grass' ? 180 : 220));
         if (progress >= 1 || release <= 0) { p.active = false; continue; }
-        const fade = Math.min(1, (1 - progress) * 3) * release;
+        const fade = (shape === 'trail' ? 1 - progress : Math.min(1, (1 - progress) * 3)) * release;
         this.transform.position.set(p.x, p.y, p.z);
         this.transform.rotation.set(0, 0, p.rotation);
         if (shape === 'grass') {
-          const grow = Math.min(1, age / .065);
+          const grow = Math.min(1, age / .18);
           this.transform.scale.set(p.size * Math.sqrt(fade), p.size * grow * fade, p.size * fade);
           this.transform.rotation.set(-.3, p.rotation, Math.sin(now / 650 + p.x) * .13 + p.rotation * .18);
         } else if (shape === 'current') {
           const radius = p.size * (.55 + progress * .95);
           this.transform.rotation.set(.28, .12, p.rotation);
           this.transform.scale.set(radius, radius, 1);
-        } else if (shape === 'heat') {
-          this.transform.position.y += 23 + age * 14;
-          this.transform.rotation.z = p.rotation * .3;
-          this.transform.scale.set(p.size * (.85 + progress * .15), p.size * 1.2, 1);
+        } else if (shape === 'trail') {
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          const size = p.size * (1 - progress * .55);
+          this.transform.scale.set(size, size, 1);
         } else {
           p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
           const size = p.size * fade * Math.min(1, age / .08);
           this.transform.scale.set(size, size * 1.7, size);
         }
-        const opacity = fade * Math.min(1, age / .12);
-        pool.mesh.setColorAt(count, this.fadeColor.setRGB(opacity, opacity, opacity));
+        const opacity = fade * Math.min(1, age / (shape === 'trail' ? .03 : .12));
+        // The trail's shader reads green as heat: a fresh ember burns orange, an old one fades to deep red.
+        pool.mesh.setColorAt(count, this.fadeColor.setRGB(opacity, shape === 'trail' ? 1 - progress : opacity, opacity));
         this.transform.updateMatrix();
         pool.mesh.setMatrixAt(count++, this.transform.matrix);
       }
@@ -242,10 +255,10 @@ export class ElementalScene {
   };
 }
 
-/** Short, tapered blades with a fixed 14-instance ceiling. */
+/** Short, tapered blades with a fixed 32-instance ceiling. */
 function grassGeometry(): BufferGeometry {
   const positions: number[] = [], colors: number[] = [], indices: number[] = [];
-  const base = new Color('#365827'), tip = new Color('#b7d58c');
+  const base = new Color('#4c7a32'), tip = new Color('#d2ec9e');
   for (let row = 0; row <= 5; row++) {
     const t = row / 5, width = .075 * (1 - t), bend = t * t * .25;
     for (let col = 0; col < 3; col++) {

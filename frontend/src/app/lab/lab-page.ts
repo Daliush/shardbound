@@ -14,6 +14,7 @@ import { DECISION_METRIC, atPath, differences, formatMetric, generic, humanize, 
 import { QuestionDetail } from './question-detail';
 import { MetricsGraph } from './metrics-graph';
 import { CombinationBuilder } from './combination-builder';
+import { ComingSoon } from './coming-soon';
 import { LabMotion } from './lab-motion';
 import { pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
 import { isContextMetric, candidateSummary } from './metrics';
@@ -22,7 +23,7 @@ import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './u
 
 @Component({
   selector:'app-lab-page',
-  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,MetricsGraph,CombinationBuilder,LabMotion,RecallChart],
+  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,MetricsGraph,CombinationBuilder,ComingSoon,LabMotion,RecallChart],
   templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-tables.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
 export class LabPage implements OnDestroy {

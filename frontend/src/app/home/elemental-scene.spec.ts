@@ -40,23 +40,48 @@ describe('Elemental trail lifecycle', () => {
 
   afterEach(() => { scene.dispose(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-  it('keeps stationary grass sparse and retracts completely within 100ms of leaving', () => {
+  function sweep(kind: 'ember' | 'root', from: number, to: number, ms: number) {
+    for (let elapsed = 0; elapsed < ms; elapsed += 20) {
+      scene.point(kind, from + (to - from) * elapsed / ms, 300);
+      advance(20);
+    }
+  }
+
+  it('grows a small tuft where the cursor rests and retracts within 200ms of leaving', () => {
     scene.point('root', 400, 300);
     advance(1000);
     expect(Number(canvas.dataset['instances'])).toBeGreaterThan(0);
     expect(Number(canvas.dataset['instances'])).toBeLessThanOrEqual(8);
     scene.leave();
-    advance(100);
+    advance(200);
     expect(canvas.dataset['instances']).toBe('0');
     expect(canvas.dataset['renderState']).toBe('idle');
     expect(frames.size).toBe(0);
   });
 
-  it.each(['ember', 'tide'] as const)('fades %s out and stops rendering after leaving', kind => {
+  it('leaves grass along the path that stays a moment', () => {
+    sweep('root', 100, 700, 400);
+    const grown = Number(canvas.dataset['instances']);
+    expect(grown).toBeGreaterThan(8);
+    advance(250);
+    expect(Number(canvas.dataset['instances'])).toBeGreaterThanOrEqual(grown);
+  });
+
+  it('lays a glowing trail behind a moving cursor and clears it after leaving', () => {
+    sweep('ember', 100, 400, 300);
+    expect(Number(canvas.dataset['instances'])).toBeGreaterThanOrEqual(40);
+    scene.leave();
+    advance(240);
+    expect(canvas.dataset['renderState']).toBe('idle');
+    expect(canvas.dataset['instances']).toBe('0');
+    expect(frames.size).toBe(0);
+  });
+
+  it.each(['ember', 'tide'] as const)('fades a resting %s cursor out and stops rendering after leaving', kind => {
     scene.point(kind, 400, 300);
     advance(600);
     expect(Number(canvas.dataset['instances'])).toBeGreaterThan(0);
-    expect(Number(canvas.dataset['instances'])).toBeLessThanOrEqual(8);
+    expect(Number(canvas.dataset['instances'])).toBeLessThanOrEqual(16);
     scene.leave();
     advance(240);
     expect(canvas.dataset['renderState']).toBe('idle');
