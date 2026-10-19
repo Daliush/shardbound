@@ -1,4 +1,5 @@
 <section class="lab-page">
+  <app-coming-soon />
   <div class="lab-identity"><div class="lab-wordmark"><app-icon name="lab" /><span>Lab</span><span class="identity-divider"></span><span class="benchmark-label">AI benchmark</span></div><button class="quiet share" (click)="share()"><app-icon name="link" />{{ copied() ? 'Copied' : 'Share' }}</button></div>
   @if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> }
   <nav class="lab-nav" aria-label="Benchmark pages">@for (view of views; track view.id) { <button class="quiet" [attr.aria-current]="activeView() === view.id ? 'page' : null" (click)="update({tab:view.id,question:''})"><app-icon [name]="view.icon" />{{ view.label }}</button> }</nav>
