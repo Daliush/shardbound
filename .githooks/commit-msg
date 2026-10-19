@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Git's commit-msg hook: refuses a message that breaks the convention of AGENTS.md. Turned on once per clone with
+# git config core.hooksPath .githooks
+exec bash "$(git rev-parse --show-toplevel)/scripts/check-commit-message.sh" "$1"

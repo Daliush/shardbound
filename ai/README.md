@@ -8,6 +8,7 @@ uv run pytest                                      # the tests; no model is call
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
 uv run python -m rag index                         # write the chunks and their vectors into the database
 uv run python -m rag evaluate --description "…"    # score every retriever on the dev questions (or name some)
+uv run python -m rag compare <recorded> <new>      # two evaluations run by run; --max-drop fails on a lower recall
 ```
 
 ## What `dataset/` does
@@ -91,8 +92,9 @@ retriever random, answer None on v2 dev, 61 answerable questions
 
 ```
 rag/
-├── __main__.py                 the command line: index, evaluate; it calls a service and prints
+├── __main__.py                 the command line: index, evaluate, compare; it calls a service and prints
 ├── chunks.py                   the chunks engine/corpus writes
+├── comparison/                 two saved evaluations, run by run: comparison_service.py, comparison_table.py
 ├── indexing/
 │   └── indexing_service.py     the index: the chunks into the database, then each model's vectors of the changed ones
 ├── repository/                 the database, Postgres with pgvector, through SQLAlchemy

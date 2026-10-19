@@ -68,7 +68,7 @@ Rules the code keeps:
 - Method names say what they do, verb first. Loops are explicit `for` loops, not comprehensions. Never pass two lists that only line up by position (no `zip`): make one object per item where it is produced, as `EmbeddingModel.embed_chunk(chunk)` returns a `ChunkEmbedding`.
 - Name for the future: what the answer evaluation will share stays generic (`Question`, `Scores`, `Report`, `evaluate`); only what really is retrieval says so (`retrieval_metrics.py`).
 - Every technique reads the chunks from the database, never from `ai/.corpus/chunks.jsonl`, so a run cannot mix two versions of the corpus. The evaluation reads them once; a technique makes no database call per question.
-- The unit tests download no model and start no database: they use fakes (`tests/rag/retrievers/dense/conftest.py`, and a monkeypatched `_model` for the reranker). A real index and evaluation prove the SQL and the models.
+- The unit tests download no model and start no database: they use fakes (`tests/rag/retrievers/dense/conftest.py`, and a monkeypatched `_model` for the reranker). A real index and evaluation prove the SQL and the models, and CI runs one on each pull request that touches retrieval (`.github/workflows/rag-smoke.yml`): it fails when a run's Recall@10 lost more than 2 points against the evaluation the commit records.
 
 ## The evaluation
 
@@ -78,7 +78,7 @@ Rules the code keeps:
 - **Recall@10** decides: it is what the prompt holds. **Recall@20** is the top 20 that the expansion starts from. **MRR** explains. **Candidates** is how many chunks a run ranks. The **recall curve**, Recall@k for every k, compares runs at the same number of chunks; its last value is the most a reranker could keep.
 - One question moves a score by about 1.6 points, and a 7-question category is noise: dev gives a direction, test (596 questions) the published numbers. `--split test` never chooses anything.
 - The random retriever is the floor: every pipeline must beat it.
-- Each evaluation is one new file, `evals/reports/<version>/<split>/<timestamp>.json`, never overwritten. It holds the code commit (`-dirty` when a tracked file outside `evals/reports/` changed), why it was run, and each run named by its layers, with its scores and each question's ranking. The game server serves it as written (`GET /api/evaluations/…`).
+- Each evaluation is one new file, `evals/reports/<version>/<split>/<timestamp>.json`, never overwritten. It holds the code commit (`-dirty` when a tracked file outside `evals/reports/` changed), why it was run, and each run named by its layers, with its scores and each question's ranking. The game server serves it as written (`GET /api/evaluations/…`). `uv run python -m rag compare <recorded> <new>` says how two evaluations differ, run by run (`rag/comparison/`).
 
 ## What each step keeps
 
