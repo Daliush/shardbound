@@ -32,8 +32,9 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 | `evals/datasets/` | JSONL | The dataset versions; the final files are `dataset-dev.jsonl` and `dataset-test.jsonl`, built by `scripts/build-dataset.sh` |
 | `evals/reports/` | JSON | One file per evaluation, `<version>/<split>/<timestamp>.json`, written by `python -m rag evaluate`, served by `engine/api` to the benchmark explorer |
 | `frontend/` | Angular | Test UI first, polished UI later, results pages and answer comparator |
-| `proto/` | Protobuf / gRPC | Contract between the engine and the Python players |
 | `content/cards/` | JSON + JSON Schema | Single source for card data |
+
+A Protobuf / gRPC contract between the engine and the Python players comes with the AI opponents (phase 6).
 
 Language rule: compute-heavy code and business logic go to Java; code that calls or evaluates models goes to Python.
 

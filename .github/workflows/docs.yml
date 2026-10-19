@@ -1,0 +1,19 @@
+name: Docs checks
+
+# Every path that the agents' instructions cite (AGENTS.md, CLAUDE.md, .claude/) must exist. Runs on every push and pull
+# request, since renaming or deleting a file anywhere can break one.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  doc-paths:
+    name: Paths cited by the agents' instructions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the cited paths
+        run: python3 scripts/check-doc-paths.py

@@ -74,7 +74,7 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
   ```
 
   A question whose id changed shows as ranked differently. A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
-- **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`, or the `api` configuration of `.claude/launch.json`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
+- **Served**: start the server (from `engine/`, `./mvnw -pl api -am spring-boot:run`) and read `GET /api/evaluations/<v>/<split>`. It reads the reports folder at each request, so a new file needs no restart.
 
 ## In a worktree, beside the maintainer's work
 
