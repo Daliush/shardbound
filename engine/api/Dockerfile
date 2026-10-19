@@ -1,5 +1,6 @@
-# The game server. Build context: the repository root, since the server loads content/ at startup and reads the
-# Arbiter's evaluations (evals/reports/) and their datasets (evals/datasets/) at each request.
+# The game server, for docker compose and Google Cloud Run (engine/README.md). Build context: the repository root,
+# since the server loads content/ at startup and reads the Arbiter's evaluations (evals/reports/) and their datasets
+# (evals/datasets/) at each request.
 # Tests are not run here: CI runs them.
 
 FROM eclipse-temurin:21-jdk AS build
@@ -17,5 +18,7 @@ COPY evals/datasets/ datasets/
 ENV SHARDBOUND_CONTENT_DIR=/app/content
 ENV SHARDBOUND_REPORTS_DIR=/app/reports
 ENV SHARDBOUND_DATASETS_DIR=/app/datasets
+# The JVM takes a quarter of the container's memory by default; the server is the only process here.
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
