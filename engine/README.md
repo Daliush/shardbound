@@ -41,9 +41,11 @@ gcloud run deploy shardbound-api --image <registry>/shardbound-api --allow-unaut
 - `--max-instances 1`: the games live in memory, in one instance. They are lost when it stops.
 - `--timeout 3600`: a game's WebSocket stays open up to one hour. The client reconnects after that.
 
-Then deploy the client ([frontend/README.md](../frontend/README.md)) and give its URL to the server:
+The build runs from the repository root, not from `engine/api`: the image also needs `content/` and `evals/`. It needs BuildKit, Docker's default builder. A Cloud Build trigger made by Cloud Run's "Continuously deploy" uses neither: in its `Build` step, replace `engine/api` with `.` and add `env: ["DOCKER_BUILDKIT=1"]`.
+
+Then deploy the client ([frontend/README.md](../frontend/README.md)) and give its URLs to the server. A Cloud Run service has two URLs (`…-<project number>.<region>.run.app` and `…-<hash>.a.run.app`), so allow both. `^##^` tells gcloud that the comma is part of the value:
 
 ```bash
 gcloud run services update shardbound-api \
-  --update-env-vars SHARDBOUND_WEBSOCKET_ALLOWEDORIGINS=<client url>
+  --update-env-vars "^##^SHARDBOUND_WEBSOCKET_ALLOWEDORIGINS=<client url>,<client's other url>"
 ```
