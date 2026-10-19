@@ -14,4 +14,6 @@ COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /src/dist/shardbound/browser /usr/share/nginx/html
 ENV PORT=8080
 ENV API_URL=http://api:8080
+# Makes the image's entrypoint export NGINX_LOCAL_RESOLVERS, the DNS servers the template's resolver uses.
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 EXPOSE 8080

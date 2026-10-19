@@ -33,7 +33,7 @@ The image serves the built client with nginx. nginx also passes `/api` and `/ws`
 
 | Variable | What |
 |---|---|
-| `API_URL` | The game server's URL, without a trailing `/`. Default: `http://api:8080` (docker compose). |
+| `API_URL` | The game server's URL, without a trailing `/`. Required on Cloud Run: without it, the pages load but `/api` answers 502. Default: `http://api:8080` (docker compose). |
 | `PORT` | The port to listen on. Cloud Run sets it. Default: `8080`. |
 
 Deploy the game server first, then, with the same `<registry>`:
