@@ -11,6 +11,7 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 - **No candidate recall** (2026-10-17). It always equalled the curve's last value, and was 100% for every retriever that returns the whole corpus.
 - **One file per evaluation, and no index file.** A file is never overwritten; an index would be one more thing to keep in sync, and the frontend reads the timestamps. Each run is named by its layers, so that the frontend switches between runs by layer.
 - **Every evaluation says why it was run** (2026-10-17), so that the benchmark explorer can show it.
+- **CI fails a pull request whose Recall@10 drops by more than 2 points** *(proposed, 2026-10-19)*. One dev question moves a score by about 1.6 points, so a drop of 2 is more than one question; a change meant to lower recall records a new evaluation with it, and the drop shows in its diff.
 - **A new report format replaces the old reports** (2026-10-18). The first report of the reranker's format replaced every older one rather than converting them.
 
 ## Step 1: the chunks
