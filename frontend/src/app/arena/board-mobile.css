@@ -5,9 +5,8 @@
   .row { padding: 12px 0 2px; }
   .battle { border-radius: 14px; }
   .empty-row { padding: 10px 14px; font-size: 12px; text-align: center; }
-  .hand { padding: 0 6px; }
-  .hand-card { rotate: calc(var(--d) * 2.4deg); translate: 0 calc(var(--d) * var(--d) * 2px); }
-  .hand-card[data-mark='selectable'] { translate: 0 calc(var(--d) * var(--d) * 2px - 8px); }
+  .hand { --arc: 2.4deg; --sag: 2px; padding: 0 6px; }
+  .hand-card[data-mark='selectable'] { translate: 0 calc(var(--y) - 8px); }
   .hand-card[data-mark='selected'] { translate: 0 -62%; scale: 1.28; }
 }
 @media (max-width: 760px) and (max-height: 700px) {

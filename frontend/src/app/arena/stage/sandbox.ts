@@ -13,12 +13,16 @@ import { ArenaStage } from './stage-player';
 import { StageOverlay } from './stage-overlay';
 import { Feedback } from './feedback';
 
+const HAND = ['ember.spark-dart', 'neutral.binding-thread', 'tide.receding-wave', 'tide.deepcurrent-behemoth', 'tide.coral-font', 'tide.mire-eel',
+  'tide.brine-adept', 'tide.moonpull', 'neutral.shard-construct', 'neutral.shard-construct'];
+
 @Component({
   selector: 'app-sandbox',
   imports: [CardComponent, ArenaBoard, StageOverlay],
   providers: [Anchors, ArenaStage, Feedback],
   template: `<section class="page"><div class="heading"><div><h1>The stage</h1><p class="muted">Synthetic fixtures · development only</p></div><button (click)="reset()">Reset board</button></div>
     <div class="controls"><label>Card <select (change)="cardId.set(value($event)); reset()">@for (card of book.cards(); track card.id) { <option [value]="card.id" [selected]="card.id === cardId()">{{ card.name }}</option> }</select></label>
+    <label>Hand <select (change)="handSize.set(+value($event)); reset()">@for (size of handSizes; track size) { <option [value]="size" [selected]="size === handSize()">{{ size }}</option> }</select></label>
     <label>Speed <select [value]="settings.preferences().speed" (change)="setSpeed($event)"><option value="1">1×</option><option value="2">2×</option><option value="0">Instant</option></select></label>
     <label><input type="checkbox" [checked]="settings.reducedMotion()" (change)="settings.update({motion: settings.reducedMotion() ? 'off' : 'on'})" />Reduced motion</label><button (click)="director.skip()">Skip</button><button (click)="inspect.open({id:cardId()})">Inspect card</button></div>
     <div class="fake-table">@if (director.shownView(); as view) { <app-arena-board [view]="view" [locked]="director.busy()" /> }</div>
@@ -34,6 +38,8 @@ export class Sandbox {
   protected readonly director = new Director(inject(ArenaStage));
   protected readonly eventTypes = Object.keys(EVENT_BEATS);
   protected readonly cardId = signal('ember.ash-warden');
+  protected readonly handSizes = Array.from({ length: 11 }, (_, size) => size);
+  protected readonly handSize = signal(4);
   protected readonly back = signal(false);
   protected readonly lastEvent = signal('Choose an event to rehearse its beat.');
   protected readonly names = ['Frozen', 'Doomed', 'Anchored', 'Linked', 'Modified', 'Token', 'Arrived', 'Ready', 'Attacked'];
@@ -46,7 +52,7 @@ export class Sandbox {
   protected reset(): void { this.director.reset(this.fixture(), []); }
   private fixture(): GameView {
     const base = aView(0);
-    return { ...base, decision: null, you: { ...base.you, units: this.examples().slice(0,6), hand: [this.cardId(),'ember.spark-dart','neutral.binding-thread','tide.echo-shard'].map((card,index) => ({id:100+index,card,cost:2,fractureStep:null})) }, opponent: { ...base.opponent!, units: this.examples().slice(3,9).map(unit => ({...unit,id:unit.id+60,controller:'opponent' as const})) } };
+    return { ...base, decision: null, you: { ...base.you, units: this.examples().slice(0,6), hand: [this.cardId(), ...HAND].slice(0, this.handSize()).map((card,index) => ({id:100+index,card,cost:2,fractureStep:null})) }, opponent: { ...base.opponent!, units: this.examples().slice(3,9).map(unit => ({...unit,id:unit.id+60,controller:'opponent' as const})) } };
   }
   protected play(type: string): void {
     const old = this.fixture(); this.director.reset(old, []);
