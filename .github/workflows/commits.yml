@@ -1,0 +1,21 @@
+name: Commit messages
+
+# Every commit of a pull request follows the convention of AGENTS.md: the subject's form and the lines' length
+# (scripts/check-commit-message.sh). Merge commits are left out.
+on:
+  pull_request:
+
+jobs:
+  commit-messages:
+    name: Conventional subject, 72 characters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check every commit of the pull request
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-commit-message.sh "$BASE..$HEAD"

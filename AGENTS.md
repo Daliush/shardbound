@@ -59,6 +59,7 @@ This repository is a portfolio: its history is read by recruiters. Follow a ligh
 - Body: explain why the change is made and the decisions behind it; the diff already shows what changed. Wrap lines at 72 characters.
 - One logical change per commit. New cards, a new format, and a docs-only update are separate commits. Tests go in the same commit as the code or content they cover, so every commit passes CI.
 - Commits made with a coding agent end with a `Co-Authored-By:` trailer for it: the agentic workflow is part of what the project shows.
+- `scripts/check-commit-message.sh` checks the subject and the line lengths. Turn it on once per clone with `git config core.hooksPath .githooks`, so that git runs it at each commit; CI checks every commit of a pull request (`.github/workflows/commits.yml`).
 
 Example:
 
