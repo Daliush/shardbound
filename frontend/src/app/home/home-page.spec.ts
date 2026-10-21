@@ -17,7 +17,6 @@ function render() {
     {id: 'root.root-sentinel', name: 'Root Sentinel', faction: 'root', type: 'unit', cost: 2, defense: 5, text: [{kind: 'keywords', text: 'Anchor'}]},
   ]);
   fixture.detectChanges();
-  http.expectOne('/cards/art/manifest.json').flush({});
   return fixture;
 }
 

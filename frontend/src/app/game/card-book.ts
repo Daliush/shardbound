@@ -13,6 +13,7 @@ export class CardBook {
     return of([] as Card[]);
   })), { initialValue: [] as Card[] });
   private readonly byId = computed(() => new Map(this.cards().map((card) => [card.id, card])));
+  readonly loaded = computed(() => this.cards().length > 0);
 
   card(id: string): Card | undefined {
     return this.byId().get(id);

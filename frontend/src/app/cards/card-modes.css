@@ -1,6 +1,7 @@
 :host([data-mode='board']) .nameplate { padding-left: 0; min-height: 30px; font-size: 13px; position: relative; z-index: 1; text-shadow: var(--game-label-shadow); }
 :host([data-mode='board']) .cost, :host([data-mode='board']) .type-line { display: none; }
-:host([data-mode='board']) .art-window { position: absolute; inset: 0 0 auto; height: 40px; margin: 0; opacity: .35; border-radius: 0; }
+:host([data-mode='board']) .art-window { inset: 0 0 auto; height: 40px; opacity: .35; }
+:host([data-mode='board']) .panel { margin-top: 0; padding-top: 0; background: none; }
 :host([data-mode='board']) .rules { padding-top: 7px; font-size: 12px; line-height: 1.35; }
 :host([data-mode='board']) .attack-chips { display: flex; gap: 5px; padding-right: 49px; margin-top: 4px; min-height: 26px; flex-wrap: wrap; }
 .attack-chips span { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); font: 600 13px/1 var(--font-ui); }
@@ -11,20 +12,23 @@
 :host([data-mode='board']) .fracture-pips { display: none; }
 :host([data-mode='board']) .state-icons { position: static; padding: 0; margin-top: 3px; background: transparent; }
 :host([data-mode='board']) .modifiers { position: static; display: flex; gap: 3px; }
-:host([data-mode='thumb']) .rules, :host([data-mode='thumb']) .type-line, :host([data-mode='thumb']) .nameplate, :host([data-mode='thumb']) .cost, :host([data-mode='thumb']) .defense, :host([data-mode='thumb']) .fracture-pips { display: none; }
-:host([data-mode='thumb']) .front { padding: 3px; }:host([data-mode='thumb']) .art-window { flex: 1; margin: 0; }
+:host([data-mode='thumb']) .panel, :host([data-mode='thumb']) .nameplate, :host([data-mode='thumb']) .cost, :host([data-mode='thumb']) .fracture-pips { display: none; }
+:host([data-mode='thumb']) .front { padding: 3px; }:host([data-mode='thumb']) .art-window::after { display: none; }
+/* A hand card shows the start of its rules; the whole text is one hover, press or tap away. */
+:host([data-mode='hand']) .rules { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
 :host([data-mode='inspect']) .front { padding: 16px; }:host([data-mode='inspect']) .nameplate { padding-left: 58px; min-height: 44px; }
 :host([data-mode='inspect']) .cost { top: 17px; left: 16px; gap: 5px; }:host([data-mode='inspect']) .cost app-icon { width: 19px; height: 26px; }
-:host([data-mode='inspect']) .rules { font-size: 5.1cqw; line-height: 1.45; }
-:host([data-mode='inspect']) .rules .flavor { display: block; color: var(--muted); font: italic 5cqw/1.3 var(--font-title); margin-top: .7em; }
+:host([data-mode='inspect']) .panel { max-height: 60%; margin: auto -16px -16px; padding: 30px 16px 14px; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--game-surface) 94%, transparent) 26px); }
+:host([data-mode='inspect']) .type-line { font-size: max(11px, 3.6cqw); padding-bottom: 8px; }
+:host([data-mode='inspect']) .rules { font-size: max(13px, 4.3cqw); line-height: 1.45; }
+:host([data-mode='inspect']) .rules .flavor { display: block; color: var(--muted); font: italic max(14px, 4.4cqw)/1.3 var(--font-title); margin-top: .7em; }
 :host([data-mode='inspect']) .defense { flex-basis: 36px; }:host([data-mode='inspect']) .state-icons { top: 78px; right: 22px; }
-:host([data-mode='inspect']) .art-window { flex-basis: 29%; }
-/* A hand card on a phone: cost, name and art; its text is in the battle line once selected, or a long press away. */
+/* A hand card on a phone: cost, name and art; its text is in the battle line once selected, or a press away. */
 @container (max-width: 125px) {
-  :host([data-mode='hand']) .rules, :host([data-mode='hand']) .type-line, :host([data-mode='hand']) .defense, :host([data-mode='hand']) .fracture-pips { display: none; }
+  :host([data-mode='hand']) .panel, :host([data-mode='hand']) .fracture-pips { display: none; }
   :host([data-mode='hand']) .front { padding: 6px; }
   :host([data-mode='hand']) .nameplate { padding-left: 0; padding-top: 24px; min-height: 0; font-size: 11.5px; }
   :host([data-mode='hand']) .cost { left: 6px; top: 5px; }
   :host([data-mode='hand']) .cost b { font-size: 20px; }
-  :host([data-mode='hand']) .art-window { flex: 1; margin-top: 5px; }
+  :host([data-mode='hand']) .art-window::after { background: linear-gradient(180deg, color-mix(in srgb, var(--game-surface) 90%, transparent), color-mix(in srgb, var(--game-surface) 40%, transparent) 42%, transparent 60%); }
 }

@@ -21,7 +21,6 @@ describe('GamePage', () => {
     await fixture.whenStable();
     const http = TestBed.inject(HttpTestingController);
     http.match('/api/cards').forEach(request => request.flush([]));
-    http.match('/cards/art/manifest.json').forEach(request => request.flush({}));
     await fixture.whenStable();
     return fixture;
   }

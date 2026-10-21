@@ -1,17 +1,16 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { CardBook } from '../game/card-book';
 import { ArtPalette, drawPlaceholder } from './procedural-art';
 
+/** A card's art: the image the server gives the address of, or else a placeholder drawn from the card's id. */
 @Injectable({ providedIn: 'root' })
 export class CardArt {
-  private readonly manifest = toSignal(inject(HttpClient).get<Record<string, string>>('/cards/art/manifest.json').pipe(catchError(() => of({} as Record<string, string>))), { initialValue: {} as Record<string, string> });
+  private readonly book = inject(CardBook);
   private readonly placeholders = new Map<string, string>();
-  readonly entries = computed(() => this.manifest());
+  /** Empty until the cards are loaded, so a card never flashes its placeholder before its art. */
   source(id: string, faction: string): string {
-    const file = this.manifest()[id];
-    return file && /^[a-zA-Z0-9._-]+\.webp$/.test(file) ? '/cards/art/' + file : this.placeholder(id, faction);
+    if (!this.book.loaded()) return '';
+    return this.book.card(id)?.art ?? this.placeholder(id, faction);
   }
   placeholder(id: string, faction: string): string {
     if (!this.placeholders.has(id)) {
