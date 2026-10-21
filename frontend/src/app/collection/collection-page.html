@@ -1,0 +1,87 @@
+@let q = query();
+<section class="page collection">
+  <div class="intro">
+    <span class="eyebrow">The collection</span>
+    <h1>Every card.</h1>
+    <p>{{ book.cards().length || 'All the' }} cards across Ember, Tide, Root and the neutral Shards. Open one to turn it in your hands.</p>
+  </div>
+
+  <div class="toolbar" role="search">
+    <label class="search">
+      <app-icon name="search" /><span class="sr-only">Search the cards</span>
+      <input type="search" placeholder="Search a name or an effect" autocomplete="off" [value]="q.search" (input)="update({ search: value($event) }, false)" />
+    </label>
+    <div class="filters">
+      <div class="chips" role="group" aria-label="Faction">
+        @for (faction of factions; track faction.id) {
+          <button type="button" class="chip" [attr.data-faction]="faction.id" [attr.aria-pressed]="q.faction === faction.id" (click)="toggle('faction', faction.id)">
+            <app-icon [name]="faction.id" />{{ faction.name }}
+          </button>
+        }
+      </div>
+      <div class="chips" role="group" aria-label="Type">
+        @for (type of types; track type.id) {
+          <button type="button" class="chip" [attr.aria-pressed]="q.type === type.id" (click)="toggle('type', type.id)">{{ type.name }}</button>
+        }
+      </div>
+      <label class="field"><span>Deck</span>
+        <select [value]="q.deck" (change)="update({ deck: value($event) })">
+          <option value="" [selected]="!q.deck">Any deck</option>
+          @for (deck of decks(); track deck.id) { <option [value]="deck.id" [selected]="q.deck === deck.id">{{ deck.name }}</option> }
+        </select>
+      </label>
+    </div>
+    <div class="arrange">
+      <div class="segmented" role="group" aria-label="Group by">
+        <span class="legend">Group by</span>
+        @for (group of groupings; track group.id) {
+          <button type="button" [attr.aria-pressed]="q.group === group.id" (click)="update({ group: group.id })">{{ group.name }}</button>
+        }
+      </div>
+      <div class="segmented" role="group" aria-label="Sort by">
+        <span class="legend">Sort by</span>
+        @for (sort of sortings; track sort.id) {
+          <button type="button" [attr.aria-pressed]="q.sort === sort.id" (click)="update({ sort: sort.id })">{{ sort.name }}</button>
+        }
+      </div>
+      <p class="tally" role="status">
+        @if (book.loaded()) { {{ filtered() ? shown() + ' of ' + book.cards().length + ' cards' : 'All ' + book.cards().length + ' cards' }} }
+        @if (filtered()) { <button type="button" class="quiet clear" (click)="clear()"><app-icon name="close" />Clear filters</button> }
+      </p>
+    </div>
+  </div>
+
+  @if (book.error(); as error) {
+    <p role="alert" class="error">{{ error }}</p>
+  } @else if (!book.loaded()) {
+    <p role="status" class="muted waiting">Shuffling the cards…</p>
+  } @else {
+    @for (shelf of shelves(); track shelf.key) {
+      <section class="shelf" [attr.data-faction]="shelf.faction" [attr.aria-label]="shelf.title || 'Cards'">
+        @if (shelf.title) {
+          <header class="shelf-head">
+            <h2>@if (shelf.faction) { <app-icon [name]="shelf.faction" /> }{{ shelf.title }}</h2>
+            @if (shelf.detail) { <p>{{ shelf.detail }}</p> }
+            <span class="count">{{ shelf.cards.length }}</span>
+          </header>
+        }
+        <ul class="grid">
+          @for (entry of shelf.cards; track entry.card.id; let index = $index) {
+            <li class="tile" [style.--i]="index" [style.view-transition-name]="transitionName(entry.card.id)" [attr.data-faction]="entry.card.faction">
+              <button type="button" class="open" (click)="inspect.open({ id: entry.card.id })">
+                <app-card [cardId]="entry.card.id" mode="inspect" [interactiveTilt]="false" />
+              </button>
+              @if (entry.copies) { <span class="copies" [title]="copies(entry.copies)">×{{ entry.copies }}</span> }
+            </li>
+          }
+        </ul>
+      </section>
+    } @empty {
+      <div class="empty">
+        <app-icon name="search" />
+        <p>No card matches{{ q.search ? ' “' + q.search + '”' : '' }} with these filters.</p>
+        <button type="button" (click)="clear()">Clear filters</button>
+      </div>
+    }
+  }
+</section>

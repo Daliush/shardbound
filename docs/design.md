@@ -77,7 +77,7 @@
 >
 > **v2.30 (October 2026)** — the game server and the client run on Cloud Run, from the same images as docker compose (`engine/README.md`, `frontend/README.md`). For now the server is one instance with its games in memory; the shared store comes when it needs several (§8.2).
 >
-> **v2.31 (October 2026)** — the cards show their art. Each card's painting is kept in `assets/art/cards/` with its prompt, and published as a web image to an art store, a folder today and a bucket online, behind a DAO like the evaluations. `GET /api/cards` gives each card the address of its image, with a version so that a browser keeps it until it changes (§10).
+> **v2.31 (October 2026)** — the cards show their art. Each card's painting is kept in `assets/art/cards/` with its prompt, and published as a web image to an art store, a folder today and a bucket online, behind a DAO like the evaluations. `GET /api/cards` gives each card the address of its image, with a version so that a browser keeps it until it changes. The client gains a collection page, every card searched, filtered and grouped by faction, deck, cost or type (§10).
 
 ---
 
