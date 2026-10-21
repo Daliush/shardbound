@@ -1,0 +1,21 @@
+@if (inspect.preview(); as card) {
+  <div class="hover-preview" aria-hidden="true"><app-card [cardId]="card.id" [hand]="card.hand ?? null" [unit]="card.unit ?? null" mode="inspect" /></div>
+}
+<dialog #dialog class="showcase" aria-label="Inspect card" [attr.data-faction]="faction()" [class.leaving]="leaving()"
+  (cancel)="dismiss($event)" (close)="inspect.close()" (click)="backdrop($event)"
+  (pointermove)="point($event)" (pointerup)="letGo($event)" (pointercancel)="letGo($event)" (pointerleave)="rest()">
+  @if (inspect.card(); as card) {
+    <div class="aura" aria-hidden="true"></div>
+    <div class="motes" aria-hidden="true">
+      @for (mote of motes; track $index) {
+        <span [style.left.%]="mote.left" [style.--size.px]="mote.size" [style.--drift.px]="mote.drift" [style.animation-delay.s]="mote.delay" [style.animation-duration.s]="mote.duration"></span>
+      }
+    </div>
+    <figure class="stage" (pointerdown)="grab($event)">
+      <app-card [cardId]="card.id" [hand]="card.hand ?? null" [unit]="card.unit ?? null" mode="inspect" [interactiveTilt]="false" [pose]="pose()" />
+      <div class="floor" aria-hidden="true" [style.--lean]="turn()"></div>
+    </figure>
+    <p class="hint">{{ touchOnly ? 'Drag the card to turn it · tap beside it to close' : 'Drag the card to turn it · Esc to close' }}</p>
+  }
+  <button class="close quiet" aria-label="Close card" (click)="dismiss()"><app-icon name="close" /></button>
+</dialog>

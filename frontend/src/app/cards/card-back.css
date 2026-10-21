@@ -1,4 +1,5 @@
-.back { transform: rotateY(180deg); display: grid; place-items: center; background: radial-gradient(ellipse at 50% 45%, var(--obsidian-700), var(--obsidian-950) 65%); border-color: var(--prism-deep); }
+/* Behind the edge layers, which would hide it once the card has turned around. */
+.back { transform: translateZ(-6px) rotateY(180deg); display: grid; place-items: center; background: radial-gradient(ellipse at 50% 45%, var(--obsidian-700), var(--obsidian-950) 65%); border-color: var(--prism-deep); }
 .back-border { position: absolute; inset: 7%; border: 1px solid var(--prism-deep); border-radius: 2%; }
 .back-sigil { display: grid; justify-items: center; color: var(--prism); gap: 9cqw; }
 .back-sigil app-icon { width: 42cqw; height: 42cqw; }

@@ -1,5 +1,6 @@
 <div class="perspective" [attr.data-faction]="faction()" [attr.data-mark]="mark()" [class.frozen]="unit()?.frozen" [class.doomed]="unit()?.doomed" [class.spent]="unit()?.hasAttackedThisTurn" [class.arrived]="unit()?.arrivedThisTurn" [class.token]="unit()?.token || definition()?.token" [class.anchored]="unit()?.anchorProtected">
-  <article class="artifact" [style.transform]="transform()" [attr.aria-label]="accessibleText()" [style.--glare]="pointer().glare + '%'" [style.--foil-strength]=".05 + (printedCost() ?? 0) * .012">
+  <article class="artifact" [class.posed]="pose() !== null" [style.transform]="transform()" [attr.aria-label]="accessibleText()" [style.--glare]="pointer().glare + '%'" [style.--foil-strength]=".05 + (printedCost() ?? 0) * .012"
+    [style.--light-x.%]="light()?.x" [style.--light-y.%]="light()?.y" [style.--sheen]="light()?.glare">
     <div class="edge"></div><div class="edge second"></div>
     <div class="face front" [attr.aria-hidden]="back()">
       <div class="art-window" [class.medallion]="definition()?.type === 'relic'">

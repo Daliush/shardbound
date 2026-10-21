@@ -7,11 +7,14 @@ import { Mark } from '../game/decision-groups';
 import { CardArt } from './card-art';
 import { RulesText } from './rules-text';
 
+/** A card's rotation in degrees: x leans it back and forth, y turns it around (180 shows its back). */
+export interface Pose { x: number; y: number; }
+
 @Component({
   selector: 'app-card',
   imports: [Icon, RulesText],
   templateUrl: './card.html',
-  styleUrls: ['./card.css', './card-states.css', './card-modes.css', './card-back.css'],
+  styleUrls: ['./card.css', './card-states.css', './card-modes.css', './card-back.css', './card-light.css'],
   host: { '[attr.data-mode]': 'mode()', '(pointermove)': 'point($event)', '(pointerleave)': 'resetTilt()', '(pointercancel)': 'resetTilt()' },
 })
 export class CardComponent {
@@ -23,6 +26,8 @@ export class CardComponent {
   readonly interactiveTilt = input(true);
   readonly mark = input<Mark>(null);
   readonly readyAttacks = input<number[]>([]);
+  /** A rotation set by a parent that moves the card in 3D (the inspect showcase); the card then catches the light. */
+  readonly pose = input<Pose | null>(null);
   protected readonly book = inject(CardBook);
   protected readonly art = inject(CardArt);
   protected readonly settings = inject(Settings);
@@ -39,9 +44,18 @@ export class CardComponent {
   protected readonly printedCost = computed(() => this.definition()?.fracture?.find(step => step.step === (this.hand()?.fractureStep ?? 1))?.cost ?? this.definition()?.cost);
   protected readonly cost = computed(() => this.hand()?.cost ?? this.printedCost());
   protected readonly transform = computed(() => {
+    const pose = this.pose();
+    if (pose) return 'rotateX(' + pose.x + 'deg) rotateY(' + (pose.y + (this.back() ? 180 : 0)) + 'deg)';
     if (this.settings.reducedMotion() || this.mode() !== 'thumb') return this.back() ? 'rotateY(180deg)' : '';
     const tilt = this.settings.preferences().gyroscope ? this.settings.tilt() : this.pointer();
     return 'rotateX(' + -tilt.x + 'deg) rotateY(' + (tilt.y + (this.back() ? 180 : 0)) + 'deg)';
+  });
+  /** Where the light hits the face, in percent of the card, and how bright the glare is: it follows the turn. */
+  protected readonly light = computed(() => {
+    const pose = this.pose();
+    if (!pose) return null;
+    const turn = ((pose.y % 360) + 540) % 360 - 180;
+    return { x: 50 - turn * 2.4, y: 42 + pose.x * 2.6, glare: Math.min(.75, .22 + (Math.abs(turn) + Math.abs(pose.x)) / 40) };
   });
   protected readonly states = computed(() => {
     const u = this.unit();

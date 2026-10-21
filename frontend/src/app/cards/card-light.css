@@ -1,0 +1,13 @@
+/* A posed card follows its parent's every frame, so it has no transition of its own, and catches the light: a glare
+   where the light hits the face, and a foil over the art that shifts with the turn, stronger on dearer cards. */
+.posed { transition: none; }
+:host([data-mode='inspect']) .perspective { perspective: 1500px; }
+.posed .glare {
+  display: block; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit; mix-blend-mode: soft-light; opacity: var(--sheen, .3);
+  background: radial-gradient(circle at var(--light-x, 50%) var(--light-y, 40%), var(--white), color-mix(in srgb, var(--white) 30%, transparent) 30%, transparent 62%);
+}
+.posed .foil {
+  display: block; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: calc(var(--foil-strength) * 2.4);
+  background: linear-gradient(115deg, transparent 22%, #ff8a7a 34%, #ffd27a 40%, #8affbf 46%, #7ad0ff 52%, #c99bff 58%, transparent 70%) var(--light-x, 50%) var(--light-y, 50%) / 260% 260% no-repeat;
+}
+.posed .edge { background: color-mix(in srgb, var(--faction) 30%, var(--obsidian-800)); }
