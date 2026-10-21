@@ -154,6 +154,8 @@ export interface Card {
   text: TextLine[];
   flavor?: string;
   fracture?: { step: number; cost: number }[];
+  /** Where to download the card's art; a card without art has none, and gets a placeholder. */
+  art?: string;
 }
 
 /** One line of a card's rules text, written by the engine from the card data (spec §9). */

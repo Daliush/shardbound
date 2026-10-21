@@ -1,0 +1,74 @@
+Illustrate Root Sentinel, an existing root unit card. The card-specific subject overrides example figures, clothing or effects in the style prompt. The reference image, when supplied, controls paint handling only. Single original artwork, no border, labels or text.
+
+The attached model image is a STYLE REFERENCE ONLY: match its paint handling, mark size, abstraction and detail hierarchy. Create the card-specific subject below. Do not copy the model character, costume, pose, composition or setting. New single illustration, opaque background, no frame or text.
+
+Use case: stylized-concept.
+Asset type: original Shardbound trading card illustration, Root faction.
+Create one portrait 2:3 illustration, with no text or card frame.
+
+Card: Root Sentinel.
+Type: unit.
+Independent subject design: A heavy bull-like rootwood creature, low head, broad shoulders and intertwined root legs; not a humanoid tree warrior..
+Subject and visible action: Planting its forelegs firmly across an old path, head lowered and roots gripping around a stone..
+Scene: A mossy ravine, overlapping root planes and soft pale woodland beyond..
+Framing: Close low side view, near shoulder and grounded forelegs dominate; a few distant trees establish scale..
+Lighting: Muted cool daylight shapes the silhouette while small local amber highlights warm the focal growth..
+
+IDENTITY IS INDEPENDENT OF STYLE. The subject design above overrides every
+visual reference for appearance. References supply paint handling only:
+never copy their face, apparent age, hair, body proportions, costume,
+silhouette, gesture or pose. Use the card brief's structural and material
+design, equipment and attitude; appearance details belong to that specific
+subject rather than the faction style. Do not turn all Root units into
+the same oak guardian. Once a card's own design is approved, preserve it
+in later illustrations rather than randomly changing its identity.
+
+ART DIRECTION — SUBSTANTIAL, ATMOSPHERIC FANTASY PAINTING
+Paint a tactile, ancient living world with convincing drawing, weight and
+organic structure. The main subject dominates the card: for a unit, use
+a close character or creature-led composition occupying roughly 80 percent
+of the image height; for a spell or relic, give the main action or object
+equivalent prominence. Preserve a legible real environment and a clear
+silhouette without spending most of the image on surrounding scenery.
+
+Use expressive oil-and-gouache-like paint handling: broad connected planes,
+subtle broken color and selected irregular strokes that follow the form.
+Material richness comes from the drawing, color and light on substantial
+surfaces, with a few refined accents at the focal point. Keep bark, moss,
+stone, fabric and living forms tactile when present, but suggest their
+texture economically. Treat foliage as overlapping clusters and bark as
+large directional planes, not an inventory of leaves and grooves.
+Allow contours to soften or disappear in shadow and sharpen at important
+lit edges. Brushwork remains visible without turning everything into
+graphic streaks, repeated chips or a roughness filter. Preserve the
+Oakheart Guardian's organic mass and quiet majestic atmosphere.
+
+Build a palette of forest green, moss, olive, warm bark umber and muted
+ochre, with cool grey-green or violet shadows and restrained amber/golden
+accents where the scene motivates them. Preserve nuanced natural color
+variation. Do not give every subject a glowing heart or uniform green skin.
+
+Lighting is fundamental and specific to the brief. Establish one dominant
+motivated light source, selective illumination and believable local bounce.
+Use light to reveal volume and material while leaving broad rich colored
+shadow masses. A secondary magical light, if requested, affects only its
+nearby surroundings. Alternate illumination patterns between cards rather
+than always adding a beam from above. Preserve highlight detail and avoid
+universal rim glow or evenly illuminated forms.
+
+Create depth with overlap, perspective, relative scale, dark foreground
+shapes and softer, less contrasted distant forms. Make the eye find the
+subject's expressive feature first. Let the surrounding scene contain
+quiet passages and atmospheric breathing room. No photographic blur is
+needed to separate planes.
+
+Use the supplied Oakheart Guardian model for paint handling, organic form,
+material and light only. Compose the card-specific subject without copying
+the guardian's anatomy, glowing heart or pose.
+
+Avoid photorealistic or glossy game rendering, airbrushed surfaces,
+vector/cel shading, thick palette-knife relief, all-over tiny texture,
+individually highlighted leaves, excessive root tangles, repeated pointed
+brush ribbons, ubiquitous particles and dramatic bloom. Do not flatten
+the forms or remove the richness around the focal point.
+No lettering, frame, statistics, logo, signature or watermark.

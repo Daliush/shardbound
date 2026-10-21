@@ -5,24 +5,38 @@
   position: relative; z-index: 5; width: min(100%, 1120px); height: 100%; display: flex; justify-content: center; align-items: flex-start; padding: 0 24px;
   container-type: inline-size;
 }
+/* Each card is a slot, which the stage slides when the hand changes, holding a pose, which CSS fans and lifts. GSAP
+   folds an element's CSS rotate and translate into its transform, so the two never share an element: a fanned slot
+   would keep the angle it had when the stage last moved it, and lean more at every update. */
 .hand-card {
   --d: calc(var(--i) - (var(--count) - 1) / 2);
   --y: calc(var(--d) * var(--d) * min(var(--sag), 88px / (var(--gaps) * var(--gaps))));
   position: relative; z-index: calc(10 + var(--i)); flex: none; width: var(--card-w); min-height: 0; padding: 0; border: 0; background: none !important; display: block;
   margin-left: min(0px, (100cqw - var(--card-w)) / var(--gaps) - var(--card-w));
-  transform-origin: 50% 100%; translate: 0 var(--y); rotate: calc(var(--d) * min(var(--arc), 11deg / var(--gaps)));
-  transition: translate 240ms var(--ease-out), rotate 240ms var(--ease-out), scale 240ms var(--ease-out), opacity 200ms ease, filter 200ms ease;
+  transition: opacity 200ms ease, filter 200ms ease;
   touch-action: none;
 }
 .hand-card:first-child { margin-left: 0; }
+.pose {
+  display: block; transform-origin: 50% 100%; translate: 0 var(--y); rotate: calc(var(--d) * min(var(--arc), 11deg / var(--gaps)));
+  transition: translate 240ms var(--ease-out), rotate 240ms var(--ease-out), scale 240ms var(--ease-out), opacity 120ms ease;
+}
 .hand-card app-card { width: var(--card-w); --card-width: var(--card-w); }
-.hand-card[data-mark='selectable'] { translate: 0 calc(var(--y) - 12px); }
-.hand-card[data-mark='selected'] { z-index: 60; translate: 0 -34%; rotate: 0deg; scale: 1.1; }
-.hand-card[data-mark='targetable'] { translate: 0 -14px; }
+.hand-card[data-mark='selectable'] > .pose { translate: 0 calc(var(--y) - 12px); }
+.hand-card[data-mark='selected'] { z-index: 60; }
+.hand-card[data-mark='selected'] > .pose { translate: 0 -34%; rotate: 0deg; scale: 1.1; }
+.hand-card[data-mark='targetable'] > .pose { translate: 0 -14px; }
 .hand-card.rest { filter: brightness(.66) saturate(.55); }
 .hand-card.dim { opacity: .35; filter: saturate(.4); }
-.hand-card:focus-visible { outline: none; z-index: 70; translate: 0 -30%; rotate: 0deg; }
+.hand-card:focus-visible { outline: none; z-index: 70; }
 .hand-card:focus-visible app-card { outline: 2px solid var(--game-selected); outline-offset: 4px; border-radius: 10px; }
-@media (hover: hover) {
-  .hand-card:hover { z-index: 70; translate: 0 -36%; rotate: 0deg; scale: 1.16; filter: none; opacity: 1; }
+/* The card being read leaves its place to its big copy above the hand: the rest of the hand stays in sight. */
+.hand-card.peeked { filter: none; opacity: 1; }
+.hand-card.peeked > .pose { opacity: .18; }
+.peek {
+  position: absolute; bottom: calc(100% + 16px); z-index: 80; pointer-events: none; transform-origin: 50% 100%;
+  filter: drop-shadow(0 22px 36px color-mix(in srgb, var(--black) 75%, transparent));
+  animation: peek-in 200ms var(--ease-out) both;
 }
+@keyframes peek-in { from { opacity: 0; transform: translate(var(--from-x), 45%) scale(var(--from-scale)); } }
+:root[data-reduced-motion='true'] .peek { animation: none; }

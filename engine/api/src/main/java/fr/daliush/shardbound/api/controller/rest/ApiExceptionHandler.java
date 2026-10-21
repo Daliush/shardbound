@@ -1,5 +1,6 @@
 package fr.daliush.shardbound.api.controller.rest;
 
+import fr.daliush.shardbound.api.domain.bo.error.ContentException;
 import fr.daliush.shardbound.api.domain.bo.error.EvaluationException;
 import fr.daliush.shardbound.api.domain.bo.error.GameException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         HttpStatus status = switch (exception) {
             case EvaluationException.UnknownEvaluation ignored -> HttpStatus.NOT_FOUND;
             case EvaluationException.UnknownDataset ignored -> HttpStatus.NOT_FOUND;
+        };
+        return describeProblem(status, exception, request);
+    }
+
+    @ExceptionHandler
+    public ProblemDetail refused(ContentException exception, HttpServletRequest request) {
+        HttpStatus status = switch (exception) {
+            case ContentException.UnknownArt ignored -> HttpStatus.NOT_FOUND;
         };
         return describeProblem(status, exception, request);
     }

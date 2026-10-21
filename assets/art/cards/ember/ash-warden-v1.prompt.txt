@@ -1,0 +1,31 @@
+Illustrate Ash Warden, an existing ember unit card. The card-specific subject overrides example figures, clothing or effects in the style prompt. The reference image, when supplied, controls paint handling only. Single original artwork, no border, labels or text.
+
+The attached model image is a STYLE REFERENCE ONLY: match its paint handling, mark size, abstraction and detail hierarchy. Create the card-specific subject below. Do not copy the model character, costume, pose, composition or setting. New single illustration, opaque background, no frame or text.
+
+An original Ember card for Shardbound, portrait 2:3.
+Subject: A soot-cloaked guardian with a huge jaw-shaped iron gauntlet; face lost in ash shadow, no lava-cat anatomy..
+Action: Twisting through a backhand blow; a biting crescent of cinder paint opens from the gauntlet and the cloak trails behind..
+Camera: Close side view, enormous gauntlet lower-left, bowed head upper-right, continuous diagonal body gesture..
+Setting: A broken kiln wall and two quiet violet ruin silhouettes..
+Light: Warm flame light from the near-right models selected edges; deep cool violet shadows elsewhere..
+
+LONG PAINT BRUSHSTROKES CREATE THE SHAPES. Draw the figure and action from
+long continuous curved or diagonal brush gestures. One curved vermilion
+stroke builds a shoulder; long dark sweeps build hair and clothing; a few
+overlapping curved strokes build a sleeve. An immense creamy-ivory stroke
+over red builds fire when it is part of the brief. Each stroke has a broad
+connected body, an irregular edge and a tapered or split end. Shapes follow
+the brush's continuous movement. Keep stroke interiors relatively quiet;
+the energy lives in their large silhouettes and directional overlap.
+Use raw bristle endings and gaps of muted violet underpainting.
+
+The face is a shadow wedge with two or three accents. Clothing is one or
+two broad masses; equipment is a simple painted shape. Leave contours open
+and merge parts of the figure into the brush gesture. A large close subject,
+forceful diagonal action, strong overlap and two distant ruin silhouettes
+give cinematic depth. Broad warm light against quiet violet shadows.
+
+Stop at the expressive color-sketch stage. No additional surface description,
+refined facial features, individual hair strands, armor plates, fabric
+folds, texture fill, speckles, particles, smooth digital shading or neat
+vector edges. No text, border or watermark.

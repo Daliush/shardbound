@@ -1,5 +1,6 @@
 /**
  * The data layer: entities, and the DAOs that store games, carry notifications between instances and read the
- * Arbiter's evaluations and their datasets. Maps in memory and a folder today, a shared store and a bucket later. It knows nothing of the layers above it.
+ * Arbiter's evaluations, their datasets and the cards' art. Maps in memory and folders today, a shared store and
+ * buckets later. It knows nothing of the layers above it.
  */
 package fr.daliush.shardbound.api.dao;

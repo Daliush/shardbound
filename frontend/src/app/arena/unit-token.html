@@ -1,6 +1,6 @@
 @let u = unit();
 <div class="frame">
-  <img class="art" [src]="artSource()" alt="" draggable="false" (error)="failed()" />
+  @if (artSource(); as source) { <img class="art" [src]="source" alt="" draggable="false" decoding="async" (error)="failed()" /> }
   <div class="shade"></div>
   @if (states().length) {
     <div class="states">@for (state of states(); track state.icon) { <span [title]="state.label"><app-icon [name]="state.icon" /><span class="sr-only">{{ state.label }}</span></span> }</div>

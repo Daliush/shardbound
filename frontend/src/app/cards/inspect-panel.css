@@ -1,0 +1,45 @@
+.hover-preview { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 100; }
+.hover-preview app-card { width: min(370px, 70vw, 50dvh); filter: drop-shadow(0 16px 48px #000c); }
+
+/* The showcase: no box, only the card over the blurred page, its faction's glow behind it and specks of light rising. */
+.showcase {
+  --faction: var(--prism); --faction-light: var(--prism-light);
+  width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; overflow: hidden;
+  background: transparent; color: var(--text); border-radius: 0; box-shadow: none;
+}
+.showcase[open] { display: grid; place-items: center; }
+.showcase[data-faction='ember'] { --faction: var(--ember); --faction-light: var(--ember-light); }
+.showcase[data-faction='tide'] { --faction: var(--tide); --faction-light: var(--tide-light); }
+.showcase[data-faction='root'] { --faction: var(--root); --faction-light: var(--root-light); }
+.showcase::backdrop { background: color-mix(in srgb, var(--obsidian-950) 76%, transparent); backdrop-filter: blur(14px) saturate(.75); animation: fade-in 240ms ease both; }
+.aura {
+  position: absolute; left: 50%; top: 47%; width: min(130vw, 980px); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--faction) 42%, transparent), color-mix(in srgb, var(--faction) 12%, transparent) 52%, transparent);
+  animation: aura-in 700ms var(--ease-out) both, aura-breathe 6s ease-in-out 700ms infinite;
+}
+.motes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.motes span {
+  position: absolute; bottom: -12px; width: var(--size); height: var(--size); border-radius: 50%; opacity: 0;
+  background: color-mix(in srgb, var(--faction-light) 60%, var(--white)); box-shadow: 0 0 10px 2px color-mix(in srgb, var(--faction) 70%, transparent);
+  animation: mote linear infinite;
+}
+.stage { position: relative; z-index: 1; margin: 0; display: grid; justify-items: center; cursor: grab; touch-action: none; user-select: none; animation: stage-in 460ms var(--ease-out) both; }
+.stage:active { cursor: grabbing; }
+.stage app-card { --card-width: min(84vw, 420px, calc((100dvh - 150px) * 5 / 7)); filter: drop-shadow(0 34px 44px color-mix(in srgb, var(--black) 55%, transparent)); }
+.floor {
+  width: 64%; height: 22px; margin-top: 20px; border-radius: 50%; pointer-events: none; opacity: .85;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--faction) 55%, transparent), transparent); translate: calc(var(--lean) * -.7px) 0;
+}
+.hint { position: absolute; left: 0; right: 0; bottom: max(16px, env(safe-area-inset-bottom)); margin: 0 auto; max-width: none; text-align: center; font-size: 12px; letter-spacing: .03em; color: var(--muted); animation: fade-in 400ms ease 700ms both; }
+.close { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 2; }
+.showcase.leaving .stage { animation: stage-out 180ms ease-in both; }
+.showcase.leaving .aura, .showcase.leaving .motes, .showcase.leaving .hint { animation: fade-out 180ms ease-in both; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes aura-in { from { opacity: 0; scale: .5; } }
+@keyframes aura-breathe { 50% { opacity: .75; scale: 1.06; } }
+@keyframes stage-in { from { opacity: 0; scale: .72; translate: 0 48px; } }
+@keyframes stage-out { to { opacity: 0; scale: .86; translate: 0 36px; } }
+@keyframes mote { 12% { opacity: .8; } 75% { opacity: .45; } to { opacity: 0; transform: translate(var(--drift), -78vh); } }
+:root[data-reduced-motion='true'] .showcase *, :root[data-reduced-motion='true'] .showcase::backdrop { animation: none; }
+:root[data-reduced-motion='true'] .motes { display: none; }

@@ -2,14 +2,18 @@ package fr.daliush.shardbound.api.controller.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,7 +25,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(properties = {"shardbound.reports-dir=src/test/resources/reports",
-        "shardbound.datasets-dir=src/test/resources/datasets"})
+        "shardbound.datasets-dir=src/test/resources/datasets", "shardbound.art-dir=src/test/resources/art"})
 @AutoConfigureMockMvc
 class RestApiTest {
 
@@ -53,6 +57,41 @@ class RestApiTest {
                 .andExpect(jsonPath("$[?(@.id == 'ember.ash-warden')].text[*].kind").value(contains("attack", "attack")))
                 .andExpect(jsonPath("$[?(@.id == 'ember.cinderling')].text[1].kind").value("ability"))
                 .andExpect(jsonPath("$[?(@.id == 'tide.moonpull')].text[0].text").value("Fracture 3."));
+    }
+
+    @Test
+    void givesEachCardWithArtTheAddressOfItsCurrentImage() throws Exception {
+        mvc.perform(get("/api/cards"))
+                .andExpect(jsonPath("$[?(@.id == 'ember.ash-warden')].art").value(
+                        contains(matchesPattern("/api/cards/ember[.]ash-warden/art[?]v=[0-9a-z]+"))))
+                .andExpect(jsonPath("$[?(@.id == 'root.sprout')].art").isEmpty());
+    }
+
+    @Test
+    void servesACardsArtForeverAtItsVersionedAddressThenAsNotModified() throws Exception {
+        String address = body(mvc.perform(get("/api/cards"))).valueStream()
+                .filter(card -> card.get("id").asString().equals("ember.ash-warden"))
+                .findFirst().orElseThrow().get("art").asString();
+
+        String etag = mvc.perform(get(address))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/webp"))
+                .andExpect(content().bytes(Files.readAllBytes(Path.of("src/test/resources/art/ember.ash-warden.webp"))))
+                .andExpect(header().string("Cache-Control", containsString("immutable")))
+                .andReturn().getResponse().getHeader("ETag");
+        mvc.perform(get("/api/cards/ember.ash-warden/art").header("If-None-Match", etag))
+                .andExpect(status().isNotModified());
+        mvc.perform(get("/api/cards/ember.ash-warden/art?v=old"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-cache"));
+    }
+
+    @Test
+    void refusesTheArtOfACardWithoutArtWithAProblem() throws Exception {
+        mvc.perform(get("/api/cards/root.sprout/art"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("No art for card: root.sprout"));
     }
 
     @Test

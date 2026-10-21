@@ -5,15 +5,10 @@ import { Settings } from '../core/settings';
 import { Inspect } from '../cards/inspect';
 import { CardComponent } from '../cards/card';
 import { Ambience } from '../core/ambience';
+import { FACTIONS } from '../core/factions';
 import { CardBook } from '../game/card-book';
 import type { ElementalScene, ElementKind } from './elemental-scene';
 import { StepSwipe } from './step-swipe';
-
-const FACTIONS = [
-  { id: 'ember', name: 'Ember', style: 'Fire & sacrifice', description: 'Burn bright. Strike hard. Turn sacrifice into power.', card: 'ember.ash-warden', cardName: 'Ash Warden' },
-  { id: 'tide', name: 'Tide', style: 'Flow & control', description: 'Turn the current. Strengthen your allies. Unravel their plans.', card: 'tide.deepcurrent-behemoth', cardName: 'Deepcurrent Behemoth' },
-  { id: 'root', name: 'Root', style: 'Growth & resilience', description: 'Take root. Summon your allies. Grow stronger together.', card: 'root.root-sentinel', cardName: 'Root Sentinel' },
-] as const;
 
 @Component({
   selector: 'app-home-page',

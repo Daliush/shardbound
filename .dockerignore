@@ -1,4 +1,5 @@
-# The game server's image needs engine/, content/, and the evaluations and datasets in evals/.
+# The game server's image needs engine/, content/, the evaluations and datasets in evals/, and the published card art
+# in assets/art/web/: the masters and their prompts stay out of the build context.
 .git
 .claude
 docs
@@ -9,3 +10,6 @@ frontend
 **/__pycache__
 **/.venv
 evals/datasets/preview
+assets/art/cards
+assets/art/models
+assets/art/references

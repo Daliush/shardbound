@@ -1,0 +1,52 @@
+Illustrate Spring Tide, an existing tide spell card. The card-specific subject overrides example figures, clothing or effects in the style prompt. The reference image, when supplied, controls paint handling only. Single original artwork, no border, labels or text.
+
+The attached model image is a STYLE REFERENCE ONLY: match its paint handling, mark size, abstraction and detail hierarchy. Create the card-specific subject below. Do not copy the model character, costume, pose, composition or setting. New single illustration, opaque background, no frame or text.
+
+Paint one original Tide-faction illustration for Shardbound. Portrait 2:3.
+Card: Spring Tide. Type: spell.
+Independent subject design: A spell event: layered rising seawater lifting several small allied sea creatures along a rocky shelf..
+Subject and action: The withdrawing lower current gives way to a greater swelling turquoise tide, carrying the allies upward together..
+Setting: A quiet tidal alcove, dark near stone and a narrow desaturated sea opening..
+Composition: Three broad connected water gestures dominate; figures and distant coast remain quiet and small..
+Light: Low sea-green reflected water light with weak warm lateral dusk..
+
+IDENTITY IS INDEPENDENT OF STYLE. The subject design above overrides every
+visual reference for appearance. References supply brush handling only:
+never copy their face, apparent age, hair, body proportions, costume,
+silhouette, gesture or pose. Use the card brief's structural design,
+equipment, silhouette and attitude; add appearance details only when they
+serve that particular subject rather than making them faction defaults.
+Different cards need distinct identities, not the same model with another
+palette. Preserve a card's own approved identity in later illustrations;
+vary identities across cards rather than randomly changing the same person.
+
+The picture is DRAWN WITH A BRUSH. Let the viewer recognize the painter's
+individual gestures. Use a wide worn flat brush loaded with opaque gouache,
+plus a few thin dark drawing accents. A single broad sweep describes a
+whole major fold or water movement. Show the stroke's beginning, change of
+pressure, irregular coverage and imperfect stop. Alternate wet opaque shapes,
+thin dragged paint and a few dry bristle skips. Leave quiet underpainting
+visible between selected marks. Broad calm dark shapes carry the shadows.
+
+Use FEWER, LARGER marks. Avoid filling those strokes with tiny decorative
+chips or drawing a neat outline around every shape. A brushstroke should
+construct the form itself, not decorate a fully rendered surface. Vary its
+width, direction, edge and ending. Preserve natural drawing and convincing
+anatomy with a handful of precise marks at the focal feature. Keep the
+remaining description economical and intentionally unresolved in places.
+
+Lively petrol blue, jade, turquoise, deep navy, warm ivory and restrained
+coral accents. Matte pigment, subtle warm/cool color relationships, selective
+light and a clear value hierarchy. Express water with two or three imperfect
+connected strokes, including a dark underside and a sparse cream crest.
+
+The main subject fills the image, with a small but real setting. Keep depth
+through overlap and distant values, while reducing backgrounds to a few
+quiet painted shapes. Preserve weight, structure and directional lighting.
+Use any supplied brush references for their actual shape-making and economy
+of gesture, not their characters, colors or isolated backgrounds.
+
+No polished digital rendering, airbrushed faces, regular pointed ribbons,
+all-over small marks, granular distress filters, impasto relief, glitter,
+spray particles or ornamental clutter. Do not add surface texture as a
+substitute for visible brush gestures. No text, frames, logos or signatures.

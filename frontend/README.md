@@ -23,7 +23,8 @@ To play both seats on one computer, open the second one in a private window.
 | `home/`, `play/`, `join/` | Pick a deck, create a game, join one from an invite link |
 | `game/` | The game page and its WebSocket connection |
 | `arena/` | The game table: units, hand, combat, animations |
-| `cards/` | How a card looks |
+| `cards/` | How a card looks, and the inspected card in 3D |
+| `collection/` | Every card, searched, filtered and grouped (`/cards`) |
 | `lab/` | The benchmark lab |
 | `core/` | Themes, settings, shared styles |
 

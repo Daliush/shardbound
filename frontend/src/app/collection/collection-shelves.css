@@ -1,0 +1,29 @@
+/* A shelf per group: its heading in the group's color, then the cards. */
+.shelf { margin-top: 2.75rem; scroll-margin-top: 12rem; }
+.shelf-head { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: .25rem 1rem; padding-bottom: .9rem; margin-bottom: 1.25rem; border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, color-mix(in srgb, var(--faction) 70%, transparent), transparent 70%) 1; }
+.shelf:not([data-faction]) .shelf-head { border-image: linear-gradient(90deg, var(--line), transparent 70%) 1; }
+.shelf-head h2 { display: flex; align-items: center; gap: .6rem; margin: 0; font-size: clamp(1.7rem, 3vw, 2.3rem); }
+.shelf-head h2 app-icon { width: .8em; height: .8em; color: var(--faction); }
+.shelf-head p { margin: 0; font-size: .82rem; color: var(--muted); max-width: 60ch; }
+.shelf-head .count { font: 500 .8rem var(--font-number); color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(208px, 42vw), 1fr)); gap: clamp(14px, 2vw, 24px); margin: 0; padding: 0; list-style: none; }
+.tile { position: relative; animation: tile-in 420ms var(--ease-out) both; animation-delay: calc(min(var(--i), 14) * 28ms); view-transition-class: collection-card; }
+.open { display: block; width: 100%; min-height: 0; padding: 0; border: 0; border-radius: 12px; background: none; cursor: zoom-in; transition: translate 220ms var(--ease-out), filter 220ms ease; }
+.open:hover:not(:disabled) { background: none; translate: 0 -6px; filter: drop-shadow(0 18px 26px color-mix(in srgb, var(--faction) 40%, transparent)); }
+.open:focus-visible { outline: 2px solid var(--faction-light); outline-offset: 4px; }
+.open app-card { --card-width: 100%; }
+.copies {
+  position: absolute; top: -9px; right: -9px; z-index: 1; min-width: 32px; padding: .2rem .5rem; border-radius: 999px; text-align: center; pointer-events: none;
+  font: 600 .78rem var(--font-number); color: var(--obsidian-950); background: var(--faction-light); box-shadow: 0 4px 12px color-mix(in srgb, var(--black) 40%, transparent);
+}
+.empty { display: grid; justify-items: center; gap: .75rem; padding: 4rem 1rem; text-align: center; color: var(--muted); }
+.empty app-icon { width: 28px; height: 28px; }
+.waiting { padding: 4rem 0; text-align: center; }
+@keyframes tile-in { from { opacity: 0; translate: 0 14px; } }
+
+@media (max-width: 700px) {
+  .shelf { margin-top: 2rem; }
+  .shelf-head { grid-template-columns: 1fr auto; }
+  .shelf-head p { grid-column: 1 / -1; grid-row: 2; }
+}

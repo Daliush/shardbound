@@ -26,6 +26,7 @@ None is needed on your machine.
 | `PORT` | No, Cloud Run sets it | The port to listen on. Default: `8080`. |
 | `SHARDBOUND_CONTENT_DIR` | No, the image sets it | The cards and decks (`content/`). Without it, the server looks for `content/` in the parent folders. |
 | `SHARDBOUND_REPORTS_DIR`, `SHARDBOUND_DATASETS_DIR` | No, the image sets them | The saved evaluations and their datasets (`evals/`). |
+| `SHARDBOUND_ART_DIR` | No, the image sets it | The cards' art, one WebP image per card (`assets/art/web/`). |
 
 ## Google Cloud Run
 

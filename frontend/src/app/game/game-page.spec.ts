@@ -21,7 +21,6 @@ describe('GamePage', () => {
     await fixture.whenStable();
     const http = TestBed.inject(HttpTestingController);
     http.match('/api/cards').forEach(request => request.flush([]));
-    http.match('/cards/art/manifest.json').forEach(request => request.flush({}));
     await fixture.whenStable();
     return fixture;
   }
@@ -82,6 +81,55 @@ describe('GamePage', () => {
     expect(FakeWebSocket.latest().sent).toHaveLength(0);
     (page.querySelector('[data-key="unit:61"]') as HTMLButtonElement).click();
     expect(FakeWebSocket.latest().sent).toEqual([{type:'act',requestId:'c-1',decisionId:'d-13',action:4}]);
+  });
+  it('grows the hand card under the mouse above the hand, with its whole text, and none while the player aims', async () => {
+    const base = aView(20);
+    const fixture = await open(true, aView(20, {you: {...base.you, hand: [...base.you.hand, {id: 15, card: 'ember.ash-warden', cost: 3, fractureStep: null}]}}));
+    const page = fixture.nativeElement as HTMLElement, warden = page.querySelector('[data-key="card:15"]')!;
+    warden.dispatchEvent(new PointerEvent('pointerenter', {pointerType: 'mouse'}));
+    await fixture.whenStable();
+    expect(page.querySelector('.hand .peek app-card')?.getAttribute('data-mode')).toBe('inspect');
+    expect(warden.classList).toContain('peeked');
+    expect(page.querySelectorAll('.hand-card').length).toBe(2);
+    warden.dispatchEvent(new PointerEvent('pointerleave', {pointerType: 'mouse'}));
+    await fixture.whenStable();
+    expect(page.querySelector('.peek')).toBeNull();
+    (page.querySelector('[data-key="card:3"]') as HTMLButtonElement).click(); await fixture.whenStable();
+    warden.dispatchEvent(new PointerEvent('pointerenter', {pointerType: 'mouse'}));
+    await fixture.whenStable();
+    expect(page.querySelector('.peek')).toBeNull();
+  });
+  it('reads the hand card under a sliding finger, and plays one only once it is pulled up out of the hand', async () => {
+    const base = aView(20);
+    const fixture = await open(true, aView(20, {you: {...base.you, hand: [...base.you.hand, {id: 15, card: 'ember.ash-warden', cost: 3, fractureStep: null}]}}));
+    const page = fixture.nativeElement as HTMLElement, dart = page.querySelector('[data-key="card:3"]')!, warden = page.querySelector('[data-key="card:15"]')!;
+    const touch = (type: string, target: EventTarget, x: number, y: number) => target.dispatchEvent(new PointerEvent(type, {bubbles: true, pointerId: 4, pointerType: 'touch', button: 0, clientX: x, clientY: y}));
+    const original = document.elementFromPoint;
+    let under: Element = dart;
+    document.elementFromPoint = () => under;
+    try {
+      touch('pointerdown', dart, 100, 700);
+      await fixture.whenStable();
+      expect(dart.classList).toContain('peeked');
+      under = warden;
+      touch('pointermove', dart, 140, 700); touch('pointermove', window, 140, 700);
+      await fixture.whenStable();
+      expect(warden.classList).toContain('peeked');
+      expect(page.querySelector('.drag-arrow')).toBeNull();
+      touch('pointerup', dart, 140, 700); touch('pointerup', window, 140, 700);
+      (dart as HTMLButtonElement).click();
+      await fixture.whenStable();
+      expect(page.querySelector('.peek')).toBeNull();
+      expect(page.querySelector('[data-mark="selected"]')).toBeNull();
+      under = warden;
+      touch('pointerdown', warden, 140, 700);
+      under = page.querySelector('.row.yours')!;
+      touch('pointermove', warden, 140, 500); touch('pointermove', window, 140, 500);
+      await fixture.whenStable();
+      expect(page.querySelector('.peek')).toBeNull();
+      expect(page.querySelector('.drag-arrow')).not.toBeNull();
+      expect(warden.getAttribute('data-mark')).toBe('selected');
+    } finally { document.elementFromPoint = original; }
   });
   it('submits an interception only after a pointer drag reaches the defender', async () => {
     const base = aView(20);

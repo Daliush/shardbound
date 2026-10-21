@@ -146,7 +146,7 @@ export class GamePage implements OnInit {
   protected readonly graveSide = signal<Side>('you');
   protected readonly copied = signal(false);
   protected readonly drag = signal<{ x: number; y: number; fromX: number; fromY: number } | null>(null);
-  private pointer: { key: string; x: number; y: number; attack: number | null; moving: boolean; timer: ReturnType<typeof setTimeout> } | null = null;
+  private pointer: { key: string; x: number; y: number; attack: number | null; moving: boolean; slid: boolean; touch: boolean; timer: ReturnType<typeof setTimeout> | undefined } | null = null;
   private suppressClickUntil = 0;
 
   constructor() {
@@ -195,16 +195,27 @@ export class GamePage implements OnInit {
     if (input.event.button !== 0 || !this.ready() || this.sent()) return;
     this.inspect.clearPreview();
     this.abortGesture();
-    const timer = setTimeout(() => {
+    // A finger held on a hand card reads it, grown by the board; on any other piece, a long press inspects it.
+    const reading = input.event.pointerType === 'touch' && input.key.startsWith('card:');
+    const timer = reading ? undefined : setTimeout(() => {
       if (!this.pointer?.moving) { this.inspectKey(input.key); this.suppressClickUntil = Date.now() + 600; this.abortGesture(); }
     }, 500);
-    this.pointer = { key: input.key, x: input.event.clientX, y: input.event.clientY, attack: input.attack ?? null, moving: false, timer };
+    this.pointer = { key: input.key, x: input.event.clientX, y: input.event.clientY, attack: input.attack ?? null, moving: false, slid: false, touch: input.event.pointerType === 'touch', timer };
   }
   protected move(event: PointerEvent): void {
     const pointer = this.pointer;
     if (!pointer || this.sent()) return;
     if (Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) < 9 && !pointer.moving) return;
     clearTimeout(pointer.timer);
+    // A finger sliding along the hand reads its cards (the board grows them); pulling one up out of the hand plays it.
+    if (pointer.touch && !pointer.moving && pointer.key.startsWith('card:')) {
+      const under = document.elementFromPoint(event.clientX, event.clientY);
+      if (under?.closest('.hand')) {
+        pointer.key = under.closest<HTMLElement>('.hand-card')?.dataset['key'] ?? pointer.key;
+        pointer.x = event.clientX; pointer.y = event.clientY; pointer.slid = true;
+        return;
+      }
+    }
     if (!this.groups().sources().has(pointer.key)) return;
     if (!pointer.moving) this.select(pointer.key, pointer.attack ?? (this.selected() === pointer.key ? this.attackIndex() : null));
     pointer.moving = true;
@@ -215,6 +226,7 @@ export class GamePage implements OnInit {
   }
   protected release(event: PointerEvent): void {
     const pointer = this.pointer;
+    if (pointer?.slid) this.suppressClickUntil = Date.now() + 600;
     if (pointer?.moving && this.view()) {
       const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-key]')?.dataset['key'];
       this.suppressClickUntil = Date.now() + 600;
