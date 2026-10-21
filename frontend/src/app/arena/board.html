@@ -36,14 +36,22 @@
   <app-player-hud class="hud yours" side="you" [player]="v.you" [handCount]="v.you.hand.length" [active]="v.activePlayer === 'you'"
     [marks]="lockedMarks()" [labels]="labels()" [projections]="projections()" (pick)="pick($event)" (graveyard)="graveyard.emit('you')" />
 
-  <div class="hand" appAnchor="hand:you" [style.--count]="v.you.hand.length" aria-label="Your hand">
+  <div class="hand" #hand appAnchor="hand:you" [style.--count]="v.you.hand.length" aria-label="Your hand"
+    (pointermove)="slide($event)" (pointerup)="release($event)" (pointercancel)="release($event)">
     @for (card of v.you.hand; track card.id; let index = $index) {
       @let key = 'card:' + card.id;
       <button class="hand-card" [appAnchor]="key" [attr.data-key]="key" [attr.data-mark]="mark(key)" [class.rest]="rest(key)" [class.dim]="dim(key)"
-        [style.--i]="index" [attr.aria-label]="label(key, 'Inspect ' + book.name(card.card))"
-        (click)="pick(key, card.card)" (pointerdown)="press.emit({ key, event: $event })" (contextmenu)="$event.preventDefault(); inspect.open({ id: card.card, hand: card })">
+        [class.peeked]="peek()?.key === key" [style.--i]="index" [attr.aria-label]="label(key, 'Inspect ' + book.name(card.card))"
+        (click)="pick(key, card.card)" (pointerdown)="press.emit({ key, event: $event }); touch($event, key)" (pointerenter)="hoverIn($event, key)" (pointerleave)="hoverOut($event, key)"
+        (focus)="focusIn($event, key)" (blur)="focusOut(key)"
+        (contextmenu)="$event.preventDefault(); inspect.open({ id: card.card, hand: card })">
         <span class="pose"><app-card [cardId]="card.card" [hand]="card" [mark]="mark(key)" [interactiveTilt]="false" /></span>
       </button>
+    }
+    @if (peek(); as peek) {
+      <div class="peek" aria-hidden="true" [style.left.px]="peek.left" [style.width.px]="peek.width" [style.--from-x.px]="peek.fromX" [style.--from-scale]="peek.fromScale">
+        <app-card [cardId]="peek.card.card" [hand]="peek.card" [mark]="mark(peek.key)" mode="inspect" [interactiveTilt]="false" [style.--card-width.px]="peek.width" />
+      </div>
     }
   </div>
 </div>

@@ -19,7 +19,7 @@
 .hand-card:first-child { margin-left: 0; }
 .pose {
   display: block; transform-origin: 50% 100%; translate: 0 var(--y); rotate: calc(var(--d) * min(var(--arc), 11deg / var(--gaps)));
-  transition: translate 240ms var(--ease-out), rotate 240ms var(--ease-out), scale 240ms var(--ease-out);
+  transition: translate 240ms var(--ease-out), rotate 240ms var(--ease-out), scale 240ms var(--ease-out), opacity 120ms ease;
 }
 .hand-card app-card { width: var(--card-w); --card-width: var(--card-w); }
 .hand-card[data-mark='selectable'] > .pose { translate: 0 calc(var(--y) - 12px); }
@@ -29,9 +29,14 @@
 .hand-card.rest { filter: brightness(.66) saturate(.55); }
 .hand-card.dim { opacity: .35; filter: saturate(.4); }
 .hand-card:focus-visible { outline: none; z-index: 70; }
-.hand-card:focus-visible > .pose { translate: 0 -30%; rotate: 0deg; }
 .hand-card:focus-visible app-card { outline: 2px solid var(--game-selected); outline-offset: 4px; border-radius: 10px; }
-@media (hover: hover) {
-  .hand-card:hover { z-index: 70; filter: none; opacity: 1; }
-  .hand-card:hover > .pose { translate: 0 -36%; rotate: 0deg; scale: 1.16; }
+/* The card being read leaves its place to its big copy above the hand: the rest of the hand stays in sight. */
+.hand-card.peeked { filter: none; opacity: 1; }
+.hand-card.peeked > .pose { opacity: .18; }
+.peek {
+  position: absolute; bottom: calc(100% + 16px); z-index: 80; pointer-events: none; transform-origin: 50% 100%;
+  filter: drop-shadow(0 22px 36px color-mix(in srgb, var(--black) 75%, transparent));
+  animation: peek-in 200ms var(--ease-out) both;
 }
+@keyframes peek-in { from { opacity: 0; transform: translate(var(--from-x), 45%) scale(var(--from-scale)); } }
+:root[data-reduced-motion='true'] .peek { animation: none; }

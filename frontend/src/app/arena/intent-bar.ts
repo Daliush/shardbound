@@ -1,6 +1,7 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { ActionView } from '../api/protocol';
 import { CardComponent } from '../cards/card';
+import { Inspect } from '../cards/inspect';
 import { RulesText } from '../cards/rules-text';
 import { Icon } from '../core/icon';
 
@@ -19,7 +20,7 @@ export interface IntentOption { label: string; detail: string; value: number; ac
   imports: [CardComponent, RulesText, Icon],
   template: `@let now = intent();
     <div class="say" [attr.data-tone]="now.tone" aria-live="polite">
-      @if (now.card) { <app-card class="thumb" [cardId]="now.card" mode="thumb" [interactiveTilt]="false" /> }
+      @if (now.card) { <button class="thumb quiet" aria-label="Inspect the card" (click)="inspect.open({ id: now.card })"><app-card [cardId]="now.card" mode="thumb" [interactiveTilt]="false" /></button> }
       @else { <span class="glyph"><app-icon [name]="glyph()" /></span> }
       <div class="words">
         <p class="title">{{ now.title }}</p>
@@ -46,6 +47,7 @@ export interface IntentOption { label: string; detail: string; value: number; ac
   styleUrl: './intent-bar.css',
 })
 export class IntentBar {
+  protected readonly inspect = inject(Inspect);
   readonly intent = input.required<Intent>();
   readonly buttons = input<ActionView[]>([]);
   readonly options = input<IntentOption[]>([]);
