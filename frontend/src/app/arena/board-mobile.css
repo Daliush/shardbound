@@ -6,8 +6,8 @@
   .battle { border-radius: 14px; }
   .empty-row { padding: 10px 14px; font-size: 12px; text-align: center; }
   .hand { --arc: 2.4deg; --sag: 2px; padding: 0 6px; }
-  .hand-card[data-mark='selectable'] { translate: 0 calc(var(--y) - 8px); }
-  .hand-card[data-mark='selected'] { translate: 0 -62%; scale: 1.28; }
+  .hand-card[data-mark='selectable'] > .pose { translate: 0 calc(var(--y) - 8px); }
+  .hand-card[data-mark='selected'] > .pose { translate: 0 -62%; scale: 1.28; }
 }
 @media (max-width: 760px) and (max-height: 700px) {
   :host { --token-max: 84px; --card-w: 88px; }

@@ -42,7 +42,7 @@
       <button class="hand-card" [appAnchor]="key" [attr.data-key]="key" [attr.data-mark]="mark(key)" [class.rest]="rest(key)" [class.dim]="dim(key)"
         [style.--i]="index" [attr.aria-label]="label(key, 'Inspect ' + book.name(card.card))"
         (click)="pick(key, card.card)" (pointerdown)="press.emit({ key, event: $event })" (contextmenu)="$event.preventDefault(); inspect.open({ id: card.card, hand: card })">
-        <app-card [cardId]="card.card" [hand]="card" [mark]="mark(key)" [interactiveTilt]="false" />
+        <span class="pose"><app-card [cardId]="card.card" [hand]="card" [mark]="mark(key)" [interactiveTilt]="false" /></span>
       </button>
     }
   </div>
