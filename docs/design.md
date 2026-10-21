@@ -76,6 +76,8 @@
 > **v2.29 (October 2026)** — the agent harness: hooks refuse a command on the test split and run the fast test suites when an agent stops; three read-only review agents check the rules, the evaluation's integrity and the docs; a review agent comments on each pull request; commit messages are checked; and CI blocks a pull request whose retrieval Recall@10 drops by more than 2 points, the first job that runs a model (§9).
 >
 > **v2.30 (October 2026)** — the game server and the client run on Cloud Run, from the same images as docker compose (`engine/README.md`, `frontend/README.md`). For now the server is one instance with its games in memory; the shared store comes when it needs several (§8.2).
+>
+> **v2.31 (October 2026)** — the cards show their art. Each card's painting is kept in `assets/art/cards/` with its prompt, and published as a web image to an art store, a folder today and a bucket online, behind a DAO like the evaluations. `GET /api/cards` gives each card the address of its image, with a version so that a browser keeps it until it changes (§10).
 
 ---
 
@@ -863,7 +865,8 @@ shardbound/
 │   └── service/                # FastAPI service exposed to the backend
 ├── frontend/                   # Angular: test frontend, then polished frontend, results pages, comparator
 ├── deploy/                     # static site + Cloud Run CPU (limits, budget)
-├── scripts/                    # build-dataset.sh: a dataset version from end to end
+├── assets/art/                 # cards/: each card's painting and its prompt; web/: the images the server serves
+├── scripts/                    # build-dataset.sh: a dataset version from end to end; publish-card-art.py: the art's web images
 ├── docs/
 │   ├── design.md               # this document
 │   ├── rules/                  # rulebook: README.md index + one file per section (00-vocabulary.md … 12-open-points.md)

@@ -670,7 +670,8 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 
 | Method | Path | Request | Response |
 |---|---|---|---|
-| `GET` | `/api/cards` | — | `[{ id, name, faction, type, cost?, defense?, token, keywords, text: [{ kind, text }], flavor? , fracture?: [{ step, cost }] }]` |
+| `GET` | `/api/cards` | — | `[{ id, name, faction, type, cost?, defense?, token, keywords, text: [{ kind, text }], flavor? , fracture?: [{ step, cost }], art? }]` |
+| `GET` | `/api/cards/{id}/art` | — | the card's art, `image/webp`, at the address `art` gives |
 | `GET` | `/api/decks` | — | `[{ id, name, description?, faction, cards: [{ card, count }] }]` |
 | `GET` | `/api/bots` | — | `["random", "greedy"]` (only the bots implemented so far) |
 | `POST` | `/api/games` | `{ "deck": "ember-starter", "opponent": { "type": "bot", "bot": "random", "deck": "root-starter" }, "seed"?: 42 }` | `201 { gameId, playerToken, websocketPath: "/ws/games/{id}" }` |
@@ -685,6 +686,7 @@ Base path `/api`. JSON. Errors as RFC 9457 Problem Details (Spring `ProblemDetai
 - `seed` is optional (random when missing). It is never returned while the game runs.
 - `text` comes from `CardTextRenderer` (section 9): one `{ kind, text }` per line, in the renderer's order (added in slice 3).
 - Optional fields are left out of REST responses when absent (`cost` of a token, `joinCode` of a bot game).
+- `art` is where to download the card's art: `/api/cards/{id}/art?v=<version>` while a folder stores it (`assets/art/web/<card id>.webp`, `shardbound.art-dir`, read at each request), a bucket's own address later. The version changes with the image, so the server sends it with `Cache-Control: immutable` at that address, and `no-cache` with its `ETag` without it. A card without art has no `art`, and the client draws a placeholder; its address answers `404`.
 - `playerToken` and `joinCode`: 32 random bytes from `SecureRandom`, base64url. Compare tokens in constant time.
 - Validation errors (unknown deck, unknown bot, illegal deck): `400`. Unknown game: `404`. Wrong join code, or game already full: `409`.
 - The evaluations are the Arbiter's (phase 3, `docs/design.md` §8.2), loaded from `evals/reports/<version>/<split>/<timestamp>.json` (`shardbound.reports-dir`) by a DAO that reads the folder at each request, so a new evaluation is served at once; a bucket later. The server serves each document as written: its format belongs to `ai/rag/evaluation/evaluation_json.py`. An evaluation that never ran: `404`. The datasets they score come the same way from `evals/datasets/<version>/dataset-<split>.jsonl` (`shardbound.datasets-dir`), so the explorer shows each question as worded, with its answer key; a split never built: `404`.

@@ -11,7 +11,7 @@ server:
 
 # See spec §3.4. shardbound.content-dir is found by walking up from the working directory when not set, and
 # shardbound.reports-dir and shardbound.datasets-dir, the Arbiter's evaluations and their datasets, are then the
-# repository's evals/reports and evals/datasets.
+# repository's evals/reports and evals/datasets, and shardbound.art-dir, the cards' art, its assets/art/web.
 shardbound:
   sessions:
     finished-ttl: 30m

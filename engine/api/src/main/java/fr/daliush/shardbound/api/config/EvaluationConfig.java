@@ -4,9 +4,7 @@ import fr.daliush.shardbound.api.dao.evaluation.DatasetDao;
 import fr.daliush.shardbound.api.dao.evaluation.DatasetDaoFile;
 import fr.daliush.shardbound.api.dao.evaluation.EvaluationDao;
 import fr.daliush.shardbound.api.dao.evaluation.EvaluationDaoFile;
-import fr.daliush.shardbound.core.content.ContentLoader;
 import java.nio.file.Path;
-import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,20 +21,13 @@ class EvaluationConfig {
 
     @Bean
     EvaluationDao evaluationDao(ShardboundProperties properties) {
-        return new EvaluationDaoFile(folder(properties.reportsDir(), REPORTS, "shardbound.reports-dir"));
+        return new EvaluationDaoFile(RepositoryFolders.find(properties.reportsDir(), REPORTS,
+                "shardbound.reports-dir"));
     }
 
     @Bean
     DatasetDao datasetDao(ShardboundProperties properties) {
-        return new DatasetDaoFile(folder(properties.datasetsDir(), DATASETS, "shardbound.datasets-dir"));
-    }
-
-    /** The folder a property names, or else the one at {@code inRepository} in the repository found above. */
-    private static Path folder(Path configured, Path inRepository, String property) {
-        Path here = Path.of("").toAbsolutePath();
-        return Optional.ofNullable(configured)
-                .or(() -> ContentLoader.find(here).map(content -> content.getParent().resolve(inRepository)))
-                .orElseThrow(() -> new IllegalStateException("No repository found above " + here
-                        + ": set " + property + " to the folder of " + inRepository));
+        return new DatasetDaoFile(RepositoryFolders.find(properties.datasetsDir(), DATASETS,
+                "shardbound.datasets-dir"));
     }
 }
