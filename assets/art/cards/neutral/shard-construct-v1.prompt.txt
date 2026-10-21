@@ -1,0 +1,15 @@
+Illustrate Shard Construct, an existing neutral unit card. The card-specific subject overrides example figures, clothing or effects in the style prompt. The reference image, when supplied, controls paint handling only. Single original artwork, no border, labels or text.
+
+Use case: stylized-concept. Original Shardbound Neutral card illustration, portrait 2:3.
+Card: Shard Construct. Type: unit.
+Subject: A massive asymmetrical golem of broad stone-grey blocks and a few ivory crystal joints, a blank recessed head and one enormous square fist..
+Action: Leaning its weight into a grounded forward crushing step, giant arm crossing the near plane..
+Setting: A worn stone threshold with soft ivory mist and two quiet dark verticals..
+Composition: Close low camera, great square shoulder and fist fill the portrait, simple ruined stone setting behind..
+Lighting: A concentrated ivory effect light against neutral charcoal shadow with tiny muted prismatic notes..
+
+Hand-painted fantasy illustration built from confident irregular gouache and thin opaque oil-like brush planes. Clear structural drawing, substantial simple forms, atmospheric depth, selective detail and quiet connected shadows. Visible natural brush pressure, overlapping pigment, a few rough dragged edges and lost contours. Rich focal paint without photographic finish or dense tiny texture.
+
+Ivory, warm stone-grey, charcoal and desaturated blue-violet. Restrained small prismatic notes where crystal catches light: pale cyan, amber and soft violet. Keep most surfaces neutral and matte. No rainbow neon, colored LED glow or faction-colored costume. The main subject dominates its card; the environment remains real but economical. Light is specific to the brief and models volume. No default overhead sunshaft.
+
+For a unit, build a distinct creature or construct. For a spell, let the event be the subject, with secondary figures only when needed for meaning. Preserve the card-specific design rather than copying any reference character. A supplied model image is for paint handling and palette only. No text, frame, statistics, logo or watermark. Avoid glossy 3D, airbrushed materials, detailed surface cracks everywhere, perfect vector shapes, tiny particles and texture overlays.
