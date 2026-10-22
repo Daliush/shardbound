@@ -2,7 +2,8 @@ import { Component, computed, effect, input, output, signal } from '@angular/cor
 import { EvaluationRun, Layers } from '../api/evaluation';
 import { Icon } from '../core/icon';
 import { layerNames, runKey, variants } from './layer-model';
-import { atPath, formatMetric, metricDescription, metricName, metrics } from './metrics';
+import { atPath, metrics } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 import { matchingRun, pipelineName, variantName } from './presentation';
 import { LabMotion } from './lab-motion';
 
@@ -35,7 +36,7 @@ import { LabMotion } from './lab-motion';
         <div class="recipe">@for (layer of layers(); track layer) { <div><span>{{ layerLabel(layer) }}</span><strong>{{ variant(draft()[layer] ?? null) }}</strong></div> }</div>
         @if (revealed() && match(); as run) {
           <div class="result-scores" [labMotion]="key(run.layers)" aria-live="polite"><p class="result-status"><app-icon name="check" />Recorded results</p>@if (run.description) { <p class="sample-size" [title]="run.description">{{ run.description }}</p> }
-            @for (metric of metrics(); track metric) { <div class="result-metric"><div><span>{{ metricName(metric) }}</span><strong>{{ format(metric,at(run.scores.overall,metric)) }}</strong></div><p>{{ description(metric) }}</p></div> }
+            @for (metric of metrics(); track metric) { <div class="result-metric"><div><span>{{ metricName(metric) }}</span><strong>{{ format(metric,at(run.scores.overall,metric)) }}</strong></div><p>{{ catalog().description(metric)?.what }}</p></div> }
             <p class="sample-size">Measured on {{ run.scores.overall['question_count'] ?? run.questions.length }} questions.</p>
             <button class="primary" (click)="compared.emit(key(run.layers))"><app-icon name="compare" />Compare this combination</button>
           </div>
@@ -52,6 +53,7 @@ import { LabMotion } from './lab-motion';
 export class CombinationBuilder {
   readonly runs = input<EvaluationRun[]>([]);
   readonly initial = input<Layers>({});
+  readonly catalog = input(MetricCatalog.fromEvaluation(null));
   readonly changed = output<Layers>();
   readonly compared = output<string>();
   protected readonly draft = signal<Layers>({});
@@ -62,10 +64,9 @@ export class CombinationBuilder {
   protected readonly variant = variantName;
   protected readonly name = pipelineName;
   protected readonly key = runKey;
-  protected readonly metricName = metricName;
-  protected readonly format = formatMetric;
   protected readonly at = atPath;
-  protected readonly description = metricDescription;
+  protected metricName(metric: string): string { return this.catalog().name(metric); }
+  protected format(metric: string, value: number | null): string { return this.catalog().format(metric,value); }
   constructor() { effect(() => { this.draft.set({...this.initial()}); this.revealed.set(false); }); }
   protected options(layer: string) { return variants(this.runs(),layer); }
   protected choose(layer: string, value: string | null): void {

@@ -92,4 +92,4 @@ Rules the code keeps:
 
 ## Docs to keep in sync
 
-`docs/design.md` §5.2, §6.2, §6.3 and its changelog; `docs/decisions/rag.md` for each decision taken with the maintainer; the status and commands of `AGENTS.md`; `ai/README.md`; `engine/corpus/README.md`; this skill when the code's layout or its rules change. A new pipeline step or variant also needs an entry in the client's `frontend/src/app/lab/pipeline-model.ts` (`PIPELINE_STAGES`), for the lab to draw it.
+`docs/design.md` §5.2, §6.2, §6.3 and its changelog; `docs/decisions/rag.md` for each decision taken with the maintainer; the status and commands of `AGENTS.md`; `ai/README.md`; `engine/corpus/README.md`; this skill when the code's layout or its rules change. A new `Display` value also needs its member in `MetricDisplay` (`frontend/src/app/api/evaluation.ts`) and its case in `MetricCatalog` (`frontend/src/app/lab/metric-catalog.ts`); a new metric with an existing display needs no client change. A new pipeline step or variant also needs an entry in the client's `frontend/src/app/lab/pipeline-model.ts` (`PIPELINE_STAGES`), for the lab to draw it.

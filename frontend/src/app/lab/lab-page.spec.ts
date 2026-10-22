@@ -3,6 +3,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LabPage } from './lab-page';
+function navButton(host: HTMLElement, label: string): HTMLButtonElement {
+  return [...host.querySelectorAll<HTMLButtonElement>('.lab-nav button')].find(button => button.textContent?.trim() === label)!;
+}
 describe('LabPage loading', () => {
   beforeEach(() => TestBed.configureTestingModule({imports:[LabPage],providers:[provideHttpClient(),provideHttpClientTesting(),provideRouter([])]}));
   it('uses test when evaluated and reads the chosen report through existing endpoints', async () => {
@@ -36,12 +39,12 @@ describe('LabPage loading', () => {
     ]}));
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('.leaderboard')).not.toBeNull(); });
     http.expectOne('/api/datasets/v2/dev').flush('{"id":"q","category":"rule","question":"How many HP?","answerable":true,"key_facts":[],"citations":[],"cards":[]}\n');
-    fixture.nativeElement.querySelectorAll('.lab-nav button')[2].click();
+    navButton(fixture.nativeElement,'Compare').click();
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('.comparison-picker')).not.toBeNull(); });
     const selects = fixture.nativeElement.querySelectorAll('.comparison-picker select') as NodeListOf<HTMLSelectElement>;
     expect(selects[0].selectedOptions[0].textContent).toContain('Qwen3');
     expect(selects[1].selectedOptions[0].textContent).toBe('BM25');
-    fixture.nativeElement.querySelectorAll('.lab-nav button')[1].click();
+    navButton(fixture.nativeElement,'Metrics').click();
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('app-metrics-graph')).not.toBeNull(); });
     http.verify();
   });

@@ -1,13 +1,12 @@
 import { Component, computed, input, output } from '@angular/core';
 import { rankedRuns, runColor } from './presentation';
-import { max } from 'd3-array';
-import { scaleLinear } from 'd3-scale';
 import { EvaluationRun } from '../api/evaluation';
 import { isFloor, runKey, runName } from './layer-model';
-import { atPath, formatMetric, isRatio, metricName, metricUnit } from './metrics';
+import { atPath } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 @Component({
   selector:'app-score-chart',
-  template:`<div class="axis"><span>{{ metricName(metric()) }} · {{ metricUnit(metric()) }}</span><span>0 — {{ format(metric(), ceiling()) }}</span></div>
+  template:`<div class="axis"><span>{{ metricName(metric()) }} · {{ metricUnit(metric()) }}</span><span>{{ lower() ? format(metric(),ceiling()) + ' — 0 · a longer bar is faster' : '0 — ' + format(metric(),ceiling()) }}</span></div>
     @for (row of rows(); track row.key) {
       <div class="score-row" [class.pinned]="pins().includes(row.key)" [style.--contender]="color(row.key)">
         <button class="run-label quiet" (click)="selected.emit(row.key)" [title]="row.name">{{ row.name }}</button>
@@ -24,12 +23,17 @@ import { atPath, formatMetric, isRatio, metricName, metricUnit } from './metrics
 })
 export class ScoreChart {
   readonly runs = input<EvaluationRun[]>([]); readonly metric = input('mean_recall_at.10'); readonly pins = input<string[]>([]);
+  readonly catalog = input(MetricCatalog.fromEvaluation(null));
   readonly selected = output<string>(); readonly pinned = output<string>();
-  protected readonly format = formatMetric; protected readonly metricName = metricName; protected readonly metricUnit = metricUnit;
-  protected readonly rows = computed(() => rankedRuns(this.runs(),this.metric()).map(row => ({key:row.key,name:runName(row.run),value:row.value})));
+  protected readonly rows = computed(() => rankedRuns(this.runs(),this.metric(),this.catalog()).map(row => ({key:row.key,name:runName(row.run),value:row.value})));
   protected readonly floor = computed(() => atPath(this.runs().find(isFloor)?.scores.overall,this.metric()));
-  protected readonly ceiling = computed(() => isRatio(this.metric()) ? 1 : Math.max(1,max(this.rows(),row => row.value ?? 0) ?? 1,this.floor() ?? 0));
-  protected width(value: number | null): number { return scaleLinear().domain([0,this.ceiling()]).range([0,600]).clamp(true)(value ?? 0); }
+  protected readonly ceiling = computed(() => this.catalog().ceiling(this.metric(),[...this.rows().map(row => row.value),this.floor()]));
+  protected readonly lower = computed(() => this.catalog().lowerIsBetter(this.metric()));
+  protected format(metric: string, value: number | null): string { return this.catalog().format(metric,value); }
+  protected metricName(metric: string): string { return this.catalog().name(metric); }
+  protected metricUnit(metric: string): string { return this.catalog().unit(metric); }
+  /** Always longer for a better value: a time's bar shrinks as it grows. */
+  protected width(value: number | null): number { return this.catalog().barLength(this.metric(),value,this.ceiling()) * 600; }
   protected color(key: string): string { const run = this.runs().find(run => runKey(run.layers) === key); return run ? runColor(run) : 'var(--lab-accent)'; }
 }
 
