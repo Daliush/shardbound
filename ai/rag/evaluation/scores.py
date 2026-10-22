@@ -29,8 +29,10 @@ GROUP_VALUE_DESCRIPTIONS = [
         what="Recall for every list length, from 1 chunk to the whole list.",
         how="For each length k, the average Recall@k over all the questions. When a question's list is shorter than k, "
             "it keeps the recall of its full list.",
-        represents="It compares pipelines at the same number of chunks. Its last point is the most a reranker could "
-                   "keep, since a reranker only reorders the list."),
+        represents="It compares pipelines at the same number of chunks. Its last point is the share of the needed "
+                   "chunks found anywhere in the list. After the expansion, that is the most a reranker could keep, "
+                   "since a reranker only reorders what it gets; after a retriever alone, a reranker gets only its "
+                   "first 20."),
     MetricDescription(
         path="latency_p50_seconds", name="Latency p50", display=Display.SECONDS,
         what="How long a typical question takes.",

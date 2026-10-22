@@ -10,7 +10,8 @@ from abc import ABC, abstractmethod
 from rag.evaluation.metric_description import Display, MetricDescription
 
 CUTOFFS = {10: "the prompt (the 10 chunks the model will read)",
-           20: "the first 20 chunks (what a retriever passes to the next step, and the prompt of the 20-chunk test)"}
+           20: "the first 20 chunks (what a retriever passes to the next step, and what a 20-chunk prompt would "
+               "hold)"}
 """The k of Recall@k and binary nDCG@k, each with what its first k chunks are. The share of the relevant chunks a run
 ranks at all, however many chunks, is the recall curve's last value."""
 
@@ -73,10 +74,10 @@ class BinaryNdcgAtK(RetrievalMetric):
         super().__init__(
             key=f"binary_ndcg_at.{k}", name=f"Binary nDCG@{k}", display=Display.SCORE,
             what=f"How close to the top the needed chunks are, in the first {k}. From 0 to 1.",
-            how="Each needed chunk earns points, fewer the lower it sits: 1 at rank 1, 0.63 at rank 2, 0.5 at rank 3, "
-                "0.29 at rank 10. The formula is 1 / log2(rank + 1). Other chunks earn nothing. Add up the points, "
-                "then divide by the best total possible, with every needed chunk at the top. Then take the average "
-                "over all the questions.",
+            how=f"Each needed chunk in the first {k} earns points, fewer the lower it sits: 1 at rank 1, 0.63 at "
+                f"rank 2, 0.5 at rank 3, 0.29 at rank 10. The formula is 1 / log2(rank + 1). A needed chunk past rank "
+                f"{k}, like any other chunk, earns nothing. Add up the points, then divide by the best total possible, "
+                f"with every needed chunk at the top. Then take the average over all the questions.",
             represents=f"Whether the needed chunks sit high in {describe_cutoff(k)}, not just somewhere in it. 1 means "
                        f"they fill the top places. A question whose only needed chunk is at rank {k} gets 100% on "
                        f"Recall@{k}, but only {discount_gain(k):.2f} here.")
