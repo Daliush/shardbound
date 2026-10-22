@@ -1,15 +1,11 @@
-"""The result of each question, and their averages. Today the retrieval metrics; the answer metrics will join them."""
+"""The result of each question, and the scores of a group of them. Today the retrieval metrics; the answer metrics will
+join them."""
 
 import math
 from dataclasses import dataclass
 
 from rag.evaluation.questions import Question
-from rag.evaluation.retrieval_metrics import find_relevant_ranks, recall_at_k, reciprocal_rank
-
-RECALL_CUTOFFS = (10, 20)
-"""10: the chunks the prompt holds after the reranker. 20: the top 20 the refs expansion starts from, and the prompt of
-the 20-chunk variant. The share of the relevant chunks a run ranks at all, however many chunks, is the recall curve's
-last value."""
+from rag.evaluation.retrieval_metrics import CUTOFFS, RETRIEVAL_METRICS, RecallAtK, find_relevant_ranks
 
 
 @dataclass(frozen=True)
@@ -20,10 +16,10 @@ class QuestionResult:
     category: str
     top_chunk_ids: list[str]
     relevant_ranks: dict[str, int | None]
-    """Each relevant chunk's rank in the whole list the retriever returned, None when it left it out: `recall_at`
-    and `reciprocal_rank` are read from them, and the comparator sees where a chunk landed past the first 20."""
-    recall_at: dict[int, float]
-    reciprocal_rank: float
+    """Each relevant chunk's rank in the whole list the retriever returned, None when it left it out: every metric is
+    read from them, and the comparator sees where a chunk landed past the first 20."""
+    metric_values: dict[str, float]
+    """Each retrieval metric's value for this question, by the metric's key: `recall_at.10`."""
     candidate_count: int
     """How many chunks the run ranked: the retriever's whole list, or the candidates the reranker reordered."""
     seconds: float
@@ -32,9 +28,11 @@ class QuestionResult:
 
 @dataclass(frozen=True)
 class Scores:
+    """The scores of a group of questions: all the questions of a run, or those of one category."""
+
     question_count: int
-    mean_recall_at: dict[int, float]
-    mean_reciprocal_rank: float
+    metric_means: dict[str, float]
+    """Each retrieval metric averaged over the questions, by the metric's key."""
     mean_candidate_count: float
     mean_recall_curve: list[float]
     """Recall@k averaged over the questions, for every k from 1 to the longest list a question got, the first value
@@ -52,36 +50,57 @@ class Report:
 
 
 def score_question(question: Question, ranked_ids: list[str], seconds: float) -> QuestionResult:
+    """One question's result: the rank of each of its relevant chunks in `ranked_ids`, then the value of each retrieval
+    metric, read from these ranks."""
     relevant_ranks = find_relevant_ranks(ranked_ids, question.relevant_ids)
-    recall_at = {}
-    for k in RECALL_CUTOFFS:
-        recall_at[k] = recall_at_k(relevant_ranks, k)
+    metric_values = {}
+    for metric in RETRIEVAL_METRICS:
+        metric_values[metric.description.key] = metric.score(relevant_ranks)
     return QuestionResult(question_id=question.id, category=question.category,
-                          top_chunk_ids=ranked_ids[:max(RECALL_CUTOFFS)], relevant_ranks=relevant_ranks,
-                          recall_at=recall_at, reciprocal_rank=reciprocal_rank(relevant_ranks),
-                          candidate_count=len(ranked_ids), seconds=seconds)
+                          top_chunk_ids=ranked_ids[:max(CUTOFFS)], relevant_ranks=relevant_ranks,
+                          metric_values=metric_values, candidate_count=len(ranked_ids), seconds=seconds)
 
 
-def average_scores(results: list[QuestionResult]) -> Scores:
-    """Every question weighs the same, whatever its number of relevant chunks."""
-    recall_sums = {k: 0.0 for k in RECALL_CUTOFFS}
-    reciprocal_rank_sum = 0.0
-    candidate_count_sum = 0
-    seconds = []
-    for result in results:
-        for k in RECALL_CUTOFFS:
-            recall_sums[k] += result.recall_at[k]
-        reciprocal_rank_sum += result.reciprocal_rank
-        candidate_count_sum += result.candidate_count
-        seconds.append(result.seconds)
-    count = len(results)
-    return Scores(question_count=count,
-                  mean_recall_at={k: total / count for k, total in recall_sums.items()},
-                  mean_reciprocal_rank=reciprocal_rank_sum / count,
-                  mean_candidate_count=candidate_count_sum / count,
+def score_group(results: list[QuestionResult]) -> Scores:
+    """
+    The scores of a group of questions: all the questions of a run, or those of one category. Each retrieval metric is
+    averaged over the questions, every question weighing the same whatever its number of relevant chunks. The values
+    that are not the mean of a metric are computed here too: the number of questions, the mean number of candidates,
+    the recall curve, and the latency p50 and p95, read from the time each question took.
+    """
+    seconds = list_seconds(results)
+    return Scores(question_count=len(results),
+                  metric_means=average_metric_values(results),
+                  mean_candidate_count=average_candidate_count(results),
                   mean_recall_curve=average_recall_curve(results),
                   latency_p50_seconds=find_percentile(seconds, 50),
                   latency_p95_seconds=find_percentile(seconds, 95))
+
+
+def average_metric_values(results: list[QuestionResult]) -> dict[str, float]:
+    """Each retrieval metric's value averaged over the questions, by the metric's key."""
+    means = {}
+    for metric in RETRIEVAL_METRICS:
+        key = metric.description.key
+        total = 0.0
+        for result in results:
+            total += result.metric_values[key]
+        means[key] = total / len(results)
+    return means
+
+
+def average_candidate_count(results: list[QuestionResult]) -> float:
+    total = 0
+    for result in results:
+        total += result.candidate_count
+    return total / len(results)
+
+
+def list_seconds(results: list[QuestionResult]) -> list[float]:
+    seconds = []
+    for result in results:
+        seconds.append(result.seconds)
+    return seconds
 
 
 def find_percentile(values: list[float], percent: int) -> float:
@@ -97,8 +116,9 @@ def average_recall_curve(results: list[QuestionResult]) -> list[float]:
         longest = max(longest, result.candidate_count)
     curve = []
     for k in range(1, longest + 1):
+        recall_at_k = RecallAtK(k)
         recall_sum = 0.0
         for result in results:
-            recall_sum += recall_at_k(result.relevant_ranks, k)
+            recall_sum += recall_at_k.score(result.relevant_ranks)
         curve.append(recall_sum / len(results))
     return curve

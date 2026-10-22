@@ -59,14 +59,14 @@ named cards + top 20 → + refs (one level) → cross-encoder reranker → top 1
 - `__main__.py` only parses the arguments, calls a service and prints. `indexing/` and `evaluation/` hold one service each, one per command.
 - `technique.py` holds `Step` (retriever, expand, rerank; answer later) and `Technique`, which `Retriever`, `Expander` and `Reranker` extend. Each family has its contract, a `registry.py` that names each technique, and one sub-package per technique: `retrievers/bm25/`, `retrievers/dense/`, `retrievers/fusion/`, `expanders/refs/`, `rerankers/minilm/`.
 - `repository/` is where the RAG keeps things: one repository per table, a contract and its `…Postgres` implementation, with `…InMemory` fakes in the tests, and `evaluation_repository.py`, which writes the evaluation files (a bucket later).
-- `evaluation/`: `evaluation_service.py` builds the tree of pipelines, `stages.py` its nodes, `retrieval_metrics.py` the metrics, `evaluation_json.py` the saved document.
+- `evaluation/`: `evaluation_service.py` builds the tree of pipelines, `stages.py` its nodes, `retrieval_metrics.py` the metrics (each extends `RetrievalMetric` and is one entry of `RETRIEVAL_METRICS`; `metric_description.py` says where its value is, its name and how it is written), `scores.py` the result of a question (`score_question`) and the scores of a group of questions (`score_group`), `evaluation_json.py` the saved document.
 
 Rules the code keeps:
 
 - A contract is an `ABC` that a class extends explicitly, as in Java, not a `Protocol`: the contract shows in the class line.
 - A variant is one more entry in its family's registry, and changes **one** setting.
 - Method names say what they do, verb first. Loops are explicit `for` loops, not comprehensions. Never pass two lists that only line up by position (no `zip`): make one object per item where it is produced, as `EmbeddingModel.embed_chunk(chunk)` returns a `ChunkEmbedding`.
-- Name for the future: what the answer evaluation will share stays generic (`Question`, `Scores`, `Report`, `evaluate`); only what really is retrieval says so (`retrieval_metrics.py`).
+- Name for the future: what the answer evaluation will share stays generic (`Question`, `Scores`, `Report`, `evaluate`, `MetricDescription`, `score_group`); only what really is retrieval says so (`retrieval_metrics.py`).
 - Every technique reads the chunks from the database, never from `ai/.corpus/chunks.jsonl`, so a run cannot mix two versions of the corpus. The evaluation reads them once; a technique makes no database call per question.
 - The unit tests download no model and start no database: they use fakes (`tests/rag/retrievers/dense/conftest.py`, and a monkeypatched `_model` for the reranker). A real index and evaluation prove the SQL and the models, and CI runs one on each pull request that touches retrieval (`.github/workflows/rag-smoke.yml`): it fails when a run's Recall@10 lost more than 2 points against the evaluation the commit records.
 

@@ -61,7 +61,7 @@ def test_scores_a_node_on_what_its_pipeline_handed_on():
     assert run.layers == Layers(retriever="fixed", rerank="reversing")
     assert run.description == "fixed rankings; its top 20 reversed"
     assert deck_question.top_chunk_ids == ["2.2", "2.1"]
-    assert deck_question.reciprocal_rank == 1.0
+    assert deck_question.metric_values["reciprocal_rank"] == 1.0
     assert anchor_question.relevant_ranks == {"11.3.2": 20, "11.3.3": None}, "11.3.3 was 21st"
     assert anchor_question.candidate_count == 20
 
@@ -70,12 +70,12 @@ def test_averages_each_metric_over_the_questions_then_by_category():
     report = score(apply(FixedRetriever(), None, ANSWERABLE)).report
 
     assert report.overall.question_count == 2
-    assert report.overall.mean_recall_at == {10: (1.0 + 0.5) / 2, 20: (1.0 + 0.5) / 2}
-    assert report.overall.mean_reciprocal_rank == (0.5 + 1.0) / 2
+    assert report.overall.metric_means == {"recall_at.10": (1.0 + 0.5) / 2, "recall_at.20": (1.0 + 0.5) / 2,
+                                           "reciprocal_rank": (0.5 + 1.0) / 2}
     assert report.overall.mean_candidate_count == (2 + 21) / 2
     assert list(report.by_category) == ["interaction", "simple-rule"]
-    assert report.by_category["simple-rule"].mean_reciprocal_rank == 0.5
-    assert report.by_category["interaction"].mean_recall_at[20] == 0.5
+    assert report.by_category["simple-rule"].metric_means["reciprocal_rank"] == 0.5
+    assert report.by_category["interaction"].metric_means["recall_at.20"] == 0.5
 
 
 def test_keeps_each_question_first_twenty_chunks_and_finds_a_relevant_chunk_ranked_past_them():
@@ -91,8 +91,8 @@ def test_averages_a_recall_curve_that_agrees_with_recall_at_k():
     overall = score(apply(FixedRetriever(), None, ANSWERABLE)).report.overall
 
     assert len(overall.mean_recall_curve) == 21
-    assert overall.mean_recall_curve[9] == overall.mean_recall_at[10]
-    assert overall.mean_recall_curve[19] == overall.mean_recall_at[20]
+    assert overall.mean_recall_curve[9] == overall.metric_means["recall_at.10"]
+    assert overall.mean_recall_curve[19] == overall.metric_means["recall_at.20"]
     assert overall.mean_recall_curve[-1] == 1.0, "every relevant chunk is ranked"
 
 

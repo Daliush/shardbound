@@ -1,4 +1,4 @@
-from rag.evaluation.retrieval_metrics import find_relevant_ranks, recall_at_k, reciprocal_rank
+from rag.evaluation.retrieval_metrics import RETRIEVAL_METRICS, RecallAtK, ReciprocalRank, find_relevant_ranks
 
 RELEVANT = frozenset({"11.3.2", "11.3.3", "11.5.4", "neutral.tempest"})
 """The example we worked through: 11.3.2 first, Tempest third, 11.5.4 twelfth, 11.3.3 not ranked."""
@@ -19,15 +19,26 @@ def test_keeps_the_first_rank_of_a_chunk_ranked_twice():
 
 
 def test_recall_at_k_is_the_share_of_the_relevant_chunks_among_the_first_k():
-    assert recall_at_k(RANKS, 5) == 0.5
-    assert recall_at_k(RANKS, 11) == 0.5
-    assert recall_at_k(RANKS, 12) == 0.75
+    assert RecallAtK(5).score(RANKS) == 0.5
+    assert RecallAtK(11).score(RANKS) == 0.5
+    assert RecallAtK(12).score(RANKS) == 0.75
 
 
 def test_reciprocal_rank_reads_the_rank_of_the_first_relevant_chunk_only():
-    assert reciprocal_rank(RANKS) == 1.0
-    assert reciprocal_rank({"11.3.2": 3, "11.5.4": 7}) == 1 / 3
+    assert ReciprocalRank().score(RANKS) == 1.0
+    assert ReciprocalRank().score({"11.3.2": 3, "11.5.4": 7}) == 1 / 3
 
 
 def test_reciprocal_rank_is_zero_when_no_relevant_chunk_is_ranked():
-    assert reciprocal_rank({"11.3.2": None, "11.5.4": None}) == 0.0
+    assert ReciprocalRank().score({"11.3.2": None, "11.5.4": None}) == 0.0
+
+
+def test_lists_recall_at_10_and_20_then_the_reciprocal_rank_each_named_by_its_key():
+    keys = []
+    names = []
+    for metric in RETRIEVAL_METRICS:
+        keys.append(metric.description.key)
+        names.append(metric.description.name)
+
+    assert keys == ["recall_at.10", "recall_at.20", "reciprocal_rank"]
+    assert names == ["Recall@10", "Recall@20", "MRR"]
