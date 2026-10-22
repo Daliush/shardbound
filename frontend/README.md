@@ -26,7 +26,7 @@ To play both seats on one computer, open the second one in a private window.
 | `cards/` | How a card looks, and the inspected card in 3D |
 | `collection/` | Every card, searched, filtered and grouped (`/cards`) |
 | `lab/` | The benchmark lab; `metric-catalog.ts` names, writes and explains each metric from the evaluation file, and `metric-guide.ts` is its "Our metrics" page |
-| `core/` | Themes, settings, shared styles |
+| `core/` | Themes, settings, shared styles, and the message shown while the server wakes up (`server-wake.ts`) |
 
 ## Docker and Google Cloud Run
 
@@ -47,3 +47,5 @@ gcloud run deploy shardbound-web --image <registry>/shardbound-web --allow-unaut
 ```
 
 Then give this service's URL to the server: `SHARDBOUND_WEBSOCKET_ALLOWEDORIGINS` ([engine/README.md](../engine/README.md)).
+
+The game server keeps no instance running, so the first request after a quiet spell waits for one to start. When requests to the server stay unanswered for more than 3 seconds, the client says so at the top of the page.

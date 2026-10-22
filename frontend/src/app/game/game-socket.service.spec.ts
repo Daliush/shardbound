@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { FakeWebSocket } from '../testing/fake-web-socket';
 import { aView } from '../testing/views';
 import { GameSocketService, REPLACED, WEB_SOCKET } from './game-socket.service';
+import { SLOW_AFTER_MS, ServerWake } from '../core/server-wake';
 
 describe('GameSocketService', () => {
   let service: GameSocketService;
@@ -44,6 +45,16 @@ describe('GameSocketService', () => {
 
     expect(service.view()?.version).toBe(15);
     expect(versions).toEqual([13, 14, 15]);
+  });
+
+  it('waits for the server from the first connection until the socket opens', () => {
+    const wake = TestBed.inject(ServerWake);
+    service.connect('ws://test/ws/games/g?token=t');
+    vi.advanceTimersByTime(SLOW_AFTER_MS);
+    expect(wake.state()).toBe('waking');
+
+    FakeWebSocket.latest().open();
+    expect(wake.state()).toBe('awake');
   });
 
   it('asks for the full state when a version is missing', () => {
