@@ -9,12 +9,15 @@ EVALUATED_AT = datetime(2026, 10, 15, 10, 42, 7, tzinfo=timezone.utc)
 
 
 def build_evaluation(retrievers: list[str]) -> Evaluation:
-    scores = Scores(question_count=1, metric_means={"recall_at.10": 1.0, "recall_at.20": 1.0, "reciprocal_rank": 1.0},
+    scores = Scores(question_count=1, metric_means={"recall_at.10": 1.0, "recall_at.20": 1.0,
+                                                   "binary_ndcg_at.10": 1.0, "binary_ndcg_at.20": 1.0,
+                                                   "reciprocal_rank": 1.0},
                     mean_candidate_count=2.0, mean_recall_curve=[1.0, 1.0], latency_p50_seconds=0.1,
                     latency_p95_seconds=0.2)
     result = QuestionResult(question_id="rule/2.2", category="simple-rule", top_chunk_ids=["2.2", "2.1"],
                             relevant_ranks={"2.2": 1, "4.1": None},
-                            metric_values={"recall_at.10": 0.5, "recall_at.20": 0.5, "reciprocal_rank": 1.0},
+                            metric_values={"recall_at.10": 0.5, "recall_at.20": 0.5, "binary_ndcg_at.10": 0.613,
+                                           "binary_ndcg_at.20": 0.613, "reciprocal_rank": 1.0},
                             candidate_count=2, seconds=0.1)
     runs = []
     for retriever in retrievers:
@@ -47,14 +50,14 @@ def test_writes_each_question_relevant_ranks_and_each_score_recall_curve():
     assert run["scores"]["overall"]["mean_recall_curve"] == [1.0, 1.0]
 
 
-def test_writes_exactly_the_fields_of_a_score_and_of_a_question_in_the_order_every_file_has_kept():
+def test_writes_exactly_the_fields_of_a_score_and_of_a_question_in_a_fixed_order():
     run = json.loads(convert_evaluation_to_json(build_evaluation(["bm25"])))["runs"][0]
 
-    assert list(run["scores"]["overall"]) == ["question_count", "mean_recall_at", "mean_reciprocal_rank",
-                                             "mean_candidate_count", "mean_recall_curve", "latency_p50_seconds",
-                                             "latency_p95_seconds"]
+    assert list(run["scores"]["overall"]) == ["question_count", "mean_recall_at", "mean_binary_ndcg_at",
+                                             "mean_reciprocal_rank", "mean_candidate_count", "mean_recall_curve",
+                                             "latency_p50_seconds", "latency_p95_seconds"]
     assert list(run["questions"][0]) == ["question_id", "category", "top_chunk_ids", "relevant_ranks", "recall_at",
-                                        "reciprocal_rank", "candidate_count", "seconds"]
+                                        "binary_ndcg_at", "reciprocal_rank", "candidate_count", "seconds"]
     assert run["questions"][0]["recall_at"] == {"10": 0.5, "20": 0.5}, "a metric's key nested at its dot"
 
 

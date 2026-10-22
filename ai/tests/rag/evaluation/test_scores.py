@@ -1,11 +1,25 @@
+from rag.evaluation.retrieval_metrics import RETRIEVAL_METRICS
 from rag.evaluation.scores import QuestionResult, score_group
 
 
-def build_result(relevant_ranks: dict[str, int | None], candidate_count: int, seconds: float = 0.0) -> QuestionResult:
-    """Only the fields `score_group` reads in these tests are filled in: the metrics are left at 0."""
+def build_result(relevant_ranks: dict[str, int | None], candidate_count: int, seconds: float = 0.0,
+                 metric_value: float = 0.0) -> QuestionResult:
+    """Only the fields `score_group` reads in these tests are filled in: every metric has `metric_value`."""
+    metric_values = {}
+    for metric in RETRIEVAL_METRICS:
+        metric_values[metric.description.key] = metric_value
     return QuestionResult(question_id="anchor", category="interaction", top_chunk_ids=[], relevant_ranks=relevant_ranks,
-                          metric_values={"recall_at.10": 0.0, "recall_at.20": 0.0, "reciprocal_rank": 0.0},
-                          candidate_count=candidate_count, seconds=seconds)
+                          metric_values=metric_values, candidate_count=candidate_count, seconds=seconds)
+
+
+def test_averages_each_metric_over_the_questions():
+    first = build_result({"8.2": 1}, 20, metric_value=1.0)
+    third = build_result({"8.2": 3}, 20, metric_value=0.5)
+
+    scores = score_group([first, third])
+
+    assert scores.metric_means["binary_ndcg_at.10"] == 0.75
+    assert len(scores.metric_means) == len(RETRIEVAL_METRICS)
 
 
 def test_averages_the_number_of_candidates():

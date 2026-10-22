@@ -75,15 +75,16 @@ The tables are created from the entities when missing, never altered: there are 
 ```text
 retriever random, answer None on v2 dev, 61 answerable questions
 
-| Questions | Count | Recall@10 | Recall@20 | MRR | Candidates |
-|---|---:|---:|---:|---:|---:|
-| all | 61 | 8.9% | 11.9% | 0.093 | 191.0 |
+| Questions | Count | Recall@10 | Recall@20 | Binary nDCG@10 | Binary nDCG@20 | MRR | Candidates |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| all | 61 | 8.9% | 11.9% | 0.056 | 0.067 | 0.093 | 191.0 |
 | ...
 ```
 
 - **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
+- **Binary nDCG@k** says how high the relevant chunks sit among the first k, from 0 to 1. Every relevant chunk gains 1 and any other chunk 0; a gain at rank r is worth 1 / log2(r + 1) (1 first, 0.5 third, 0.29 tenth); the sum is divided by that of the best ranking, every relevant chunk first. A question whose only relevant chunk is tenth keeps its whole Recall@10, but scores 0.29.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
-- **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), from which Recall@k and MRR are read.
+- **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), from which every metric is read.
 - **Candidates** is the mean number of chunks a run ranks. Without a reranker, the retriever's whole list: random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ return all 191; the other BM25 variants return only the chunks sharing a word with the question; the expansion 41 on average. After a reranker, the candidates it reordered: 20, or the expansion's whole list. The share of the relevant chunks among all of them is the last value of the recall curve: after the expansion, the most a reranker could keep.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
@@ -127,8 +128,8 @@ rag/
     ├── questions.py            Question: every question of a split, its relevant chunks, answerable or not
     ├── metric_description.py   MetricDescription: where a metric's value is, its name, how it is written (Display)
     ├── retrieval_metrics.py    RetrievalMetric: score(relevant ranks) → one question's value; RecallAtK(k),
-    │                           ReciprocalRank(); RETRIEVAL_METRICS, every one scored; CUTOFFS (answer_metrics.py
-    │                           will join it)
+    │                           BinaryNdcgAtK(k), ReciprocalRank(); RETRIEVAL_METRICS, every one scored; CUTOFFS
+    │                           (answer_metrics.py will join it)
     ├── scores.py               QuestionResult, Scores, Report; score_question, score_group (a run or a category)
     ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "expand": null, "rerank": null, …}
     ├── evaluation_json.py      an evaluation as the JSON the benchmark explorer reads, and its name

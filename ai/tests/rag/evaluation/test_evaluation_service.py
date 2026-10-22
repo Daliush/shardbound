@@ -1,3 +1,7 @@
+import math
+
+import pytest
+
 from rag.chunks import Chunk
 from rag.evaluation.evaluation_service import apply, continue_with, evaluate_combinations, score
 from rag.evaluation.questions import Question
@@ -70,8 +74,13 @@ def test_averages_each_metric_over_the_questions_then_by_category():
     report = score(apply(FixedRetriever(), None, ANSWERABLE)).report
 
     assert report.overall.question_count == 2
-    assert report.overall.metric_means == {"recall_at.10": (1.0 + 0.5) / 2, "recall_at.20": (1.0 + 0.5) / 2,
-                                           "reciprocal_rank": (0.5 + 1.0) / 2}
+    second_of_one = 1 / math.log2(3)
+    first_of_two_the_other_21st = 1 / (1 + 1 / math.log2(3))
+    assert report.overall.metric_means["recall_at.10"] == (1.0 + 0.5) / 2
+    assert report.overall.metric_means["recall_at.20"] == (1.0 + 0.5) / 2
+    assert report.overall.metric_means["binary_ndcg_at.10"] == pytest.approx(
+        (second_of_one + first_of_two_the_other_21st) / 2)
+    assert report.overall.metric_means["reciprocal_rank"] == (0.5 + 1.0) / 2
     assert report.overall.mean_candidate_count == (2 + 21) / 2
     assert list(report.by_category) == ["interaction", "simple-rule"]
     assert report.by_category["simple-rule"].metric_means["reciprocal_rank"] == 0.5
