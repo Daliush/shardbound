@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { EvaluationRun } from '../api/evaluation';
-import { candidateSummary, formatMetric, isContextMetric } from './metrics';
+import { candidateSummary } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 import { rankedRuns, runColor } from './presentation';
 import { rankAtBudget, recallAt, recallCurve, curvePath } from './recall-model';
 import { RecallChart } from './recall-chart';
@@ -10,20 +11,21 @@ function run(retriever: string, curve?: number[], count = 191): EvaluationRun {
 }
 
 describe('Report metric semantics', () => {
+  const catalog = MetricCatalog.fromEvaluation(null);
   it('formats MRR as absolute decimals and counts as context', () => {
-    expect(formatMetric('mean_reciprocal_rank',.5667)).toBe('0.567');
-    expect(formatMetric('mean_reciprocal_rank',.008)).toBe('0.008');
-    expect(formatMetric('reciprocal_rank',1/21)).toBe('0.048');
-    expect(formatMetric('mean_candidate_count',41)).toBe('41.0');
-    expect(formatMetric('candidate_count',50)).toBe('50');
-    expect(isContextMetric('mean_candidate_count')).toBe(true);
+    expect(catalog.format('mean_reciprocal_rank',.5667)).toBe('0.567');
+    expect(catalog.format('mean_reciprocal_rank',.008)).toBe('0.008');
+    expect(catalog.format('reciprocal_rank',1/21)).toBe('0.048');
+    expect(catalog.format('mean_candidate_count',41.3)).toBe('41.3');
+    expect(catalog.format('candidate_count',50)).toBe('50');
+    expect(catalog.isContext('mean_candidate_count')).toBe(true);
   });
   it('reads the ceiling at the end of the curve', () => {
-    expect(candidateSummary(run('rrf',[.5,.9],41).scores.overall)).toBe('90.0% of 41.0 candidates');
+    expect(candidateSummary(run('rrf',[.5,.9],41).scores.overall,catalog)).toBe('90.0% of 41 candidates');
   });
   it('does not rank or reorder runs by candidate count', () => {
     const runs = [run('small',undefined,41),run('all',undefined,191)];
-    expect(rankedRuns(runs,'mean_candidate_count').map(row => [row.run,row.rank])).toEqual([[runs[0],null],[runs[1],null]]);
+    expect(rankedRuns(runs,'mean_candidate_count',catalog).map(row => [row.run,row.rank])).toEqual([[runs[0],null],[runs[1],null]]);
     expect(runColor(runs[0])).toBe(runColor({...runs[0],scores:{overall:{},by_category:{}}}));
   });
 });

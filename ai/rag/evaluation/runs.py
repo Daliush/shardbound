@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from rag.evaluation.metric_description import MetricDescription
 from rag.evaluation.scores import Report
 
 
@@ -39,4 +40,7 @@ class Evaluation:
     code_commit: str
     description: str
     """Why it was run, as whoever ran it wrote it: "Step 6: the cards a question names and the refs expansion"."""
+    metrics: list[MetricDescription]
+    """Every value of the runs' scores, as the code that computes it describes it: what it does, how, and what it
+    represents."""
     runs: list[Run]

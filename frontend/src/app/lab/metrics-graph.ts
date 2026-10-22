@@ -1,7 +1,8 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { scaleLinear } from 'd3-scale';
 import { EvaluationRun } from '../api/evaluation';
-import { atPath, formatMetric, humanize, isRatio, isContextMetric, metricDescription, metricName, metrics, lowerIsBetter } from './metrics';
+import { DECISION_METRIC, atPath, humanize, metrics } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 import { isVariant, pipelineName, runColor } from './presentation';
 import { isFloor, runKey } from './layer-model';
 import { LabMotion } from './lab-motion';
@@ -25,8 +26,9 @@ export function zoomedAxis(values: number[], bounded: boolean) {
     <div class="metric-plots" [labMotion]="category()">
       @for (metric of axes(); track metric.key) {
         <section class="metric-plot">
-          <header><h2>{{ metricName(metric.key) }}</h2><span>{{ metric.key === 'mean_recall_at.10' ? 'Decision metric' : 'Explains performance' }}</span></header>
-          <p class="metric-description">{{ description(metric.key) }} {{ lower(metric.key) ? 'Lower is better.' : 'Higher is better.' }}</p>
+          <header><h2>{{ metricName(metric.key) }}</h2><span>{{ metric.key === decision ? 'Decision metric' : lower(metric.key) ? 'Speed' : 'Explains performance' }}</span></header>
+          <p class="metric-description">{{ catalog().description(metric.key)?.what }} {{ lower(metric.key) ? 'Lower is better.' : 'Higher is better.' }}</p>
+          @if (catalog().description(metric.key); as described) { <details class="metric-method"><summary>How it's computed</summary><p>{{ described.how }}</p><p><b>Why it matters</b>{{ described.represents }}</p></details> }
           <div class="dot-plot">
             <div class="axis-row" aria-hidden="true"><span></span><div class="axis-ticks">@for (tick of metric.ticks; track tick.value) { <span [style.left.%]="tick.x">{{ tickLabel(metric.key,tick.value) }}</span> }</div><span></span></div>
             <div class="grid-lines" aria-hidden="true">@for (tick of metric.ticks; track tick.value) { <b [style.left.%]="tick.x"></b> }@if (metric.floorX !== null) { <b class="floor" [style.left.%]="metric.floorX"></b> }</div>
@@ -45,24 +47,27 @@ export function zoomedAxis(values: number[], bounded: boolean) {
 })
 export class MetricsGraph {
   readonly runs = input<EvaluationRun[]>([]);
+  readonly catalog = input(MetricCatalog.fromEvaluation(null));
   protected readonly category = signal('');
-  protected readonly format = formatMetric; protected readonly metricName = metricName; protected readonly description = metricDescription;
-  protected readonly humanize = humanize; protected readonly lower = lowerIsBetter; protected readonly at = atPath;
+  protected readonly decision = DECISION_METRIC; protected readonly humanize = humanize; protected readonly at = atPath;
   protected readonly categories = computed(() => [...new Set(this.runs().flatMap(run => Object.keys(run.scores.by_category)))]);
   protected readonly allMetrics = computed(() => metrics(this.runs()));
   protected readonly rows = computed(() => this.runs().map(run => ({key:runKey(run.layers),name:pipelineName(run),color:runColor(run),description:run.description,variant:isVariant(run),random:isFloor(run),scores:this.category() ? run.scores.by_category[this.category()] : run.scores.overall})));
   /** One dot plot per score, best first; the random floor is a reference line, not a row. */
-  protected readonly axes = computed(() => this.allMetrics().filter(key => !isContextMetric(key)).flatMap(key => {
+  protected readonly axes = computed(() => this.allMetrics().filter(key => !this.catalog().isContext(key)).flatMap(key => {
     const pipelines = this.rows().filter(row => !row.random).map(row => ({...row,value:atPath(row.scores,key)}));
     const values = pipelines.flatMap(row => row.value === null ? [] : [row.value]);
     if (!values.length) return [];
-    const axis = zoomedAxis(values,isRatio(key) || key === 'mean_reciprocal_rank'), direction = lowerIsBetter(key) ? 1 : -1;
+    const axis = zoomedAxis(values,this.catalog().isBounded(key)), direction = this.lower(key) ? 1 : -1;
     const floor = atPath(this.rows().find(row => row.random)?.scores,key);
     const inside = floor !== null && floor >= axis.domain[0] && floor <= axis.domain[1];
     const rows = pipelines.sort((a,b) => a.value === null ? 1 : b.value === null ? -1 : direction*(a.value-b.value)).map(row => ({...row,x:row.value === null ? null : axis.x(row.value)}));
     return [{key,rows,domain:axis.domain,ticks:axis.ticks,floor,floorX:inside ? axis.x(floor) : null}];
   }));
   /** Ticks are round numbers: 52%, 0.45. */
-  protected tickLabel(key: string, value: number): string { return isRatio(key) ? +(value*100).toFixed(1) + '%' : String(+value.toFixed(3)); }
+  protected format(metric: string, value: number | null): string { return this.catalog().format(metric,value); }
+  protected metricName(metric: string): string { return this.catalog().name(metric); }
+  protected lower(metric: string): boolean { return this.catalog().lowerIsBetter(metric); }
+  protected tickLabel(key: string, value: number): string { return this.catalog().isShare(key) ? +(value*100).toFixed(1) + '%' : String(+value.toFixed(3)); }
   protected value(event: Event): string { return (event.target as HTMLSelectElement).value; }
 }

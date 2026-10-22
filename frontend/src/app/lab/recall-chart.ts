@@ -3,7 +3,8 @@ import { gsap } from 'gsap';
 import { EvaluationRun } from '../api/evaluation';
 import { Settings } from '../core/settings';
 import { isFloor, runKey } from './layer-model';
-import { atPath, candidateSummary, formatMetric, humanize } from './metrics';
+import { atPath, candidateSummary, humanize } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 import { isVariant, pipelineName, runColor } from './presentation';
 import { curvePath, rankAtBudget, recallAt, recallCurve } from './recall-model';
 import { LabMotion } from './lab-motion';
@@ -15,12 +16,12 @@ import { LabMotion } from './lab-motion';
 export class RecallChart implements OnDestroy {
   readonly runs = input<EvaluationRun[]>([]);
   readonly category = input('');
+  readonly catalog = input(MetricCatalog.fromEvaluation(null));
   /** A small multiple: the budget and the focused pipeline come from a shared control, so it draws neither. */
   readonly compact = input(false);
   protected readonly full = signal(false);
   readonly budget = model(20);
   readonly focused = model<string | null>(null);
-  protected readonly format = formatMetric;
   protected readonly humanize = humanize;
   protected readonly ticks = [0,.25,.5,.75,1];
   protected readonly plotWidth = signal(790);
@@ -45,9 +46,11 @@ export class RecallChart implements OnDestroy {
     });
   }
   ngOnDestroy(): void { this.observer?.disconnect(); }
+  /** Recall@k at the budget: a point of the recall curve, written as the curve is. */
+  protected formatRecall(value: number | null): string { return this.catalog().format('mean_recall_curve',value); }
   protected readonly all = computed(() => this.runs().map(run => {
     const scores = this.category() ? run.scores.by_category[this.category()] : run.scores.overall;
-    return {key:runKey(run.layers),name:pipelineName(run),color:runColor(run),curve:recallCurve(scores),summary:candidateSummary(scores),description:run.description,random:isFloor(run),variant:isVariant(run)};
+    return {key:runKey(run.layers),name:pipelineName(run),color:runColor(run),curve:recallCurve(scores),summary:candidateSummary(scores,this.catalog()),description:run.description,random:isFloor(run),variant:isVariant(run)};
   }));
   protected readonly maximum = computed(() => Math.max(1,...this.all().map(series => series.curve.length)));
   protected readonly limit = computed(() => this.full() ? this.maximum() : Math.min(70,this.maximum()));

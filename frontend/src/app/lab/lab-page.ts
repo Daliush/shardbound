@@ -10,20 +10,21 @@ import { Evaluations } from './evaluations';
 import { HeadToHead } from './head-to-head';
 import { LabHistory } from './history';
 import { decodeRun, isFloor, runKey } from './layer-model';
-import { DECISION_METRIC, atPath, differences, formatMetric, generic, humanize, metricName, metrics, metricDescription, lowerIsBetter, isRatio } from './metrics';
+import { DECISION_METRIC, atPath, candidateSummary, differences, generic, humanize, metrics } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 import { QuestionDetail } from './question-detail';
 import { MetricsGraph } from './metrics-graph';
+import { MetricGuide } from './metric-guide';
 import { CombinationBuilder } from './combination-builder';
 import { ComingSoon } from './coming-soon';
 import { LabMotion } from './lab-motion';
 import { pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
-import { isContextMetric, candidateSummary } from './metrics';
 import { RecallChart } from './recall-chart';
 import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './url-state';
 
 @Component({
   selector:'app-lab-page',
-  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,MetricsGraph,CombinationBuilder,ComingSoon,LabMotion,RecallChart],
+  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,MetricsGraph,MetricGuide,CombinationBuilder,ComingSoon,LabMotion,RecallChart],
   templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-tables.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
 export class LabPage implements OnDestroy {
@@ -36,16 +37,16 @@ export class LabPage implements OnDestroy {
   protected readonly splitTimes = signal<Record<string,string[]>>({dev:[],test:[]});
   protected readonly loading = signal(true); protected readonly error = signal(''); protected readonly copied = signal(false);
   protected readonly versions = DATASET_VERSIONS; protected readonly tabs = LAB_TABS;
-  protected readonly key = runKey; protected readonly name = pipelineName; protected readonly humanize = humanize; protected readonly metricName = metricName; protected readonly format = formatMetric; protected readonly generic = generic;
-  protected readonly at = atPath; protected readonly kind = pipelineKind; protected readonly description = metricDescription; protected readonly lower = lowerIsBetter;
+  protected readonly key = runKey; protected readonly name = pipelineName; protected readonly humanize = humanize; protected readonly generic = generic;
+  protected readonly at = atPath; protected readonly kind = pipelineKind;
   protected readonly search = signal('');
   protected readonly copyMessage = signal('');
-  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'metrics',label:'Metrics',icon:'chart'},{id:'compare',label:'Compare',icon:'compare'},{id:'builder',label:'Build',icon:'build'}];
-  protected readonly contextMetric = isContextMetric;
-  protected readonly candidateSummary = candidateSummary;
+  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'metrics',label:'Metrics',icon:'chart'},{id:'guide',label:'Our metrics',icon:'info'},{id:'compare',label:'Compare',icon:'compare'},{id:'builder',label:'Build',icon:'build'}];
   protected readonly color = runColor;
-  protected readonly rankingMetric = computed(() => isContextMetric(this.state().metric) ? DECISION_METRIC : this.state().metric);
-  protected readonly scoreMetrics = computed(() => this.metrics().filter(metric => !isContextMetric(metric)));
+  /** Every value of the loaded evaluation, as its file describes it. */
+  protected readonly catalog = computed(() => MetricCatalog.fromEvaluation(this.report()));
+  protected readonly rankingMetric = computed(() => this.catalog().isContext(this.state().metric) ? DECISION_METRIC : this.state().metric);
+  protected readonly scoreMetrics = computed(() => this.metrics().filter(metric => !this.catalog().isContext(metric)));
   protected readonly tableMetrics = computed(() => this.metrics().filter(metric => metric !== 'mean_candidate_count'));
   protected readonly runs = computed(() => this.report()?.runs ?? []);
   protected readonly selected = computed<EvaluationRun | undefined>(() => this.runs().find(run => runKey(run.layers) === this.state().run) ?? this.runs()[0]);
@@ -57,13 +58,13 @@ export class LabPage implements OnDestroy {
     for (const row of this.ranked()) { if (chosen.length < 2 && !chosen.includes(row.run)) chosen.push(row.run); }
     return chosen;
   });
-  protected readonly ranked = computed(() => rankedRuns(this.runs(),this.rankingMetric()));
+  protected readonly ranked = computed(() => rankedRuns(this.runs(),this.rankingMetric(),this.catalog()));
   protected readonly displayed = computed(() => this.ranked().filter(row => pipelineName(row.run).toLowerCase().includes(this.search().toLowerCase()) || JSON.stringify(row.run.layers).toLowerCase().includes(this.search().toLowerCase())));
   protected readonly baseline = computed(() => this.runs().find(isFloor));
   protected readonly graphRuns = computed(() => [...this.runs()].sort((a,b) => Number(isFloor(a))-Number(isFloor(b))));
   protected readonly activeView = computed(() => this.state().tab === 'head-to-head' ? 'compare' : this.state().tab);
-  protected readonly title = computed(() => ({leaderboard:'Better retrieval, in perspective.',metrics:'Understand every metric',compare:'Compare combinations',builder:'Build your combination',questions:'Explore the evidence',categories:'Scores by category',history:'Evaluation history'}[this.activeView()] ?? 'Benchmark'));
-  protected readonly subtitle = computed(() => ({leaderboard:'Every evaluated combination, ranked on the same questions.',metrics:'See where each combination performs best.',compare:'Two pipelines. The same questions. A clear comparison.',builder:'Choose your pipeline. See how it measures up.',questions:'Inspect the sources retrieved for each question.',categories:'Understand performance across question types.',history:'Follow recorded results over time.'}[this.activeView()] ?? ''));
+  protected readonly title = computed(() => ({leaderboard:'Better retrieval, in perspective.',metrics:'Understand every metric',guide:'Our metrics',compare:'Compare combinations',builder:'Build your combination',questions:'Explore the evidence',categories:'Scores by category',history:'Evaluation history'}[this.activeView()] ?? 'Benchmark'));
+  protected readonly subtitle = computed(() => ({leaderboard:'Every evaluated combination, ranked on the same questions.',metrics:'See where each combination performs best.',guide:'What each score measures, how it is computed, and what it stands for.',compare:'Two pipelines. The same questions. A clear comparison.',builder:'Choose your pipeline. See how it measures up.',questions:'Inspect the sources retrieved for each question.',categories:'Understand performance across question types.',history:'Follow recorded results over time.'}[this.activeView()] ?? ''));
   protected readonly categories = computed(() => [...new Set(this.runs().flatMap(run => run.questions.map(question => question.category)))].sort());
   protected readonly count = computed(() => Number(this.runs()[0]?.scores.overall['question_count'] ?? 0));
   protected readonly times = computed(() => this.splitTimes()[this.state().split] ?? []);
@@ -77,7 +78,7 @@ export class LabPage implements OnDestroy {
     }
     return matching.sort((a,b) => a.question_id.localeCompare(b.question_id));
   });
-  protected readonly extraReportFields = computed(() => Object.entries(this.report() ?? {}).filter(([key]) => !['dataset','evaluated_at','code','runs','description'].includes(key)));
+  protected readonly extraReportFields = computed(() => Object.entries(this.report() ?? {}).filter(([key]) => !['dataset','evaluated_at','code','runs','description','metrics'].includes(key)));
   protected readonly extraRunFields = computed(() => {
     const run = this.selected();
     if (!run) return [];
@@ -140,10 +141,10 @@ export class LabPage implements OnDestroy {
     void this.update({tab:'compare',pins:[key,...(other ? [other] : [])],question:''});
   }
   protected buildRun(key: string): void { void this.update({tab:'builder',run:key}); }
+  /** The bar of a run's score, in percent of the column: always longer for a better value. */
   protected scoreWidth(run: EvaluationRun, metric: string): number {
-    const value = atPath(run.scores.overall,metric);
-    const max = isRatio(metric) ? 1 : Math.max(1,...this.runs().map(run => atPath(run.scores.overall,metric) ?? 0));
-    return value === null ? 0 : Math.max(0,Math.min(100,value/max*100));
+    const ceiling = this.catalog().ceiling(metric,this.runs().map(other => atPath(other.scores.overall,metric)));
+    return this.catalog().barLength(metric,atPath(run.scores.overall,metric),ceiling) * 100;
   }
   protected delta(metric: string): number | null {
     const a = atPath(this.comparison()[0]?.scores.overall,metric), b = atPath(this.comparison()[1]?.scores.overall,metric);
@@ -153,13 +154,22 @@ export class LabPage implements OnDestroy {
     const delta = this.delta(metric);
     if (delta === null) return '—';
     if (Math.abs(delta) < 1e-10) return 'Tied';
-    return (delta > 0 ? '+' : '−') + (isRatio(metric) ? (Math.abs(delta)*100).toFixed(1) + ' pp' : formatMetric(metric,Math.abs(delta)));
+    return (delta > 0 ? '+' : '−') + (this.catalog().isShare(metric) ? (Math.abs(delta)*100).toFixed(1) + ' pp' : this.format(metric,Math.abs(delta)));
   }
   protected advantage(metric: string): string {
-    if (isContextMetric(metric)) return 'context';
+    if (this.contextMetric(metric)) return 'context';
     const delta = this.delta(metric);
-    return delta === null || Math.abs(delta) < 1e-10 ? 'tie' : ((lowerIsBetter(metric) ? -delta : delta) > 0 ? 'a' : 'b');
+    return delta === null || Math.abs(delta) < 1e-10 ? 'tie' : ((this.lower(metric) ? -delta : delta) > 0 ? 'a' : 'b');
   }
+  protected metricName(metric: string): string { return this.catalog().name(metric); }
+  protected format(metric: string, value: number | null): string { return this.catalog().format(metric,value); }
+  /** What the metric does, as its evaluation's file says; nothing for a file written before it said so. */
+  protected description(metric: string): string { return this.catalog().description(metric)?.what ?? ''; }
+  protected lower(metric: string): boolean { return this.catalog().lowerIsBetter(metric); }
+  protected contextMetric(metric: string): boolean { return this.catalog().isContext(metric); }
+  protected candidateSummary(scores: EvaluationRun['scores']['overall']): string { return candidateSummary(scores,this.catalog()); }
+  /** The split's latest evaluation, which describes every value it holds. */
+  protected openLatest(): void { void this.update({timestamp:this.times().at(-1) ?? ''}); }
   protected openQuestion(id: string): void { void this.update({question:id,tab:'questions'}); }
   protected value(event: Event): string { return (event.target as HTMLInputElement).value; }
   protected date(timestamp: string): string { return new Date(timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})Z/,'T$1:$2:$3Z')).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}); }

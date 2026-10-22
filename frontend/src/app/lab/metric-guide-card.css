@@ -1,0 +1,42 @@
+/* One metric: its name, what it does, how it is computed, what it represents, its value in the evaluation open. */
+.metric-card { scroll-margin-top: 1.5rem; padding: 1.7rem 1.8rem 1.6rem; border-radius: 16px; background: var(--lab-surface); box-shadow: inset 0 2px 0 color-mix(in srgb, var(--role) 72%, transparent); }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.card-head h3 { margin: 0; font: 500 1.45rem/1.2 var(--font-ui); letter-spacing: -.025em; }
+.display-badge { flex: none; padding: .3rem .65rem; border-radius: 999px; font-size: .66rem; color: var(--role); background: color-mix(in srgb, var(--role) 13%, transparent); }
+.card-what { margin: .7rem 0 1.4rem; max-width: 70ch; font-size: 1rem; line-height: 1.65; color: var(--text); }
+
+.card-facets { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .9rem; }
+.facet { padding: 1rem 1.1rem 1.1rem; border-radius: 12px; background: var(--lab-subtle); }
+.facet h4 { display: flex; align-items: center; gap: .45rem; margin: 0 0 .55rem; font: 500 .64rem var(--font-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.facet h4 app-icon { width: 14px; height: 14px; color: var(--role); }
+.facet p { margin: 0; font-size: .82rem; line-height: 1.7; color: var(--text); }
+
+/* Its value in the evaluation open. */
+.card-sample { margin: 1.4rem 0 0; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+.card-sample figcaption { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; font-size: .64rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.card-sample figcaption small { font-size: .64rem; font-weight: 400; letter-spacing: .04em; text-transform: none; }
+.sample-leader { margin: -.35rem 0 .9rem; font-size: .74rem; line-height: 1.6; color: var(--muted); }
+.sample-leader b { font-weight: 500; color: var(--text); }
+.sample-rows { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
+.sample-rows li { display: grid; grid-template-columns: 112px minmax(0,1fr) 92px; gap: 1rem; align-items: center; min-height: 26px; }
+.sample-rows.legend li { grid-template-columns: minmax(0,1fr) auto; }
+.sample-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .76rem; }
+.sample-name i { display: inline-block; width: 7px; height: 7px; margin-right: .5rem; border-radius: 50%; }
+.floor .sample-name { color: var(--muted); }
+.sample-track { position: relative; height: 8px; border-radius: 4px; background: var(--lab-subtle); overflow: hidden; }
+.sample-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.floor .sample-fill { opacity: .55; }
+.sample-rows strong { font: 500 .82rem var(--font-number); font-variant-numeric: tabular-nums; text-align: right; }
+.sample-single { display: flex; align-items: baseline; gap: .7rem; margin: 0; }
+.sample-single strong { font: 500 1.7rem var(--font-number); letter-spacing: -.02em; }
+.sample-single span { font-size: .78rem; color: var(--muted); }
+
+.sample-curve { position: relative; margin-bottom: 1.6rem; }
+.sample-curve svg { display: block; width: 100%; height: 120px; overflow: visible; }
+.sample-curve path { fill: none; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.sample-curve path.floor { stroke-width: 1.5; stroke-dasharray: 4 4; opacity: .8; }
+.curve-mark { stroke: var(--line); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
+.curve-axis { position: absolute; left: 0; right: 0; top: calc(100% + .35rem); height: 1rem; font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.curve-axis span { position: absolute; transform: translateX(-50%); }
+.curve-axis span:first-child { left: 0; transform: none; }
+.curve-axis span:last-child { right: 0; transform: none; }

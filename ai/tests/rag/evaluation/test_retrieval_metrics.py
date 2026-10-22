@@ -1,4 +1,9 @@
-from rag.evaluation.retrieval_metrics import find_relevant_ranks, recall_at_k, reciprocal_rank
+import math
+
+import pytest
+
+from rag.evaluation.retrieval_metrics import (RETRIEVAL_METRICS, BinaryNdcgAtK, RecallAtK, ReciprocalRank,
+                                              find_relevant_ranks)
 
 RELEVANT = frozenset({"11.3.2", "11.3.3", "11.5.4", "neutral.tempest"})
 """The example we worked through: 11.3.2 first, Tempest third, 11.5.4 twelfth, 11.3.3 not ranked."""
@@ -19,15 +24,78 @@ def test_keeps_the_first_rank_of_a_chunk_ranked_twice():
 
 
 def test_recall_at_k_is_the_share_of_the_relevant_chunks_among_the_first_k():
-    assert recall_at_k(RANKS, 5) == 0.5
-    assert recall_at_k(RANKS, 11) == 0.5
-    assert recall_at_k(RANKS, 12) == 0.75
+    assert RecallAtK(5).score(RANKS) == 0.5
+    assert RecallAtK(11).score(RANKS) == 0.5
+    assert RecallAtK(12).score(RANKS) == 0.75
+
+
+def test_binary_ndcg_at_k_of_a_single_relevant_chunk_is_the_discount_of_its_rank():
+    assert BinaryNdcgAtK(10).score({"8.3": 1}) == 1.0
+    assert BinaryNdcgAtK(10).score({"8.3": 3}) == 0.5, "rule/8.3 after the reranker"
+    assert BinaryNdcgAtK(10).score({"2.1": 10}) == pytest.approx(0.289, abs=0.001), "a deck question, last of 10"
+    assert BinaryNdcgAtK(10).score({"8.3": 17}) == 0.0
+
+
+def test_binary_ndcg_at_k_divides_by_the_gains_of_every_relevant_chunk_ranked_first():
+    nine_relevant = {"9.11": 1, "1.2": 6, "9.8": 10, "8.1": 12, "8.2": 24, "9.3": 27, "6.3": 28, "1.6": None,
+                     "3.5": None}
+    gains = 1 + 1 / math.log2(7) + 1 / math.log2(11)
+    best_gains = 0.0
+    for rank in range(1, 10):
+        best_gains += 1 / math.log2(rank + 1)
+
+    assert BinaryNdcgAtK(10).score(nine_relevant) == pytest.approx(gains / best_gains)
+    assert BinaryNdcgAtK(10).score(nine_relevant) == pytest.approx(0.387, abs=0.001), "the 2-HP Tempest question"
+
+
+def test_binary_ndcg_at_k_is_one_when_the_first_k_are_all_relevant_even_with_more_relevant_chunks_left():
+    twelve_ranked_first = {}
+    for rank in range(1, 13):
+        twelve_ranked_first[f"8.{rank}"] = rank
+
+    assert BinaryNdcgAtK(10).score(twelve_ranked_first) == 1.0
+    assert RecallAtK(10).score(twelve_ranked_first) == 10 / 12
+
+
+def test_binary_ndcg_at_k_of_a_perfect_ranking_is_exactly_one_whatever_the_order_of_the_ids():
+    ranked_first_in_another_order = {"1.1": 1, "1.2": 2, "1.3": 6, "1.4": 3, "1.5": 4, "1.6": 5}
+
+    assert BinaryNdcgAtK(10).score(ranked_first_in_another_order) == 1.0, "0.9999999999999999 added in id order"
 
 
 def test_reciprocal_rank_reads_the_rank_of_the_first_relevant_chunk_only():
-    assert reciprocal_rank(RANKS) == 1.0
-    assert reciprocal_rank({"11.3.2": 3, "11.5.4": 7}) == 1 / 3
+    assert ReciprocalRank().score(RANKS) == 1.0
+    assert ReciprocalRank().score({"11.3.2": 3, "11.5.4": 7}) == 1 / 3
 
 
 def test_reciprocal_rank_is_zero_when_no_relevant_chunk_is_ranked():
-    assert reciprocal_rank({"11.3.2": None, "11.5.4": None}) == 0.0
+    assert ReciprocalRank().score({"11.3.2": None, "11.5.4": None}) == 0.0
+
+
+def test_every_metric_says_what_it_does_how_and_what_it_represents():
+    for metric in RETRIEVAL_METRICS:
+        assert metric.description.what.strip(), metric.key
+        assert metric.description.how.strip(), metric.key
+        assert metric.description.represents.strip(), metric.key
+
+
+def test_describes_each_cutoff_by_what_its_first_k_chunks_are():
+    assert "the prompt (the 10 chunks the model will read)" in RecallAtK(10).description.represents
+    assert "what a retriever passes to the next step" in BinaryNdcgAtK(20).description.represents
+    assert "is at rank 20 gets 100% on Recall@20, but only 0.23 here" in BinaryNdcgAtK(20).description.represents
+    assert "the first 7 chunks" in RecallAtK(7).description.represents, "a k the evaluation does not report"
+
+
+def test_lists_recall_and_binary_ndcg_at_10_and_20_then_the_reciprocal_rank_each_named_by_its_key():
+    keys = []
+    paths = []
+    names = []
+    for metric in RETRIEVAL_METRICS:
+        keys.append(metric.key)
+        paths.append(metric.description.path)
+        names.append(metric.description.name)
+
+    assert keys == ["recall_at.10", "recall_at.20", "binary_ndcg_at.10", "binary_ndcg_at.20", "reciprocal_rank"]
+    assert paths == ["mean_recall_at.10", "mean_recall_at.20", "mean_binary_ndcg_at.10", "mean_binary_ndcg_at.20",
+                     "mean_reciprocal_rank"], "a group's scores hold each mean at mean_ and the key"
+    assert names == ["Recall@10", "Recall@20", "Binary nDCG@10", "Binary nDCG@20", "MRR"]

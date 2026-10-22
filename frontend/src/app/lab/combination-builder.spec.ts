@@ -4,8 +4,8 @@ import { CombinationBuilder } from './combination-builder';
 import { Settings } from '../core/settings';
 
 const runs: EvaluationRun[] = [
-  {layers:{retriever:'dense',answer:'model'},scores:{overall:{accuracy:.8,question_count:10},by_category:{}},questions:[]},
-  {layers:{retriever:'bm25',answer:null},scores:{overall:{accuracy:.5,question_count:10},by_category:{}},questions:[]},
+  {layers:{retriever:'dense',answer:'model'},scores:{overall:{mean_recall_at:{10:.8},question_count:10},by_category:{}},questions:[]},
+  {layers:{retriever:'bm25',answer:null},scores:{overall:{mean_recall_at:{10:.5},question_count:10},by_category:{}},questions:[]},
 ];
 describe('Combination builder', () => {
   beforeEach(() => { TestBed.configureTestingModule({imports:[CombinationBuilder]}); TestBed.inject(Settings).update({motion:'on'}); });
@@ -27,8 +27,8 @@ describe('Combination builder', () => {
   });
   it('builds a pipeline with or without its reranker', async () => {
     const reranked: EvaluationRun[] = [
-      {layers:{retriever:'bm25',rerank:null,answer:null},scores:{overall:{accuracy:.5,question_count:10},by_category:{}},questions:[]},
-      {layers:{retriever:'bm25',rerank:'minilm-l6',answer:null},scores:{overall:{accuracy:.7,question_count:10},by_category:{}},questions:[]},
+      {layers:{retriever:'bm25',rerank:null,answer:null},scores:{overall:{mean_recall_at:{10:.5},question_count:10},by_category:{}},questions:[]},
+      {layers:{retriever:'bm25',rerank:'minilm-l6',answer:null},scores:{overall:{mean_recall_at:{10:.7},question_count:10},by_category:{}},questions:[]},
     ];
     const fixture = TestBed.createComponent(CombinationBuilder);
     fixture.componentRef.setInput('runs',reranked); fixture.componentRef.setInput('initial',reranked[0].layers);

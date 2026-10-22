@@ -5,7 +5,7 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 ## How it is measured
 
 - **A question's relevant chunks are its citations.** The answer key already says what a correct answer must cite, so nothing is labelled by hand.
-- **Recall@10 decides, MRR explains** (2026-10-12). A chunk that is not retrieved cannot be used, and the prompt holds 10. nDCG@10 is agreed for after the reranker (2026-10-17), not built yet.
+- **Recall@10 decides, MRR explains** (2026-10-12). A chunk that is not retrieved cannot be used, and the prompt holds 10.
 - **The prompt holds 10 chunks** (2026-10-12). A chunk is about 40 tokens and no question needs more than 10 rules; 5 would cap 8% of the questions. 5 and 20 are variants.
 - **A recall curve, not a composite score** (2026-10-17). To show that the refs expansion does better with fewer chunks, runs are compared at the same number of chunks. A score weighing recall against size was rejected: arbitrary weights could change the winner (design §6.3).
 - **No candidate recall** (2026-10-17). It always equalled the curve's last value, and was 100% for every retriever that returns the whole corpus.
@@ -13,6 +13,8 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 - **Every evaluation says why it was run** (2026-10-17), so that the benchmark explorer can show it.
 - **CI fails a pull request whose Recall@10 drops by more than 2 points** *(proposed, 2026-10-19)*. One dev question moves a score by about 1.6 points, so a drop of 2 is more than one question; a change meant to lower recall records a new evaluation with it, and the drop shows in its diff.
 - **A new report format replaces the old reports** (2026-10-18). The first report of the reranker's format replaced every older one rather than converting them.
+- **Binary nDCG@10 and @20 explain too** (2026-10-22), at the same cutoffs as Recall. Agreed on 2026-10-17 for after the reranker, it is computed on every run, like MRR, so it also shows what the reranker adds: on v2 dev, the binary nDCG@10 of the fusion with the refs is 0.550 without the reranker and 0.623 with it. Every cited chunk gains 1: the context rules are full citations, so no chunk weighs more than another. It shows what Recall@10 hides: a cited chunk at rank 10 counts as much as one at rank 1 for Recall@10, but 0.29 for nDCG. A graded nDCG would sit next to it under its own name.
+- **Each metric is a class that describes itself** (2026-10-22). It scores one question from the ranks of its cited chunks, and says what it does, how and what it represents; the evaluation loops over the list of metrics, and every evaluation file keeps the descriptions, which the benchmark explorer shows. One interface only: the values that are not a metric's mean (the count, the candidates, the recall curve, the latency) are computed by `score_group` and only described.
 
 ## Step 1: the chunks
 
@@ -63,7 +65,6 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 ## Open
 
 - The refs attached again after the reranker, measured against the refs before it only, on the cited rules that reach the prompt and on the prompt's size (asked 2026-10-17).
-- nDCG@10 after the reranker.
 - One Qwen3 model loaded once for every dense-based retriever.
 - A smaller k for RRF *(proposed)*: k = 60 put rule 8.3 17th.
 - A "perfect" retriever, the ceiling *(proposed, not asked for)*.

@@ -1,5 +1,6 @@
 import { EvaluationRun, Layers } from '../api/evaluation';
-import { atPath, lowerIsBetter, isContextMetric } from './metrics';
+import { atPath } from './metrics';
+import { MetricCatalog } from './metric-catalog';
 import { isFloor, runKey } from './layer-model';
 
 const NAMES: Record<string, string> = {
@@ -20,9 +21,9 @@ export function pipelineKind(run: EvaluationRun): string {
     : retriever.startsWith('dense') ? 'Dense retrieval' : retriever.startsWith('bm25') ? 'Lexical retrieval' : 'Pipeline';
   return kind + (run.layers['expand'] ? ' + references' : '') + (run.layers['rerank'] ? ' + reranking' : '') + (run.layers['answer'] ? ' + answer generation' : '');
 }
-export function rankedRuns(runs: EvaluationRun[], metric: string) {
-  if (isContextMetric(metric)) return runs.filter(run => !isFloor(run)).map(run => ({run,key:runKey(run.layers),value:atPath(run.scores.overall,metric),rank:null}));
-  const direction = lowerIsBetter(metric) ? 1 : -1;
+export function rankedRuns(runs: EvaluationRun[], metric: string, catalog: MetricCatalog) {
+  if (catalog.isContext(metric)) return runs.filter(run => !isFloor(run)).map(run => ({run,key:runKey(run.layers),value:atPath(run.scores.overall,metric),rank:null}));
+  const direction = catalog.lowerIsBetter(metric) ? 1 : -1;
   const sorted = [...runs].filter(run => !isFloor(run)).sort((a,b) => {
     const av = atPath(a.scores.overall,metric), bv = atPath(b.scores.overall,metric);
     if (av === null) return bv === null ? 0 : 1;

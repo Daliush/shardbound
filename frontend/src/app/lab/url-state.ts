@@ -1,7 +1,7 @@
 import { Params } from '@angular/router';
 export const DATASET_VERSIONS = ['v2'];
 export const SPLITS = ['dev','test'];
-export const LAB_TABS = ['leaderboard','metrics','compare','builder','categories','head-to-head','questions','history'] as const;
+export const LAB_TABS = ['leaderboard','metrics','guide','compare','builder','categories','head-to-head','questions','history'] as const;
 export interface LabState { version: string; split: string; timestamp: string; run: string; pins: string[]; metric: string; tab: string; question: string; category: string; search: string; sort: string; multiples: boolean; }
 export function readState(params: Params): LabState {
   const text = (key: string) => typeof params[key] === 'string' ? params[key] : '';

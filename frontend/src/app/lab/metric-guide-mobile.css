@@ -1,0 +1,25 @@
+@media (max-width: 1000px) {
+  .guide-intro { flex-direction: column; align-items: flex-start; gap: 1.2rem; }
+  .guide-layout { grid-template-columns: minmax(0,1fr); gap: 1.6rem; }
+  /* The index becomes a row of chips that stays above the cards. */
+  .guide-rail { position: sticky; top: 0; z-index: 4; flex-direction: row; gap: .45rem; margin-inline: -1rem; padding: .75rem 1rem; border: 0; overflow-x: auto; scrollbar-width: none; background: color-mix(in srgb, var(--obsidian-950) 90%, transparent); backdrop-filter: blur(10px); }
+  .guide-rail::-webkit-scrollbar { display: none; }
+  .rail-marker, .rail-group { display: none; }
+  .rail-item { flex: none; padding: .45rem .8rem; border-radius: 999px; font-size: .75rem; background: var(--lab-surface); }
+  .rail-item[aria-current] { color: var(--obsidian-950); background: var(--role); }
+  .metric-card { scroll-margin-top: 4.5rem; }
+}
+@media (max-width: 700px) {
+  .guide-groups { gap: 2.4rem; }
+  .group-heading { flex-direction: column; gap: .3rem; }
+  .metric-card { padding: 1.25rem 1.1rem 1.2rem; border-radius: 14px; }
+  .card-head { align-items: flex-start; flex-direction: column; gap: .55rem; }
+  .card-head h3 { font-size: 1.25rem; }
+  .card-what { font-size: .92rem; margin-bottom: 1.1rem; }
+  .card-facets { grid-template-columns: minmax(0,1fr); gap: .7rem; }
+  .sample-rows li { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: 'name value' 'track track'; gap: .35rem .8rem; }
+  .sample-rows.legend li { grid-template-areas: 'name value'; }
+  .sample-name { grid-area: name; }
+  .sample-track { grid-area: track; }
+  .sample-rows strong { grid-area: value; }
+}

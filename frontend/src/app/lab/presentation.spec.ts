@@ -1,17 +1,19 @@
 import { EvaluationRun, Layers } from '../api/evaluation';
+import { MetricCatalog } from './metric-catalog';
 import { isVariant, matchingRun, pipelineKind, rankedRuns, runColor } from './presentation';
 
 function run(retriever: string, value: number | null, answer: string | null = null): EvaluationRun {
-  return {layers:{retriever,answer},scores:{overall:{accuracy:value,latency_ms:value},by_category:{}},questions:[]};
+  return {layers:{retriever,answer},scores:{overall:{accuracy:value,latency_p50_seconds:value},by_category:{}},questions:[]};
 }
+const catalog = MetricCatalog.fromEvaluation(null);
 function pipeline(layers: Layers): EvaluationRun { return {...run(layers['retriever'] ?? '',0),layers}; }
 describe('Benchmark ranking', () => {
   it('ranks ties equally, leaves missing scores last, and keeps the reference floor out of the ranking', () => {
-    const rows = rankedRuns([run('missing',null),run('first',.8),run('tie',.8),run('last',.3),run('random',1)],'accuracy');
+    const rows = rankedRuns([run('missing',null),run('first',.8),run('tie',.8),run('last',.3),run('random',1)],'accuracy',catalog);
     expect(rows.map(row => [row.run.layers['retriever'],row.rank])).toEqual([['first',1],['tie',1],['last',3],['missing',4]]);
   });
   it('ranks latency from lowest to highest without treating a missing value as zero', () => {
-    expect(rankedRuns([run('slow',120),run('missing',null),run('fast',30)],'latency_ms').map(row => row.run.layers['retriever'])).toEqual(['fast','slow','missing']);
+    expect(rankedRuns([run('slow',120),run('missing',null),run('fast',30)],'latency_p50_seconds',catalog).map(row => row.run.layers['retriever'])).toEqual(['fast','slow','missing']);
   });
   it('gives each main pipeline its own color and each variant a muted shade of its family', () => {
     const mains = [pipeline({retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'}),pipeline({retriever:'rrf-bm25-dense',expand:'refs'}),
@@ -25,7 +27,7 @@ describe('Benchmark ranking', () => {
   });
   it('ranks a reranked random retriever with the pipelines and names its reranking', () => {
     const reranked: EvaluationRun = {...run('random',.9),layers:{retriever:'random',rerank:'minilm-l6',answer:null}};
-    expect(rankedRuns([run('random',1),reranked,run('bm25',.5)],'accuracy').map(row => row.run.layers['rerank'] ?? row.run.layers['retriever'])).toEqual(['minilm-l6','bm25']);
+    expect(rankedRuns([run('random',1),reranked,run('bm25',.5)],'accuracy',catalog).map(row => row.run.layers['rerank'] ?? row.run.layers['retriever'])).toEqual(['minilm-l6','bm25']);
     expect([pipelineKind(run('random',0)),pipelineKind(reranked)]).toEqual(['Reference floor','Random order + reranking']);
     expect(pipelineKind(pipeline({retriever:'rrf-bm25-dense',expand:'refs'}))).toBe('Hybrid retrieval + references');
   });

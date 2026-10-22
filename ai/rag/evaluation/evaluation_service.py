@@ -8,7 +8,7 @@ from rag.chunks import Chunk
 from rag.evaluation.code_commit import read_code_commit
 from rag.evaluation.questions import Question, read_questions
 from rag.evaluation.runs import Evaluation, Run
-from rag.evaluation.scores import Report, average_scores, score_question
+from rag.evaluation.scores import QuestionResult, Report, list_metric_descriptions, score_group, score_question
 from rag.evaluation.stages import Stage, StepResult
 from rag.expanders.registry import build_expander
 from rag.repository.chunk_repository import ChunkRepositoryPostgres
@@ -38,7 +38,7 @@ def evaluate_all(retriever_names: list[str], expander_names: list[str], reranker
     for reranker_name in reranker_names:
         techniques_after_retrieval[Step.RERANK].append(build_reranker(reranker_name, chunks))
     evaluation = Evaluation(version=version, split=split, evaluated_at=evaluated_at, code_commit=code_commit,
-                            description=description,
+                            description=description, metrics=list_metric_descriptions(),
                             runs=evaluate_combinations(retriever_names, chunks, techniques_after_retrieval, questions))
     evaluation_repository.save_evaluation(evaluation)
     return evaluation
@@ -93,13 +93,15 @@ def apply(technique: Technique, parent: Stage | None, questions: list[Question])
 
 
 def score(stage: Stage) -> Run:
-    """The node's run: its metrics on every question, then averaged over all of them and by category."""
+    """The node's run: its metrics on every question, then the scores of all of them and of each category."""
     results = []
+    results_by_category: dict[str, list[QuestionResult]] = {}
     for step_result in stage.results.values():
-        results.append(score_question(step_result.question, step_result.chunk_ids,
-                                      stage.sum_seconds(step_result.question)))
+        result = score_question(step_result.question, step_result.chunk_ids, stage.sum_seconds(step_result.question))
+        results.append(result)
+        results_by_category.setdefault(result.category, []).append(result)
     by_category = {}
-    for category in sorted({result.category for result in results}):
-        by_category[category] = average_scores([result for result in results if result.category == category])
-    report = Report(overall=average_scores(results), by_category=by_category, questions=results)
+    for category in sorted(results_by_category):
+        by_category[category] = score_group(results_by_category[category])
+    report = Report(overall=score_group(results), by_category=by_category, questions=results)
     return Run(stage.name_layers(), stage.describe(), report)

@@ -1,0 +1,38 @@
+:host { display: block; }
+.role-decides { --role: var(--lab-accent); }
+.role-explains { --role: var(--chart-1); }
+.role-speed { --role: var(--chart-2); }
+.role-context { --role: var(--chart-7); }
+
+/* The lead and the count of metrics in each role. */
+.guide-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin: 0 0 2.4rem; padding-bottom: 1.6rem; border-bottom: 1px solid var(--line); }
+.intro-lead { max-width: 64ch; margin: 0; font-size: .95rem; line-height: 1.7; color: var(--text); }
+.role-legend { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.role-legend li { display: inline-flex; align-items: center; gap: .45rem; padding: .35rem .7rem; border-radius: 999px; font-size: .72rem; color: var(--muted); background: var(--lab-surface); }
+.role-legend b { font: 500 .78rem var(--font-number); color: var(--role); }
+
+.guide-layout { display: grid; grid-template-columns: 196px minmax(0,1fr); gap: 2.6rem; align-items: start; }
+
+/* The index: a marker slides to the card read. */
+.guide-rail { position: sticky; top: 1.5rem; display: flex; flex-direction: column; padding-left: .9rem; border-left: 1px solid var(--line); }
+.rail-marker { position: absolute; left: -1px; top: 0; width: 2px; height: 0; border-radius: 2px; background: var(--lab-accent); opacity: 0; pointer-events: none; }
+.rail-group { margin: 1.2rem 0 .35rem; font-size: .62rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--role); }
+.rail-group:first-of-type { margin-top: 0; }
+.rail-item { justify-content: flex-start; padding: .38rem 0; border: 0; border-radius: 0; font-size: .8rem; font-weight: 400; color: var(--muted); text-align: left; transition: color .18s; }
+.rail-item:hover { background: transparent; color: var(--text); }
+.rail-item[aria-current] { color: var(--text); font-weight: 500; }
+
+/* One section per role, one card per metric. */
+.guide-groups { display: grid; gap: 3rem; min-width: 0; }
+.guide-group { display: grid; gap: 1.1rem; }
+.group-heading { display: flex; align-items: baseline; gap: 1rem; }
+.group-heading h2 { margin: 0; font: 500 .72rem var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--role); }
+.group-heading p { margin: 0; font-size: .8rem; color: var(--muted); }
+
+.guide-source { display: flex; gap: .6rem; margin: 0; font-size: .74rem; line-height: 1.7; color: var(--muted); }
+.guide-source app-icon { flex: none; width: 15px; height: 15px; margin-top: .15rem; }
+
+.guide-empty { display: grid; justify-items: start; gap: .8rem; max-width: 60ch; padding: 2rem; border-radius: 16px; background: var(--lab-surface); }
+.guide-empty app-icon { width: 20px; height: 20px; color: var(--lab-accent); }
+.guide-empty h2 { margin: 0; font: 500 1.15rem/1.4 var(--font-ui); }
+.guide-empty p { margin: 0; font-size: .85rem; line-height: 1.7; color: var(--muted); }
