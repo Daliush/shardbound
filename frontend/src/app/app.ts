@@ -8,10 +8,11 @@ import { SettingsPanel } from './core/settings-panel';
 import { InspectPanel } from './cards/inspect-panel';
 import { ThemeToggle } from './core/theme-toggle';
 import { Ambience } from './core/ambience';
+import { ServerWakeBanner } from './core/server-wake-banner';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Backdrop, Icon, SettingsPanel, InspectPanel, ThemeToggle],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Backdrop, Icon, SettingsPanel, InspectPanel, ThemeToggle, ServerWakeBanner],
   template: `
     <app-backdrop />
     @if (!inGame()) {
@@ -21,6 +22,7 @@ import { Ambience } from './core/ambience';
     }
     <main [class.in-game]="inGame()"><router-outlet /></main>
     <app-inspect-panel />
+    <app-server-wake-banner />
   `,
   styleUrl: './app.css',
   host: { '[attr.data-faction]': 'ambience.faction()' },

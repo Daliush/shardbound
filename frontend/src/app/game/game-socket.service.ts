@@ -2,6 +2,7 @@ import { Injectable, InjectionToken, OnDestroy, inject, signal } from '@angular/
 import { EMPTY, Observable, Subject, Subscription, repeat, retry, timer } from 'rxjs';
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 import { ClientMessage, EventView, GameView, ServerMessage } from '../api/protocol';
+import { ServerWait, ServerWake } from '../core/server-wake';
 
 /** The WebSocket constructor, replaced by a fake in tests. */
 export const WEB_SOCKET = new InjectionToken<typeof WebSocket>('WEB_SOCKET', {
@@ -24,6 +25,7 @@ export type GameFrame = Exclude<ServerMessage, { type: 'rejected' }> | { type: '
 @Injectable()
 export class GameSocketService implements OnDestroy {
   private readonly webSocketCtor = inject(WEB_SOCKET);
+  private readonly serverWake = inject(ServerWake);
 
   readonly view = signal<GameView | null>(null);
   readonly log = signal<EventView[]>([]);
@@ -36,9 +38,12 @@ export class GameSocketService implements OnDestroy {
   private subscription?: Subscription;
   private failures = 0;
   private requests = 0;
+  private firstOpen?: ServerWait;
 
   connect(url: string): void {
     this.subscription?.unsubscribe();
+    this.firstOpen?.end(false);
+    this.firstOpen = this.serverWake.startWait();
     this.synchronized.set(false);
     this.status.set('connecting');
     this.socket = webSocket<ServerMessage | ClientMessage>({
@@ -61,6 +66,7 @@ export class GameSocketService implements OnDestroy {
   }
 
   disconnect(): void {
+    this.firstOpen?.end(false);
     this.status.set('closed');
     this.subscription?.unsubscribe();
     this.synchronized.set(false);
@@ -114,6 +120,7 @@ export class GameSocketService implements OnDestroy {
 
   /** The server sends the full state on every connection, so a reconnection resyncs by itself. */
   private opened(): void {
+    this.firstOpen?.end(true);
     this.failures = 0;
     this.status.set('open');
   }
