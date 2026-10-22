@@ -9,9 +9,8 @@ from abc import ABC, abstractmethod
 
 from rag.evaluation.metric_description import Display, MetricDescription
 
-CUTOFFS = {10: "the prompt, which holds the first 10 chunks of the run's list",
-           20: "the first 20 chunks of the run's list: what a retriever hands to the next step, and the prompt of the "
-               "20-chunk variant"}
+CUTOFFS = {10: "the prompt (the 10 chunks the model will read)",
+           20: "the first 20 chunks (what a retriever passes to the next step, and the prompt of the 20-chunk test)"}
 """The k of Recall@k and binary nDCG@k, each with what its first k chunks are. The share of the relevant chunks a run
 ranks at all, however many chunks, is the recall curve's last value."""
 
@@ -27,9 +26,9 @@ def find_relevant_ranks(ranked_ids: list[str], relevant_ids: frozenset[str]) -> 
 
 
 def describe_cutoff(k: int) -> str:
-    """What the first `k` chunks are, as `CUTOFFS` says for 10 and 20; only the first k chunks of the run's list for a
-    k the evaluation does not report."""
-    return CUTOFFS.get(k, f"the first {k} chunks of the run's list")
+    """What the first `k` chunks are, as `CUTOFFS` says for 10 and 20; only the first k chunks for a k the evaluation
+    does not report."""
+    return CUTOFFS.get(k, f"the first {k} chunks")
 
 
 class RetrievalMetric(ABC):
@@ -52,10 +51,12 @@ class RecallAtK(RetrievalMetric):
     def __init__(self, k: int) -> None:
         super().__init__(
             key=f"recall_at.{k}", name=f"Recall@{k}", display=Display.SHARE,
-            what=f"The share of a question's cited chunks found among the first {k} chunks of the run's list.",
-            how=f"The number of cited chunks ranked 1 to {k}, divided by the number of cited chunks. Averaged over the "
-                f"questions, each weighing the same.",
-            represents=f"How much of what a correct answer needs reaches {describe_cutoff(k)}.")
+            what=f"Out of the chunks a question needs, the share found in the first {k}.",
+            how=f"The chunks a question needs are the ones its answer key cites. Count how many of them are ranked 1 "
+                f"to {k}, then divide by how many there are: 3 found out of 4 gives 75%. Then take the average over "
+                f"all the questions.",
+            represents=f"Whether what the answer needs gets into {describe_cutoff(k)}. A chunk left out can't help the "
+                       f"answer.")
         self.k = k
 
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
@@ -71,13 +72,14 @@ class BinaryNdcgAtK(RetrievalMetric):
     def __init__(self, k: int) -> None:
         super().__init__(
             key=f"binary_ndcg_at.{k}", name=f"Binary nDCG@{k}", display=Display.SCORE,
-            what=f"How high the cited chunks sit among the first {k}, from 0 to 1.",
-            how="Every cited chunk gains 1 and any other chunk 0. A gain at rank r is worth 1 / log2(r + 1): 1 first, "
-                "0.5 third, 0.29 tenth. The sum is divided by the sum of the best ranking, every cited chunk first. "
-                "Averaged over the questions.",
-            represents=f"How high the cited chunks sit inside {describe_cutoff(k)}, and how many get there: 1 only "
-                       f"when the cited chunks take the first places, as many as fit. A question's only cited chunk, "
-                       f"ranked {k}th, keeps its whole Recall@{k} but scores {discount_gain(k):.2f}.")
+            what=f"How close to the top the needed chunks are, in the first {k}. From 0 to 1.",
+            how="Each needed chunk earns points, fewer the lower it sits: 1 at rank 1, 0.63 at rank 2, 0.5 at rank 3, "
+                "0.29 at rank 10. The formula is 1 / log2(rank + 1). Other chunks earn nothing. Add up the points, "
+                "then divide by the best total possible, with every needed chunk at the top. Then take the average "
+                "over all the questions.",
+            represents=f"Whether the needed chunks sit high in {describe_cutoff(k)}, not just somewhere in it. 1 means "
+                       f"they fill the top places. A question whose only needed chunk is at rank {k} gets 100% on "
+                       f"Recall@{k}, but only {discount_gain(k):.2f} here.")
         self.k = k
 
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
@@ -108,11 +110,10 @@ class ReciprocalRank(RetrievalMetric):
     def __init__(self) -> None:
         super().__init__(
             key="reciprocal_rank", name="MRR", display=Display.SCORE,
-            what="How early the first cited chunk comes.",
-            how="1 / the rank of the first cited chunk, at any depth: 1 first, 0.5 second, 0.1 tenth; 0 when the run "
-                "leaves out every cited chunk. Averaged over the questions.",
-            represents="How soon the list gives a useful chunk: 0.5 can mean that every question's first cited chunk "
-                       "is second. It says nothing about the other cited chunks.")
+            what="How soon the first needed chunk shows up in the list.",
+            how="Take 1 divided by the rank of the first needed chunk: 1 at rank 1, 0.5 at rank 2, 0.1 at rank 10, and "
+                "0 when the list has none. Then take the average over all the questions.",
+            represents="Whether the list starts well. It only looks at the first needed chunk, not at the others.")
 
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
         """1 / the rank of the first relevant chunk (first: 1.0, third: 0.33), 0.0 when none is ranked."""

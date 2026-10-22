@@ -80,9 +80,9 @@ def test_every_metric_says_what_it_does_how_and_what_it_represents():
 
 
 def test_describes_each_cutoff_by_what_its_first_k_chunks_are():
-    assert "the prompt, which holds the first 10 chunks" in RecallAtK(10).description.represents
-    assert "what a retriever hands to the next step" in BinaryNdcgAtK(20).description.represents
-    assert "ranked 20th, keeps its whole Recall@20 but scores 0.23" in BinaryNdcgAtK(20).description.represents
+    assert "the prompt (the 10 chunks the model will read)" in RecallAtK(10).description.represents
+    assert "what a retriever passes to the next step" in BinaryNdcgAtK(20).description.represents
+    assert "is at rank 20 gets 100% on Recall@20, but only 0.23 here" in BinaryNdcgAtK(20).description.represents
     assert "the first 7 chunks" in RecallAtK(7).description.represents, "a k the evaluation does not report"
 
 

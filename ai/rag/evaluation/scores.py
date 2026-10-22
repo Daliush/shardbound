@@ -8,40 +8,40 @@ from rag.evaluation.metric_description import Display, MetricDescription
 from rag.evaluation.questions import Question
 from rag.evaluation.retrieval_metrics import CUTOFFS, RETRIEVAL_METRICS, RecallAtK, find_relevant_ranks
 
-LATENCY_MEANING = "What a user waits for retrieval, on the machine that ran the evaluation. Lower is better."
+LATENCY_MEANING = "How long a user waits for the chunks, on the computer that ran the evaluation. Lower is better."
 
 GROUP_VALUE_DESCRIPTIONS = [
     MetricDescription(
         path="question_count", name="Questions", display=Display.COUNT,
         what="How many questions were scored.",
-        how="The answerable questions of the split, or of one category. An unanswerable question has no cited chunk "
-            "to find.",
-        represents="How much one question weighs in a score: 1 / the number of questions. A small category moves a "
-                   "lot with one question."),
+        how="Every question of the split, or of one category, that has an answer. A question with no answer needs no "
+            "chunk, so it is left out.",
+        represents="How much to trust a score. The fewer the questions, the more a single question moves it."),
     MetricDescription(
         path="mean_candidate_count", name="Candidates", display=Display.COUNT,
-        what="How many chunks a run ranks for a question.",
-        how="The length of the list the run's last step returns, averaged over the questions.",
-        represents="Context, not a score: a list of the whole corpus holds every cited chunk. Read it with the end of "
-                   "the recall curve."),
+        what="How many chunks a pipeline returns for a question, on average.",
+        how="Count the chunks in the list the pipeline's last step returns, then take the average over all the "
+            "questions.",
+        represents="Context, not a score to win: a list of every chunk would hold every needed chunk. Read it with the "
+                   "end of the recall curve."),
     MetricDescription(
         path="mean_recall_curve", name="Recall curve", display=Display.SHARE,
-        what="Recall@k for every k, from 1 to the longest list.",
-        how="At each k, Recall@k averaged over the questions. Past the end of its own list, a question keeps the "
-            "recall its whole list reached.",
-        represents="Runs compared at the same number of chunks. Its last value is the share of the cited chunks among "
-                   "every chunk ranked: after the expansion, the most a reranker could keep."),
+        what="Recall for every list length, from 1 chunk to the whole list.",
+        how="For each length k, the average Recall@k over all the questions. When a question's list is shorter than k, "
+            "it keeps the recall of its full list.",
+        represents="It compares pipelines at the same number of chunks. Its last point is the most a reranker could "
+                   "keep, since a reranker only reorders the list."),
     MetricDescription(
         path="latency_p50_seconds", name="Latency p50", display=Display.SECONDS,
-        what="How long the pipeline takes for a typical question.",
-        how="The time of every step, added up for each question. The p50 is the time half of the questions take no "
-            "longer than.",
+        what="How long a typical question takes.",
+        how="For each question, add up the time of every step. The p50 is the time that half of the questions don't "
+            "go over.",
         represents=LATENCY_MEANING),
     MetricDescription(
         path="latency_p95_seconds", name="Latency p95", display=Display.SECONDS,
-        what="How long the pipeline takes for its slowest questions.",
-        how="The time of every step, added up for each question. The p95 is the time 95% of the questions take no "
-            "longer than.",
+        what="How long the slowest questions take.",
+        how="For each question, add up the time of every step. The p95 is the time that 95% of the questions don't "
+            "go over.",
         represents=LATENCY_MEANING),
 ]
 """The values of a group that are not the mean of a metric, which `score_group` computes itself."""

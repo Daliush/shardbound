@@ -15,7 +15,7 @@ class Display(Enum):
     COUNT = "count"
     """A number of things, with one decimal when it is a mean: 61, 41.3."""
     SECONDS = "seconds"
-    """A time, with two decimals: 0.78 s."""
+    """A time in seconds: 0.78 s."""
 
 
 @dataclass(frozen=True)
