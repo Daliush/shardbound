@@ -1,22 +1,34 @@
-"""What the evaluation says about each metric it scores: where its value is, its name, and how its value is written."""
+"""What the evaluation says about each value it scores: where it is, its name, how it is written, what it does, how it
+is computed and what it represents. The evaluation file keeps every description, and the benchmark explorer shows it."""
 
 from dataclasses import dataclass
 from enum import Enum
 
 
 class Display(Enum):
-    """How a metric's value is written."""
+    """How a value is written."""
 
     SHARE = "share"
-    """A share of chunks, as a percentage: 72.7%."""
+    """A share, as a percentage: 72.7%."""
     SCORE = "score"
     """A score from 0 to 1, with three decimals: 0.663."""
+    COUNT = "count"
+    """A number of things, with one decimal when it is a mean: 61, 41.3."""
+    SECONDS = "seconds"
+    """A time, with two decimals: 0.78 s."""
 
 
 @dataclass(frozen=True)
 class MetricDescription:
-    key: str
-    """Where its value is: `recall_at.10` in a question's result, `mean_recall_at.10` in the scores of a group."""
+    path: str
+    """Where its value is in the scores of a group, as the evaluation file writes them: `mean_recall_at.10`,
+    `question_count`."""
     name: str
-    """What a report calls its mean over a group of questions: Recall@10, MRR."""
+    """What a reader calls its value over a group of questions: Recall@10, MRR, Questions."""
     display: Display
+    what: str
+    """What it does."""
+    how: str
+    """How it is computed."""
+    represents: str
+    """What it stands for in the Arbiter."""

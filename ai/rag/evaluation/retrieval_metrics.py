@@ -1,7 +1,7 @@
 """
 The retrieval metrics of one question: how well a ranking holds the chunks it needs. Each is read from the ranks of
-the question's relevant chunks in the ranking, which `find_relevant_ranks` finds once. `RETRIEVAL_METRICS` lists every
-metric the evaluation scores.
+the question's relevant chunks in the ranking, which `find_relevant_ranks` finds once, and says what it does, how and
+what it represents. `RETRIEVAL_METRICS` lists every metric the evaluation scores.
 """
 
 import math
@@ -9,10 +9,11 @@ from abc import ABC, abstractmethod
 
 from rag.evaluation.metric_description import Display, MetricDescription
 
-CUTOFFS = (10, 20)
-"""The k of Recall@k and binary nDCG@k. 10: the chunks the prompt holds after the reranker. 20: the top 20 the refs
-expansion starts from, and the prompt of the 20-chunk variant. The share of the relevant chunks a run ranks at all,
-however many chunks, is the recall curve's last value."""
+CUTOFFS = {10: "the prompt, which holds the first 10 chunks of the run's list",
+           20: "the first 20 chunks of the run's list: what a retriever hands to the next step, and the prompt of the "
+               "20-chunk variant"}
+"""The k of Recall@k and binary nDCG@k, each with what its first k chunks are. The share of the relevant chunks a run
+ranks at all, however many chunks, is the recall curve's last value."""
 
 
 def find_relevant_ranks(ranked_ids: list[str], relevant_ids: frozenset[str]) -> dict[str, int | None]:
@@ -25,12 +26,22 @@ def find_relevant_ranks(ranked_ids: list[str], relevant_ids: frozenset[str]) -> 
     return relevant_ranks
 
 
+def describe_cutoff(k: int) -> str:
+    """What the first `k` chunks are, as `CUTOFFS` says for 10 and 20; only the first k chunks of the run's list for a
+    k the evaluation does not report."""
+    return CUTOFFS.get(k, f"the first {k} chunks of the run's list")
+
+
 class RetrievalMetric(ABC):
     """One number for one question, read from the ranks of its relevant chunks. The evaluation averages it over a group
     of questions."""
 
-    def __init__(self, description: MetricDescription) -> None:
-        self.description = description
+    def __init__(self, key: str, name: str, display: Display, what: str, how: str, represents: str) -> None:
+        self.key = key
+        """Where its value is in a question's result: `recall_at.10`. A group's scores hold its mean at `mean_` and
+        the key."""
+        self.description = MetricDescription(path=f"mean_{key}", name=name, display=display, what=what, how=how,
+                                             represents=represents)
 
     @abstractmethod
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
@@ -39,7 +50,12 @@ class RetrievalMetric(ABC):
 
 class RecallAtK(RetrievalMetric):
     def __init__(self, k: int) -> None:
-        super().__init__(MetricDescription(key=f"recall_at.{k}", name=f"Recall@{k}", display=Display.SHARE))
+        super().__init__(
+            key=f"recall_at.{k}", name=f"Recall@{k}", display=Display.SHARE,
+            what=f"The share of a question's cited chunks found among the first {k} chunks of the run's list.",
+            how=f"The number of cited chunks ranked 1 to {k}, divided by the number of cited chunks. Averaged over the "
+                f"questions, each weighing the same.",
+            represents=f"How much of what a correct answer needs reaches {describe_cutoff(k)}.")
         self.k = k
 
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
@@ -53,7 +69,15 @@ class RecallAtK(RetrievalMetric):
 
 class BinaryNdcgAtK(RetrievalMetric):
     def __init__(self, k: int) -> None:
-        super().__init__(MetricDescription(key=f"binary_ndcg_at.{k}", name=f"Binary nDCG@{k}", display=Display.SCORE))
+        super().__init__(
+            key=f"binary_ndcg_at.{k}", name=f"Binary nDCG@{k}", display=Display.SCORE,
+            what=f"How high the cited chunks sit among the first {k}, from 0 to 1.",
+            how="Every cited chunk gains 1 and any other chunk 0. A gain at rank r is worth 1 / log2(r + 1): 1 first, "
+                "0.5 third, 0.29 tenth. The sum is divided by the sum of the best ranking, every cited chunk first. "
+                "Averaged over the questions.",
+            represents=f"How high the cited chunks sit inside {describe_cutoff(k)}, and how many get there: 1 only "
+                       f"when the cited chunks take the first places, as many as fit. A question's only cited chunk, "
+                       f"ranked {k}th, keeps its whole Recall@{k} but scores {discount_gain(k):.2f}.")
         self.k = k
 
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
@@ -82,7 +106,13 @@ def discount_gain(rank: int) -> float:
 
 class ReciprocalRank(RetrievalMetric):
     def __init__(self) -> None:
-        super().__init__(MetricDescription(key="reciprocal_rank", name="MRR", display=Display.SCORE))
+        super().__init__(
+            key="reciprocal_rank", name="MRR", display=Display.SCORE,
+            what="How early the first cited chunk comes.",
+            how="1 / the rank of the first cited chunk, at any depth: 1 first, 0.5 second, 0.1 tenth; 0 when the run "
+                "leaves out every cited chunk. Averaged over the questions.",
+            represents="How soon the list gives a useful chunk: 0.5 can mean that every question's first cited chunk "
+                       "is second. It says nothing about the other cited chunks.")
 
     def score(self, relevant_ranks: dict[str, int | None]) -> float:
         """1 / the rank of the first relevant chunk (first: 1.0, third: 0.33), 0.0 when none is ranked."""

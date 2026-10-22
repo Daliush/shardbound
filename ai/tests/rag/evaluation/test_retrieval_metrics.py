@@ -72,12 +72,30 @@ def test_reciprocal_rank_is_zero_when_no_relevant_chunk_is_ranked():
     assert ReciprocalRank().score({"11.3.2": None, "11.5.4": None}) == 0.0
 
 
+def test_every_metric_says_what_it_does_how_and_what_it_represents():
+    for metric in RETRIEVAL_METRICS:
+        assert metric.description.what.strip(), metric.key
+        assert metric.description.how.strip(), metric.key
+        assert metric.description.represents.strip(), metric.key
+
+
+def test_describes_each_cutoff_by_what_its_first_k_chunks_are():
+    assert "the prompt, which holds the first 10 chunks" in RecallAtK(10).description.represents
+    assert "what a retriever hands to the next step" in BinaryNdcgAtK(20).description.represents
+    assert "ranked 20th, keeps its whole Recall@20 but scores 0.23" in BinaryNdcgAtK(20).description.represents
+    assert "the first 7 chunks" in RecallAtK(7).description.represents, "a k the evaluation does not report"
+
+
 def test_lists_recall_and_binary_ndcg_at_10_and_20_then_the_reciprocal_rank_each_named_by_its_key():
     keys = []
+    paths = []
     names = []
     for metric in RETRIEVAL_METRICS:
-        keys.append(metric.description.key)
+        keys.append(metric.key)
+        paths.append(metric.description.path)
         names.append(metric.description.name)
 
     assert keys == ["recall_at.10", "recall_at.20", "binary_ndcg_at.10", "binary_ndcg_at.20", "reciprocal_rank"]
+    assert paths == ["mean_recall_at.10", "mean_recall_at.20", "mean_binary_ndcg_at.10", "mean_binary_ndcg_at.20",
+                     "mean_reciprocal_rank"], "a group's scores hold each mean at mean_ and the key"
     assert names == ["Recall@10", "Recall@20", "Binary nDCG@10", "Binary nDCG@20", "MRR"]

@@ -1,5 +1,5 @@
 from rag.evaluation.retrieval_metrics import RETRIEVAL_METRICS
-from rag.evaluation.scores import QuestionResult, score_group
+from rag.evaluation.scores import QuestionResult, list_metric_descriptions, score_group
 
 
 def build_result(relevant_ranks: dict[str, int | None], candidate_count: int, seconds: float = 0.0,
@@ -7,7 +7,7 @@ def build_result(relevant_ranks: dict[str, int | None], candidate_count: int, se
     """Only the fields `score_group` reads in these tests are filled in: every metric has `metric_value`."""
     metric_values = {}
     for metric in RETRIEVAL_METRICS:
-        metric_values[metric.description.key] = metric_value
+        metric_values[metric.key] = metric_value
     return QuestionResult(question_id="anchor", category="interaction", top_chunk_ids=[], relevant_ranks=relevant_ranks,
                           metric_values=metric_values, candidate_count=candidate_count, seconds=seconds)
 
@@ -20,6 +20,16 @@ def test_averages_each_metric_over_the_questions():
 
     assert scores.metric_means["binary_ndcg_at.10"] == 0.75
     assert len(scores.metric_means) == len(RETRIEVAL_METRICS)
+
+
+def test_describes_each_metric_then_each_value_only_a_group_has():
+    paths = []
+    for description in list_metric_descriptions():
+        paths.append(description.path)
+
+    assert paths == ["mean_recall_at.10", "mean_recall_at.20", "mean_binary_ndcg_at.10", "mean_binary_ndcg_at.20",
+                     "mean_reciprocal_rank", "question_count", "mean_candidate_count", "mean_recall_curve",
+                     "latency_p50_seconds", "latency_p95_seconds"]
 
 
 def test_averages_the_number_of_candidates():

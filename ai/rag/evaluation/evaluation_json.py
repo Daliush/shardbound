@@ -4,6 +4,8 @@ storage writes this same document:
 
 {"dataset": {"version": "v1", "split": "dev"}, "evaluated_at": "2026-10-15T10:42:07Z", "code": "45c56b9",
  "description": "Step 3: BM25 and its variants",
+ "metrics": [{"path": "mean_recall_at.10", "name": "Recall@10", "display": "share", "what": …, "how": …,
+              "represents": …}, …],
  "runs": [{"layers": {"retriever": "bm25", "answer": null},
            "description": "BM25 (lucene formula, k1 = 1.5, b = 0.75, stemmed words, stop words kept)",
            "scores": {"overall": {…}, "by_category": {…}},
@@ -13,6 +15,7 @@ storage writes this same document:
 import json
 from dataclasses import asdict
 
+from rag.evaluation.metric_description import MetricDescription
 from rag.evaluation.runs import Evaluation
 from rag.evaluation.scores import QuestionResult, Scores
 
@@ -34,8 +37,22 @@ def convert_evaluation_to_json(evaluation: Evaluation) -> str:
                 "evaluated_at": evaluation.evaluated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "code": evaluation.code_commit,
                 "description": evaluation.description,
+                "metrics": convert_metric_descriptions(evaluation.metrics),
                 "runs": runs}
     return json.dumps(document, indent=1, ensure_ascii=False) + "\n"
+
+
+def convert_metric_descriptions(descriptions: list[MetricDescription]) -> list[dict]:
+    """Each value's description, its display by name: {"path": "mean_recall_at.10", "display": "share", …}."""
+    documents = []
+    for description in descriptions:
+        documents.append({"path": description.path,
+                          "name": description.name,
+                          "display": description.display.value,
+                          "what": description.what,
+                          "how": description.how,
+                          "represents": description.represents})
+    return documents
 
 
 def convert_scores(scores: Scores) -> dict:

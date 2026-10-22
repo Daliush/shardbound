@@ -21,7 +21,7 @@ def format_report_table(report: Report) -> str:
 def format_row(label: str, scores: Scores) -> str:
     cells = [label, str(scores.question_count)]
     for metric in RETRIEVAL_METRICS:
-        cells.append(format_value(metric.description.display, scores.metric_means[metric.description.key]))
+        cells.append(format_value(metric.description.display, scores.metric_means[metric.key]))
     cells.append(f"{scores.mean_candidate_count:.1f}")
     return "| " + " | ".join(cells) + " |"
 

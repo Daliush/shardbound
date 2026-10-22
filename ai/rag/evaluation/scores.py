@@ -4,8 +4,47 @@ join them."""
 import math
 from dataclasses import dataclass
 
+from rag.evaluation.metric_description import Display, MetricDescription
 from rag.evaluation.questions import Question
 from rag.evaluation.retrieval_metrics import CUTOFFS, RETRIEVAL_METRICS, RecallAtK, find_relevant_ranks
+
+LATENCY_MEANING = "What a user waits for retrieval, on the machine that ran the evaluation. Lower is better."
+
+GROUP_VALUE_DESCRIPTIONS = [
+    MetricDescription(
+        path="question_count", name="Questions", display=Display.COUNT,
+        what="How many questions were scored.",
+        how="The answerable questions of the split, or of one category. An unanswerable question has no cited chunk "
+            "to find.",
+        represents="How much one question weighs in a score: 1 / the number of questions. A small category moves a "
+                   "lot with one question."),
+    MetricDescription(
+        path="mean_candidate_count", name="Candidates", display=Display.COUNT,
+        what="How many chunks a run ranks for a question.",
+        how="The length of the list the run's last step returns, averaged over the questions.",
+        represents="Context, not a score: a list of the whole corpus holds every cited chunk. Read it with the end of "
+                   "the recall curve."),
+    MetricDescription(
+        path="mean_recall_curve", name="Recall curve", display=Display.SHARE,
+        what="Recall@k for every k, from 1 to the longest list.",
+        how="At each k, Recall@k averaged over the questions. Past the end of its own list, a question keeps the "
+            "recall its whole list reached.",
+        represents="Runs compared at the same number of chunks. Its last value is the share of the cited chunks among "
+                   "every chunk ranked: after the expansion, the most a reranker could keep."),
+    MetricDescription(
+        path="latency_p50_seconds", name="Latency p50", display=Display.SECONDS,
+        what="How long the pipeline takes for a typical question.",
+        how="The time of every step, added up for each question. The p50 is the time half of the questions take no "
+            "longer than.",
+        represents=LATENCY_MEANING),
+    MetricDescription(
+        path="latency_p95_seconds", name="Latency p95", display=Display.SECONDS,
+        what="How long the pipeline takes for its slowest questions.",
+        how="The time of every step, added up for each question. The p95 is the time 95% of the questions take no "
+            "longer than.",
+        represents=LATENCY_MEANING),
+]
+"""The values of a group that are not the mean of a metric, which `score_group` computes itself."""
 
 
 @dataclass(frozen=True)
@@ -49,13 +88,22 @@ class Report:
     questions: list[QuestionResult]
 
 
+def list_metric_descriptions() -> list[MetricDescription]:
+    """Every value the scores of a group hold, described: each retrieval metric, then the values only a group has."""
+    descriptions = []
+    for metric in RETRIEVAL_METRICS:
+        descriptions.append(metric.description)
+    descriptions.extend(GROUP_VALUE_DESCRIPTIONS)
+    return descriptions
+
+
 def score_question(question: Question, ranked_ids: list[str], seconds: float) -> QuestionResult:
     """One question's result: the rank of each of its relevant chunks in `ranked_ids`, then the value of each retrieval
     metric, read from these ranks."""
     relevant_ranks = find_relevant_ranks(ranked_ids, question.relevant_ids)
     metric_values = {}
     for metric in RETRIEVAL_METRICS:
-        metric_values[metric.description.key] = metric.score(relevant_ranks)
+        metric_values[metric.key] = metric.score(relevant_ranks)
     return QuestionResult(question_id=question.id, category=question.category,
                           top_chunk_ids=ranked_ids[:max(CUTOFFS)], relevant_ranks=relevant_ranks,
                           metric_values=metric_values, candidate_count=len(ranked_ids), seconds=seconds)
@@ -81,7 +129,7 @@ def average_metric_values(results: list[QuestionResult]) -> dict[str, float]:
     """Each retrieval metric's value averaged over the questions, by the metric's key."""
     means = {}
     for metric in RETRIEVAL_METRICS:
-        key = metric.description.key
+        key = metric.key
         total = 0.0
         for result in results:
             total += result.metric_values[key]

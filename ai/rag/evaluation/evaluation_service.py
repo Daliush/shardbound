@@ -8,7 +8,7 @@ from rag.chunks import Chunk
 from rag.evaluation.code_commit import read_code_commit
 from rag.evaluation.questions import Question, read_questions
 from rag.evaluation.runs import Evaluation, Run
-from rag.evaluation.scores import QuestionResult, Report, score_group, score_question
+from rag.evaluation.scores import QuestionResult, Report, list_metric_descriptions, score_group, score_question
 from rag.evaluation.stages import Stage, StepResult
 from rag.expanders.registry import build_expander
 from rag.repository.chunk_repository import ChunkRepositoryPostgres
@@ -38,7 +38,7 @@ def evaluate_all(retriever_names: list[str], expander_names: list[str], reranker
     for reranker_name in reranker_names:
         techniques_after_retrieval[Step.RERANK].append(build_reranker(reranker_name, chunks))
     evaluation = Evaluation(version=version, split=split, evaluated_at=evaluated_at, code_commit=code_commit,
-                            description=description,
+                            description=description, metrics=list_metric_descriptions(),
                             runs=evaluate_combinations(retriever_names, chunks, techniques_after_retrieval, questions))
     evaluation_repository.save_evaluation(evaluation)
     return evaluation

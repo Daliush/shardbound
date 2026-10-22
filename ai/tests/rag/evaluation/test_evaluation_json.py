@@ -1,9 +1,10 @@
 import json
 from datetime import datetime, timezone
 
-from rag.evaluation.evaluation_json import convert_evaluation_to_json, name_evaluation
+from rag.evaluation.evaluation_json import convert_evaluation_to_json, convert_scores, name_evaluation
+from rag.evaluation.metric_description import Display, MetricDescription
 from rag.evaluation.runs import Evaluation, Layers, Run
-from rag.evaluation.scores import QuestionResult, Report, Scores
+from rag.evaluation.scores import QuestionResult, Report, Scores, list_metric_descriptions
 
 EVALUATED_AT = datetime(2026, 10, 15, 10, 42, 7, tzinfo=timezone.utc)
 
@@ -23,8 +24,10 @@ def build_evaluation(retrievers: list[str]) -> Evaluation:
     for retriever in retrievers:
         runs.append(Run(Layers(retriever=retriever), f"what {retriever} does",
                         Report(overall=scores, by_category={"simple-rule": scores}, questions=[result])))
+    recall = MetricDescription(path="mean_recall_at.10", name="Recall@10", display=Display.SHARE,
+                               what="The share…", how="The number…", represents="How much…")
     return Evaluation(version="v1", split="dev", evaluated_at=EVALUATED_AT, code_commit="45c56b9",
-                      description="Step 3: BM25", runs=runs)
+                      description="Step 3: BM25", metrics=[recall], runs=runs)
 
 
 def test_writes_the_dataset_the_time_the_code_and_why_once_then_each_run_by_its_layers_and_description():
@@ -59,6 +62,30 @@ def test_writes_exactly_the_fields_of_a_score_and_of_a_question_in_a_fixed_order
     assert list(run["questions"][0]) == ["question_id", "category", "top_chunk_ids", "relevant_ranks", "recall_at",
                                         "binary_ndcg_at", "reciprocal_rank", "candidate_count", "seconds"]
     assert run["questions"][0]["recall_at"] == {"10": 0.5, "20": 0.5}, "a metric's key nested at its dot"
+
+
+def test_writes_every_metric_description_once_before_the_runs_its_display_by_name():
+    document = json.loads(convert_evaluation_to_json(build_evaluation(["random", "bm25"])))
+
+    assert list(document) == ["dataset", "evaluated_at", "code", "description", "metrics", "runs"]
+    assert document["metrics"] == [{"path": "mean_recall_at.10", "name": "Recall@10", "display": "share",
+                                    "what": "The share…", "how": "The number…", "represents": "How much…"}]
+
+
+def test_describes_every_value_the_scores_of_a_group_hold_and_nothing_else():
+    written = convert_scores(build_evaluation(["bm25"]).runs[0].report.overall)
+    paths = []
+    for name, value in written.items():
+        if isinstance(value, dict):
+            for cutoff in value:
+                paths.append(f"{name}.{cutoff}")
+        else:
+            paths.append(name)
+    described = []
+    for description in list_metric_descriptions():
+        described.append(description.path)
+
+    assert sorted(described) == sorted(paths)
 
 
 def test_names_an_evaluation_by_its_dataset_split_and_time():
