@@ -6,6 +6,7 @@ from functools import cached_property
 import numpy as np
 
 from rag.chunks import Chunk
+from rag.device import read_device
 from rag.retrievers.dense.chunk_embedding import ChunkEmbedding
 
 LOCAL_EMBEDDING_MODELS: dict[str, str] = {
@@ -33,6 +34,9 @@ class LocalEmbeddingModel(EmbeddingModel):
     One model of `LOCAL_EMBEDDING_MODELS`, by our name for it: `LocalEmbeddingModel("qwen3-0.6b")`. Downloaded from
     Hugging Face on first use, then cached. Its own configuration adds the marker it was trained with: Qwen3 puts an
     instruction before the question and nothing before a chunk.
+
+    It runs on the device `RAG_DEVICE` names, in float32. In bfloat16, the format Qwen3-Embedding's weights are stored
+    in, two builds of torch gave cosines up to 0.006 apart, enough to swap close chunks; in float32, 0.000001.
     """
 
     def __init__(self, name: str) -> None:
@@ -45,7 +49,7 @@ class LocalEmbeddingModel(EmbeddingModel):
         # Imported here, not at the top: torch takes seconds to load, and BM25 runs and the tests never need it.
         from sentence_transformers import SentenceTransformer
 
-        return SentenceTransformer(self.hugging_face_id, device="cpu")
+        return SentenceTransformer(self.hugging_face_id, device=read_device(), model_kwargs={"dtype": "float32"})
 
     def embed_chunk(self, chunk: Chunk) -> ChunkEmbedding:
         return ChunkEmbedding(chunk, self._model.encode_document(chunk.text))

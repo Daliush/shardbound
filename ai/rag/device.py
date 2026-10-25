@@ -1,4 +1,5 @@
-"""Where the rerankers run: the CPU, unless `RAG_DEVICE` names a GPU (`ai/README.md` says how to set one up)."""
+"""Where the models run, the embedding model and the rerankers: the CPU, unless `RAG_DEVICE` names a GPU (`ai/README.md`
+says how to set one up)."""
 
 import os
 
@@ -13,9 +14,9 @@ def read_device() -> str:
 
 def describe_device() -> str:
     """
-    What an evaluation records of where its rerankers ran: "cpu", or the GPU's name and the torch build it ran on
-    ("AMD Radeon RX 6800 XT, torch 2.14.0+rocm10.1.0"). A GPU build is installed over the locked one, so the commit
-    alone does not say which torch ran.
+    What an evaluation records of where its models ran: "cpu", or the GPU's name and the torch build it ran on
+    ("AMD Radeon RX 6800 XT, torch 2.14.0+rocm10.1.0"). A GPU build is installed apart from the locked one, so the
+    commit alone does not say which torch ran.
     """
     device = read_device()
     if device == CPU:

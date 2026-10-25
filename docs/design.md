@@ -85,6 +85,8 @@
 
 > **v2.34 (October 2026)** — the rerankers can run on a GPU, which `RAG_DEVICE` names, and load their models in float32, the format in which the CPU and a GPU gave the same rankings. Each evaluation records its device and torch build, since latency depends on them (§6.2).
 
+> **v2.35 (October 2026)** — the embedding model too loads in float32, on the device `RAG_DEVICE` names. In bfloat16, a question's vector depended on the build of torch that embedded it, and the dense retriever's rankings with it (§5.2).
+
 ---
 
 ## 0. Glossary (read first)
