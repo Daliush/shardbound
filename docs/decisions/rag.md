@@ -47,7 +47,8 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 
 - **Card names are matched exactly, as whole words, on the lowercased question, with no typo handling** (2026-10-17). A tolerant layer (edit distance, an LLM) becomes a variant once questions with typos can measure it. Plurals ("two Sprouts") are not matched either. Matching while ignoring case was dropped after a review: a letter such as "ſ" matches a name that it cannot then be looked up by.
 - **Vocabulary terms are never matched**: "destroy" and "die" are in most questions.
-- **The refs are attached before the reranker** (2026-10-12), so a chunk found only through a ref is judged like the others. Attaching them again after it, as design §5.2 also says, is still to be measured (below).
+- **The refs are attached before the reranker** (2026-10-12), so a chunk found only through a ref is judged like the others.
+- **And not again after it** (2026-10-23). The reranker has already ranked them among the candidates, and the prompt keeps its 10 chunks. The variant asked on 2026-10-17 was dropped by the maintainer without being measured.
 - What it showed: 95.3% of the relevant chunks among 41.3 candidates on average, against 78.6% in the fused top 20; interaction questions from 0% to 89.8%, multi-step ones from 24% to 73.1%.
 
 ## Step 7: the reranker
@@ -64,7 +65,6 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 
 ## Open
 
-- The refs attached again after the reranker, measured against the refs before it only, on the cited rules that reach the prompt and on the prompt's size (asked 2026-10-17).
 - One Qwen3 model loaded once for every dense-based retriever.
 - A smaller k for RRF *(proposed)*: k = 60 put rule 8.3 17th.
 - A "perfect" retriever, the ceiling *(proposed, not asked for)*.
