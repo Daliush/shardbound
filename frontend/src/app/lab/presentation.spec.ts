@@ -17,8 +17,9 @@ describe('Benchmark ranking', () => {
   });
   it('gives each main pipeline its own color and each variant a muted shade of its family', () => {
     const mains = [pipeline({retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'}),pipeline({retriever:'rrf-bm25-dense',expand:'refs'}),
-      ...['rrf-bm25-dense','bm25','dense-qwen3-0.6b','random'].map(name => run(name,0))];
-    expect(mains.map(runColor)).toEqual(['var(--chart-0)','var(--chart-1)','var(--chart-2)','var(--chart-3)','var(--chart-4)','var(--chart-8)']);
+      ...['rrf-bm25-dense','bm25','dense-qwen3-0.6b'].map(name => run(name,0)),
+      pipeline({retriever:'rrf-bm25-dense',expand:'refs',rerank:'qwen3-reranker-0.6b'}),run('random',0)];
+    expect(mains.map(runColor)).toEqual(['var(--chart-0)','var(--chart-1)','var(--chart-2)','var(--chart-3)','var(--chart-4)','var(--chart-5)','var(--chart-8)']);
     const variants = ['bm25-no-stemming','bm25l','bm25+'].map(name => runColor(run(name,0)));
     expect(variants.every(color => color.startsWith('color-mix(in srgb, var(--chart-3) '))).toBe(true);
     expect(new Set(variants).size).toBe(3);

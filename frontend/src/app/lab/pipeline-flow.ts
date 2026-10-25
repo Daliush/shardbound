@@ -6,8 +6,11 @@ import { Settings } from '../core/settings';
 import { ChunkChip } from './chunk-chip';
 import { PipelineColumn, PipelineSlot, citedChunks, columnSummary, pipelineColumns } from './pipeline-model';
 
-/** Pixels of the drawing: a rank every STEP, columns GAP apart after a GUTTER for the cut labels. */
-const STEP = 7, BAR = 5, TOP = 52, GAP = 40, GUTTER = 28, LINE = 15, MIN_WIDTH = 600;
+/**
+ * Pixels of the drawing: a rank every STEP, columns GAP apart after a GUTTER for the cut labels. A column is never
+ * narrower than MIN_COLUMN, so that its caption ("Both fused · top 20 of 191") stays clear of the next one.
+ */
+const STEP = 7, BAR = 5, TOP = 52, GAP = 40, GUTTER = 28, LINE = 15, MIN_COLUMN = 90;
 const link = linkHorizontal();
 
 /** One question through the pipeline's stages: every chunk at its rank, cited chunks joined from stage to stage. */
@@ -26,7 +29,9 @@ export class PipelineFlow implements OnDestroy {
   private observer?: ResizeObserver; private motion?: gsap.Context;
   protected readonly columns = computed(() => pipelineColumns(this.runs(),this.id(),this.cards()));
   protected readonly cited = computed(() => citedChunks(this.columns()));
-  protected readonly columnWidth = computed(() => (this.width()-GUTTER-GAP*(this.columns().length-1))/Math.max(1,this.columns().length));
+  /** The drawing's width: the canvas's, never narrower than its columns need; past that, the canvas scrolls. */
+  protected readonly drawingWidth = computed(() => Math.max(GUTTER+this.columns().length*(MIN_COLUMN+GAP)-GAP,this.width()));
+  protected readonly columnWidth = computed(() => (this.drawingWidth()-GUTTER-GAP*(this.columns().length-1))/Math.max(1,this.columns().length));
   protected readonly layout = computed(() => this.columns().map((column,index) => {
     const summary = this.cited().length ? columnSummary(column) : [];
     return {column,summary,x:GUTTER+index*(this.columnWidth()+GAP),boxY:TOP+column.slots.length*STEP+10,boxHeight:summary.length*LINE+12};
@@ -48,7 +53,7 @@ export class PipelineFlow implements OnDestroy {
       const canvas = this.canvas()?.nativeElement;
       this.observer?.disconnect();
       if (!canvas || typeof ResizeObserver === 'undefined') return;
-      this.observer = new ResizeObserver(entries => { const width = Math.round(entries[0].contentRect.width); if (width > 0) this.width.set(Math.max(MIN_WIDTH,width)); });
+      this.observer = new ResizeObserver(entries => { const width = Math.round(entries[0].contentRect.width); if (width > 0) this.width.set(width); });
       this.observer.observe(canvas);
     });
     afterRenderEffect(() => {

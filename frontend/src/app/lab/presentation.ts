@@ -8,7 +8,7 @@ const NAMES: Record<string, string> = {
   'bm25-stop-words-removed': 'BM25 · No stop words', 'bm25-robertson': 'BM25 · Robertson',
   'bm25-atire': 'BM25 · ATIRE', bm25l: 'BM25L', 'bm25+': 'BM25+', random: 'Random baseline',
   'rrf-bm25-dense': 'RRF · BM25 + dense', refs: 'References',
-  'minilm-l6': 'MiniLM-L6 cross-encoder',
+  'minilm-l6': 'MiniLM-L6 cross-encoder', 'qwen3-reranker-0.6b': 'Qwen3-Reranker · 0.6B',
 };
 export function variantName(value: string | null): string { return value === null ? 'None' : NAMES[value] ?? value; }
 export function pipelineName(run: EvaluationRun): string {
@@ -37,6 +37,7 @@ export function rankedRuns(runs: EvaluationRun[], metric: string, catalog: Metri
 const MAIN_PIPELINES: Layers[] = [
   {retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'}, {retriever:'rrf-bm25-dense',expand:'refs'},
   {retriever:'rrf-bm25-dense'}, {retriever:'bm25'}, {retriever:'dense-qwen3-0.6b'},
+  {retriever:'rrf-bm25-dense',expand:'refs',rerank:'qwen3-reranker-0.6b'},
 ];
 const VARIANTS = ['bm25-no-stemming','bm25-stop-words-removed','bm25-robertson','bm25-atire','bm25l','bm25+'];
 /** A variant of a main pipeline, drawn quieter than it: the BM25 settings, or BM25 expanded, say. The random floor is neither. */
