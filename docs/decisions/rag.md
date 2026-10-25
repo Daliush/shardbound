@@ -58,6 +58,8 @@ Why the RAG Arbiter is built the way it is, step by step, and what was tried or 
 - **The pipeline is steps, and the evaluation is the tree of every pipeline they make** (2026-10-18), each node computed once and knowing its parent. Rejected first: a retriever computed again for each reranker, a cache inside the retriever, and a ranking handed back to the retriever to cut.
 - **A reranker reads the candidates, never the corpus** (2026-10-18, as design §5.2 says). A retriever hands on its top 20, the expansion its whole list.
 - **MiniLM-L6 comes first** (2026-10-18): 22M parameters, the classic small baseline. Qwen3-Reranker-0.6B and Jev *noul* come later.
+- **Qwen3-Reranker-0.6B is the second reranker** (2026-10-23): a cross-encoder built on a 0.6B LLM, whose score is the logit of "yes" minus the logit of "no". It loads from its official repository with sentence-transformers, like MiniLM, so both extend one `CrossEncoderReranker`; its revision is pinned, since the repository was changed after release to load that way. It is told the task by one generic instruction, "Given a question about a card game's rules, retrieve the rules and cards needed to answer it.", in place of its default one about web search.
+- **The rerankers load their models in float32** (2026-10-25). Qwen3-Reranker's weights are stored in bfloat16, which keeps about 3 significant digits: on the same CPU, the batch size alone moved its scores by about 0.07, enough to swap close candidates. In float32, the CPU and a GPU ranked 6 dev questions identically (scores within 0.0001), whatever the batch size. It costs speed on the CPU: Qwen3-Reranker takes about 50 s a question instead of 17 s.
 
 ## Later
 

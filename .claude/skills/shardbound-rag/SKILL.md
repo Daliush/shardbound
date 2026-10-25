@@ -33,7 +33,7 @@ named cards + top 20 → + refs (one level) → cross-encoder reranker → top 1
 | Chunks, with their refs | | `engine/corpus` (Java), described in `engine/corpus/README.md` |
 | Retriever | random (the floor), BM25 and its variants, dense, RRF | `ai/rag/retrievers/` |
 | Expand | the cards a question names, then the refs | `ai/rag/expanders/refs/` |
-| Rerank | MiniLM-L6, a cross-encoder | `ai/rag/rerankers/` |
+| Rerank | MiniLM-L6 and Qwen3-Reranker-0.6B, cross-encoders | `ai/rag/rerankers/` |
 | Answer | the prompt and its output `{answer, citations, answerable}` | not built yet |
 | Evaluation | the tree of every pipeline, scored and saved | `ai/rag/evaluation/` |
 
@@ -58,7 +58,7 @@ named cards + top 20 → + refs (one level) → cross-encoder reranker → top 1
 `ai/rag` has one package per responsibility, so that anything is found at a glance:
 
 - `__main__.py` only parses the arguments, calls a service and prints. `indexing/` and `evaluation/` hold one service each, one per command.
-- `technique.py` holds `Step` (retriever, expand, rerank; answer later) and `Technique`, which `Retriever`, `Expander` and `Reranker` extend. Each family has its contract, a `registry.py` that names each technique, and one sub-package per technique: `retrievers/bm25/`, `retrievers/dense/`, `retrievers/fusion/`, `expanders/refs/`, `rerankers/minilm/`.
+- `technique.py` holds `Step` (retriever, expand, rerank; answer later) and `Technique`, which `Retriever`, `Expander` and `Reranker` extend. Each family has its contract, a `registry.py` that names each technique, and one sub-package per technique: `retrievers/bm25/`, `retrievers/dense/`, `retrievers/fusion/`, `expanders/refs/`, `rerankers/minilm/`, `rerankers/qwen3/`. Both rerankers extend `rerankers/cross_encoder_reranker.py`.
 - `repository/` is where the RAG keeps things: one repository per table, a contract and its `…Postgres` implementation, with `…InMemory` fakes in the tests, and `evaluation_repository.py`, which writes the evaluation files (a bucket later).
 - `evaluation/`: `evaluation_service.py` builds the tree of pipelines, `stages.py` its nodes, `retrieval_metrics.py` the metrics (each extends `RetrievalMetric` and is one entry of `RETRIEVAL_METRICS`; `metric_description.py` says where its value is, its name, how it is written, what it does, how, and what it represents), `scores.py` the result of a question (`score_question`), the scores of a group of questions (`score_group`), and `GROUP_VALUE_DESCRIPTIONS`, the values only a group has, described (`list_metric_descriptions()` returns them all), `evaluation_json.py` the saved document.
 
@@ -69,7 +69,7 @@ Rules the code keeps:
 - Method names say what they do, verb first. Loops are explicit `for` loops, not comprehensions. Never pass two lists that only line up by position (no `zip`): make one object per item where it is produced, as `EmbeddingModel.embed_chunk(chunk)` returns a `ChunkEmbedding`.
 - Name for the future: what the answer evaluation will share stays generic (`Question`, `Scores`, `Report`, `evaluate`, `MetricDescription`, `score_group`); only what really is retrieval says so (`retrieval_metrics.py`).
 - Every technique reads the chunks from the database, never from `ai/.corpus/chunks.jsonl`, so a run cannot mix two versions of the corpus. The evaluation reads them once; a technique makes no database call per question.
-- The unit tests download no model and start no database: they use fakes (`tests/rag/retrievers/dense/conftest.py`, and a monkeypatched `_model` for the reranker). A real index and evaluation prove the SQL and the models, and CI runs one on each pull request that touches retrieval (`.github/workflows/rag-smoke.yml`): it fails when a run's Recall@10 lost more than 2 points against the evaluation the commit records.
+- The unit tests download no model and start no database: they use fakes (`tests/rag/retrievers/dense/conftest.py`; for the rerankers, a fake `sentence_transformers` module in `tests/rag/rerankers/conftest.py`, or a subclass whose `_load_model` returns a fake model). A real index and evaluation prove the SQL and the models, and CI runs one on each pull request that touches retrieval (`.github/workflows/rag-smoke.yml`): it fails when a run's Recall@10 lost more than 2 points against the evaluation the commit records.
 
 ## The evaluation
 
@@ -88,7 +88,7 @@ Rules the code keeps:
 - **Dense retrieval**: one `LocalEmbeddingModel(name)` per entry of `LOCAL_EMBEDDING_MODELS`; the model adds its own query marker at the encode call. Only the chunks whose text changed are embedded again. A change to an entity means `docker compose down -v`: the tables are never altered.
 - **RRF**: a chunk scores Σ 1 / (60 + rank) over the rankings it is in; on a tie, the first rankings' order wins.
 - **Refs expansion**: the candidates, each once, are the chunks of the cards the question names, then the top 20 it is handed, then the refs of all of these, one level deep. Card names are matched exactly, as whole words, on the lowercased question, the longest first, never with `re.IGNORECASE`. Vocabulary terms are never matched.
-- **Reranker**: `rerank_chunks(question, chunk_ids)` returns every candidate reordered, none dropped; the prompt keeps the first 10. It reads the candidates, never the corpus, and loads its model on the first question.
+- **Reranker**: `rerank_chunks(question, chunk_ids)` returns every candidate reordered, none dropped; the prompt keeps the first 10. It reads the candidates, never the corpus, and loads its model on the first question, in float32 (in bfloat16, Qwen3-Reranker's scores move with the batch size).
 
 ## Docs to keep in sync
 
