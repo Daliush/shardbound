@@ -19,7 +19,7 @@ What each step does and why lives in `docs/design.md` §5.2 and §6, `ai/README.
 
 If `docker version` shows no server, ask the maintainer to start Docker Desktop. Do not reset it.
 
-The rerankers run on the CPU unless `RAG_DEVICE` names a GPU. On the maintainer's machine, a GPU run needs the GPU build of torch installed over the locked one and `UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1` before `evaluate.sh` (`ai/README.md`); the evaluation records the device.
+The rerankers run on the CPU unless `RAG_DEVICE` names a GPU. On the maintainer's machine, the GPU build of torch lives in a second environment, `ai/.venv-gpu`, so a GPU run puts `UV_PROJECT_ENVIRONMENT=.venv-gpu UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1` before `evaluate.sh` (`ai/README.md`); the evaluation records the device. A plain `uv run`, as the test hook does, syncs `ai/.venv` only, so it never touches a GPU run.
 
 ## What a change calls for
 

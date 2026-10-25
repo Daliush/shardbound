@@ -173,19 +173,20 @@ scripts/evaluate.sh random bm25 dense-qwen3-0.6b --description "A first look"
 
 The rerankers run on the CPU unless `RAG_DEVICE` names a GPU. On an AMD Radeon RX 6800 XT, Qwen3-Reranker takes about 1.3 s a question instead of about 50 s on the CPU, and MiniLM-L6 0.065 s instead of 1.15 s (rrf + refs, v2 dev). The retrievers and the embedding model stay on the CPU.
 
-`uv.lock` installs the CPU build of torch. The GPU build is installed by hand over it, and `UV_NO_SYNC=1` stops `uv run` from putting the CPU build back. The tested setup is the RX 6800 XT (target `gfx1030`) on Windows, with AMD's ROCm build of torch:
+`uv.lock` installs the CPU build of torch in `.venv`. The GPU build lives in a second environment, `.venv-gpu`: the locked packages, then the GPU build of torch over them. `UV_PROJECT_ENVIRONMENT` points `uv run` at it, and `UV_NO_SYNC=1` stops `uv run` from putting the CPU build back. `.venv` stays as the lock says, for the tests and the agents' hooks. The tested setup is the RX 6800 XT (target `gfx1030`) on Windows, with AMD's ROCm build of torch:
 
 ```bash
-# from ai/, once: AMD's torch for gfx1030, about 1.1 GB
-uv pip install --index-url https://stable.repo.amd.com/rocm/whl-next/ "torch[device-gfx1030]==2.14.0"
+# from ai/, once: the second environment, then AMD's torch for gfx1030 in it (about 1.1 GB)
+UV_PROJECT_ENVIRONMENT=.venv-gpu uv sync
+VIRTUAL_ENV=.venv-gpu uv pip install --index-url https://stable.repo.amd.com/rocm/whl-next/ "torch[device-gfx1030]==2.14.0"
 # every run on the GPU, from ai/
-UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1 uv run python -m rag evaluate --description "Why it is run"
+UV_PROJECT_ENVIRONMENT=.venv-gpu UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1 uv run python -m rag evaluate --description "Why it is run"
 # or from the root, the index first
-UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1 scripts/evaluate.sh --description "Why it is run"
+UV_PROJECT_ENVIRONMENT=.venv-gpu UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1 scripts/evaluate.sh --description "Why it is run"
 ```
 
 - An AMD GPU is `cuda` too: the ROCm build of torch keeps CUDA's name. Another AMD card needs its own target in place of `gfx1030` ([AMD's list](https://github.com/ROCm/TheRock/blob/main/SUPPORTED_GPUS.md)); an NVIDIA card needs PyTorch's CUDA build instead (not tested here).
 - `HIP_VISIBLE_DEVICES=1` hides the processor's integrated GPU, which ROCm counts first and which the `gfx1030` build cannot run on (`invalid kernel file`). `torch.cuda.get_device_name(i)` gives each device's name.
-- A plain `uv run`, as the tests and the agents' hooks do, puts the CPU build back from uv's cache: install the GPU build again before the next GPU run.
+- After a change to `uv.lock`, run the two commands again: `uv sync` puts the CPU build back in `.venv-gpu` too.
 - The rerankers load their models in float32, the format in which the CPU and the GPU gave the same rankings (scores within 0.0001 on 6 dev questions). In bfloat16, the format Qwen3-Reranker's weights are stored in, the batch size alone moves its scores by about 0.07, enough to swap two close candidates.
 - Each evaluation records where its rerankers ran (`device`: the GPU's name and torch's build), since their latency depends on it and the commit alone does not say which torch ran.
