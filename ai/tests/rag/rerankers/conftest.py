@@ -14,5 +14,7 @@ class RecordingCrossEncoder:
 
 @pytest.fixture
 def sentence_transformers(monkeypatch) -> None:
-    """A fake `sentence_transformers` module, which `_load_cross_encoder` imports instead of the real one (and torch)."""
+    """A fake `sentence_transformers` module, which `_load_cross_encoder` imports instead of the real one (and torch).
+    `RAG_DEVICE` is unset, whatever the shell running the tests says."""
     monkeypatch.setitem(sys.modules, "sentence_transformers", SimpleNamespace(CrossEncoder=RecordingCrossEncoder))
+    monkeypatch.delenv("RAG_DEVICE", raising=False)

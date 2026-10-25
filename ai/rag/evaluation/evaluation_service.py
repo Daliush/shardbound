@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from rag.chunks import Chunk
+from rag.device import describe_device
 from rag.evaluation.code_commit import read_code_commit
 from rag.evaluation.questions import Question, read_questions
 from rag.evaluation.runs import Evaluation, Run
@@ -38,7 +39,7 @@ def evaluate_all(retriever_names: list[str], expander_names: list[str], reranker
     for reranker_name in reranker_names:
         techniques_after_retrieval[Step.RERANK].append(build_reranker(reranker_name, chunks))
     evaluation = Evaluation(version=version, split=split, evaluated_at=evaluated_at, code_commit=code_commit,
-                            description=description, metrics=list_metric_descriptions(),
+                            device=describe_device(), description=description, metrics=list_metric_descriptions(),
                             runs=evaluate_combinations(retriever_names, chunks, techniques_after_retrieval, questions))
     evaluation_repository.save_evaluation(evaluation)
     return evaluation

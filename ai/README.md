@@ -117,6 +117,7 @@ rag/
 │   ├── registry.py             every expander by name
 │   └── refs/                   refs_expander.py (the named cards and the refs)
 ├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common
+├── device.py                   where the rerankers run: read_device() (RAG_DEVICE, "cpu" by default)
 ├── rerankers/
 │   ├── __init__.py             Reranker: rerank_chunks(question, candidate ids) → every candidate, reordered
 │   ├── registry.py             every reranker by name
@@ -146,12 +147,12 @@ rag/
 - **`evaluate` builds the tree of every pipeline** (`stages.py`): each retriever is a node, and under each node, each technique of the next step makes a child, the step skipped makes none. A `Stage` holds its technique, its parent and what it handed on for each question, so going up the parents gives the run's name and what each step did. Every node is computed once and is a run: 6 per retriever with `refs`, `minilm-l6` and `qwen3-reranker-0.6b`, so the benchmark explorer can build any pipeline. A run's list is what its last step handed on: the retriever's whole ranking, the ~41 candidates of the expansion, or the 20 or ~41 a reranker reordered. Each question also keeps how long its pipeline took (`seconds`), and each score block the latency's p50 and p95.
 - **A retrieval metric extends `RetrievalMetric`** and is one entry of `RETRIEVAL_METRICS` (`list_retrieval_metrics()`): `score_question` gives each question its value, `score_group` averages it, and the report table and the evaluation file show it, with no other change. Its key `name.k` is written `{"name": {"k": …}}`, with `mean_` in a group's scores. The values of a group that are not a metric's mean, the number of questions and of candidates, the recall curve and the latency, are computed by `score_group` itself, and described in `GROUP_VALUE_DESCRIPTIONS` beside it. A test fails when a value of the scores has no description.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), the device the rerankers ran on (`"cpu"` or the GPU's name, since their latency depends on it), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## Running the RAG on a new machine
 
-Needs **JDK 21** (the engine writes the chunks), **uv** (Python and its packages), and **Docker** (the database). No GPU: the embedding models run on CPU.
+Needs **JDK 21** (the engine writes the chunks), **uv** (Python and its packages), and **Docker** (the database). No GPU: everything runs on the CPU, and a GPU only speeds up the rerankers (below).
 
 ```bash
 # from the repository root: chunks, database and vectors, in one go
@@ -164,6 +165,27 @@ scripts/evaluate.sh random bm25 dense-qwen3-0.6b --description "A first look"
 
 - `uv` installs the exact versions of `uv.lock`, with the **CPU build of torch** on every platform (`pyproject.toml` points uv at PyTorch's CPU index), about 200 MB instead of 2 GB.
 - The first index run downloads each embedding model once from Hugging Face (Qwen3-Embedding-0.6B: about 1.2 GB) into its cache. On Windows, a warning about symlinks only means the cache copies files instead of linking them. The first evaluation with a reranker downloads its model too: Qwen3-Reranker-0.6B is about 1.2 GB.
-- On the CPU, Qwen3-Reranker takes about 50 s a question, so an evaluation that runs it after every retriever takes hours: name the rerankers (`--rerankers minilm-l6`) to leave it out.
+- On the CPU, Qwen3-Reranker takes about 50 s a question, so an evaluation that runs it after every retriever takes hours: name the rerankers (`--rerankers minilm-l6`) to leave it out, or run them on a GPU (below).
 - The database is local: `docker compose up -d --wait db`, user and password `shardbound`, port 5432. `RAG_DATABASE_URL` points elsewhere, as a SQLAlchemy URL (`postgresql+psycopg://user:password@host:port/database`).
 - The tests need none of this: they use a fake model and an in-memory store, and call no model.
+
+## Running the rerankers on a GPU
+
+The rerankers run on the CPU unless `RAG_DEVICE` names a GPU. On an AMD Radeon RX 6800 XT, Qwen3-Reranker takes about 1.3 s a question instead of about 50 s on the CPU, and MiniLM-L6 0.065 s instead of 1.15 s (rrf + refs, v2 dev). The retrievers and the embedding model stay on the CPU.
+
+`uv.lock` installs the CPU build of torch. The GPU build is installed by hand over it, and `UV_NO_SYNC=1` stops `uv run` from putting the CPU build back. The tested setup is the RX 6800 XT (target `gfx1030`) on Windows, with AMD's ROCm build of torch:
+
+```bash
+# from ai/, once: AMD's torch for gfx1030, about 1.1 GB
+uv pip install --index-url https://stable.repo.amd.com/rocm/whl-next/ "torch[device-gfx1030]==2.14.0"
+# every run on the GPU, from ai/
+UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1 uv run python -m rag evaluate --description "Why it is run"
+# or from the root, the index first
+UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1 scripts/evaluate.sh --description "Why it is run"
+```
+
+- An AMD GPU is `cuda` too: the ROCm build of torch keeps CUDA's name. Another AMD card needs its own target in place of `gfx1030` ([AMD's list](https://github.com/ROCm/TheRock/blob/main/SUPPORTED_GPUS.md)); an NVIDIA card needs PyTorch's CUDA build instead (not tested here).
+- `HIP_VISIBLE_DEVICES=1` hides the processor's integrated GPU, which ROCm counts first and which the `gfx1030` build cannot run on (`invalid kernel file`). `torch.cuda.get_device_name(i)` gives each device's name.
+- A plain `uv run`, as the tests and the agents' hooks do, puts the CPU build back from uv's cache: install the GPU build again before the next GPU run.
+- The rerankers load their models in float32, the format in which the CPU and the GPU gave the same rankings (scores within 0.0001 on 6 dev questions). In bfloat16, the format Qwen3-Reranker's weights are stored in, the batch size alone moves its scores by about 0.07, enough to swap two close candidates.
+- Each evaluation records where its rerankers ran (`device`: the GPU's name and torch's build), since their latency depends on it and the commit alone does not say which torch ran.

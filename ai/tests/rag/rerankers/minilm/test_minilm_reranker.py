@@ -4,7 +4,7 @@ from rag.rerankers.minilm.minilm_reranker import MiniLMReranker
 CHUNKS = [Chunk("8.2", "rule", None, "[8. Effects] Destroy: sends a unit to the graveyard.", (), "r", "h")]
 
 
-def test_loads_its_model_in_float32_on_the_cpu(sentence_transformers):
+def test_loads_its_model_in_float32_on_the_cpu_by_default(sentence_transformers):
     model = MiniLMReranker("minilm-l6", CHUNKS)._load_model()
 
     assert model.hugging_face_id == "cross-encoder/ms-marco-MiniLM-L6-v2"

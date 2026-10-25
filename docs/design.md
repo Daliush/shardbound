@@ -83,6 +83,8 @@
 
 > **v2.33 (October 2026)** — the refs are attached before the reranker only. The reranker has already ranked them among the candidates, so the prompt keeps its 10 chunks, and the rules in it are no longer followed by their refs (§5.2, §6.2).
 
+> **v2.34 (October 2026)** — the rerankers can run on a GPU, which `RAG_DEVICE` names, and load their models in float32, the format in which the CPU and a GPU gave the same rankings. Each evaluation records its device and torch build, since latency depends on them (§6.2).
+
 ---
 
 ## 0. Glossary (read first)
@@ -613,7 +615,7 @@ All configurations except the last one use **the same open base model** (§4.2).
 | Prompt size | 10 chunks after the reranker | 5, 20 |
 | Output | API structured outputs / constrained decoding | prompt only |
 
-The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
+The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the device its models ran on (latency depends on it), the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
 
 ### 6.3 What we measure, and how
 

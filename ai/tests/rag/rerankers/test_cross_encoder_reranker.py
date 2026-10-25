@@ -58,6 +58,15 @@ def test_reads_only_the_candidates_texts_in_the_order_the_retriever_ranked_them(
                                                 "[2. Deck building] A deck contains exactly 30 cards."]]
 
 
+def test_loads_a_cross_encoder_in_float32_on_the_device_rag_device_names(sentence_transformers, monkeypatch):
+    monkeypatch.setenv("RAG_DEVICE", "cuda")
+
+    model = SharedWordsReranker(CHUNKS)._load_cross_encoder("org/model", prompts={"query": "Find it."})
+
+    assert model.hugging_face_id == "org/model"
+    assert model.settings == {"device": "cuda", "model_kwargs": {"dtype": "float32"}, "prompts": {"query": "Find it."}}
+
+
 def test_loads_its_model_once_on_the_first_question_not_when_built():
     reranker = SharedWordsReranker(CHUNKS)
     assert reranker.loaded_models == []

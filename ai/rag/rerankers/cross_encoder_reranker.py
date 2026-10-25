@@ -4,6 +4,7 @@ from abc import abstractmethod
 from functools import cached_property
 
 from rag.chunks import Chunk
+from rag.device import read_device
 from rag.rerankers import Reranker
 
 
@@ -42,11 +43,11 @@ class CrossEncoderReranker(Reranker):
 
     def _load_cross_encoder(self, hugging_face_id: str, **settings):
         """
-        The `CrossEncoder` that `hugging_face_id` names, on the CPU, in float32: the format in which the rankings do not
-        depend on how many candidates are scored at once. In bfloat16, the format Qwen3-Reranker's weights are stored
-        in, the batch size alone moves its scores by about 0.07.
+        The `CrossEncoder` that `hugging_face_id` names, on the device `RAG_DEVICE` names, in float32: the format in
+        which the CPU and a GPU gave the same rankings, however many candidates were scored at once. In bfloat16, the
+        format Qwen3-Reranker's weights are stored in, the batch size alone moves its scores by about 0.07.
         """
         # Imported here, not at the top: torch takes seconds to load, and BM25 runs and the tests never need it.
         from sentence_transformers import CrossEncoder
 
-        return CrossEncoder(hugging_face_id, device="cpu", model_kwargs={"dtype": "float32"}, **settings)
+        return CrossEncoder(hugging_face_id, device=read_device(), model_kwargs={"dtype": "float32"}, **settings)

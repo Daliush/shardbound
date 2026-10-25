@@ -3,7 +3,7 @@ An evaluation as JSON, the format the Java backend serves to the benchmark explo
 storage writes this same document:
 
 {"dataset": {"version": "v1", "split": "dev"}, "evaluated_at": "2026-10-15T10:42:07Z", "code": "45c56b9",
- "description": "Step 3: BM25 and its variants",
+ "device": "cpu", "description": "Step 3: BM25 and its variants",
  "metrics": [{"path": "mean_recall_at.10", "name": "Recall@10", "display": "share", "what": …, "how": …,
               "represents": …}, …],
  "runs": [{"layers": {"retriever": "bm25", "answer": null},
@@ -36,6 +36,7 @@ def convert_evaluation_to_json(evaluation: Evaluation) -> str:
     document = {"dataset": {"version": evaluation.version, "split": evaluation.split},
                 "evaluated_at": evaluation.evaluated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "code": evaluation.code_commit,
+                "device": evaluation.device,
                 "description": evaluation.description,
                 "metrics": convert_metric_descriptions(evaluation.metrics),
                 "runs": runs}
