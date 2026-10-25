@@ -27,6 +27,7 @@ describe('Metric catalog', () => {
 
     expect([catalog.isContext('mean_candidate_count'),catalog.isContext('question_count'),catalog.isContext('mean_recall_at.10')]).toEqual([true,true,false]);
     expect([catalog.lowerIsBetter('latency_p95_seconds'),catalog.lowerIsBetter('mean_reciprocal_rank')]).toEqual([true,false]);
+    expect([catalog.isTime('latency_p95_seconds'),catalog.isTime('mean_recall_at.10')]).toEqual([true,false]);
     expect([catalog.isBounded('mean_recall_at.20'),catalog.isBounded('mean_reciprocal_rank'),catalog.isBounded('mean_candidate_count')]).toEqual([true,true,false]);
     expect([catalog.unit('mean_recall_at.10'),catalog.unit('latency_p50_seconds'),catalog.unit('mean_reciprocal_rank')]).toEqual(['%','s','value']);
   });

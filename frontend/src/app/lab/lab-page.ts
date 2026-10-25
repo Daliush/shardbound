@@ -18,7 +18,7 @@ import { MetricGuide } from './metric-guide';
 import { CombinationBuilder } from './combination-builder';
 import { ComingSoon } from './coming-soon';
 import { LabMotion } from './lab-motion';
-import { pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
+import { deviceName, pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
 import { RecallChart } from './recall-chart';
 import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './url-state';
 
@@ -38,6 +38,7 @@ export class LabPage implements OnDestroy {
   protected readonly loading = signal(true); protected readonly error = signal(''); protected readonly copied = signal(false);
   protected readonly versions = DATASET_VERSIONS; protected readonly tabs = LAB_TABS;
   protected readonly key = runKey; protected readonly name = pipelineName; protected readonly humanize = humanize; protected readonly generic = generic;
+  protected readonly deviceName = deviceName;
   protected readonly at = atPath; protected readonly kind = pipelineKind;
   protected readonly search = signal('');
   protected readonly copyMessage = signal('');
@@ -78,7 +79,7 @@ export class LabPage implements OnDestroy {
     }
     return matching.sort((a,b) => a.question_id.localeCompare(b.question_id));
   });
-  protected readonly extraReportFields = computed(() => Object.entries(this.report() ?? {}).filter(([key]) => !['dataset','evaluated_at','code','runs','description','metrics'].includes(key)));
+  protected readonly extraReportFields = computed(() => Object.entries(this.report() ?? {}).filter(([key]) => !['dataset','evaluated_at','code','device','runs','description','metrics'].includes(key)));
   protected readonly extraRunFields = computed(() => {
     const run = this.selected();
     if (!run) return [];

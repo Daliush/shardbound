@@ -41,7 +41,9 @@ export class MetricCatalog {
   isShare(path: string): boolean { return this.display(path) === 'share'; }
   isBounded(path: string): boolean { return this.isShare(path) || this.display(path) === 'score'; }
   isContext(path: string): boolean { return this.display(path) === 'count'; }
-  lowerIsBetter(path: string): boolean { return this.display(path) === 'seconds'; }
+  /** A time, which depends on the machine it was measured on. */
+  isTime(path: string): boolean { return this.display(path) === 'seconds'; }
+  lowerIsBetter(path: string): boolean { return this.isTime(path); }
   unit(path: string): string { return this.isShare(path) ? '%' : this.display(path) === 'seconds' ? 's' : 'value'; }
 
   /** The top of a bar's scale: 1 for a share or a score, the largest value otherwise. */

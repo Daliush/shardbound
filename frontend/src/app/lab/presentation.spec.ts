@@ -1,6 +1,6 @@
 import { EvaluationRun, Layers } from '../api/evaluation';
 import { MetricCatalog } from './metric-catalog';
-import { isVariant, matchingRun, pipelineKind, rankedRuns, runColor } from './presentation';
+import { deviceName, isVariant, matchingRun, pipelineKind, rankedRuns, runColor } from './presentation';
 
 function run(retriever: string, value: number | null, answer: string | null = null): EvaluationRun {
   return {layers:{retriever,answer},scores:{overall:{accuracy:value,latency_p50_seconds:value},by_category:{}},questions:[]};
@@ -31,6 +31,11 @@ describe('Benchmark ranking', () => {
     expect(rankedRuns([run('random',1),reranked,run('bm25',.5)],'accuracy',catalog).map(row => row.run.layers['rerank'] ?? row.run.layers['retriever'])).toEqual(['minilm-l6','bm25']);
     expect([pipelineKind(run('random',0)),pipelineKind(reranked)]).toEqual(['Reference floor','Random order + reranking']);
     expect(pipelineKind(pipeline({retriever:'rrf-bm25-dense',expand:'refs'}))).toBe('Hybrid retrieval + references');
+  });
+  it('names the device an evaluation ran on, the CPU for a file older than the device', () => {
+    const evaluation = {dataset:{version:'v2',split:'dev'},evaluated_at:'2026-10-25T18:59:43Z',code:'181b910',runs:[]};
+    expect([deviceName(evaluation),deviceName({...evaluation,device:'cpu'}),deviceName({...evaluation,device:'AMD Radeon RX 6800 XT, torch 2.14.0+rocm10.1.0'})])
+      .toEqual(['CPU','CPU','AMD Radeon RX 6800 XT']);
   });
   it('does not manufacture scores for a combination whose components exist separately', () => {
     const runs = [run('dense',.8,'model-a'),run('bm25',.5,null)];
