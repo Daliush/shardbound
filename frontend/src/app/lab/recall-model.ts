@@ -5,6 +5,10 @@ export function recallCurve(fields: Fields): number[] {
   return fields['mean_recall_curve'] as number[];
 }
 /** Once a run exhausts its candidates, recall stays at its reported ceiling. */
+/** How far the chunk budget's slider is filled, from 1 chunk ("0%") to the limit ("100%"). */
+export function budgetFill(k: number, limit: number): string {
+  return (limit > 1 ? (k-1)/(limit-1)*100 : 100) + '%';
+}
 export function recallAt(curve: number[], k: number): number {
   return curve[Math.min(curve.length,Math.max(1,Math.round(k)))-1];
 }

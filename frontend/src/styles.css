@@ -13,7 +13,7 @@
 html { background: var(--obsidian-950); color: var(--text); font: 15px/1.5 var(--font-ui); scrollbar-color: var(--line) var(--obsidian-950); }
 body { margin: 0; }
 button, input, select, textarea { font: inherit; }
-button, .button, select, input:not([type='checkbox']):not([type='radio']) { min-height: 44px; border: 1px solid var(--line); border-radius: 6px; background: var(--obsidian-800); color: var(--text); padding: .65rem 1rem; }
+button, .button, select, input:not([type='checkbox']):not([type='radio']):not([type='range']) { min-height: 44px; border: 1px solid var(--line); border-radius: 6px; background: var(--obsidian-800); color: var(--text); padding: .65rem 1rem; }
 button, .button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-weight: 500; text-decoration: none; touch-action: manipulation; }
 button:not(:disabled), select, .button { cursor: pointer; }
 button:hover:not(:disabled), .button:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--obsidian-800)); }
