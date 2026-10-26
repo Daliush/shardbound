@@ -42,6 +42,8 @@ The dataset's manifest records the engine commit and `sources_clean` (no change 
 2. Build the dataset; commit it, with the CLI's new default version.
 3. Run `evaluate.sh`; commit the report, and the status of `AGENTS.md` if its numbers moved.
 
+A pull request that changes a file retrieval depends on (`ai/rag/gate/retrieval_inputs.py`) must commit an evaluation recorded at its last such change, from a branch up to date with main: CI's "Evaluation is fresh" refuses it otherwise, and `uv run python -m rag check-evaluation`, from `ai/`, says so before pushing.
+
 ## Checking a run
 
 - **Dataset**: compare the engine's five files with the base version's, by id. Only the questions you expect should be new, gone or changed. "N reworded now" counts the new or changed templates; read each new wording against its template (the arrival order, a number, who acts). The manifest should say `"sources_clean": true`. `uv run pytest` in `ai/` checks every version.

@@ -66,7 +66,8 @@ I don't count on the agent remembering a rule. When a rule matters, a test, a ho
 | A review agent tries to change a file | A hook lets only reading commands through |
 | A doc points to a file that moved | `scripts/check-doc-paths.py`, in CI |
 | A bad commit message | A git hook, and CI |
-| A change lowers retrieval recall | The RAG smoke evaluation fails the pull request |
+| A change lowers retrieval recall | The RAG gate compares the baseline with main's evaluation |
+| A change to retrieval comes without its evaluation | The RAG gate refuses the pull request |
 
 ## Three mistakes, and what caught them
 
