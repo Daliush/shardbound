@@ -58,10 +58,10 @@ export function runColor(run: EvaluationRun): string {
   const shade = known >= 0 ? known : [...runKey(run.layers)].reduce((sum,char) => sum+char.charCodeAt(0),0)%VARIANTS.length;
   return 'color-mix(in srgb, var(--chart-' + (family >= 0 ? family : 7) + ') ' + (62-shade*7) + '%, var(--muted))';
 }
-/** Where an evaluation's models ran, in short: "CPU", or the GPU's name without torch's build. A file older than the device ran on the CPU. */
+/** Where an evaluation's models ran, in short: "CPU", or the GPU's name, without torch's build. A file older than the device ran on the CPU. */
 export function deviceName(evaluation: Evaluation): string {
-  const device = evaluation.device ?? 'cpu';
-  return device === 'cpu' ? 'CPU' : device.split(', torch ')[0];
+  const device = (evaluation.device ?? 'cpu').split(', torch ')[0];
+  return device === 'cpu' ? 'CPU' : device;
 }
 export function matchingRun(runs: EvaluationRun[], layers: Layers): EvaluationRun | undefined {
   return runs.find(run => hasLayers(run,layers));

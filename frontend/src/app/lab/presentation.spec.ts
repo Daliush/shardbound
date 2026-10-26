@@ -34,8 +34,8 @@ describe('Benchmark ranking', () => {
   });
   it('names the device an evaluation ran on, the CPU for a file older than the device', () => {
     const evaluation = {dataset:{version:'v2',split:'dev'},evaluated_at:'2026-10-25T18:59:43Z',code:'181b910',runs:[]};
-    expect([deviceName(evaluation),deviceName({...evaluation,device:'cpu'}),deviceName({...evaluation,device:'AMD Radeon RX 6800 XT, torch 2.14.0+rocm10.1.0'})])
-      .toEqual(['CPU','CPU','AMD Radeon RX 6800 XT']);
+    expect([deviceName(evaluation),deviceName({...evaluation,device:'cpu'}),deviceName({...evaluation,device:'cpu, torch 2.14.1+cpu'}),
+      deviceName({...evaluation,device:'AMD Radeon RX 6800 XT, torch 2.14.0+rocm10.1.0'})]).toEqual(['CPU','CPU','CPU','AMD Radeon RX 6800 XT']);
   });
   it('does not manufacture scores for a combination whose components exist separately', () => {
     const runs = [run('dense',.8,'model-a'),run('bm25',.5,null)];
