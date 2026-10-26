@@ -21,3 +21,7 @@ def test_loads_its_model_in_float32_on_the_device_rag_device_names(monkeypatch):
 
     assert model.hugging_face_id == "Qwen/Qwen3-Embedding-0.6B"
     assert model.settings == {"device": "cuda", "model_kwargs": {"dtype": "float32"}}
+
+
+def test_keeps_its_vectors_under_its_name_and_format():
+    assert LocalEmbeddingModel("qwen3-0.6b").index_key == "qwen3-0.6b/float32"

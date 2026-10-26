@@ -16,9 +16,17 @@ LOCAL_EMBEDDING_MODELS: dict[str, str] = {
 
 
 class EmbeddingModel(ABC):
-    """Turns texts into vectors. A question's vector is comparable with the chunks' only if one model made both."""
+    """
+    Turns texts into vectors. A question's vector is comparable with the chunks' only if one model, run the same way,
+    made both.
+    """
 
     name: str
+
+    @property
+    def index_key(self) -> str:
+        """What the index keeps this model's vectors under: its name, unless the way it runs changes its vectors."""
+        return self.name
 
     @abstractmethod
     def embed_chunk(self, chunk: Chunk) -> ChunkEmbedding:
@@ -39,9 +47,17 @@ class LocalEmbeddingModel(EmbeddingModel):
     in, two builds of torch gave cosines up to 0.006 apart, enough to swap close chunks; in float32, 0.000001.
     """
 
+    FORMAT = "float32"
+
     def __init__(self, name: str) -> None:
         self.name = name
         self.hugging_face_id = LOCAL_EMBEDDING_MODELS[name]
+
+    @property
+    def index_key(self) -> str:
+        """Its name and its format, "qwen3-0.6b/float32": vectors made in another format are never reused, and the
+        index embeds every chunk again."""
+        return f"{self.name}/{self.FORMAT}"
 
     @cached_property
     def _model(self):
@@ -49,7 +65,7 @@ class LocalEmbeddingModel(EmbeddingModel):
         # Imported here, not at the top: torch takes seconds to load, and BM25 runs and the tests never need it.
         from sentence_transformers import SentenceTransformer
 
-        return SentenceTransformer(self.hugging_face_id, device=read_device(), model_kwargs={"dtype": "float32"})
+        return SentenceTransformer(self.hugging_face_id, device=read_device(), model_kwargs={"dtype": self.FORMAT})
 
     def embed_chunk(self, chunk: Chunk) -> ChunkEmbedding:
         return ChunkEmbedding(chunk, self._model.encode_document(chunk.text))

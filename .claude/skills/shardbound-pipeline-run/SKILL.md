@@ -30,7 +30,7 @@ The models, the embedding model and the rerankers, run on the CPU unless `RAG_DE
 | A card | The chunks and a new dataset version: factual questions and scenarios read the cards. |
 | A recipe, or a written question | A new dataset version. |
 | A retriever or a metric (`ai/rag`) | `evaluate.sh` alone. |
-| An entity (`ai/rag/repository/entities.py`), or an embedding model's settings | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, and a chunk's hash does not see the model's settings, so the database starts empty and every chunk is embedded again. |
+| An entity (`ai/rag/repository/entities.py`) | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, so the database starts empty and every chunk is embedded again. An embedding model's new format needs no reset: its vectors are kept under another key, and every chunk is embedded again. |
 
 A built dataset version is frozen. A change makes a new version on the previous one (`build-dataset.sh v3 --base v2`): an unchanged question keeps its wording and its side of the split, so only new or changed questions go to Luna. `rag evaluate` reads the version that `ai/rag/__main__.py` names by default; move that default, and `AGENTS.md`'s status, to the new version.
 
