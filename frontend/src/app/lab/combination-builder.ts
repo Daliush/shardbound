@@ -85,6 +85,7 @@ export class CombinationBuilder {
     if (value === null) return layer === 'answer' ? 'Retrieval only · no answer generation' : layer === 'rerank' ? 'No reranking · in retrieval order' : layer === 'expand' ? 'No expansion · the retrieved chunks only' : 'Skip this component';
     if (value === 'random') return 'Random selection · reference floor';
     if (value === 'minilm-l6') return 'Cross-encoder · reads the question with each candidate';
+    if (value === 'qwen3-reranker-0.6b') return 'Cross-encoder built on an LLM · told the task, judges each candidate';
     if (value === 'refs') return 'The cards the question names and the rules every chunk refers to';
     if (value.startsWith('rrf')) return 'BM25 and dense retrieval fused by rank';
     if (value.startsWith('dense')) return 'Semantic search with embeddings';

@@ -3,7 +3,7 @@ import { EvaluationRun } from '../api/evaluation';
 import { candidateSummary } from './metrics';
 import { MetricCatalog } from './metric-catalog';
 import { rankedRuns, runColor } from './presentation';
-import { rankAtBudget, recallAt, recallCurve, curvePath } from './recall-model';
+import { budgetFill, rankAtBudget, recallAt, recallCurve, curvePath } from './recall-model';
 import { RecallChart } from './recall-chart';
 
 function run(retriever: string, curve?: number[], count = 191): EvaluationRun {
@@ -31,6 +31,9 @@ describe('Report metric semantics', () => {
 });
 
 describe('Recall at equal budgets', () => {
+  it('fills the budget slider from the first chunk to the limit', () => {
+    expect([budgetFill(1,41),budgetFill(21,41),budgetFill(41,41),budgetFill(1,1)]).toEqual(['0%','50%','100%','100%']);
+  });
   it('uses k minus one and clamps at the ceiling', () => {
     expect(recallAt([.1,.4,.7],1)).toBe(.1);
     expect(recallAt([.1,.4,.7],2)).toBe(.4);

@@ -27,15 +27,16 @@ def build_evaluation(retrievers: list[str]) -> Evaluation:
     recall = MetricDescription(path="mean_recall_at.10", name="Recall@10", display=Display.SHARE,
                                what="The share…", how="The number…", represents="How much…")
     return Evaluation(version="v1", split="dev", evaluated_at=EVALUATED_AT, code_commit="45c56b9",
-                      description="Step 3: BM25", metrics=[recall], runs=runs)
+                      device="cpu", description="Step 3: BM25", metrics=[recall], runs=runs)
 
 
-def test_writes_the_dataset_the_time_the_code_and_why_once_then_each_run_by_its_layers_and_description():
+def test_writes_the_dataset_the_time_the_code_the_device_and_why_once_then_each_run_by_its_layers_and_description():
     document = json.loads(convert_evaluation_to_json(build_evaluation(["random", "bm25"])))
 
     assert document["dataset"] == {"version": "v1", "split": "dev"}
     assert document["evaluated_at"] == "2026-10-15T10:42:07Z"
     assert document["code"] == "45c56b9"
+    assert document["device"] == "cpu"
     assert document["description"] == "Step 3: BM25"
     assert [run["layers"] for run in document["runs"]] == [
         {"retriever": "random", "expand": None, "rerank": None, "answer": None},
@@ -67,7 +68,7 @@ def test_writes_exactly_the_fields_of_a_score_and_of_a_question_in_a_fixed_order
 def test_writes_every_metric_description_once_before_the_runs_its_display_by_name():
     document = json.loads(convert_evaluation_to_json(build_evaluation(["random", "bm25"])))
 
-    assert list(document) == ["dataset", "evaluated_at", "code", "description", "metrics", "runs"]
+    assert list(document) == ["dataset", "evaluated_at", "code", "device", "description", "metrics", "runs"]
     assert document["metrics"] == [{"path": "mean_recall_at.10", "name": "Recall@10", "display": "share",
                                     "what": "The share…", "how": "The number…", "represents": "How much…"}]
 

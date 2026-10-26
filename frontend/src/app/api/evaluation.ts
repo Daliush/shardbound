@@ -45,6 +45,8 @@ export interface Evaluation {
   dataset: { version: string; split: string };
   evaluated_at: string;
   code: string;
+  /** Where the models ran: "cpu" or the GPU's name, then torch's build; absent from the files written before, all on the CPU. */
+  device?: string;
   /** Every value of the scores, described; absent from the files written before each value described itself. */
   metrics?: MetricDescription[];
   runs: EvaluationRun[];

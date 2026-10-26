@@ -57,6 +57,16 @@ describe('Pipeline flow', () => {
     expect(rows).toEqual([['#29','#21'],['#3','#24'],['#155','—']]);
     expect(host.querySelector('.rank-table tbody tr td.in-prompt')?.textContent).toBe('#3');
   });
+  it('widens the drawing with its columns, so that no caption runs into the next one', async () => {
+    const stages: EvaluationRun['layers'][] = [{retriever:'bm25'},{retriever:'dense-qwen3-0.6b'},{retriever:'rrf-bm25-dense'},{retriever:'rrf-bm25-dense',expand:'refs'},
+      {retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'},{retriever:'rrf-bm25-dense',expand:'refs',rerank:'qwen3-reranker-0.6b'}];
+    const fixture = TestBed.createComponent(PipelineFlow);
+    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',stages.map(layers => run(layers,top,{'8.5':3},25)));
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('[data-flow-stage]')).toHaveLength(6);
+    expect(host.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 768 ' + host.querySelector('svg')?.getAttribute('height'));
+  });
   it('explains that an unanswerable question cites nothing', async () => {
     const fixture = TestBed.createComponent(PipelineFlow);
     fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[run({retriever:'bm25'},top,{},156)]);

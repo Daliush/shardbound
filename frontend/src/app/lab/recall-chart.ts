@@ -6,7 +6,7 @@ import { isFloor, runKey } from './layer-model';
 import { atPath, candidateSummary, humanize } from './metrics';
 import { MetricCatalog } from './metric-catalog';
 import { isVariant, pipelineName, runColor } from './presentation';
-import { curvePath, rankAtBudget, recallAt, recallCurve } from './recall-model';
+import { budgetFill, curvePath, rankAtBudget, recallAt, recallCurve } from './recall-model';
 import { LabMotion } from './lab-motion';
 
 @Component({
@@ -55,6 +55,7 @@ export class RecallChart implements OnDestroy {
   protected readonly maximum = computed(() => Math.max(1,...this.all().map(series => series.curve.length)));
   protected readonly limit = computed(() => this.full() ? this.maximum() : Math.min(70,this.maximum()));
   protected readonly k = computed(() => Math.min(this.limit(),this.budget()));
+  protected readonly progress = computed(() => budgetFill(this.k(),this.limit()));
   protected readonly sample = computed(() => {
     const scores = this.category() ? this.runs()[0]?.scores.by_category[this.category()] : this.runs()[0]?.scores.overall;
     return atPath(scores,'question_count');

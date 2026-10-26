@@ -1,4 +1,4 @@
-import { EvaluationRun, Layers } from '../api/evaluation';
+import { Evaluation, EvaluationRun, Layers } from '../api/evaluation';
 import { atPath } from './metrics';
 import { MetricCatalog } from './metric-catalog';
 import { isFloor, runKey } from './layer-model';
@@ -8,7 +8,7 @@ const NAMES: Record<string, string> = {
   'bm25-stop-words-removed': 'BM25 · No stop words', 'bm25-robertson': 'BM25 · Robertson',
   'bm25-atire': 'BM25 · ATIRE', bm25l: 'BM25L', 'bm25+': 'BM25+', random: 'Random baseline',
   'rrf-bm25-dense': 'RRF · BM25 + dense', refs: 'References',
-  'minilm-l6': 'MiniLM-L6 cross-encoder',
+  'minilm-l6': 'MiniLM-L6 cross-encoder', 'qwen3-reranker-0.6b': 'Qwen3-Reranker · 0.6B',
 };
 export function variantName(value: string | null): string { return value === null ? 'None' : NAMES[value] ?? value; }
 export function pipelineName(run: EvaluationRun): string {
@@ -37,6 +37,7 @@ export function rankedRuns(runs: EvaluationRun[], metric: string, catalog: Metri
 const MAIN_PIPELINES: Layers[] = [
   {retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'}, {retriever:'rrf-bm25-dense',expand:'refs'},
   {retriever:'rrf-bm25-dense'}, {retriever:'bm25'}, {retriever:'dense-qwen3-0.6b'},
+  {retriever:'rrf-bm25-dense',expand:'refs',rerank:'qwen3-reranker-0.6b'},
 ];
 const VARIANTS = ['bm25-no-stemming','bm25-stop-words-removed','bm25-robertson','bm25-atire','bm25l','bm25+'];
 /** A variant of a main pipeline, drawn quieter than it: the BM25 settings, or BM25 expanded, say. The random floor is neither. */
@@ -56,6 +57,11 @@ export function runColor(run: EvaluationRun): string {
   const known = hasLayers(run,{retriever}) ? VARIANTS.indexOf(retriever) : -1;
   const shade = known >= 0 ? known : [...runKey(run.layers)].reduce((sum,char) => sum+char.charCodeAt(0),0)%VARIANTS.length;
   return 'color-mix(in srgb, var(--chart-' + (family >= 0 ? family : 7) + ') ' + (62-shade*7) + '%, var(--muted))';
+}
+/** Where an evaluation's models ran, in short: "CPU", or the GPU's name, without torch's build. A file older than the device ran on the CPU. */
+export function deviceName(evaluation: Evaluation): string {
+  const device = (evaluation.device ?? 'cpu').split(', torch ')[0];
+  return device === 'cpu' ? 'CPU' : device;
 }
 export function matchingRun(runs: EvaluationRun[], layers: Layers): EvaluationRun | undefined {
   return runs.find(run => hasLayers(run,layers));

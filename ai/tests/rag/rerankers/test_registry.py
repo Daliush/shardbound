@@ -6,7 +6,7 @@ CHUNKS = [Chunk("8.2", "rule", None, "[8. Effects] **Destroy**: sends a unit to 
 
 
 def test_names_every_reranker():
-    assert list_reranker_names() == ["minilm-l6"]
+    assert list_reranker_names() == ["minilm-l6", "qwen3-reranker-0.6b"]
 
 
 def test_builds_a_reranker_by_its_name_and_gives_it_that_name():

@@ -3,8 +3,8 @@
   <h3 id="pipeline-flow-title">How the pipeline found its sources</h3>
   <p class="flow-intro">Each bar is a chunk at its rank. Cited chunks are joined from stage to stage. The first 10 ranks go into the prompt; the reranker's job is to lift the cited chunks above that line.</p>
   <div #canvas class="flow-canvas">
-    <svg [attr.viewBox]="'0 0 ' + width() + ' ' + height()" [attr.height]="height()" role="img" [attr.aria-label]="description()">
-      @for (cut of cuts(); track cut.rank) { <line [attr.x1]="gutter" [attr.x2]="width()" [attr.y1]="cut.y" [attr.y2]="cut.y" class="cut" [class.prompt]="cut.rank === 10" /><text [attr.x]="gutter - 6" [attr.y]="cut.y" class="cut-label">{{ cut.rank }}</text> }
+    <svg [attr.viewBox]="'0 0 ' + drawingWidth() + ' ' + height()" [style.min-width.px]="drawingWidth()" [attr.height]="height()" role="img" [attr.aria-label]="description()">
+      @for (cut of cuts(); track cut.rank) { <line [attr.x1]="gutter" [attr.x2]="drawingWidth()" [attr.y1]="cut.y" [attr.y2]="cut.y" class="cut" [class.prompt]="cut.rank === 10" /><text [attr.x]="gutter - 6" [attr.y]="cut.y" class="cut-label">{{ cut.rank }}</text> }
       @for (item of links(); track item.key) { <path [attr.d]="item.path" class="link" [class.lit]="focused() === item.chunk" [class.dim]="focused() !== null && focused() !== item.chunk" data-flow-link /> }
       @for (item of layout(); track item.column.stage.label) {
         <g data-flow-stage>

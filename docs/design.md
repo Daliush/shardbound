@@ -81,6 +81,14 @@
 >
 > **v2.32 (October 2026)** — every run also gets binary nDCG@10 and @20: every cited chunk gains 1, discounted by its rank. It explains how high the cited chunks sit; Recall@10 still decides. Each metric is a class that scores one question and describes itself, and every evaluation file keeps the descriptions: what each value does, how it is computed and what it represents. The lab reads them from the file and shows them all on its "Our metrics" page (§6.3, §8.2).
 
+> **v2.33 (October 2026)** — the refs are attached before the reranker only. The reranker has already ranked them among the candidates, so the prompt keeps its 10 chunks, and the rules in it are no longer followed by their refs (§5.2, §6.2).
+
+> **v2.34 (October 2026)** — the rerankers can run on a GPU, which `RAG_DEVICE` names, and load their models in float32, the format in which the CPU and a GPU gave the same rankings on 6 dev questions. Each evaluation records its device and torch build, since latency depends on them (§6.2).
+
+> **v2.35 (October 2026)** — the embedding model too loads in float32, on the device `RAG_DEVICE` names. In bfloat16, a question's vector depended on the build of torch that embedded it, and the dense retriever's rankings with it (§5.2).
+
+> **v2.36 (October 2026)** — Qwen3-Reranker-0.6B joins MiniLM-L6 as a variant of the reranker. On v2 dev, it ties at 10 (70.7% of the cited chunks, against 71.1%), puts more in its 20 (86.7% against 81.3%) and takes ten times as long, so MiniLM-L6 stays the baseline. Every model's revision is pinned, and the index keeps a model's vectors under its name and format, so that a change of format embeds every chunk again (§5.2, §6.2).
+
 ---
 
 ## 0. Glossary (read first)
@@ -442,12 +450,12 @@ The Arbiter exists in several versions, and **this is exactly what the evaluatio
   question ─┬→ card names found     → their card chunks
             ├→ BM25                 → list A ┐
             └→ embedding → cosine   → list B ┘→ RRF (k = 60) → top ~20
-  named cards + top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10, with their refs → prompt
+  named cards + top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10 → prompt
   ```
 
-  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The cards a question names are found by their exact names, as whole words, whatever their case, and join the top ~20, so that their refs are followed too; a misspelt name is not caught yet. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them).
+  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The cards a question names are found by their exact names, as whole words, whatever their case, and join the top ~20, so that their refs are followed too; a misspelt name is not caught yet. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped, and not again after it: the reranker has already ranked them among the candidates, and the prompt keeps its 10 chunks. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them). Every model, the embedding model and the rerankers, loads in float32 at a pinned revision, on the CPU unless `RAG_DEVICE` names a GPU: in bfloat16, the format the Qwen3 models' weights are stored in, the rankings moved with the batch size and with the build of torch.
 - **Storage**: Postgres + pgvector, the RAG's only source of chunks (the engine's `chunks.jsonl` is only the handoff the index reads), two tables: one row per chunk (its text and refs), and one row per chunk and embedding model (its vector), so several models' vectors sit side by side and are compared without re-embedding; with 191 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit. When the FastAPI service arrives (§5.5), indexing becomes one of its endpoints and the handoff file goes: the engine posts its chunks once its batch is done, and the service saves them, answers `202 Accepted` at once and embeds the changed ones **asynchronously**, in the background, since embedding takes about a minute on CPU (longer on a model's first download) and the engine must not wait on it.
-- **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order, each followed by its refs), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
+- **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
 - **Output**: one schema for every question, `{answer, citations, answerable}`. `answer` is the natural-language text the user reads, with the citations shown as links: nobody sees JSON. `citations` lists the rule and card IDs in the order they apply. `answerable` lets the Arbiter abstain. Structured outputs through the API for `api+rag`, constrained decoding for local models, validated with Pydantic (one retry; format failures are measured).
 - **Abstention**: the `answerable` field is the baseline; a threshold on the best reranker score (no model call) and Jev *noul* are variants (experiment 5, §6.4).
 - **Prompt injection**: the Arbiter has no tools, no secrets and only our own sources, so an injection can only make it say something wrong to its own user. Tags, the output schema, the router's `off_topic` class and a few adversarial questions in the dataset are enough; no guard model.
@@ -602,16 +610,16 @@ All configurations except the last one use **the same open base model** (§4.2).
 |---|---|---|
 | Chunk prefix | heading path, from a parser | contextual retrieval: once, at indexing, an LLM writes one or two sentences that situate each chunk in its document |
 | Retrieval | hybrid, fused by RRF | BM25 only, embeddings only |
-| Embedding model | Qwen3-Embedding-0.6B, on CPU | other local models, each one entry of a registry |
+| Embedding model | Qwen3-Embedding-0.6B, in float32, on the CPU unless `RAG_DEVICE` names a GPU | other local models, each one entry of a registry |
 | BM25 | Lucene formula, English stemming, stop words kept, k1 1.5, b 0.75 | no stemming, stop words removed, the Robertson, ATIRE, BM25L and BM25+ formulas |
-| Expansion | written cross-references | none; before the reranker only |
+| Expansion | written cross-references, before the reranker | none |
 | Card names | exact, whole words, whatever the case | tolerant of typos (once questions with typos can measure it) |
-| Reranker | cross-encoder | none, Jev *noul* |
+| Reranker | MiniLM-L6 cross-encoder | none, Qwen3-Reranker-0.6B, Jev *noul* |
 | Abstention | the `answerable` field | reranker threshold, Jev *noul* |
 | Prompt size | 10 chunks after the reranker | 5, 20 |
 | Output | API structured outputs / constrained decoding | prompt only |
 
-The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
+The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the device its models ran on (latency depends on it), the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
 
 ### 6.3 What we measure, and how
 

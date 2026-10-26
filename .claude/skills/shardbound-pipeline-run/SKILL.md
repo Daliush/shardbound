@@ -15,9 +15,11 @@ What each step does and why lives in `docs/design.md` §5.2 and §6, `ai/README.
 | Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--expanders expander…] [--rerankers reranker…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
 | Served | the game server, `GET /api/evaluations/<v>/<split>` then `/<timestamp>` | the server running | nothing |
 
-`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every pipeline the techniques make, each retriever expanded or not and reranked or not, on the latest dataset's dev split by default (a flag alone, `--expanders` or `--rerankers`, for none of them; the first run of a reranker downloads its model). The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything.
+`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every pipeline the techniques make, each retriever expanded or not and reranked or not, on the latest dataset's dev split by default (a flag alone, `--expanders` or `--rerankers`, for none of them; the first run of a reranker downloads its model). The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything. On the CPU, Qwen3-Reranker takes about 50 s a question, so an evaluation that runs it after every retriever takes hours: name the rerankers (`--rerankers minilm-l6`) to leave it out, or run them on a GPU (below).
 
 If `docker version` shows no server, ask the maintainer to start Docker Desktop. Do not reset it.
+
+The models, the embedding model and the rerankers, run on the CPU unless `RAG_DEVICE` names a GPU. On the maintainer's machine, the GPU build of torch lives in a second environment, `ai/.venv-gpu`, so a GPU run puts `UV_PROJECT_ENVIRONMENT=.venv-gpu UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICES=1` before `evaluate.sh` (`ai/README.md`); the evaluation records the device. A plain `uv run`, as the test hook does, syncs `ai/.venv` only, so it never touches a GPU run.
 
 ## What a change calls for
 
@@ -28,7 +30,7 @@ If `docker version` shows no server, ask the maintainer to start Docker Desktop.
 | A card | The chunks and a new dataset version: factual questions and scenarios read the cards. |
 | A recipe, or a written question | A new dataset version. |
 | A retriever or a metric (`ai/rag`) | `evaluate.sh` alone. |
-| An entity (`ai/rag/repository/entities.py`) | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, so the database starts empty and every chunk is embedded again. |
+| An entity (`ai/rag/repository/entities.py`) | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, so the database starts empty and every chunk is embedded again. An embedding model's new format needs no reset: its vectors are kept under another key, and every chunk is embedded again. |
 
 A built dataset version is frozen. A change makes a new version on the previous one (`build-dataset.sh v3 --base v2`): an unchanged question keeps its wording and its side of the split, so only new or changed questions go to Luna. `rag evaluate` reads the version that `ai/rag/__main__.py` names by default; move that default, and `AGENTS.md`'s status, to the new version.
 

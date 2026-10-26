@@ -38,6 +38,8 @@ class Evaluation:
     split: str
     evaluated_at: datetime
     code_commit: str
+    device: str
+    """Where the models ran, which the latency depends on: "cpu" or the GPU's name, then torch's build."""
     description: str
     """Why it was run, as whoever ran it wrote it: "Step 6: the cards a question names and the refs expansion"."""
     metrics: list[MetricDescription]
