@@ -22,8 +22,8 @@ dev = [
 [tool.uv]
 package = false
 
-# The CPU build of torch on Windows and Linux too, where PyPI's carries CUDA (~2 GB): the embedding models run on CPU,
-# and every machine, CI included, gets the same light install. macOS wheels are CPU builds already.
+# The CPU build of torch on Windows and Linux too, where PyPI's carries CUDA (~2 GB): the models run on the CPU by
+# default, and every machine, CI included, gets the same light install. A GPU build lives in .venv-gpu (ai/README.md). macOS wheels are CPU builds already.
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
 

@@ -117,7 +117,8 @@ rag/
 │   ├── registry.py             every expander by name
 │   └── refs/                   refs_expander.py (the named cards and the refs)
 ├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common
-├── device.py                   where the rerankers run: read_device() (RAG_DEVICE, "cpu" by default)
+├── device.py                   where the models run: read_device() (RAG_DEVICE, "cpu" by default);
+│                               describe_device(), what an evaluation records
 ├── rerankers/
 │   ├── __init__.py             Reranker: rerank_chunks(question, candidate ids) → every candidate, reordered
 │   ├── registry.py             every reranker by name
@@ -171,7 +172,7 @@ scripts/evaluate.sh random bm25 dense-qwen3-0.6b --description "A first look"
 
 ## Running the models on a GPU
 
-The models, the embedding model and the rerankers, run on the CPU unless `RAG_DEVICE` names a GPU. On an AMD Radeon RX 6800 XT, Qwen3-Reranker takes about 1.3 s a question instead of about 50 s on the CPU, MiniLM-L6 0.065 s instead of 1.15 s (rrf + refs, v2 dev), and Qwen3-Embedding 0.02 s a question.
+The models, the embedding model and the rerankers, run on the CPU unless `RAG_DEVICE` names a GPU. On an AMD Radeon RX 6800 XT, the main pipeline (rrf + refs, v2 dev) takes 0.11 s a question with MiniLM-L6 and 1.15 s with Qwen3-Reranker (p50, evaluation of 2026-10-25), against 0.72 s with MiniLM-L6 on the CPU (2026-10-22). A one-off timing of Qwen3-Reranker alone, in float32 on the CPU, gave about 50 s a question.
 
 `uv.lock` installs the CPU build of torch in `.venv`. The GPU build lives in a second environment, `.venv-gpu`: the locked packages, then the GPU build of torch over them. `UV_PROJECT_ENVIRONMENT` points `uv run` at it, and `UV_NO_SYNC=1` stops `uv run` from putting the CPU build back. `.venv` stays as the lock says, for the tests and the agents' hooks. The tested setup is the RX 6800 XT (target `gfx1030`) on Windows, with AMD's ROCm build of torch:
 
@@ -188,5 +189,6 @@ UV_PROJECT_ENVIRONMENT=.venv-gpu UV_NO_SYNC=1 RAG_DEVICE=cuda HIP_VISIBLE_DEVICE
 - An AMD GPU is `cuda` too: the ROCm build of torch keeps CUDA's name. Another AMD card needs its own target in place of `gfx1030` ([AMD's list](https://github.com/ROCm/TheRock/blob/main/SUPPORTED_GPUS.md)); an NVIDIA card needs PyTorch's CUDA build instead (not tested here).
 - `HIP_VISIBLE_DEVICES=1` hides the processor's integrated GPU, which ROCm counts first and which the `gfx1030` build cannot run on (`invalid kernel file`). `torch.cuda.get_device_name(i)` gives each device's name.
 - After a change to `uv.lock`, run the two commands again: `uv sync` puts the CPU build back in `.venv-gpu` too.
-- Every model loads in float32, the format in which the CPU and the GPU gave the same rankings (reranker scores within 0.0001 on 6 dev questions, cosines within 0.000001). In bfloat16, the format the Qwen3 models' weights are stored in, the batch size alone moves Qwen3-Reranker's scores by about 0.07, and two builds of torch gave cosines up to 0.006 apart: enough to swap two close chunks. On the CPU of AMD's build, float32 is slow (2.7 s to embed a question): run the embedding model on the GPU there.
+- AMD's build is torch 2.14.0, below the 2.14.1 that `pyproject.toml` asks for: `UV_NO_SYNC=1` also keeps uv from checking it.
+- Every model loads in float32, the format in which the CPU and the GPU gave the same rankings (reranker scores within 0.0001 on 6 dev questions, cosines within 0.000001 on 5 questions and 32 chunks). In bfloat16, the format the Qwen3 models' weights are stored in, the batch size alone moves Qwen3-Reranker's scores by about 0.07, and two builds of torch gave cosines up to 0.006 apart: enough to swap two close chunks. On the CPU of AMD's build, float32 is slow (2.7 s to embed a question): run the embedding model on the GPU there.
 - Each evaluation records where its models ran (`device`: "cpu" or the GPU's name, then torch's build), since the latency depends on it and the commit alone does not say which torch ran.
