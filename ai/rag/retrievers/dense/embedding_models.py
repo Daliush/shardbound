@@ -1,6 +1,7 @@
 """The embedding models the dense retriever can use, run locally with sentence-transformers."""
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import cached_property
 
 import numpy as np
@@ -9,10 +10,20 @@ from rag.chunks import Chunk
 from rag.device import read_device
 from rag.retrievers.dense.chunk_embedding import ChunkEmbedding
 
-LOCAL_EMBEDDING_MODELS: dict[str, str] = {
-    "qwen3-0.6b": "Qwen/Qwen3-Embedding-0.6B",
+
+@dataclass(frozen=True)
+class HuggingFaceModel:
+    """A model on Hugging Face at a pinned revision: a later change to its repository changes nothing here."""
+
+    id: str
+    revision: str
+
+
+LOCAL_EMBEDDING_MODELS: dict[str, HuggingFaceModel] = {
+    "qwen3-0.6b": HuggingFaceModel("Qwen/Qwen3-Embedding-0.6B", "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3"),
 }
-"""Our name for each model, then its Hugging Face id. A model added here becomes the `dense-<name>` retriever."""
+"""Our name for each model, then where it is on Hugging Face. A model added here becomes the `dense-<name>`
+retriever."""
 
 
 class EmbeddingModel(ABC):
@@ -51,7 +62,7 @@ class LocalEmbeddingModel(EmbeddingModel):
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.hugging_face_id = LOCAL_EMBEDDING_MODELS[name]
+        self.hugging_face_model = LOCAL_EMBEDDING_MODELS[name]
 
     @property
     def index_key(self) -> str:
@@ -65,7 +76,8 @@ class LocalEmbeddingModel(EmbeddingModel):
         # Imported here, not at the top: torch takes seconds to load, and BM25 runs and the tests never need it.
         from sentence_transformers import SentenceTransformer
 
-        return SentenceTransformer(self.hugging_face_id, device=read_device(), model_kwargs={"dtype": self.FORMAT})
+        return SentenceTransformer(self.hugging_face_model.id, revision=self.hugging_face_model.revision,
+                                   device=read_device(), model_kwargs={"dtype": self.FORMAT})
 
     def embed_chunk(self, chunk: Chunk) -> ChunkEmbedding:
         return ChunkEmbedding(chunk, self._model.encode_document(chunk.text))

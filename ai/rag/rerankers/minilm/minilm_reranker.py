@@ -5,13 +5,14 @@ from rag.rerankers.cross_encoder_reranker import CrossEncoderReranker
 
 class MiniLMReranker(CrossEncoderReranker):
     """`cross-encoder/ms-marco-MiniLM-L6-v2` (22M parameters): it reads the question and a text together and outputs
-    one score."""
+    one score. Its revision is pinned, so that a change to its repository changes nothing here."""
 
     HUGGING_FACE_ID = "cross-encoder/ms-marco-MiniLM-L6-v2"
+    REVISION = "233902d25c440f23af6f7d6e94d2946bac0bee0a"
 
     @property
     def description(self) -> str:
         return "reranked by MiniLM-L6, a cross-encoder that reads the question with each candidate"
 
     def _load_model(self):
-        return self._load_cross_encoder(self.HUGGING_FACE_ID)
+        return self._load_cross_encoder(self.HUGGING_FACE_ID, revision=self.REVISION)
