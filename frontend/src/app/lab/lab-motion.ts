@@ -1,8 +1,9 @@
 import { Directive, ElementRef, OnDestroy, afterRenderEffect, inject, input } from '@angular/core';
 import { gsap } from 'gsap';
 import { Settings } from '../core/settings';
+import { SPRINGS, still } from './springs';
 
-/** Animates a user's changed view; the content is visible without JavaScript motion. */
+/** Brings a changed view in on springs: it rises, its bars grow, its dots pop, its lines draw. The content is visible without motion. */
 @Directive({ selector: '[labMotion]' })
 export class LabMotion implements OnDestroy {
   readonly labMotion = input<unknown>();
@@ -13,18 +14,18 @@ export class LabMotion implements OnDestroy {
     afterRenderEffect(() => {
       this.labMotion();
       this.animation?.revert();
-      if (this.settings.reducedMotion() || this.settings.preferences().speed === 0) return;
+      if (still(this.settings)) return;
       const host = this.element.nativeElement;
       this.animation = gsap.context(() => {
-        gsap.from(host, { opacity: .5, y: 5, duration: .24, ease: 'power2.out', clearProps: 'opacity,transform' });
+        gsap.from(host, { opacity: 0, y: 12, duration: SPRINGS.gentle.duration, ease: SPRINGS.gentle.ease, clearProps: 'opacity,transform' });
         const bars = host.querySelectorAll('[data-score-bar]');
-        if (bars.length) gsap.from(bars, { scaleX: 0, transformOrigin: 'left center', duration: .55, stagger: .025, ease: 'power3.out', clearProps: 'transform' });
+        if (bars.length) gsap.from(bars, { scaleX: 0, transformOrigin: 'left center', duration: SPRINGS.bouncy.duration, stagger: .025, ease: SPRINGS.bouncy.ease, clearProps: 'transform' });
         const dots = host.querySelectorAll('[data-score-dot]');
-        if (dots.length) gsap.from(dots, { scale: 0, opacity: 0, duration: .4, stagger: .012, ease: 'back.out(2)', clearProps: 'transform,opacity' });
+        if (dots.length) gsap.from(dots, { scale: 0, opacity: 0, duration: SPRINGS.bouncy.duration, stagger: .012, ease: SPRINGS.bouncy.ease, clearProps: 'transform,opacity' });
         const paths = host.querySelectorAll<SVGPathElement>('[data-score-line]');
         paths.forEach(path => {
           const length = path.getTotalLength?.() ?? 0;
-          if (length) gsap.fromTo(path, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: .65, ease: 'power2.out', clearProps: 'strokeDasharray,strokeDashoffset' });
+          if (length) gsap.fromTo(path, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: .7, ease: 'power2.out', clearProps: 'strokeDasharray,strokeDashoffset' });
         });
       }, host);
     });
