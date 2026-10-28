@@ -1,6 +1,6 @@
 @if (groups().length) {
   <section class="guide-intro" data-guide-intro>
-    <p class="intro-lead">One score picks the best pipeline. The others explain why, show how fast it is, or give context. They are never mixed into one number.</p>
+    <p class="intro-lead">One score picks the best pipeline. The others explain why, or show how fast it is. They are never mixed into one number.</p>
     <ul class="role-legend" aria-label="Metrics by role">@for (group of groups(); track group.role) { <li [class]="'role-' + group.role"><b>{{ group.entries.length }}</b>{{ group.title }}</li> }</ul>
   </section>
   <div class="guide-layout">
@@ -30,25 +30,16 @@
               </div>
               @if (entry.sample; as sample) {
                 <figure class="card-sample" data-guide-part>
-                  <figcaption><span>In this evaluation</span><small>{{ entry.better === 'lower' ? 'Lower is better: the longer bar is the faster one' : entry.better === 'higher' ? 'Higher is better' : 'Context, not a score' }}</small></figcaption>
+                  <figcaption><span>In this evaluation</span><small>{{ entry.better === 'lower' ? 'Lower is better: the longer bar is the faster one' : 'Higher is better' }}</small></figcaption>
                   @if (sample.kind !== 'single') { <p class="sample-leader">Top pipeline, the one Recall@10 ranks first: <b>{{ sample.leader }}</b></p> }
-                  @if (sample.kind === 'curve') {
-                    <div class="sample-curve">
-                      <svg [attr.viewBox]="'0 0 ' + curveWidth + ' ' + curveHeight" preserveAspectRatio="none" role="img" [attr.aria-label]="curveLabel(sample)">
-                        @for (k of [10,20]; track k) { <line class="curve-mark" [attr.x1]="markX(k)" [attr.x2]="markX(k)" y1="0" [attr.y2]="curveHeight" /> }
-                        @for (curve of sample.curves; track curve.name) { <path [class.floor]="curve.floor" [attr.data-guide-line]="curve.floor ? null : ''" [attr.d]="curve.path" [style.stroke]="curve.color" /> }
-                      </svg>
-                      <div class="curve-axis" aria-hidden="true"><span>1</span>@for (k of [10,20]; track k) { <span [style.left.%]="markPercent(k)">{{ k }}</span> }<span>{{ curvePoints }} chunks</span></div>
-                    </div>
-                  }
                   @if (sample.kind === 'single') {
                     <p class="sample-single"><strong>{{ sample.rows[0].text }}</strong><span>the same for every pipeline</span></p>
                   } @else {
-                    <ul class="sample-rows" [class.legend]="sample.kind === 'curve'">
+                    <ul class="sample-rows">
                       @for (row of sample.rows; track row.name) {
                         <li [class.floor]="row.floor">
                           <span class="sample-name" [title]="row.name"><i [style.background]="row.color"></i>{{ row.name }}</span>
-                          @if (sample.kind === 'bars') { <span class="sample-track"><span class="sample-fill" data-guide-fill [style.width.%]="row.length * 100" [style.background]="row.color"></span></span> }
+                          <span class="sample-track"><span class="sample-fill" data-guide-fill [style.width.%]="row.length * 100" [style.background]="row.color"></span></span>
                           <strong>{{ row.text }}</strong>
                         </li>
                       }

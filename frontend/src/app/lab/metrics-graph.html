@@ -1,0 +1,44 @@
+<div class="graph-toolbar">
+  <p>One question at a time, one metric at a time. No combined score.</p>
+  <div class="toolbar-actions">
+    <label>Question category<select [value]="category()" (change)="category.set(value($event))"><option value="">All questions</option>@for (item of categories(); track item) { <option [value]="item">{{ humanize(item) }}</option> }</select></label>
+    <button class="quiet fold-all" (click)="toggleAll()">{{ allOpen() ? 'Collapse all' : 'Expand all' }}</button>
+  </div>
+</div>
+<div class="metric-plots">
+  @if (curves()) {
+    <section class="metric-plot" [class.open]="isOpen(CONTEXT)">
+      <button class="plot-head quiet" [attr.aria-expanded]="isOpen(CONTEXT)" aria-controls="plot-context" (click)="toggle(CONTEXT)">
+        <span class="head-text"><h2>How much context is enough?</h2><span class="role">Recall at every chunk budget</span></span>
+        <span class="head-summary">Give every pipeline the same number of chunks</span>
+        <app-icon name="chevron" class="caret" />
+      </button>
+      <div class="plot-body" id="plot-context" [attr.inert]="isOpen(CONTEXT) ? null : ''"><div class="plot-inner"><app-recall-chart [catalog]="catalog()" [runs]="runs()" [category]="category()" [titled]="false" /></div></div>
+    </section>
+  }
+  @for (metric of axes(); track metric.key) {
+    <section class="metric-plot" [class.open]="isOpen(metric.key)">
+      <button class="plot-head quiet" [attr.aria-expanded]="isOpen(metric.key)" [attr.aria-controls]="'plot-' + metric.anchor" (click)="toggle(metric.key)">
+        <span class="head-text"><h2>{{ metricName(metric.key) }}</h2><span class="role">{{ metric.key === decision ? 'Decision metric' : lower(metric.key) ? 'Speed' : 'Explains performance' }}</span></span>
+        @if (metric.rows[0]; as best) { <span class="head-summary" [title]="best.name"><i [style.background]="best.color"></i><span>{{ best.name }}</span><strong>{{ format(metric.key,best.value) }}</strong></span> }
+        <app-icon name="chevron" class="caret" />
+      </button>
+      <div class="plot-body" [id]="'plot-' + metric.anchor" [attr.inert]="isOpen(metric.key) ? null : ''"><div class="plot-inner">
+        <p class="metric-description">{{ catalog().description(metric.key)?.what }} {{ lower(metric.key) ? 'Lower is better.' : 'Higher is better.' }}</p>
+        @if (catalog().description(metric.key); as described) { <details class="metric-method"><summary>How it's computed</summary><p>{{ described.how }}</p><p><b>Why it matters</b>{{ described.represents }}</p></details> }
+        <div class="dot-plot">
+          <div class="axis-row" aria-hidden="true"><span></span><div class="axis-ticks">@for (tick of metric.ticks; track tick.value) { <span [style.left.%]="tick.x">{{ tickLabel(metric.key,tick.value) }}</span> }</div><span></span></div>
+          <div class="grid-lines" aria-hidden="true">@for (tick of metric.ticks; track tick.value) { <b [style.left.%]="tick.x"></b> }@if (metric.floorX !== null) { <b class="floor" [style.left.%]="metric.floorX"></b> }</div>
+          <div class="dot-rows" [labRows]="metric.window" #motion="labRows">
+            @for (row of metric.shown; track row.key) {
+              <div class="dot-row" [class.variant]="row.variant" [attr.data-row-key]="row.key" (animate.enter)="motion.enter($event,row.key)" (animate.leave)="motion.leave($event,row.key)"><span class="row-name" [title]="row.description || row.name"><small>{{ row.rank }}</small><i [style.background]="row.color"></i><span class="name-text">{{ row.name }}</span></span><div class="dot-track">@if (row.x !== null) { <i class="dot" data-score-dot [style.left.%]="row.x" [style.background]="row.color"></i> }</div><strong><app-rolling-number [text]="format(metric.key,row.value)" [value]="row.value" [better]="lower(metric.key) ? 'lower' : 'higher'" /></strong></div>
+            }
+          </div>
+        </div>
+        <div class="plot-foot"><p class="axis-note">Axis zoomed on {{ format(metric.key,metric.domain[0]) }}–{{ format(metric.key,metric.domain[1]) }} to keep close scores apart.@if (metric.floor !== null) { Random floor: {{ format(metric.key,metric.floor) }}{{ metric.floorX === null ? ', off this axis' : ', dashed' }}. }</p><app-pager [total]="metric.rows.length" [page]="pageFor(metric.key)" (pageChange)="turn(metric.key,$event)" /></div>
+      </div></div>
+    </section>
+  }
+</div>
+<p class="scale-note">Each plot has its own axis, zoomed on its values: compare positions within a plot, not across plots. Candidate counts describe the retrieval budget and never determine a winner. Returning the entire corpus puts the end of the recall curve at 100% by construction.</p>
+<details class="exact-scores"><summary>All reported values</summary><div class="score-table-wrap"><table><caption>Exact scores · {{ category() ? humanize(category()) : 'All questions' }}</caption><thead><tr><th scope="col">Pipeline</th>@for (metric of allMetrics(); track metric) { <th scope="col">{{ metricName(metric) }}</th> }<th scope="col">Questions</th></tr></thead><tbody>@for (row of rows(); track row.key) { <tr><th scope="row" [title]="row.description || row.name"><i [style.background]="row.color"></i>{{ row.name }}</th>@for (metric of allMetrics(); track metric) { <td>{{ format(metric,at(row.scores,metric)) }}</td> }<td>{{ format('question_count',at(row.scores,'question_count')) }}</td></tr> }</tbody></table></div></details>

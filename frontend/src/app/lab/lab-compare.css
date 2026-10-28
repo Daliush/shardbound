@@ -13,7 +13,7 @@
 .metric-caption small { display: block; font-size: .7rem; line-height: 1.6; margin-top: .4rem; max-width: 27ch; }
 .compared-score strong { font-size: 1.7rem; font-weight: 500; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .comparison-track { height: 4px; background: var(--lab-subtle); border-radius: 2px; margin-top: .6rem; }
-.comparison-track i { display: block; height: 100%; background: var(--contender-0); border-radius: inherit; }
+.comparison-track i { display: block; height: 100%; background: var(--contender-0); border-radius: inherit; transition: width var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-out)); }
 .side-b .comparison-track i { background: var(--contender-1); }
 .delta { text-align: right; font-size: 1rem; font-variant-numeric: tabular-nums; }
 .delta small { display: block; font-size: .68rem; margin-top: .5rem; }
@@ -28,3 +28,6 @@
 
 
 .comparison-metric > * { min-width: 0; }.comparison-metric .delta { overflow-wrap: anywhere; }
+.sort-control { display: flex; align-items: center; gap: .7rem; font-size: .75rem; color: var(--muted); }
+.sort-control select { font-size: .78rem; background: var(--lab-surface); }
+.run-description { display: block; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

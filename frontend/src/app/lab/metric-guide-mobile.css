@@ -18,7 +18,6 @@
   .card-what { font-size: .92rem; margin-bottom: 1.1rem; }
   .card-facets { grid-template-columns: minmax(0,1fr); gap: .7rem; }
   .sample-rows li { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: 'name value' 'track track'; gap: .35rem .8rem; }
-  .sample-rows.legend li { grid-template-areas: 'name value'; }
   .sample-name { grid-area: name; }
   .sample-track { grid-area: track; }
   .sample-rows strong { grid-area: value; }

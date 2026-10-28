@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, OnDestroy, afterRenderEffect, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -15,17 +15,22 @@ import { MetricCatalog } from './metric-catalog';
 import { QuestionDetail } from './question-detail';
 import { MetricsGraph } from './metrics-graph';
 import { MetricGuide } from './metric-guide';
-import { CombinationBuilder } from './combination-builder';
 import { ComingSoon } from './coming-soon';
 import { LabMotion } from './lab-motion';
+import { Leaderboard } from './leaderboard';
+import { PipelineBuilder } from './pipeline-builder';
+import { RollingNumber } from './rolling-number';
+import { SPRING_PROPERTIES, placeMarker } from './springs';
+import { Settings } from '../core/settings';
 import { deviceName, pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
 import { RecallChart } from './recall-chart';
 import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './url-state';
 
 @Component({
   selector:'app-lab-page',
-  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,MetricsGraph,MetricGuide,CombinationBuilder,ComingSoon,LabMotion,RecallChart],
-  templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-tables.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
+  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber],
+  host:{'[style]':'springs'},
+  templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
 export class LabPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute); private readonly router = inject(Router); private readonly evaluations = inject(Evaluations);
@@ -40,15 +45,16 @@ export class LabPage implements OnDestroy {
   protected readonly key = runKey; protected readonly name = pipelineName; protected readonly humanize = humanize; protected readonly generic = generic;
   protected readonly deviceName = deviceName;
   protected readonly at = atPath; protected readonly kind = pipelineKind;
-  protected readonly search = signal('');
   protected readonly copyMessage = signal('');
-  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'metrics',label:'Metrics',icon:'chart'},{id:'guide',label:'Our metrics',icon:'info'},{id:'compare',label:'Compare',icon:'compare'},{id:'builder',label:'Build',icon:'build'}];
+  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'builder',label:'Build',icon:'build'},{id:'compare',label:'Compare',icon:'compare'},{id:'metrics',label:'Metrics',icon:'chart'},{id:'guide',label:'Our metrics',icon:'info'}];
+  protected readonly evidence = [{id:'categories',label:'By category'},{id:'questions',label:'Questions'},{id:'history',label:'History'}];
+  /** The lab's springs, for every transition of its views. */
+  protected readonly springs = SPRING_PROPERTIES;
   protected readonly color = runColor;
   /** Every value of the loaded evaluation, as its file describes it. */
   protected readonly catalog = computed(() => MetricCatalog.fromEvaluation(this.report()));
   protected readonly rankingMetric = computed(() => this.catalog().isContext(this.state().metric) ? DECISION_METRIC : this.state().metric);
   protected readonly scoreMetrics = computed(() => this.metrics().filter(metric => !this.catalog().isContext(metric)));
-  protected readonly tableMetrics = computed(() => this.metrics().filter(metric => metric !== 'mean_candidate_count'));
   protected readonly runs = computed(() => this.report()?.runs ?? []);
   protected readonly selected = computed<EvaluationRun | undefined>(() => this.runs().find(run => runKey(run.layers) === this.state().run) ?? this.runs()[0]);
   protected readonly builderLayers = computed(() => decodeRun(this.state().run) ?? this.selected()?.layers ?? {});
@@ -60,12 +66,11 @@ export class LabPage implements OnDestroy {
     return chosen;
   });
   protected readonly ranked = computed(() => rankedRuns(this.runs(),this.rankingMetric(),this.catalog()));
-  protected readonly displayed = computed(() => this.ranked().filter(row => pipelineName(row.run).toLowerCase().includes(this.search().toLowerCase()) || JSON.stringify(row.run.layers).toLowerCase().includes(this.search().toLowerCase())));
   protected readonly baseline = computed(() => this.runs().find(isFloor));
   protected readonly graphRuns = computed(() => [...this.runs()].sort((a,b) => Number(isFloor(a))-Number(isFloor(b))));
   protected readonly activeView = computed(() => this.state().tab === 'head-to-head' ? 'compare' : this.state().tab);
-  protected readonly title = computed(() => ({leaderboard:'Better retrieval, in perspective.',metrics:'Understand every metric',guide:'Our metrics',compare:'Compare combinations',builder:'Build your combination',questions:'Explore the evidence',categories:'Scores by category',history:'Evaluation history'}[this.activeView()] ?? 'Benchmark'));
-  protected readonly subtitle = computed(() => ({leaderboard:'Every evaluated combination, ranked on the same questions.',metrics:'See where each combination performs best.',guide:'What each score measures, how it is computed, and what it stands for.',compare:'Two pipelines. The same questions. A clear comparison.',builder:'Choose your pipeline. See how it measures up.',questions:'Inspect the sources retrieved for each question.',categories:'Understand performance across question types.',history:'Follow recorded results over time.'}[this.activeView()] ?? ''));
+  protected readonly title = computed(() => ({leaderboard:'Which pipeline finds the rules best?',metrics:'Every metric, one at a time',guide:'Our metrics',compare:'Compare combinations',builder:'Build a pipeline',questions:'Explore the evidence',categories:'Scores by category',history:'Evaluation history'}[this.activeView()] ?? 'Benchmark'));
+  protected readonly subtitle = computed(() => ({leaderboard:this.ranked().length + ' pipelines, the same ' + this.count() + ' questions. The best one first.',metrics:'How much context each pipeline needs, then each score on its own axis.',guide:'What each score measures, how it is computed, and what it stands for.',compare:'Two pipelines. The same questions. A clear comparison.',builder:'Change a step and watch the score move. Every number is a recorded run.',questions:'Inspect the sources retrieved for each question.',categories:'Understand performance across question types.',history:'Follow recorded results over time.'}[this.activeView()] ?? ''));
   protected readonly categories = computed(() => [...new Set(this.runs().flatMap(run => run.questions.map(question => question.category)))].sort());
   protected readonly count = computed(() => Number(this.runs()[0]?.scores.overall['question_count'] ?? 0));
   protected readonly times = computed(() => this.splitTimes()[this.state().split] ?? []);
@@ -90,7 +95,13 @@ export class LabPage implements OnDestroy {
   });
   private generation = 0;
   private readonly reportRequest = computed(() => JSON.stringify([this.state().version,this.state().split,this.state().timestamp]));
-  constructor() { effect(() => { this.reportRequest(); untracked(() => void this.load(this.state(),this.query()['pins'] === undefined)); }); }
+  private readonly settings = inject(Settings);
+  private readonly nav = viewChild.required<ElementRef<HTMLElement>>('nav');
+  private readonly indicator = viewChild.required<ElementRef<HTMLElement>>('indicator');
+  constructor() {
+    effect(() => { this.reportRequest(); untracked(() => void this.load(this.state(),this.query()['pins'] === undefined)); });
+    afterRenderEffect(() => this.slideIndicator(this.activeView()));
+  }
   ngOnDestroy(): void { this.generation++; }
   protected async load(state = this.state(), defaultPins = false): Promise<void> {
     const generation = ++this.generation;
@@ -174,6 +185,12 @@ export class LabPage implements OnDestroy {
   protected openQuestion(id: string): void { void this.update({question:id,tab:'questions'}); }
   protected value(event: Event): string { return (event.target as HTMLInputElement).value; }
   protected date(timestamp: string): string { return new Date(timestamp.replace(/T(\d{2})-(\d{2})-(\d{2})Z/,'T$1:$2:$3Z')).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}); }
+  /** The tab's marker glides under the page open. */
+  private slideIndicator(view: string): void {
+    const tab = this.nav().nativeElement.querySelector<HTMLElement>('[data-tab="' + view + '"]'), indicator = this.indicator().nativeElement;
+    if (tab) placeMarker(indicator,{x:tab.offsetLeft,y:0,width:tab.offsetWidth},this.settings);
+    else indicator.style.opacity = '0';
+  }
   protected async share(): Promise<void> { try { await navigator.clipboard.writeText(location.href); this.copied.set(true); this.copyMessage.set('Link copied.'); } catch { this.copyMessage.set('Copy the URL from your browser to share this view.'); } }
 }
 

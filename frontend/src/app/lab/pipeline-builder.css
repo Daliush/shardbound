@@ -1,0 +1,38 @@
+/* A step: every variant it was evaluated with, a pill gliding behind the one chosen. */
+.node { flex: 1.15 1 0; min-width: 160px; padding: 14px 12px 12px; border-radius: 18px; background: var(--lab-surface); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lab-accent) 26%, transparent), 0 18px 36px -28px var(--black); transition: background 220ms ease, box-shadow 220ms ease; }
+.node:has(.members) { flex-grow: 1.7; min-width: 230px; }
+.node.skipped { background: color-mix(in srgb, var(--lab-surface) 45%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 80%, transparent); }
+.node-head { display: flex; align-items: center; gap: .65rem; padding: 0 .3rem; }
+.node-head h3 { margin: 0; font: 500 .92rem var(--font-ui); letter-spacing: -.01em; }
+.node-head small { display: block; font-size: .64rem; line-height: 1.35; }
+.step { flex: none; display: grid; place-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: .7rem; font-weight: 600; background: var(--lab-accent-soft); color: var(--lab-accent); transition: background 220ms ease, color 220ms ease; }
+.step app-icon { width: 14px; height: 14px; }
+.skipped .step { background: var(--lab-subtle); color: var(--muted); }
+.choices { position: relative; display: grid; gap: 3px; margin-top: 12px; }
+.pill { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 0; opacity: 0; pointer-events: none; border-radius: 13px; background: var(--lab-accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lab-accent) 50%, transparent), 0 8px 20px -14px var(--lab-accent); }
+.pill[data-placed] { transition: transform var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-spring)), height var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-spring)); }
+.skipped .pill { background: var(--lab-subtle); box-shadow: inset 0 0 0 1px var(--line); }
+.choice { position: relative; z-index: 1; border-radius: 13px; }
+.option { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: .5rem; padding: .55rem .6rem; border-radius: 13px; cursor: pointer; transition: background 160ms ease, scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
+.option:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.chosen .option:hover { background: transparent; }
+.option:active { scale: .97; }
+.option:has(input:focus-visible) { outline: 2px solid var(--lab-accent); outline-offset: 1px; }
+.option-text { display: grid; gap: .12rem; min-width: 0; }
+.option-text strong { font-size: .8rem; font-weight: 500; }
+.option-text small { font-size: .64rem; line-height: 1.35; }
+.chosen .option-text small { color: var(--text); opacity: .75; }
+.effect { padding: .15rem .45rem; border-radius: 999px; font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; transition: color 200ms ease, background 200ms ease; }
+.effect.up, .member small.up { color: var(--heal); }
+.effect.up { background: color-mix(in srgb, var(--heal) 13%, transparent); }
+.effect.down, .member small.down { color: var(--alert); }
+.effect.down { background: color-mix(in srgb, var(--alert) 11%, transparent); }
+.effect.same, .effect.missing, .member small.same, .member small.missing { color: var(--muted); }
+.effect.current { color: var(--lab-accent); font-weight: 600; }
+.members { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 .5rem .6rem; }
+.member { min-height: 28px; padding: .2rem .55rem; gap: .3rem; border: 0; border-radius: 999px; font-size: .66rem; font-weight: 500; background: color-mix(in srgb, var(--text) 6%, transparent); transition: background 180ms ease, color 180ms ease, scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
+.member:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 11%, transparent); }
+.member:active { scale: .92; }
+.member[aria-pressed='true'] { background: var(--lab-accent); color: var(--obsidian-950); }
+.member small { font-size: .6rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+

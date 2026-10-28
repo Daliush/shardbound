@@ -2,7 +2,6 @@
 .role-decides { --role: var(--lab-accent); }
 .role-explains { --role: var(--chart-1); }
 .role-speed { --role: var(--chart-2); }
-.role-context { --role: var(--chart-7); }
 
 /* The lead and the count of metrics in each role. */
 .guide-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin: 0 0 2.4rem; padding-bottom: 1.6rem; border-bottom: 1px solid var(--line); }

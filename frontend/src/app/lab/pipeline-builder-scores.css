@@ -1,0 +1,32 @@
+/* Every other score, each on the scale of every pipeline. */
+.scoreboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin-top: 1.4rem; }
+.tile { display: grid; gap: .45rem; padding: 1rem 1.05rem; border-radius: 16px; background: var(--lab-surface); }
+.tile-name { font-size: .7rem; color: var(--muted); }
+.tile strong { font: 500 1.55rem/1.1 var(--font-ui); letter-spacing: -.03em; }
+.tile-track { height: 4px; border-radius: 2px; background: var(--lab-subtle); overflow: hidden; }
+.tile-track i { display: block; height: 100%; border-radius: inherit; background: var(--lab-accent); transition: width var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-out)); }
+.tile-foot { display: flex; justify-content: space-between; gap: .5rem; min-height: 1rem; font-size: .66rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tile-foot b { font-weight: 500; }
+.tile-foot b.up { color: var(--heal); }.tile-foot b.down { color: var(--alert); }.tile-foot b.same { color: var(--muted); }
+
+/* Where the pipeline stands: every pipeline a dot, this one a marker that springs to its place. */
+.standing-strip { margin-top: 1.4rem; padding: 1.2rem 1.4rem 1.1rem; border-radius: 18px; background: var(--lab-surface); }
+.standing-strip header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; }
+.standing-strip h3 { margin: 0; font: 500 .95rem var(--font-ui); }
+.standing-strip header p { margin: 0; font-size: .72rem; color: var(--muted); }
+.strip { display: flex; flex-direction: column-reverse; margin: .6rem 1rem 0; padding-top: 34px; }
+.strip-track { position: relative; height: calc(var(--lanes, 1) * 12px + 10px); border-bottom: 1px solid var(--line); }
+.dot { position: absolute; bottom: calc(7px + var(--lane, 0) * 12px); min-width: 0; min-height: 0; width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%; translate: -50% 50%; background: color-mix(in srgb, var(--muted) 55%, transparent); transition: scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease), background 160ms ease; }
+.dot:hover, .dot:focus-visible { scale: 1.7; background: var(--lab-accent); border-color: transparent; }
+.you { position: absolute; top: -30px; bottom: -1px; width: 2px; translate: -50% 0; background: var(--lab-accent); pointer-events: none; transition: left var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-spring)); }
+.you::after { content: ''; position: absolute; bottom: -5px; left: 50%; width: 11px; height: 11px; translate: -50% 0; border-radius: 50%; background: var(--lab-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--lab-accent) 25%, transparent); }
+.you b { position: absolute; top: 0; left: 50%; translate: -50% -2px; padding: .12rem .5rem; border-radius: 999px; font-size: .62rem; font-weight: 600; white-space: nowrap; background: var(--lab-accent); color: var(--obsidian-950); }
+.strip-ticks { position: relative; height: 1.1rem; margin-top: .45rem; font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.strip-ticks span { position: absolute; translate: -50% 0; }
+.strip-note { margin: .6rem 0 0; font-size: .66rem; color: var(--muted); }
+
+.builder-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: 1.4rem; }
+.builder-actions button { min-height: 40px; border-radius: 999px; font-size: .78rem; padding-inline: 1.05rem; transition: scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
+.builder-actions button:active:not(:disabled) { scale: .95; }
+.builder-actions .quiet { background: var(--lab-surface); }
+.precomputed { margin: 0 0 0 auto; font-size: .66rem; color: var(--muted); }

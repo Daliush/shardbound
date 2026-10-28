@@ -1,0 +1,35 @@
+/* Every pipeline, ten at a time. */
+.leaderboard { --columns: 56px minmax(0,1fr) repeat(var(--metric-columns, 5), minmax(84px, 104px)) 48px; }
+.board-head, .board-row { display: grid; grid-template-columns: var(--columns); align-items: center; gap: 0 .6rem; }
+.board-head { min-height: 42px; padding-inline: .9rem; border-radius: 12px; background: var(--lab-subtle); font-size: .68rem; color: var(--muted); }
+.board-head button { min-height: 34px; width: 100%; padding: 0; justify-content: flex-end; gap: .3rem; font-size: .68rem; font-weight: 400; color: inherit; }
+.board-head button:hover { color: var(--text); background: transparent; }
+.board-head .sorted button { color: var(--text); font-weight: 500; }
+.sort-mark { opacity: 0; translate: 0 3px; transition: opacity 160ms ease, translate var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
+.sorted .sort-mark { opacity: 1; translate: 0 0; }
+.board-rows { min-height: calc(var(--row-height) * 10); }
+.board-row { min-height: var(--row-height); padding-inline: .9rem; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); background: var(--obsidian-950); transition: background 160ms ease; }
+.board-row:hover { background: color-mix(in srgb, var(--lab-subtle) 55%, var(--obsidian-950)); }
+.rank-cell { font-size: .8rem; color: var(--muted); }
+.leading .rank-cell app-rolling-number { display: inline-grid; place-content: center; min-width: 28px; height: 28px; margin-left: -5px; border-radius: 8px; background: var(--lab-accent-soft); color: var(--lab-accent); font-weight: 600; }
+.pipeline-cell { min-width: 0; display: grid; gap: .15rem; }
+.pipeline-name { justify-content: flex-start; min-width: 0; max-width: 100%; min-height: 26px; padding: 0; font-size: .84rem; font-weight: 500; text-align: left; }
+.pipeline-name > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pipeline-name:hover { color: var(--lab-accent); background: transparent; }
+.pipeline-cell small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .66rem; margin-left: 1rem; }
+.run-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; margin-right: .5rem; }
+.metric-cell { display: grid; justify-items: end; gap: .4rem; text-align: right; font-size: .8rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.metric-cell.sorted { color: var(--text); font-weight: 500; }
+.leading .metric-cell.sorted .value { color: var(--lab-accent); }
+.track { width: 64px; height: 3px; border-radius: 2px; background: var(--lab-subtle); opacity: 0; transition: opacity 200ms ease; }
+.sorted .track { opacity: 1; }
+.track i { display: block; height: 100%; border-radius: inherit; background: var(--lab-accent); transition: width var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-out)); }
+.action-cell { display: flex; justify-content: flex-end; }
+.action-cell button { min-width: 36px; min-height: 36px; padding: .4rem; border-radius: 999px; color: var(--muted); }
+.action-cell app-icon { width: 17px; height: 17px; }
+.empty-search { display: grid; justify-items: center; gap: .4rem; margin: 0; padding: 3rem 1rem; font-size: .8rem; color: var(--muted); max-width: none; }
+.empty-search button { color: var(--lab-accent); }
+.board-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: .9rem; }
+.floor-row { display: flex; align-items: center; gap: .1rem; margin: 0; font-size: .72rem; color: var(--muted); }
+.floor-row strong { margin-left: .6rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+app-pager { margin-left: auto; }

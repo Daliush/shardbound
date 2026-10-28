@@ -11,6 +11,20 @@ const NAMES: Record<string, string> = {
   'minilm-l6': 'MiniLM-L6 cross-encoder', 'qwen3-reranker-0.6b': 'Qwen3-Reranker · 0.6B',
 };
 export function variantName(value: string | null): string { return value === null ? 'None' : NAMES[value] ?? value; }
+const LAYER_NAMES: Record<string, string> = {retriever:'Retriever', expand:'Expansion', rerank:'Reranker', answer:'Answer model'};
+export function layerName(layer: string): string { return LAYER_NAMES[layer] ?? layer[0].toUpperCase() + layer.slice(1); }
+/** The steps a run takes, in order, each with the variant it runs; a skipped step is left out. */
+export function stagesOf(run: EvaluationRun): { layer: string; name: string; variant: string }[] {
+  return Object.entries(run.layers).flatMap(([layer,value]) => value === null ? [] : [{layer,name:layerName(layer),variant:variantName(value)}]);
+}
+/**
+ * The variants told apart inside one family, BM25's settings say: the family is drawn as one choice, its members as
+ * chips under it. A variant outside a family is its own.
+ */
+export function familyOf(value: string | null): { family: string; member: string } {
+  if (value !== null && value.startsWith('bm25')) return {family:'BM25', member:value === 'bm25' ? 'Default' : variantName(value).replace(/^BM25 · /,'')};
+  return {family:variantName(value), member:''};
+}
 export function pipelineName(run: EvaluationRun): string {
   return Object.values(run.layers).filter((value): value is string => value !== null).map(variantName).join(' + ') || 'No layers';
 }
