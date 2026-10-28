@@ -66,7 +66,7 @@ describe('Recall at equal budgets', () => {
     fixture.componentRef.setInput('runs',[run('bm25',[.5,.5,.5]),run('dense-qwen3-0.6b',[.1,.2,.9]),run('random',[.05,.1,.15])]);
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
-    const order = () => [...host.querySelectorAll('.readout-row')].map(row => row.querySelector('span')?.textContent + ' ' + row.querySelector('.readout-rank')?.textContent);
+    const order = () => [...host.querySelectorAll('.readout-row')].map(row => row.querySelector('.readout-name')?.textContent + ' ' + (row.querySelector('.readout-rank .sr-only')?.textContent ?? ''));
     expect(order()).toEqual(['Qwen3 · 0.6B 1','BM25 2','Random baseline ']);
     const slider = host.querySelector('input')!; slider.value = '1'; slider.dispatchEvent(new Event('input')); await fixture.whenStable();
     expect(order()).toEqual(['BM25 1','Qwen3 · 0.6B 2','Random baseline ']);
