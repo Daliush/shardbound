@@ -4,7 +4,8 @@ import { EvaluationRun, MetricDisplay } from '../api/evaluation';
 import { Icon } from '../core/icon';
 import { Settings } from '../core/settings';
 import { MetricCatalog } from './metric-catalog';
-import { CURVE_HEIGHT, CURVE_POINTS, CURVE_WIDTH, MetricSample, buildGuide } from './metric-guide-model';
+import { SPRINGS } from './springs';
+import { buildGuide } from './metric-guide-model';
 
 const DISPLAY_LABELS: Record<MetricDisplay,string> = {share:'Share · %',score:'Score · 0 to 1',count:'Count',seconds:'Seconds'};
 
@@ -24,7 +25,6 @@ export class MetricGuide implements OnDestroy {
   protected readonly groups = computed(() => buildGuide(this.catalog(),this.runs()));
   /** The card read now, which the index marks. */
   protected readonly active = signal('');
-  protected readonly curveWidth = CURVE_WIDTH; protected readonly curveHeight = CURVE_HEIGHT; protected readonly curvePoints = CURVE_POINTS;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly settings = inject(Settings);
   private motion?: gsap.Context;
@@ -38,9 +38,6 @@ export class MetricGuide implements OnDestroy {
   ngOnDestroy(): void { this.stop(); }
 
   protected displayLabel(display: MetricDisplay): string { return DISPLAY_LABELS[display]; }
-  protected markX(k: number): number { return (k-1)/(CURVE_POINTS-1)*CURVE_WIDTH; }
-  protected markPercent(k: number): number { return this.markX(k)/CURVE_WIDTH*100; }
-  protected curveLabel(sample: MetricSample): string { return sample.rows.map(row => row.name + ': ' + row.text).join('; '); }
   protected jump(anchor: string): void {
     this.active.set(anchor);
     this.host.nativeElement.querySelector('#' + anchor)?.scrollIntoView({behavior:this.still() ? 'auto' : 'smooth',block:'start'});
@@ -49,7 +46,7 @@ export class MetricGuide implements OnDestroy {
   private still(): boolean { return this.settings.reducedMotion() || this.settings.preferences().speed === 0; }
   private stop(): void { this.motion?.revert(); this.reveals?.disconnect(); this.spy?.disconnect(); }
 
-  /** Marks the card read, and reveals each card as it scrolls in: its parts rise, its gauges fill, its curve draws. */
+  /** Marks the card read, and reveals each card as it scrolls in: its parts rise, its gauges fill. */
   private watch(): void {
     this.stop();
     const host = this.host.nativeElement;
@@ -66,10 +63,6 @@ export class MetricGuide implements OnDestroy {
       gsap.from(host.querySelectorAll('[data-guide-intro] > *'),{opacity:0,y:10,duration:.45,stagger:.07,ease:'power2.out',clearProps:'opacity,transform'});
       gsap.set(cards,{opacity:0,y:24});
       gsap.set(host.querySelectorAll('[data-guide-fill]'),{scaleX:0,transformOrigin:'left center'});
-      host.querySelectorAll<SVGPathElement>('[data-guide-line]').forEach(path => {
-        const length = path.getTotalLength?.() ?? 0;
-        if (length) gsap.set(path,{strokeDasharray:length,strokeDashoffset:length});
-      });
     },host);
     this.reveals = new IntersectionObserver(entries => {
       for (const entry of entries) {
@@ -84,10 +77,9 @@ export class MetricGuide implements OnDestroy {
   private reveal(card: HTMLElement): void {
     this.motion?.add(() => {
       gsap.timeline({defaults:{ease:'power3.out'}})
-        .to(card,{opacity:1,y:0,duration:.6,clearProps:'opacity,transform'})
+        .to(card,{opacity:1,y:0,duration:SPRINGS.gentle.duration,ease:SPRINGS.gentle.ease,clearProps:'opacity,transform'})
         .from(card.querySelectorAll('[data-guide-part]'),{opacity:0,y:10,duration:.45,stagger:.08,clearProps:'opacity,transform'},'-=.4')
-        .to(card.querySelectorAll('[data-guide-fill]'),{scaleX:1,duration:.85,stagger:.1,ease:'power2.out',clearProps:'transform'},'-=.25')
-        .to(card.querySelectorAll('[data-guide-line]'),{strokeDashoffset:0,duration:1,ease:'power2.inOut',clearProps:'strokeDasharray,strokeDashoffset'},'<');
+        .to(card.querySelectorAll('[data-guide-fill]'),{scaleX:1,duration:SPRINGS.bouncy.duration,stagger:.1,ease:SPRINGS.bouncy.ease,clearProps:'transform'},'-=.25');
     });
   }
 

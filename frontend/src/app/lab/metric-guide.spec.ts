@@ -20,24 +20,20 @@ function evaluation(metrics?: MetricDescription[]): Evaluation {
 }
 
 describe('Metric guide model', () => {
-  it('groups each described value by what it is for: one decides, the others explain, time, or give context', () => {
+  it('groups each described score by what it is for, one decides, the others explain or time, and leaves the counts and the curve out', () => {
     const groups = buildGuide(MetricCatalog.fromEvaluation(evaluation(METRICS)),RUNS);
 
     expect(groups.map(group => [group.role,group.entries.map(entry => entry.description.name)])).toEqual([
-      ['decides',['Recall@10']],['explains',['Binary nDCG@10']],['speed',['Latency p95']],['context',['Questions','Candidates','Recall curve']]]);
+      ['decides',['Recall@10']],['explains',['Binary nDCG@10']],['speed',['Latency p95']]]);
   });
   it('samples each value on the top pipeline by Recall@10 against the random floor, a longer bar always better', () => {
-    const [decides,explains,speed,context] = buildGuide(MetricCatalog.fromEvaluation(evaluation(METRICS)),RUNS);
+    const [decides,explains,speed] = buildGuide(MetricCatalog.fromEvaluation(evaluation(METRICS)),RUNS);
 
     expect(findLeader(RUNS)?.layers['rerank']).toBe('minilm-l6');
     expect(decides.entries[0].sample?.rows.map(row => [row.name,row.text,row.length])).toEqual([['Top pipeline','72.7%',.727],['Random floor','8.9%',.089]]);
     expect(explains.entries[0].sample?.leader).toBe('RRF · BM25 + dense + MiniLM-L6 cross-encoder');
-    expect([speed.entries[0].better,context.entries[0].better]).toEqual(['lower',null]);
+    expect(speed.entries[0].better).toBe('lower');
     expect(speed.entries[0].sample?.rows.map(row => [row.text,row.length])).toEqual([['1.27 s',0],['0.00 s',1]]);
-    expect(context.entries[0].sample?.kind).toBe('single');
-    expect(context.entries[1].sample?.rows.map(row => row.length)).toEqual([41.3/191,1]);
-    expect(context.entries[2].sample?.kind).toBe('curve');
-    expect(context.entries[2].sample?.curves).toHaveLength(2);
   });
   it('describes nothing for an evaluation written before its values described themselves', () => {
     expect(buildGuide(MetricCatalog.fromEvaluation(evaluation()),RUNS)).toEqual([]);
@@ -56,12 +52,12 @@ describe('Metric guide', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect([...host.querySelectorAll('.metric-card h3')].map(title => title.textContent)).toEqual(
-      ['Recall@10','Binary nDCG@10','Latency p95','Questions','Candidates','Recall curve']);
+      ['Recall@10','Binary nDCG@10','Latency p95']);
     const ndcg = host.querySelector('#metric-mean-binary-ndcg-at-10')!;
     expect(ndcg.querySelector('.card-what')?.textContent).toBe('Binary nDCG@10 does this.');
     expect([...ndcg.querySelectorAll('.facet p')].map(text => text.textContent)).toEqual(['Binary nDCG@10 is computed so.','Binary nDCG@10 stands for that.']);
     expect(ndcg.querySelector('.display-badge')?.textContent).toBe('Score · 0 to 1');
-    expect(host.querySelectorAll('.rail-item')).toHaveLength(6);
+    expect(host.querySelectorAll('.rail-item')).toHaveLength(3);
   });
   it('offers the latest evaluation when the open one describes nothing', async () => {
     const fixture = TestBed.createComponent(MetricGuide);
