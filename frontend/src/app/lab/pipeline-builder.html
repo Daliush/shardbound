@@ -1,0 +1,76 @@
+<div class="diagram" aria-label="Your pipeline, step by step">
+  <div class="source"><span class="source-icon"><app-icon name="search" /></span><strong>Question</strong><small>Asked in plain words</small></div>
+  @for (node of nodes(); track node.layer; let i = $index) {
+    <div class="wire" aria-hidden="true">
+      @if (i > 0) { <span class="wire-label"><app-rolling-number [text]="chunks(counts()[i-1])" [value]="counts()[i-1]" [better]="null" /><small>chunks</small></span> }
+      <i class="flow"></i><span class="spark" data-spark></span>
+    </div>
+    <section class="node" [class.skipped]="node.skipped" [attr.aria-labelledby]="'stage-' + node.layer">
+      <header class="node-head"><span class="step">{{ i + 1 }}</span><div><h3 [id]="'stage-' + node.layer">{{ node.name }}</h3><small>{{ node.skipped ? 'Skipped · the chunks pass through' : node.role }}</small></div></header>
+      <div class="choices" role="radiogroup" [attr.aria-labelledby]="'stage-' + node.layer" data-choices>
+        <span class="pill" aria-hidden="true" data-pill></span>
+        @for (family of node.families; track family.family) {
+          <div class="choice" [class.chosen]="family.chosen" [attr.data-chosen]="family.chosen ? '' : null">
+            <label class="option">
+              <input type="radio" class="sr-only" [name]="'stage-' + node.layer" [checked]="family.chosen" (change)="choose(node.layer,family.pick.value)" />
+              <span class="option-text"><strong>{{ family.family }}</strong><small>{{ family.description }}</small></span>
+              <span class="effect" [class]="effectTone(family.pick)" [title]="family.pick.chosen ? 'Recall@10 of this pipeline' : 'Recall@10 would move by this many points'">{{ effect(family.pick) }}</span>
+            </label>
+            @if (family.members.length > 1) {
+              <div class="members" role="group" [attr.aria-label]="family.family + ' settings'">
+                @for (member of family.members; track member.value) {
+                  <button type="button" class="member" [attr.aria-pressed]="member.chosen" (click)="choose(node.layer,member.value)">{{ member.label }}@if (!member.chosen) { <small [class]="effectTone(member)">{{ effect(member) }}</small> }</button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
+  <div class="wire" aria-hidden="true"><span class="wire-label"><b>top 10</b><small>of {{ chunks(counts().at(-1) ?? null) }}</small></span><i class="flow"></i><span class="spark" data-spark></span></div>
+  <section class="output" [class.missing]="!match()" data-output aria-live="polite" aria-labelledby="output-title">
+    <header class="node-head"><span class="step"><app-icon name="check" /></span><div><h3 id="output-title">Prompt</h3><small>The first 10 chunks it reads</small></div></header>
+    @if (match(); as run) {
+      <strong class="big"><app-rolling-number [text]="format(decision,at(run,decision))" [value]="at(run,decision)" /></strong>
+      <span class="big-name" [title]="description(decision)">{{ metricName(decision) }}</span>
+      <p class="standing">@if (rank() !== null) { <b>#<app-rolling-number [text]="rankText(rank())" [value]="rank()" better="lower" /></b> of {{ pipelines().length }} pipelines } @else { The random floor, not ranked }</p>
+      @if (change(decision); as change) { <p class="change" [class]="change.tone">{{ change.text }}<small>since your last pick</small></p> }
+    } @else {
+      <strong class="big muted-big">—</strong>
+      <p class="not-run">Not run yet. This combination has no recorded score; pick another variant.</p>
+    }
+    @for (stage of fixed(); track stage.layer) { <p class="next-step"><small>Then</small>{{ stage.name }} · {{ stage.value === null ? 'not evaluated yet' : variant(stage.value) }}</p> }
+  </section>
+</div>
+
+<div class="scoreboard" aria-label="Every score of this pipeline">
+  @for (metric of tiles(); track metric) {
+    <div class="tile" [title]="description(metric)">
+      <span class="tile-name">{{ metricName(metric) }}</span>
+      <strong><app-rolling-number [text]="format(metric,at(match(),metric))" [value]="at(match(),metric)" [better]="lower(metric) ? 'lower' : 'higher'" /></strong>
+      <span class="tile-track" aria-hidden="true"><i [style.width.%]="width(metric)"></i></span>
+      <span class="tile-foot">@if (tileRank(metric); as place) { <span>#{{ place }}</span> }@if (change(metric); as change) { <b [class]="change.tone">{{ change.text }}</b> }</span>
+    </div>
+  }
+</div>
+
+@if (strip(); as strip) {
+  <section class="standing-strip" aria-labelledby="strip-title">
+    <header><h3 id="strip-title">Where it stands</h3><p>Every recorded pipeline by {{ metricName(decision) }}. Click a dot to load that pipeline.</p></header>
+    <div class="strip" [style.--lanes]="strip.lanes">
+      <div class="strip-ticks" aria-hidden="true">@for (tick of strip.axis.ticks; track tick.value) { <span [style.left.%]="tick.x">{{ format(decision,tick.value) }}</span> }</div>
+      <div class="strip-track">
+        @for (dot of strip.dots; track dot.key) { <button class="dot" [style.left.%]="dot.x" [style.--lane]="dot.lane" [attr.aria-label]="dot.name + ', ' + dot.text" [title]="dot.name + ' · ' + dot.text" (click)="load(dot.layers)"></button> }
+        @if (marker() !== null) { <span class="you" [style.left.%]="marker()" aria-hidden="true"><b>This pipeline</b></span> }
+      </div>
+    </div>
+    @if (strip.floor !== null && strip.floorX === null) { <p class="strip-note">Random floor: {{ format(decision,strip.floor) }}, off this axis.</p> }
+  </section>
+}
+
+<div class="builder-actions">
+  @if (match(); as run) { <button class="primary" (click)="compared.emit(key(run))"><app-icon name="compare" />Compare in detail</button> }
+  <button class="quiet" [disabled]="isBest()" (click)="startFromBest()"><app-icon name="ranking" />Start from the best</button>
+  <p class="precomputed">Every number is a recorded run. No model runs here.</p>
+</div>

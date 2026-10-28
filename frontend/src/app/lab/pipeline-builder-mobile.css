@@ -1,0 +1,29 @@
+/* Too narrow for the steps side by side: the pipeline runs top to bottom, its wires down the left. */
+@media (max-width: 1060px) {
+  .diagram { flex-direction: column; align-items: stretch; padding: 1.1rem; }
+  .source { display: flex; align-items: center; width: auto; padding: 0; gap: .7rem; text-align: left; }
+  .source small { margin-left: auto; }
+  .wire { flex: none; width: 2px; max-width: none; min-width: 0; height: 46px; margin: 0 0 0 21px; }
+  .flow { background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--lab-accent) 75%, transparent) 0 6px, transparent 6px 11px); background-size: 2px 11px; animation-name: flow-down; }
+  .wire::after { right: auto; left: 50%; top: auto; bottom: -1px; rotate: 135deg; translate: -50% 0; }
+  .spark { left: 50%; top: 0; }
+  .wire-label { left: 18px; bottom: auto; top: 50%; translate: 0 -50%; grid-auto-flow: column; align-items: baseline; gap: .3rem; }
+  .node, .output, .node:has(.members) { flex: none; min-width: 0; }
+  /* The score stays in sight while the steps scroll: each choice shows its effect in place. */
+  .output { position: sticky; bottom: .6rem; z-index: 3; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: .1rem 1rem; padding: .8rem 1rem; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lab-accent) 45%, transparent), 0 -10px 30px -12px var(--black); background: color-mix(in srgb, var(--lab-surface) 92%, transparent); backdrop-filter: blur(12px); }
+  .output .node-head, .output .next-step, .output .not-run { grid-column: 1 / -1; }
+  .output .node-head small { display: none; }
+  .big { grid-row: 2 / span 3; margin: 0; font-size: 2.3rem; }
+  .big-name, .standing, .change { margin: 0; }
+  .output .next-step { display: none; }
+}
+@keyframes flow-down { to { background-position: 0 11px; } }
+@media (max-width: 700px) {
+  .diagram { margin-inline: -.25rem; border-radius: 20px; }
+  .scoreboard { grid-template-columns: repeat(2, minmax(0,1fr)); gap: .55rem; }
+  .tile { padding: .85rem; }
+  .tile strong { font-size: 1.3rem; }
+  .standing-strip { padding: 1rem; }
+  .strip { margin-inline: .4rem; }
+  .precomputed { margin-left: 0; width: 100%; }
+}

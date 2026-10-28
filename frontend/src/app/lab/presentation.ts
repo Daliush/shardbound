@@ -17,6 +17,14 @@ export function layerName(layer: string): string { return LAYER_NAMES[layer] ?? 
 export function stagesOf(run: EvaluationRun): { layer: string; name: string; variant: string }[] {
   return Object.entries(run.layers).flatMap(([layer,value]) => value === null ? [] : [{layer,name:layerName(layer),variant:variantName(value)}]);
 }
+/**
+ * The variants told apart inside one family, BM25's settings say: the family is drawn as one choice, its members as
+ * chips under it. A variant outside a family is its own.
+ */
+export function familyOf(value: string | null): { family: string; member: string } {
+  if (value !== null && value.startsWith('bm25')) return {family:'BM25', member:value === 'bm25' ? 'Default' : variantName(value).replace(/^BM25 · /,'')};
+  return {family:variantName(value), member:''};
+}
 export function pipelineName(run: EvaluationRun): string {
   return Object.values(run.layers).filter((value): value is string => value !== null).map(variantName).join(' + ') || 'No layers';
 }

@@ -16,9 +16,9 @@ import { QuestionDetail } from './question-detail';
 import { MetricsGraph } from './metrics-graph';
 import { MetricGuide } from './metric-guide';
 import { ComingSoon } from './coming-soon';
-import { CombinationBuilder } from './combination-builder';
 import { LabMotion } from './lab-motion';
 import { Leaderboard } from './leaderboard';
+import { PipelineBuilder } from './pipeline-builder';
 import { RollingNumber } from './rolling-number';
 import { SPRING_PROPERTIES, placeMarker } from './springs';
 import { Settings } from '../core/settings';
@@ -28,7 +28,7 @@ import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './u
 
 @Component({
   selector:'app-lab-page',
-  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,CombinationBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber],
+  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber],
   host:{'[style]':'springs'},
   templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
