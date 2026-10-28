@@ -1,0 +1,45 @@
+:host { display: block; --row-height: 64px; }
+
+/* The best pipeline: its steps, and its score, which rolls when the ranking metric changes. */
+.champion { position: relative; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 2rem; align-items: center; padding: 1.8rem 2rem; margin-bottom: 2.2rem; border-radius: 22px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--run) 22%, transparent), transparent 55%), var(--lab-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--run) 28%, transparent), 0 24px 48px -32px color-mix(in srgb, var(--run) 60%, var(--black)); }
+.champion-body { min-width: 0; }
+.eyebrow { display: flex; align-items: center; gap: .5rem; margin: 0 0 .9rem; font-size: .7rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--run); }
+.eyebrow app-icon { width: 16px; height: 16px; }
+.eyebrow span { color: var(--muted); font-weight: 400; letter-spacing: .04em; text-transform: none; }
+.identity-stage { position: relative; display: grid; }
+.identity { grid-area: 1 / 1; min-width: 0; }
+.identity h2 { margin: 0 0 .9rem; font: 500 1.65rem/1.2 var(--font-ui); letter-spacing: -.03em; }
+.stage-chain { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 0 0 .8rem; padding: 0; list-style: none; }
+.stage-chain li { display: grid; gap: .1rem; padding: .45rem .75rem; border-radius: 12px; background: color-mix(in srgb, var(--run) 12%, var(--lab-subtle)); }
+.stage-chain li + li { position: relative; margin-left: .9rem; }
+.stage-chain li + li::before { content: '→'; position: absolute; left: -1.05rem; top: 50%; translate: 0 -50%; color: var(--muted); font-size: .8rem; }
+.stage-chain small { font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stage-chain span { font-size: .8rem; font-weight: 500; }
+.kind { margin: 0; font-size: .76rem; color: var(--muted); }
+.champion-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem; }
+.champion-actions button { min-height: 40px; font-size: .78rem; border-radius: 999px; padding-inline: 1rem; transition: scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
+.champion-actions button:active { scale: .95; }
+.champion-actions .quiet { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.champion-score { display: grid; justify-items: end; text-align: right; }
+.score { font: 500 clamp(3rem, 6vw, 4.4rem)/1 var(--font-ui); letter-spacing: -.045em; color: var(--text); }
+.score-name { margin-top: .35rem; font-size: .78rem; color: var(--muted); }
+.lead-line { display: grid; gap: .15rem; margin: 1.1rem 0 0; font-size: .74rem; }
+.lead-line b { font-weight: 500; color: var(--heal); }
+.lead-line span { max-width: 260px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--muted); }
+.floor-line { margin: .5rem 0 0; font-size: .72rem; color: var(--muted); }
+.identity-in { animation: identity-in var(--spring-bouncy-duration, .6s) var(--spring-bouncy, var(--ease-spring)) both; }
+.identity-out { animation: identity-out 220ms ease-in both; pointer-events: none; }
+@keyframes identity-in { from { opacity: 0; translate: 0 14px; filter: blur(4px); } }
+@keyframes identity-out { to { opacity: 0; translate: 0 -10px; filter: blur(4px); } }
+
+/* Finding a pipeline and choosing what ranks them. */
+.board-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .9rem; }
+.search-field { position: relative; display: flex; align-items: center; }
+.search-field app-icon { position: absolute; left: .85rem; width: 16px; height: 16px; color: var(--muted); }
+.search-field input { width: 260px; padding-left: 2.5rem; border-radius: 999px; font-size: .78rem; background: var(--lab-surface); border-color: transparent; transition: width var(--spring-snappy-duration, .4s) var(--spring-snappy, ease), box-shadow 160ms ease; }
+.search-field input:focus { width: 320px; box-shadow: 0 0 0 1px var(--lab-accent); outline: none; }
+.rank-control { display: flex; align-items: center; gap: .7rem; font-size: .75rem; color: var(--muted); }
+.rank-control select { border-radius: 999px; font-size: .78rem; background: var(--lab-surface); border-color: transparent; }
+

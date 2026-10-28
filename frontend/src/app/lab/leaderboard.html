@@ -1,0 +1,63 @@
+@if (champion(); as best) {
+  <section class="champion" aria-labelledby="champion-title" [style.--run]="color(best.run)">
+    <div class="champion-body">
+      <p class="eyebrow"><app-icon name="ranking" />Best pipeline<span>by {{ metricName(metric()) }}</span></p>
+      <div class="identity-stage">
+        @for (current of [best]; track current.key) {
+          <div class="identity" animate.enter="identity-in" animate.leave="identity-out">
+            <h2 id="champion-title">{{ name(current.run) }}</h2>
+            <ol class="stage-chain" aria-label="Its steps">@for (stage of stages(current.run); track stage.layer) { <li><small>{{ stage.name }}</small><span>{{ stage.variant }}</span></li> }</ol>
+            <p class="kind" [title]="current.run.description ?? ''">{{ kind(current.run) }}</p>
+          </div>
+        }
+      </div>
+      <div class="champion-actions">
+        <button class="primary" (click)="built.emit(best.key)"><app-icon name="build" />Open in Build</button>
+        @if (lead()) { <button class="quiet" (click)="compared.emit(best.key)"><app-icon name="compare" />Compare with #2</button> }
+      </div>
+    </div>
+    <div class="champion-score">
+      <strong class="score"><app-rolling-number [text]="format(metric(),best.value)" [value]="best.value" [better]="null" /></strong>
+      <span class="score-name">{{ metricName(metric()) }}</span>
+      @if (lead(); as lead) { <p class="lead-line"><b>{{ lead.text }}</b><span [title]="name(lead.runnerUp.run)">{{ name(lead.runnerUp.run) }}</span></p> }
+      @if (multiple(); as multiple) { <p class="floor-line">{{ multiple }}</p> }
+    </div>
+  </section>
+}
+<section class="board" aria-label="Every pipeline, ranked">
+  <div class="board-toolbar">
+    <label class="search-field"><app-icon name="search" /><input type="search" aria-label="Find a pipeline" placeholder="Find a pipeline…" [value]="search()" (input)="find($event)" /></label>
+    <label class="rank-control">Rank by<select [value]="metric()" (change)="rankBy($event)">@for (score of scores(); track score) { <option [value]="score" [selected]="score === metric()">{{ metricName(score) }}</option> }</select></label>
+  </div>
+  <div class="leaderboard" role="table" [attr.aria-label]="'Pipelines ranked by ' + metricName(metric()) + '. ' + (lower() ? 'Lower' : 'Higher') + ' is better.'" [style.--metric-columns]="columns().length">
+    <div class="board-head" role="row">
+      <span role="columnheader" class="rank-cell">Rank</span>
+      <span role="columnheader" class="pipeline-cell">Pipeline</span>
+      @for (column of columns(); track column) {
+        <span role="columnheader" class="metric-cell" [class.sorted]="column === metric()" [attr.aria-sort]="column === metric() ? (lower(column) ? 'ascending' : 'descending') : 'none'">
+          <button class="quiet" [title]="description(column)" (click)="ranked.emit(column)">{{ metricName(column) }}<span class="sort-mark" aria-hidden="true">{{ lower(column) ? '↑' : '↓' }}</span></button>
+        </span>
+      }
+      <span role="columnheader" class="action-cell"><span class="sr-only">Actions</span></span>
+    </div>
+    <div class="board-rows" role="rowgroup" [labRows]="window()" #motion="labRows">
+      @for (row of shown(); track row.key) {
+        <div class="board-row" role="row" [attr.data-row-key]="row.key" [class.leading]="row.rank === 1" (animate.enter)="motion.enter($event,row.key)" (animate.leave)="motion.leave($event,row.key)">
+          <span role="cell" class="rank-cell"><app-rolling-number [text]="rankText(row.rank)" [value]="row.rank" better="lower" /></span>
+          <span role="rowheader" class="pipeline-cell">
+            <button class="quiet pipeline-name" (click)="built.emit(row.key)" [title]="'Open ' + name(row.run) + ' in Build'"><i class="run-dot" [style.background]="color(row.run)"></i><span>{{ name(row.run) }}</span></button>
+            <small [title]="row.run.description || kind(row.run)">{{ kind(row.run) }}</small>
+          </span>
+          @for (column of columns(); track column) {
+            <span role="cell" class="metric-cell" [class.sorted]="column === metric()"><span class="value">{{ format(column,at(row.run,column)) }}</span><span class="track" aria-hidden="true"><i [style.width.%]="column === metric() ? width(row.run,column) : 0"></i></span></span>
+          }
+          <span role="cell" class="action-cell"><button class="quiet" (click)="compared.emit(row.key)" [attr.aria-label]="'Compare ' + name(row.run)" title="Compare"><app-icon name="compare" /></button></span>
+        </div>
+      } @empty { <p class="empty-search">No pipeline matches “{{ search() }}”.<button class="quiet" (click)="search.set('')">Clear search</button></p> }
+    </div>
+  </div>
+  <footer class="board-foot">
+    @if (floor(); as floor) { <p class="floor-row" [title]="metricName(metric()) + ' of the random retriever: the score of no retrieval at all'"><i class="run-dot" [style.background]="color(floor)"></i>Random floor<strong>{{ format(metric(),at(floor,metric())) }}</strong></p> }
+    <app-pager [total]="found().length" [(page)]="page" />
+  </footer>
+</section>

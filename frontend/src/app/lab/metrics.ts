@@ -2,6 +2,14 @@ import { EvaluationQuestion, EvaluationRun, Fields, JsonValue } from '../api/eva
 import type { MetricCatalog } from './metric-catalog';
 import { recallCurve } from './recall-model';
 export const DECISION_METRIC = 'mean_recall_at.10';
+/** The scores a leaderboard shows at a glance; the others are one click away, on the metrics page. */
+const LEAD_METRICS = [DECISION_METRIC,'mean_recall_at.20','mean_binary_ndcg_at.10','mean_reciprocal_rank','latency_p50_seconds'];
+/** The leaderboard's columns, in the file's order: the scores shown at a glance, and the one it ranks by. */
+export function leadMetrics(scores: readonly string[], ranking: string): string[] {
+  const lead = scores.filter(metric => LEAD_METRICS.includes(metric));
+  const shown = new Set(lead.length ? lead : scores.slice(0,5));
+  return scores.filter(metric => shown.has(metric) || metric === ranking);
+}
 export function humanize(key: string): string { return key.replaceAll('_',' ').replaceAll('.',' · ').replace(/\b\w/g, char => char.toUpperCase()); }
 export function numericFields(fields: Fields, prefix = ''): string[] {
   return Object.entries(fields).flatMap(([key,value]) => {
