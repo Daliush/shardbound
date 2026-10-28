@@ -28,7 +28,7 @@ describe('Metrics dot plots', () => {
     fixture.componentRef.setInput('runs',[run('bm25',.533),run('random',.089),run('dense-qwen3-0.6b',.623),run('bm25l',.552)]);
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
-    expect([...host.querySelectorAll('.dot-row .row-name')].map(name => name.textContent?.trim())).toEqual(['Qwen3 · 0.6B','BM25L','BM25']);
+    expect([...host.querySelectorAll('.dot-row .name-text')].map(name => name.textContent?.trim())).toEqual(['Qwen3 · 0.6B','BM25L','BM25']);
     expect(host.querySelectorAll('.dot-row.variant')).toHaveLength(1);
     expect(host.querySelector('.axis-note')?.textContent).toContain('Random floor: 8.9%, off this axis');
     expect(host.querySelector('.grid-lines .floor')).toBeNull();

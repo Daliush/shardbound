@@ -2,10 +2,9 @@
 .graph-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; margin-bottom: 1.7rem; }
 .graph-toolbar p { font-size: .8rem; color: var(--muted); margin: 0; }
 label { display: flex; align-items: center; gap: .75rem; font-size: .75rem; color: var(--muted); }select { font-size: .8rem; background: var(--lab-surface); }
-.metric-plots { display: grid; grid-template-columns: minmax(0,1fr); gap: 1.5rem; }
-.metric-plot { min-width: 0; padding: 1.4rem; border-radius: 14px; background: var(--lab-surface); }
-header { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }h2 { font: 500 1.15rem var(--font-ui); margin: 0; }header > span { font-size: .66rem; color: var(--lab-accent); }
-.metric-description { font-size: .75rem; line-height: 1.6; color: var(--muted); margin: .65rem 0 1.2rem; }
+.metric-plots { display: grid; grid-template-columns: minmax(0,1fr); gap: .75rem; }
+h2 { font: 500 1.05rem var(--font-ui); margin: 0; letter-spacing: -.01em; }
+.metric-description { font-size: .75rem; line-height: 1.6; color: var(--muted); margin: 0 0 1.2rem; }
 .metric-method { margin: -.6rem 0 1.2rem; font-size: .72rem; color: var(--muted); }
 .metric-method summary { cursor: pointer; padding: .2rem 0; font-size: .72rem; color: var(--lab-accent); width: fit-content; }
 .metric-method p { margin: .55rem 0 0; line-height: 1.65; max-width: 90ch; }
@@ -19,15 +18,18 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .grid-lines b.floor { border-left: 1px dashed var(--muted); opacity: .9; }
 .dot-row { min-height: 30px; }
 .row-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .72rem; }
+.row-name small { display: inline-block; width: 1.4rem; font-size: .6rem; font-variant-numeric: tabular-nums; }
+.dot-rows { min-height: calc(30px * 10); }
 .row-name i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: .45rem; }
 .dot-row.variant .row-name { color: var(--muted); }
 .dot-track { position: relative; height: 30px; }
 .dot-track::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--lab-subtle); }
-.dot { position: absolute; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lab-surface); }
+.dot { position: absolute; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lab-surface); transition: left var(--spring-bouncy-duration, .5s) var(--spring-bouncy, var(--ease-out)); }
 .dot-row.variant .dot { width: 8px; height: 8px; margin: -4px 0 0 -4px; }
-.dot-row strong { font-weight: 500; font-size: .72rem; text-align: right; font-variant-numeric: tabular-nums; }
-.axis-note { font-size: .68rem; color: var(--muted); margin: .9rem 0 0; line-height: 1.6; }
+.dot-row strong { display: flex; justify-content: flex-end; font-weight: 500; font-size: .72rem; font-variant-numeric: tabular-nums; }
+.dot-row { background: var(--lab-surface); }
+.axis-note { font-size: .68rem; color: var(--muted); margin: 0; line-height: 1.6; }
 .scale-note { font-size: .75rem; line-height: 1.8; color: var(--muted); margin: 1.5rem 0; max-width: 95ch; }
 summary { cursor: pointer; font-size: .85rem; padding: 1rem 0; }.score-table-wrap { overflow-x: auto; }table { width: 100%; border-collapse: collapse; text-align: left; font-size: .78rem; }caption { text-align: left; padding: 1rem 0; }th,td { padding: .8rem .5rem; border-bottom: 1px solid var(--line); white-space: nowrap; }th { font-weight: 400; }thead th { color: var(--muted); font-size: .72rem; }td { text-align: right; font-variant-numeric: tabular-nums; }
 th i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: .45rem; }
-@media(max-width:750px) { :host { --name-width: 112px; --value-width: 44px; --column-gap: .6rem; }.graph-toolbar { align-items: flex-start; flex-direction: column; }.graph-toolbar label { width: 100%; justify-content: space-between; }.metric-plot { padding: 1rem; }.row-name { font-size: .66rem; }.axis-ticks span:nth-child(even) { visibility: hidden; } }
+@media(max-width:750px) { :host { --name-width: 112px; --value-width: 44px; --column-gap: .6rem; }.graph-toolbar { align-items: flex-start; flex-direction: column; }.toolbar-actions { width: 100%; justify-content: space-between; }.row-name { font-size: .66rem; }.axis-ticks span:nth-child(even) { visibility: hidden; } }
