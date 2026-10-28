@@ -89,6 +89,8 @@
 
 > **v2.36 (October 2026)** — Qwen3-Reranker-0.6B joins MiniLM-L6 as a variant of the reranker. On v2 dev, it ties at 10 (70.7% of the cited chunks, against 71.1%), puts more in its 20 (86.7% against 81.3%) and takes ten times as long, so MiniLM-L6 stays the baseline. Every model's revision is pinned, and the index keeps a model's vectors under its name and format, so that a change of format embeds every chunk again (§5.2, §6.2).
 
+> **v2.37 (October 2026)** — the RAG gate compares a pull request with main only. It used to compare CI's run with the evaluation the pull request itself committed, so it never saw a drop against main. The baseline, the pipeline CI checks, is named once in code; a pull request that changes what retrieval depends on must commit an evaluation of its own code, so main always records one of its own (§9).
+
 ---
 
 ## 0. Glossary (read first)
@@ -831,7 +833,7 @@ Documented in `docs/dev-workflow.md`, with screenshots and real examples.
   - Agents' instructions (in place): every path that `AGENTS.md`, `CLAUDE.md` and `.claude/` cite exists, on every push or PR (`scripts/check-doc-paths.py`, `.github/workflows/docs.yml`);
   - Content (in place): card and deck schemas, card and deck rules, text templates (`content/tests/`) on every push or PR touching `content/` (`.github/workflows/content.yml`);
   - Java: Maven build, engine JUnit tests (rules, interactions, **one test per ruling**), backend integration tests;
-  - Python (in place): pytest; the RAG "smoke" eval (the main retrieval pipeline on the 61 answerable dev questions, on CPU) on every PR touching what retrieval reads or does → PR blocked if a run's Recall@10 drops by more than 2 points against the evaluation its commit records (`.github/workflows/rag-smoke.yml`); once the Arbiter answers, its answer metrics join it;
+  - Python (in place): pytest; the RAG gate on every PR (`.github/workflows/rag-gate.yml`): a PR that changes what retrieval depends on must commit an evaluation of its own code (required), and the baseline, evaluated on the 61 answerable dev questions on CPU, is compared with the evaluation main records, a drop of more than 2 points of Recall@10 failing a check the maintainer may accept; once the Arbiter answers, its answer metrics join it;
   - Proto: gRPC contract compatibility check (`buf breaking`);
   - Frontend: Angular build and tests;
   - Site deployment (static + Cloud Run CPU) on the main branch;

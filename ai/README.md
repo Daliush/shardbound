@@ -9,6 +9,8 @@ uv run python -m dataset build v2 --base v1        # word and split a version (s
 uv run python -m rag index                         # write the chunks and their vectors into the database
 uv run python -m rag evaluate --description "…"    # score every retriever on the dev questions (or name some)
 uv run python -m rag compare <recorded> <new>      # two evaluations run by run; --max-drop fails on a lower recall
+uv run python -m rag evaluate --baseline --description "…"   # the baseline only, as CI does (rag/baseline.py)
+uv run python -m rag check-evaluation              # CI's "Evaluation is fresh": does this branch commit its evaluation?
 ```
 
 ## What `dataset/` does
@@ -96,6 +98,8 @@ rag/
 ├── __main__.py                 the command line: index, evaluate, compare; it calls a service and prints
 ├── chunks.py                   the chunks engine/corpus writes
 ├── comparison/                 two saved evaluations, run by run: comparison_service.py, comparison_table.py
+├── gate/                       what CI asks of a pull request: retrieval_inputs.py (the files an evaluation depends
+│                               on), git_history.py, fresh_evaluation.py (a change commits its evaluation)
 ├── indexing/
 │   └── indexing_service.py     the index: the chunks into the database, then each model's vectors of the changed ones
 ├── repository/                 the database, Postgres with pgvector, through SQLAlchemy
@@ -117,6 +121,7 @@ rag/
 │   ├── registry.py             every expander by name
 │   └── refs/                   refs_expander.py (the named cards and the refs)
 ├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common
+├── baseline.py                 BASELINE, the pipeline the Arbiter would serve and CI checks against main
 ├── device.py                   where the models run: read_device() (RAG_DEVICE, "cpu" by default);
 │                               describe_device(), what an evaluation records
 ├── rerankers/

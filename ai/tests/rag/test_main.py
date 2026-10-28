@@ -1,9 +1,10 @@
+import argparse
 import json
 from pathlib import Path
 
 import pytest
 
-from rag.__main__ import main
+from rag.__main__ import choose_techniques, main
 
 
 @pytest.mark.parametrize("arguments", [["evaluate"], ["evaluate", "--description", "   "]])
@@ -19,6 +20,19 @@ def test_refuses_a_reranker_it_does_not_know():
         main(["evaluate", "--rerankers", "jev", "--description", "Why"])
 
     assert stopped.value.code == 2
+
+
+def test_refuses_to_name_techniques_beside_the_baseline():
+    with pytest.raises(SystemExit) as stopped:
+        main(["evaluate", "--baseline", "bm25", "--description", "Why"])
+
+    assert stopped.value.code == 2
+
+
+def test_evaluates_only_the_baseline_s_techniques_with_baseline():
+    arguments = argparse.Namespace(baseline=True, retrievers=[], expanders=None, rerankers=None)
+
+    assert choose_techniques(arguments) == (["rrf-bm25-dense"], ["refs"], ["minilm-l6"])
 
 
 def write_evaluation(folder: Path, name: str, recall_at_10: float) -> Path:

@@ -4,7 +4,10 @@ uv run python -m rag index                                    # chunks and vecto
 uv run python -m rag evaluate --description "Why it is run"   # each retriever, expanded or not, reranked or not
 uv run python -m rag evaluate bm25 dense-qwen3-0.6b --rerankers minilm-l6 --description "Why it is run"
 uv run python -m rag evaluate bm25 --expanders --rerankers --description "Why it is run"   # a flag alone: none of them
+uv run python -m rag evaluate --baseline --description "Why it is run"   # the baseline's techniques only (baseline.py)
 uv run python -m rag compare <recorded evaluation> <new evaluation> --max-drop 2   # what moved; fails on a drop
+uv run python -m rag check-evaluation --base origin/main   # fails when a change to retrieval commits no fresh evaluation
+uv run python -m rag changes-retrieval --base origin/main  # prints true when a file retrieval depends on changed
 """
 
 import argparse
@@ -12,12 +15,16 @@ import sys
 from pathlib import Path
 
 from dataset.paths import repo_root
+from rag.baseline import BASELINE
 from rag.comparison.comparison_service import compare_evaluation_files
 from rag.comparison.comparison_table import format_comparison_table
 from rag.evaluation.evaluation_json import name_evaluation
 from rag.evaluation.evaluation_service import evaluate_all
 from rag.evaluation.report_table import format_report_table
 from rag.expanders.registry import list_expander_names
+from rag.gate.fresh_evaluation import check_fresh_evaluation, describe_baseline
+from rag.gate.git_history import GitHistoryLocal
+from rag.gate.retrieval_inputs import find_retrieval_changes
 from rag.indexing.indexing_service import build_index
 from rag.repository.evaluation_repository import EvaluationRepositoryFile
 from rag.rerankers.registry import list_reranker_names
@@ -38,6 +45,8 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--rerankers", nargs="*", choices=list_reranker_names(), metavar="reranker",
                           help="each retriever runs again with each of them, every one by default; --rerankers alone "
                                "for none: " + ", ".join(list_reranker_names()))
+    evaluate.add_argument("--baseline", action="store_true",
+                          help="the baseline's techniques only, and no others: " + describe_baseline())
     evaluate.add_argument("--description", required=True, type=refuse_blank,
                           help="why this evaluation is run, kept in its file for the benchmark explorer")
     evaluate.add_argument("--version", default="v2")
@@ -48,6 +57,12 @@ def main(argv: list[str] | None = None) -> None:
     compare.add_argument("new", type=Path)
     compare.add_argument("--max-drop", type=float, metavar="points",
                          help="fail when a run's Recall@10 lost more than these points")
+    check = commands.add_parser("check-evaluation", help="fail when this pull request changes a file retrieval depends "
+                                                         "on and commits no evaluation of its own code")
+    check.add_argument("--base", default="origin/main", help="the branch the pull request goes into")
+    changes = commands.add_parser("changes-retrieval", help="print true when this pull request changes a file "
+                                                            "retrieval depends on, false otherwise")
+    changes.add_argument("--base", default="origin/main", help="the branch the pull request goes into")
     arguments = parser.parse_args(argv)
 
     root = repo_root()
@@ -56,10 +71,16 @@ def main(argv: list[str] | None = None) -> None:
     elif arguments.command == "index":
         for model_name, embedded in build_index(root).items():
             print(f"{model_name}: {embedded} chunks embedded, the others unchanged")
+    elif arguments.command == "check-evaluation":
+        check_and_report(root, arguments.base)
+    elif arguments.command == "changes-retrieval":
+        print(str(bool(find_retrieval_changes(GitHistoryLocal(root).list_changed_files(arguments.base)))).lower())
     else:
-        expanders = list_expander_names() if arguments.expanders is None else arguments.expanders
-        rerankers = list_reranker_names() if arguments.rerankers is None else arguments.rerankers
-        evaluation = evaluate_all(arguments.retrievers or list_retriever_names(), expanders, rerankers, root,
+        if arguments.baseline and (arguments.retrievers or arguments.expanders is not None
+                                   or arguments.rerankers is not None):
+            parser.error("--baseline names its own techniques: name none with it")
+        retrievers, expanders, rerankers = choose_techniques(arguments)
+        evaluation = evaluate_all(retrievers, expanders, rerankers, root,
                                   arguments.version, arguments.split, arguments.description,
                                   EvaluationRepositoryFile(root))
         for run in evaluation.runs:
@@ -81,6 +102,29 @@ def compare_and_report(recorded: Path, new: Path, max_drop: float | None) -> Non
         print(f"{run.name}: Recall@10 lost {run.count_lost_points():.1f} points, more than {max_drop:g}. If that is "
               f"meant, record a new evaluation with this change (scripts/evaluate.sh).", file=sys.stderr)
     if drops:
+        sys.exit(1)
+
+
+def choose_techniques(arguments: argparse.Namespace) -> tuple[list[str], list[str], list[str]]:
+    """The retrievers, expanders and rerankers to evaluate: the baseline's with --baseline, else those named, every
+    one of a step by default."""
+    if arguments.baseline:
+        return [BASELINE.retriever], name_layer(BASELINE.expand), name_layer(BASELINE.rerank)
+    expanders = list_expander_names() if arguments.expanders is None else arguments.expanders
+    rerankers = list_reranker_names() if arguments.rerankers is None else arguments.rerankers
+    return arguments.retrievers or list_retriever_names(), expanders, rerankers
+
+
+def name_layer(technique: str | None) -> list[str]:
+    """The technique of a layer as a list of names: none when the layer is skipped."""
+    return [] if technique is None else [technique]
+
+
+def check_and_report(root: Path, base: str) -> None:
+    """Prints the verdict on this pull request's evaluation; stops with status 1 when it fails."""
+    verdict = check_fresh_evaluation(GitHistoryLocal(root), root, base)
+    print(verdict.message, file=sys.stdout if verdict.passed else sys.stderr)
+    if not verdict.passed:
         sys.exit(1)
 
 

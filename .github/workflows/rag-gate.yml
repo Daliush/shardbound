@@ -1,0 +1,114 @@
+name: RAG gate
+
+# Two checks on every pull request about the Arbiter's retrieval; each decides by itself whether the pull request
+# changes a file retrieval depends on (ai/rag/gate/retrieval_inputs.py), so that a required check never waits forever.
+# A pull request is checked out merged into its base: a branch behind main shows main's newer files too.
+#
+# "Evaluation is fresh", required: a pull request that changes those files commits an evaluation recorded at a clean
+# commit with those files as the pull request has them, holding a run of the baseline. So main always records an
+# evaluation of its own code, the one the next pull request is compared with.
+#
+# "Recall@10 against main", not required: evaluates the baseline (ai/rag/baseline.py) on the CPU and compares it with
+# the evaluation main records. It fails when a run lost more than 2 points of Recall@10, a drop the maintainer may
+# accept; the job's summary shows the table and the questions ranked differently.
+on:
+  pull_request:
+
+jobs:
+  fresh-evaluation:
+    name: Evaluation is fresh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Check the pull request's evaluation
+        working-directory: ai
+        run: uv run python -m rag check-evaluation --base "origin/${{ github.base_ref }}"
+
+  recall-against-main:
+    name: Recall@10 against main
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:0.8.0-pg17
+        env:
+          POSTGRES_USER: shardbound
+          POSTGRES_PASSWORD: shardbound
+          POSTGRES_DB: shardbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shardbound -d shardbound"
+          --health-interval 2s --health-timeout 5s --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Does the pull request change retrieval?
+        id: changes
+        working-directory: ai
+        run: echo "retrieval=$(uv run python -m rag changes-retrieval --base "origin/${{ github.base_ref }}")" >> "$GITHUB_OUTPUT"
+
+      - name: Nothing to compare
+        if: steps.changes.outputs.retrieval != 'true'
+        run: |
+          echo "No file retrieval depends on changed: the baseline's recall cannot move." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Java 21
+        if: steps.changes.outputs.retrieval == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Cache the models
+        if: steps.changes.outputs.retrieval == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: models-${{ hashFiles('ai/rag/retrievers/dense/embedding_models.py', 'ai/rag/rerankers/minilm/minilm_reranker.py') }}
+
+      - name: Write the chunks
+        if: steps.changes.outputs.retrieval == 'true'
+        working-directory: engine
+        run: ./mvnw -B -q -pl corpus -am compile exec:java
+
+      - name: Index the chunks
+        if: steps.changes.outputs.retrieval == 'true'
+        working-directory: ai
+        run: uv run python -m rag index
+
+      - name: Evaluate the baseline
+        if: steps.changes.outputs.retrieval == 'true'
+        working-directory: ai
+        run: >-
+          uv run python -m rag evaluate --baseline --description "CI: the baseline of this pull request"
+
+      - name: Compare with the evaluation main records
+        if: steps.changes.outputs.retrieval == 'true'
+        shell: bash
+        run: |
+          new="$(git ls-files --others --exclude-standard evals/reports)"
+          folder="$(dirname "$new")"
+          recorded="$(git ls-tree --name-only "origin/${{ github.base_ref }}" "$folder/" | sort | tail -n 1)"
+          if [ -z "$recorded" ]; then
+            echo "main records no evaluation in $folder yet: nothing to compare with." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git show "origin/${{ github.base_ref }}:$recorded" > "$RUNNER_TEMP/main-evaluation.json"
+          echo "The baseline of this pull request against $recorded, the evaluation main records:" | tee -a "$GITHUB_STEP_SUMMARY"
+          cd ai && uv run python -m rag compare "$RUNNER_TEMP/main-evaluation.json" "../$new" --max-drop 2 | tee -a "$GITHUB_STEP_SUMMARY"
