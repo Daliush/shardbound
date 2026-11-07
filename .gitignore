@@ -23,7 +23,7 @@ target/
 # Local previews of the evaluation dataset; versioned datasets are committed
 evals/datasets/preview/
 
-# Model responses cached by the dataset pipeline (ai/dataset): local, rebuilt from the API
+# Model responses cached by the dataset pipeline (ai/dataset) and the Arbiter (ai/arbiter): local, rebuilt from the API
 ai/.cache/
 
 # The Arbiter's chunks, written by engine/corpus from the rulebook and the cards before each indexing

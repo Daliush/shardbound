@@ -1,5 +1,5 @@
 """
-The baseline: the pipeline the Arbiter would serve, and the one CI checks against main on every pull request
+The baseline: the pipeline the Arbiter answers with (`python -m arbiter ask`), and the one CI checks against main on every pull request
 (`.github/workflows/rag-gate.yml`). It must run on the CPU in a few minutes, since CI and Cloud Run have no GPU: a
 slower pipeline is a variant.
 """
