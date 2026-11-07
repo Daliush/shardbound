@@ -1,0 +1,2991 @@
+{
+ "dataset": {
+  "version": "v2",
+  "split": "dev"
+ },
+ "evaluated_at": "2026-11-07T23:26:05Z",
+ "code": "74b9fa7",
+ "device": "cpu, torch 2.14.1+cpu",
+ "description": "Step 9: the first checks of the answers, on the baseline's context",
+ "metrics": [
+  {
+   "path": "mean_valid_answer",
+   "name": "Valid answers",
+   "display": "share",
+   "what": "Out of the questions, the share that got an answer in the expected format.",
+   "how": "A reply is an answer when it holds a text, the ids it cites and whether the question can be answered, and nothing else. A reply that is not gets one more try. A question counts when one of its two tries is an answer. Then take the average over all the questions.",
+   "represents": "Whether the player gets an answer at all. A question with no answer also gets 0 on answered or correct refusals, and on citation recall."
+  },
+  {
+   "path": "mean_answered",
+   "name": "Answered",
+   "display": "share",
+   "what": "Out of the questions that have an answer, the share the Arbiter answers instead of refusing.",
+   "how": "An answer refuses when it says the question can't be answered (\"answerable\" is false). Count 1 for an answer that does not refuse, 0 for one that does or for no answer. Questions that have no answer to give are left out. Then take the average over the questions.",
+   "represents": "How rarely the Arbiter refuses by mistake: 100% means it never does. It says nothing of whether the answer is right, nor of the questions it should refuse: read it with correct refusals."
+  },
+  {
+   "path": "mean_correct_refusal",
+   "name": "Correct refusals",
+   "display": "share",
+   "what": "Out of the questions that have no answer, the share the Arbiter refuses.",
+   "how": "Count 1 for an answer that says the question can't be answered (\"answerable\" is false), 0 for one that answers it or for no answer. Only the questions that have no answer to give are scored. Then take the average over them.",
+   "represents": "How rarely the Arbiter invents an answer: an answer to a question that has none can only be made up. Read it with answered, which a model that always refuses would fail."
+  },
+  {
+   "path": "mean_citation_recall",
+   "name": "Citation recall",
+   "display": "share",
+   "what": "Out of the rules and cards an answer must cite, the share it cites.",
+   "how": "The answer key lists what a correct answer cites. Count how many of them the answer cites, then divide by how many there are: 2 out of 7 gives 29%. A question with no answer gets 0. Questions that have no answer to give are left out. Then take the average over the questions.",
+   "represents": "Whether an answer cites everything it relies on. It does not look at what else the answer cites: read it with citation precision."
+  },
+  {
+   "path": "mean_citation_precision",
+   "name": "Citation precision",
+   "display": "share",
+   "what": "Out of the ids an answer cites that are right or wrong, the share that are right.",
+   "how": "A cited id is right when the answer key lists it. Two kinds are tolerated, and neither counted right nor wrong: a rule an event of the scenario carries without being a key event (a spell going to the graveyard), and a card the question names. Any other id is wrong. Divide the right ones by the right and the wrong ones: 1 right and 1 wrong gives 50%. Answers that cite only tolerated ids or nothing, and questions that have no answer to give, are left out. Then take the average over the questions.",
+   "represents": "Whether an answer cites only what it should. Citing the cards the question names neither helps nor hurts. It does not look at what the answer leaves out: read it with citation recall."
+  },
+  {
+   "path": "mean_step_order",
+   "name": "Step order",
+   "display": "share",
+   "what": "Whether an answer cites the rules of a scenario in the order they apply.",
+   "how": "A scenario's key events happen one after the other, each with its rules. Take every pair of cited rules from two different events, then count the pairs cited in the order the events happen: 5 out of 6 gives 83%. Only scenarios are scored, when the answer cites rules of at least two of their events. Then take the average over the questions.",
+   "represents": "Whether an answer gives a chain of effects in the right order. One rule out of place costs a few pairs, not the whole score."
+  },
+  {
+   "path": "scored_valid_answer",
+   "name": "Valid answers: questions",
+   "display": "count",
+   "what": "How many questions Valid answers scored.",
+   "how": "The questions Valid answers applies to, as its own description says.",
+   "represents": "How much to trust Valid answers. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "scored_answered",
+   "name": "Answered: questions",
+   "display": "count",
+   "what": "How many questions Answered scored.",
+   "how": "The questions Answered applies to, as its own description says.",
+   "represents": "How much to trust Answered. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "scored_correct_refusal",
+   "name": "Correct refusals: questions",
+   "display": "count",
+   "what": "How many questions Correct refusals scored.",
+   "how": "The questions Correct refusals applies to, as its own description says.",
+   "represents": "How much to trust Correct refusals. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "scored_citation_recall",
+   "name": "Citation recall: questions",
+   "display": "count",
+   "what": "How many questions Citation recall scored.",
+   "how": "The questions Citation recall applies to, as its own description says.",
+   "represents": "How much to trust Citation recall. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "scored_citation_precision",
+   "name": "Citation precision: questions",
+   "display": "count",
+   "what": "How many questions Citation precision scored.",
+   "how": "The questions Citation precision applies to, as its own description says.",
+   "represents": "How much to trust Citation precision. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "scored_step_order",
+   "name": "Step order: questions",
+   "display": "count",
+   "what": "How many questions Step order scored.",
+   "how": "The questions Step order applies to, as its own description says.",
+   "represents": "How much to trust Step order. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "question_count",
+   "name": "Questions",
+   "display": "count",
+   "what": "How many questions were asked.",
+   "how": "Every question of the split, or of one category, those that have no answer to give included.",
+   "represents": "How much to trust a score. The fewer the questions, the more a single question moves it."
+  },
+  {
+   "path": "mean_input_tokens",
+   "name": "Input tokens",
+   "display": "count",
+   "what": "How many tokens the model reads for a question, on average.",
+   "how": "Add up the input tokens of every try at a question, then take the average over all the questions.",
+   "represents": "Most of it is the context: it grows with every chunk the prompt holds."
+  },
+  {
+   "path": "mean_output_tokens",
+   "name": "Output tokens",
+   "display": "count",
+   "what": "How many tokens the model writes for a question, on average, its thinking included.",
+   "how": "Add up the output tokens of every try at a question, then take the average over all the questions.",
+   "represents": "How much the model writes and thinks, which the latency and the cost follow."
+  },
+  {
+   "path": "mean_cost_dollars",
+   "name": "Cost",
+   "display": "dollars",
+   "what": "What a question costs, on average, in US dollars.",
+   "how": "For each question, the tokens of every try at the model's list price per million tokens, input and output apart. Then take the average over all the questions.",
+   "represents": "What an answer costs to serve. Lower is better."
+  },
+  {
+   "path": "latency_p50_seconds",
+   "name": "Latency p50",
+   "display": "seconds",
+   "what": "How long a typical answer takes.",
+   "how": "For each question, add up the time of every try. The p50 is the time that half of the questions don't go over.",
+   "represents": "How long a player waits for the answer once the context is chosen, as the model's API took when the answer was first written. Lower is better."
+  },
+  {
+   "path": "latency_p95_seconds",
+   "name": "Latency p95",
+   "display": "seconds",
+   "what": "How long the slowest answers take.",
+   "how": "For each question, add up the time of every try. The p95 is the time that 95% of the questions don't go over.",
+   "represents": "How long a player waits for the answer once the context is chosen, as the model's API took when the answer was first written. Lower is better."
+  }
+ ],
+ "runs": [
+  {
+   "layers": {
+    "retriever": "rrf-bm25-dense",
+    "expand": "refs",
+    "rerank": "minilm-l6",
+    "answer": "claude-haiku-5.5"
+   },
+   "description": "The context of rrf-bm25-dense + refs + minilm-l6; then Claude (claude-haiku-5-5, effort medium), with structured outputs",
+   "generator": {
+    "settings": {
+     "model": "claude-haiku-5-5",
+     "effort": "medium",
+     "max_tokens": 16000,
+     "answer_schema": "c26d93e8b856"
+    },
+    "price": {
+     "input_per_million": 0.1,
+     "output_per_million": 0.5
+    }
+   },
+   "scores": {
+    "overall": {
+     "question_count": 72,
+     "mean_valid_answer": 1.0,
+     "mean_answered": 0.9672131147540983,
+     "mean_correct_refusal": 1.0,
+     "mean_citation_recall": 0.7043715846994536,
+     "mean_citation_precision": 0.6187331536388141,
+     "mean_step_order": null,
+     "scored_valid_answer": 72,
+     "scored_answered": 61,
+     "scored_correct_refusal": 11,
+     "scored_citation_recall": 61,
+     "scored_citation_precision": 53,
+     "scored_step_order": 0,
+     "mean_input_tokens": 1607.875,
+     "mean_output_tokens": 406.875,
+     "mean_cost_dollars": 0.0003642250000000001,
+     "latency_p50_seconds": 2.191614800001844,
+     "latency_p95_seconds": 5.854100299999118
+    },
+    "by_category": {
+     "deck-building": {
+      "question_count": 12,
+      "mean_valid_answer": 1.0,
+      "mean_answered": 0.9166666666666666,
+      "mean_correct_refusal": null,
+      "mean_citation_recall": 0.5833333333333334,
+      "mean_citation_precision": 0.22727272727272727,
+      "mean_step_order": null,
+      "scored_valid_answer": 12,
+      "scored_answered": 12,
+      "scored_correct_refusal": 0,
+      "scored_citation_recall": 12,
+      "scored_citation_precision": 11,
+      "scored_step_order": 0,
+      "mean_input_tokens": 2175.9166666666665,
+      "mean_output_tokens": 733.0833333333334,
+      "mean_cost_dollars": 0.0005841333333333333,
+      "latency_p50_seconds": 3.590823200000159,
+      "latency_p95_seconds": 5.224745499996061
+     },
+     "factual": {
+      "question_count": 21,
+      "mean_valid_answer": 1.0,
+      "mean_answered": 1.0,
+      "mean_correct_refusal": null,
+      "mean_citation_recall": 1.0,
+      "mean_citation_precision": 0.7976190476190477,
+      "mean_step_order": null,
+      "scored_valid_answer": 21,
+      "scored_answered": 21,
+      "scored_correct_refusal": 0,
+      "scored_citation_recall": 21,
+      "scored_citation_precision": 21,
+      "scored_step_order": 0,
+      "mean_input_tokens": 1458.0,
+      "mean_output_tokens": 118.23809523809524,
+      "mean_cost_dollars": 0.00020491904761904764,
+      "latency_p50_seconds": 1.2119802000015625,
+      "latency_p95_seconds": 2.191614800001844
+     },
+     "interaction": {
+      "question_count": 7,
+      "mean_valid_answer": 1.0,
+      "mean_answered": 0.8571428571428571,
+      "mean_correct_refusal": null,
+      "mean_citation_recall": 0.0,
+      "mean_citation_precision": null,
+      "mean_step_order": null,
+      "scored_valid_answer": 7,
+      "scored_answered": 7,
+      "scored_correct_refusal": 0,
+      "scored_citation_recall": 7,
+      "scored_citation_precision": 0,
+      "scored_step_order": 0,
+      "mean_input_tokens": 1573.0,
+      "mean_output_tokens": 811.7142857142857,
+      "mean_cost_dollars": 0.0005631571428571428,
+      "latency_p50_seconds": 4.254208500002278,
+      "latency_p95_seconds": 5.854100299999118
+     },
+     "multi-step": {
+      "question_count": 8,
+      "mean_valid_answer": 1.0,
+      "mean_answered": 1.0,
+      "mean_correct_refusal": null,
+      "mean_citation_recall": 0.24583333333333332,
+      "mean_citation_precision": 0.84375,
+      "mean_step_order": null,
+      "scored_valid_answer": 8,
+      "scored_answered": 8,
+      "scored_correct_refusal": 0,
+      "scored_citation_recall": 8,
+      "scored_citation_precision": 8,
+      "scored_step_order": 0,
+      "mean_input_tokens": 1499.75,
+      "mean_output_tokens": 992.0,
+      "mean_cost_dollars": 0.0006459749999999999,
+      "latency_p50_seconds": 5.139575300003344,
+      "latency_p95_seconds": 6.584817200004181
+     },
+     "simple-rule": {
+      "question_count": 13,
+      "mean_valid_answer": 1.0,
+      "mean_answered": 1.0,
+      "mean_correct_refusal": null,
+      "mean_citation_recall": 1.0,
+      "mean_citation_precision": 0.5225274725274726,
+      "mean_step_order": null,
+      "scored_valid_answer": 13,
+      "scored_answered": 13,
+      "scored_correct_refusal": 0,
+      "scored_citation_recall": 13,
+      "scored_citation_precision": 13,
+      "scored_step_order": 0,
+      "mean_input_tokens": 1468.6923076923076,
+      "mean_output_tokens": 217.0,
+      "mean_cost_dollars": 0.00025536923076923074,
+      "latency_p50_seconds": 1.3281130000032135,
+      "latency_p95_seconds": 3.201824800002214
+     },
+     "unanswerable": {
+      "question_count": 11,
+      "mean_valid_answer": 1.0,
+      "mean_answered": null,
+      "mean_correct_refusal": 1.0,
+      "mean_citation_recall": null,
+      "mean_citation_precision": null,
+      "mean_step_order": null,
+      "scored_valid_answer": 11,
+      "scored_answered": 0,
+      "scored_correct_refusal": 11,
+      "scored_citation_recall": 0,
+      "scored_citation_precision": 0,
+      "scored_step_order": 0,
+      "mean_input_tokens": 1539.6363636363637,
+      "mean_output_tokens": 143.27272727272728,
+      "mean_cost_dollars": 0.00022559999999999995,
+      "latency_p50_seconds": 1.3762088000003132,
+      "latency_p95_seconds": 2.6301233999984106
+     }
+    }
+   },
+   "questions": [
+    {
+     "question_id": "echo+modify/ember.ash-warden/ember.roaring-pyre/neutral.tempest",
+     "category": "interaction",
+     "context_ids": [
+      "7.3",
+      "ember.ash-warden",
+      "7.2",
+      "1.4",
+      "11.3.4",
+      "ember.roaring-pyre",
+      "ember.pyre-offering",
+      "7.7",
+      "root.bramble-warden",
+      "9.11",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Casting Roaring Pyre first gives all your units +3/+0 until end of turn, so Ash Warden gets +3 attack for the rest of the turn. Casting Tempest next destroys all units, so your Ash Warden is destroyed, and the +3/+0 bonus ends with it. Your opponent has no unit to lose, so Tempest only affects your side. The context does not say whether you can afford both spells (2 + 7 = 9 Shards in total).",
+      "citations": [
+       "ember.roaring-pyre",
+       "neutral.tempest"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1632,
+     "output_tokens": 772,
+     "cost_dollars": 0.0005492,
+     "seconds": 4.254208500002278
+    },
+    {
+     "question_id": "echo+modify/ember.ash-warden/tide.reefkeeper:swell/neutral.tempest",
+     "category": "interaction",
+     "context_ids": [
+      "7.3",
+      "tide.reefkeeper",
+      "ember.ash-warden",
+      "11.3.4",
+      "1.4",
+      "7.7",
+      "11.3.2",
+      "8.10",
+      "7.1",
+      "root.bramble-warden",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Swell first gives all your units +1/+1 until they leave the board, so Ash Warden becomes 7 defense and Reefkeeper becomes 7 defense. Tempest then destroys all units, including both of yours, regardless of their defense. Nothing in the context protects them from destruction, so both leave the board and the +1/+1 is lost with them. Your opponent has no units, so nothing on their side is affected. The context does not give the rules for Shard totals or whether you can pay for Swell (2 Shards) and Tempest (7 Shards) in the same turn, so I can't say whether you can afford both.",
+      "citations": [
+       "tide.reefkeeper",
+       "neutral.tempest",
+       "ember.ash-warden"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1619,
+     "output_tokens": 850,
+     "cost_dollars": 0.0005869,
+     "seconds": 4.688268500001868
+    },
+    {
+     "question_id": "echo+modify/ember.ashborn-drake/ember.roaring-pyre/neutral.tempest",
+     "category": "interaction",
+     "context_ids": [
+      "7.3",
+      "ember.ashborn-drake",
+      "1.4",
+      "ember.roaring-pyre",
+      "11.3.4",
+      "7.7",
+      "ember.pyre-offering",
+      "neutral.tempest",
+      "9.11",
+      "11.3.2"
+     ],
+     "answer": {
+      "answer": "Casting Roaring Pyre first gives all your units +3/+0 until end of turn, so Ashborn Drake gets +3 power for the rest of the turn. Casting Tempest next destroys all units, so Ashborn Drake is destroyed despite its 11 defense and the buff. Your opponent has no units, so Tempest destroys only your Drake. The two spells cost 2 and 7 Shards, 9 in total. The context does not say whether you have that many Shards. Nothing in the context protects Drake, so the Anchor rule does not stop its destruction.",
+      "citations": [
+       "ember.roaring-pyre",
+       "neutral.tempest",
+       "ember.ashborn-drake"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1485,
+     "output_tokens": 735,
+     "cost_dollars": 0.000516,
+     "seconds": 3.760826600002474
+    },
+    {
+     "question_id": "echo+modify/ember.ashborn-drake/ember.ash-warden:kindle/neutral.tempest",
+     "category": "interaction",
+     "context_ids": [
+      "7.3",
+      "ember.ash-warden",
+      "ember.ashborn-drake",
+      "root.bramble-warden",
+      "1.4",
+      "7.7",
+      "11.3.4",
+      "3.4",
+      "11.3.2",
+      "7.1",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Kindle resolves first: Ash Warden's Kindle (1 Shard) gives all your units +2/+0 until end of turn, so Ashborn Drake and Ash Warden both get the bonus. Then Tempest (7 Shards) resolves and destroys all units. Both your Ashborn Drake and Ash Warden are destroyed, and the +2/+0 bonus is lost with them. Your opponent has no units, so nothing of theirs is affected. The Kindle bonus does not protect either unit, because the context gives Tempest no exception and neither unit is protected.",
+      "citations": [
+       "ember.ash-warden",
+       "neutral.tempest"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1564,
+     "output_tokens": 598,
+     "cost_dollars": 0.00045539999999999996,
+     "seconds": 3.265219100001559
+    },
+    {
+     "question_id": "echo+modify/ember.ashborn-drake/tide.reefkeeper:swell/neutral.tempest",
+     "category": "interaction",
+     "context_ids": [
+      "7.3",
+      "tide.reefkeeper",
+      "ember.ashborn-drake",
+      "11.3.4",
+      "1.4",
+      "7.7",
+      "8.10",
+      "11.3.2",
+      "8.14",
+      "tide.spring-tide",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Swell resolves first: for 2 Shards, all your units get +1/+1, so Ashborn Drake becomes 12 defense and Reefkeeper becomes 7 defense. Then Tempest (7 Shards) resolves and destroys all units. That includes both of your units, whatever their defense, so Ashborn Drake and Reefkeeper are both destroyed and the board has no units left. The +1/+1 from Swell is lost with them. Your opponent has no units, so nothing of theirs is affected. Nothing in the context protects your units from destruction, so Tempest's effect applies in full.",
+      "citations": [
+       "tide.reefkeeper",
+       "neutral.tempest"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1724,
+     "output_tokens": 801,
+     "cost_dollars": 0.0005729,
+     "seconds": 4.1237173000045
+    },
+    {
+     "question_id": "death+trigger-order/ember.cinderling/tide.shoal-sprite/neutral.tempest/20-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "9.11",
+      "ember.cinderling",
+      "ember.cinder-pact",
+      "tide.shoal-sprite",
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4",
+      "neutral.tempest",
+      "8.1"
+     ],
+     "answer": {
+      "answer": "Tempest resolves first: it destroys all units, so Cinderling and Shoal Sprite both leave the board. Each one's Death ability then triggers and waits to resolve, as the triggered-ability rule says. Cinderling's Death deals 2 damage to its controller's opponent, which is you, so you go from 20 HP to 18 HP. Shoal Sprite's Death makes its controller's opponent draw 1 card, so your opponent draws 1 card. The order in which these two triggers resolve is set by rule 9.8, which is not in my context, so I cannot confirm which goes first. The result is the same either way unless a draw from an empty deck is involved, and I don't have information on either deck. I am also assuming that destruction counts as dying for Death abilities, which the context does not state.",
+      "citations": [
+       "neutral.tempest",
+       "9.11",
+       "ember.cinderling",
+       "8.1",
+       "tide.shoal-sprite"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.25,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1410,
+     "output_tokens": 1219,
+     "cost_dollars": 0.0007505,
+     "seconds": 6.584817200004181
+    },
+    {
+     "question_id": "death+trigger-order/ember.cinderling/tide.shoal-sprite/neutral.tempest/2-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "9.11",
+      "ember.cinderling",
+      "tide.shoal-sprite",
+      "ember.cinder-pact",
+      "1.4",
+      "1.2",
+      "1.3",
+      "1.1",
+      "neutral.tempest",
+      "9.8"
+     ],
+     "answer": {
+      "answer": "Tempest resolves first and destroys both Cinderling and Shoal Sprite. Their Death abilities then trigger and wait. Since you cast Tempest, you are the active player, so your own triggers resolve first, but you have none. Your opponent's triggers resolve next, in board order: Cinderling's Death deals 2 damage to you, taking you from 2 HP to 0 HP. You lose, because a player wins when their opponent's HP drops to 0 or less. Shoal Sprite's Death, which draws your opponent 1 card, would come after Cinderling's, but the game is already decided. You are not at 0 HP at the same time as your opponent, so the game is not a draw.",
+      "citations": [
+       "9.11",
+       "9.8",
+       "neutral.tempest",
+       "ember.cinderling",
+       "tide.shoal-sprite",
+       "1.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.3333333333333333,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1485,
+     "output_tokens": 936,
+     "cost_dollars": 0.0006165,
+     "seconds": 4.658570100000361
+    },
+    {
+     "question_id": "death+trigger-order/ember.cinderling/tide.shoal-sprite/ember.cinderfall/20-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "ember.cinderling",
+      "9.11",
+      "tide.shoal-sprite",
+      "ember.cinder-pact",
+      "ember.cinderfall",
+      "1.1",
+      "1.2",
+      "1.3",
+      "9.8",
+      "7.2"
+     ],
+     "answer": {
+      "answer": "Cinderfall resolves first: it deals 4 damage to each of your opponent's units. Cinderling (2 defense) and Shoal Sprite (2 defense) both take lethal damage and leave the board. Their Death abilities then trigger. Because you are the active player, the opponent's abilities resolve in arrival order, so Cinderling's Death resolves first: it deals 2 damage to its controller's opponent, which is you, taking you from 20 HP to 18 HP. Next, Shoal Sprite's Death resolves: its controller draws 1 card. Final result: you are at 18 HP, your opponent has no units on the board, and your opponent has drawn 1 card.",
+      "citations": [
+       "ember.cinderfall",
+       "ember.cinderling",
+       "tide.shoal-sprite",
+       "9.11",
+       "9.8"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.25,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1505,
+     "output_tokens": 911,
+     "cost_dollars": 0.000606,
+     "seconds": 5.139575300003344
+    },
+    {
+     "question_id": "death+trigger-order/ember.cinderling/tide.shoal-sprite/ember.cinderfall/2-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "9.11",
+      "ember.cinderling",
+      "tide.shoal-sprite",
+      "ember.cinder-pact",
+      "ember.cinderfall",
+      "1.4",
+      "1.2",
+      "1.3",
+      "1.1",
+      "9.8"
+     ],
+     "answer": {
+      "answer": "Cinderfall resolves first: it deals 4 damage to each of your opponent's units. Cinderling (2 defense) and Shoal Sprite (2 defense) both die. Their Death abilities then trigger and wait. Both belong to your opponent, who is not the active player, so they resolve in arrival order: Cinderling first. Cinderling's Death deals 2 damage to its controller's opponent, which is you. You go from 2 HP to 0, so you lose. Shoal Sprite's Death (draw 1 card) would resolve after that, but the game is already over. Your opponent stays at 20 HP, so this is not a draw.",
+      "citations": [
+       "ember.cinderfall",
+       "9.11",
+       "9.8",
+       "ember.cinderling",
+       "tide.shoal-sprite",
+       "1.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.3333333333333333,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1498,
+     "output_tokens": 903,
+     "cost_dollars": 0.0006012999999999999,
+     "seconds": 5.969527900000685
+    },
+    {
+     "question_id": "death+trigger-order/tide.shoal-sprite/ember.cinderling/neutral.tempest/20-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "9.11",
+      "ember.cinderling",
+      "tide.shoal-sprite",
+      "1.1",
+      "ember.cinder-pact",
+      "1.2",
+      "1.3",
+      "1.4",
+      "9.8",
+      "6.9",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Tempest resolves first and destroys all units, so your opponent's Shoal Sprite and Cinderling both leave the board at once. Their Death abilities then trigger and wait. Since you are the active player and have no units on the board, your opponent's triggers resolve next, in order of arrival. Shoal Sprite arrived first, so its Death resolves first: your opponent draws 1 card. Cinderling's Death resolves next: it deals 2 damage to its controller's opponent, which is you, so you go from 20 HP to 18 HP. Tempest itself deals no damage to players.",
+      "citations": [
+       "neutral.tempest",
+       "9.11",
+       "9.8",
+       "tide.shoal-sprite",
+       "ember.cinderling"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.25,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1554,
+     "output_tokens": 829,
+     "cost_dollars": 0.0005699,
+     "seconds": 3.9895201999970595
+    },
+    {
+     "question_id": "death+trigger-order/tide.shoal-sprite/ember.cinderling/neutral.tempest/2-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "tide.shoal-sprite",
+      "ember.cinderling",
+      "9.11",
+      "ember.cinder-pact",
+      "1.2",
+      "1.1",
+      "1.3",
+      "1.4",
+      "9.8",
+      "8.1",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Tempest resolves first and destroys all units, including yours and your opponent's. Each unit's Death ability then triggers and waits. Both triggers belong to your opponent, so they resolve in the order the units arrived: Shoal Sprite first, so your opponent draws 1 card, then Cinderling, which deals 2 damage to its opponent, which is you. You are at 2 HP, so you drop to 0 and lose the game. If you control units with Death abilities, those trigger first because you are the active player, but the context does not show any, so this ruling assumes you have none.",
+      "citations": [
+       "neutral.tempest",
+       "rule-9.11",
+       "rule-9.8",
+       "tide.shoal-sprite",
+       "ember.cinderling",
+       "rule-8.1",
+       "rule-1.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": 0.0,
+     "step_order": null,
+     "input_tokens": 1544,
+     "output_tokens": 921,
+     "cost_dollars": 0.0006148999999999999,
+     "seconds": 5.459309800004121
+    },
+    {
+     "question_id": "death+trigger-order/tide.shoal-sprite/ember.cinderling/ember.cinderfall/20-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "9.11",
+      "ember.cinderling",
+      "tide.shoal-sprite",
+      "ember.cinderfall",
+      "1.1",
+      "ember.cinder-pact",
+      "1.2",
+      "1.3",
+      "1.4",
+      "9.8"
+     ],
+     "answer": {
+      "answer": "Cinderfall deals 4 damage to each enemy unit. Shoal Sprite and Cinderling each have 2 defense, so both are destroyed. Cinderfall finishes resolving before their Death abilities trigger (9.11). Both Death abilities belong to your opponent, so they resolve in the order the units arrived: Shoal Sprite first, then Cinderling. Shoal Sprite's Death makes your opponent draw 1 card. Cinderling's Death deals 2 damage to its controller's opponent, which is you, so you go from 20 HP to 18 HP. Your opponent ends with 1 extra card and you end at 18 HP.",
+      "citations": [
+       "ember.cinderfall",
+       "9.11",
+       "9.8",
+       "tide.shoal-sprite",
+       "ember.cinderling"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.25,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1498,
+     "output_tokens": 950,
+     "cost_dollars": 0.0006248,
+     "seconds": 4.973555999997188
+    },
+    {
+     "question_id": "death+trigger-order/tide.shoal-sprite/ember.cinderling/ember.cinderfall/2-hp",
+     "category": "multi-step",
+     "context_ids": [
+      "tide.shoal-sprite",
+      "9.11",
+      "ember.cinderling",
+      "ember.cinder-pact",
+      "ember.cinderfall",
+      "1.2",
+      "1.3",
+      "1.4",
+      "1.1",
+      "9.8"
+     ],
+     "answer": {
+      "answer": "Cinderfall deals 4 damage to each of your opponent's units. Shoal Sprite (2 defense) and Cinderling (2 defense) both die. Cinderfall finishes resolving completely before their Death abilities resolve. Those abilities belong to your opponent, who is not the active player, so they resolve in arrival order: first Shoal Sprite's Death draws your opponent 1 card, then Cinderling's Death deals 2 damage to you, its controller's opponent. You go from 2 HP to 0 and lose; your opponent wins because they stay at 20 HP, so it is not a draw.",
+      "citations": [
+       "ember.cinderfall",
+       "9.11",
+       "9.8",
+       "tide.shoal-sprite",
+       "ember.cinderling",
+       "1.2",
+       "1.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.3,
+     "citation_precision": 0.75,
+     "step_order": null,
+     "input_tokens": 1504,
+     "output_tokens": 1267,
+     "cost_dollars": 0.0007839,
+     "seconds": 6.11314520000451
+    },
+    {
+     "question_id": "aura+end/full/tide.coral-font/neutral.shardbreak-pulse",
+     "category": "interaction",
+     "context_ids": [
+      "neutral.shardbreak-pulse",
+      "neutral.shardling",
+      "ember.cinderling",
+      "root.sprout",
+      "neutral.shard-construct",
+      "tide.shoal-sprite",
+      "ember.ash-warden",
+      "tide.spring-tide",
+      "tide.coral-font",
+      "8.17"
+     ],
+     "answer": {
+      "answer": "Shardbreak Pulse costs 2 Shards and destroys an enemy relic. Coral Font is your opponent's relic, so it is a legal target and it is destroyed. Its 'All your units have +1/+2' effect then stops applying. The context does not say how that lost +1/+2 changes the Shardling's max or current defense, so I can't confirm the Shardling's new numbers. Rule 8.17 does not settle it, because it covers a temporary defense malus expiring, not a relic's bonus ending.",
+      "citations": [
+       "neutral.shardbreak-pulse",
+       "tide.coral-font"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1498,
+     "output_tokens": 1072,
+     "cost_dollars": 0.0006858,
+     "seconds": 5.854100299999118
+    },
+    {
+     "question_id": "aura+end/damaged/tide.coral-font/neutral.shardbreak-pulse",
+     "category": "interaction",
+     "context_ids": [
+      "neutral.shardling",
+      "ember.cinderling",
+      "neutral.shardbreak-pulse",
+      "neutral.shard-construct",
+      "root.sprout",
+      "tide.shoal-sprite",
+      "tide.ebb-and-surge",
+      "tide.spring-tide",
+      "tide.coral-font",
+      "8.17"
+     ],
+     "answer": {
+      "answer": "Shardbreak Pulse (2 Shards) destroys an enemy relic, so Coral Font would be destroyed. The rules I have don't say how a destroyed relic's ongoing +1/+2 bonus is removed from the Shardling, so I can't confirm its resulting max or current defense.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 0.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1489,
+     "output_tokens": 854,
+     "cost_dollars": 0.0005759,
+     "seconds": 4.574698100004753
+    },
+    {
+     "question_id": "card/neutral.binding-thread/faction",
+     "category": "factual",
+     "context_ids": [
+      "neutral.binding-thread",
+      "6.1",
+      "3.7",
+      "2.2",
+      "11.5.4",
+      "8.11",
+      "11.5.3",
+      "11.5.1",
+      "11.3.5",
+      "11.3.2"
+     ],
+     "answer": {
+      "answer": "Binding Thread is a Neutral spell, so it has no faction. It costs 1 Shard and links two units.",
+      "citations": [
+       "neutral.binding-thread",
+       "6.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1287,
+     "output_tokens": 161,
+     "cost_dollars": 0.00020920000000000002,
+     "seconds": 2.293144299997948
+    },
+    {
+     "question_id": "card/neutral.binding-thread/cost",
+     "category": "factual",
+     "context_ids": [
+      "neutral.binding-thread",
+      "6.8",
+      "root.briarwall-sentry",
+      "tide.brine-ward",
+      "root.deepening-roots",
+      "neutral.crystal-rupture",
+      "neutral.shardbreak-pulse",
+      "11.4.1",
+      "tide.coral-font",
+      "root.verdant-burst"
+     ],
+     "answer": {
+      "answer": "Binding Thread costs 1 Shard. Its printed cost is 1 Shard, and the cost-adjustment rules (auras, overcharge) only apply if they are in play.",
+      "citations": [
+       "neutral.binding-thread"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1329,
+     "output_tokens": 89,
+     "cost_dollars": 0.0001774,
+     "seconds": 1.2119802000015625
+    },
+    {
+     "question_id": "card/neutral.binding-thread/effects",
+     "category": "factual",
+     "context_ids": [
+      "neutral.binding-thread",
+      "11.5.4",
+      "11.5.2",
+      "11.5.1",
+      "vocabulary.ability",
+      "10.6",
+      "10.5",
+      "8.15",
+      "11.1.3",
+      "10.3"
+     ],
+     "answer": {
+      "answer": "Binding Thread is a Neutral spell costing 1 Shard. When played, it links two units. The link lasts until the link breaks, which happens when either linked unit leaves the board. While linked, when one of them takes damage from an attack or a spell, the damage is shared: the unit hit takes half, rounded up, and the linked unit takes the rest. The transferred share is not shared again. For example, 3 damage to a linked unit means 2 to it and 1 to its partner. A unit can only have one link, and a unit that is already linked cannot be chosen for a new Link.",
+      "citations": [
+       "neutral.binding-thread",
+       "11.5.4",
+       "11.5.2",
+       "11.5.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.25,
+     "step_order": null,
+     "input_tokens": 1391,
+     "output_tokens": 232,
+     "cost_dollars": 0.0002551,
+     "seconds": 1.6493436000018846
+    },
+    {
+     "question_id": "card/root.root-sentinel/faction",
+     "category": "factual",
+     "context_ids": [
+      "root.root-sentinel",
+      "2.2",
+      "3.7",
+      "6.1",
+      "root.bramble-warden",
+      "root.oakheart-guardian",
+      "root.sprout",
+      "root.briarwall-sentry",
+      "root.thornback-ancient",
+      "root.sproutcaller"
+     ],
+     "answer": {
+      "answer": "Root Sentinel is a Root card. Its card text reads \"Root unit,\" which places it in the Root faction, and every card has a faction, as rule 6.1 states.",
+      "citations": [
+       "root.root-sentinel",
+       "6.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1393,
+     "output_tokens": 264,
+     "cost_dollars": 0.00027130000000000004,
+     "seconds": 1.67017279999709
+    },
+    {
+     "question_id": "card/root.root-sentinel/cost",
+     "category": "factual",
+     "context_ids": [
+      "root.root-sentinel",
+      "root.oakheart-guardian",
+      "root.briarwall-sentry",
+      "root.bramble-warden",
+      "root.thornback-ancient",
+      "root.sproutcaller",
+      "root.heartwood-shrine",
+      "root.seedmother",
+      "root.mossmender",
+      "root.deepening-roots"
+     ],
+     "answer": {
+      "answer": "Root Sentinel costs 2 Shards.",
+      "citations": [
+       "root.root-sentinel"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1413,
+     "output_tokens": 46,
+     "cost_dollars": 0.0001643,
+     "seconds": 0.7989837999994052
+    },
+    {
+     "question_id": "card/root.root-sentinel/keywords",
+     "category": "factual",
+     "context_ids": [
+      "root.root-sentinel",
+      "root.sprout",
+      "root.sproutcaller",
+      "root.bramble-warden",
+      "root.seedmother",
+      "root.thornback-ancient",
+      "root.oakheart-guardian",
+      "root.mossmender",
+      "root.briarwall-sentry",
+      "2.2"
+     ],
+     "answer": {
+      "answer": "Root Sentinel has the Anchor keyword. Its other text is Root Slam (2 Shards): Deal 4 damage to the target. The context does not define what Anchor does, so its effect cannot be stated here.",
+      "citations": [
+       "root.root-sentinel"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1409,
+     "output_tokens": 100,
+     "cost_dollars": 0.0001909,
+     "seconds": 1.089687399995455
+    },
+    {
+     "question_id": "card/root.root-sentinel/defense",
+     "category": "factual",
+     "context_ids": [
+      "root.root-sentinel",
+      "root.oakheart-guardian",
+      "root.thornback-ancient",
+      "root.briarwall-sentry",
+      "root.mossmender",
+      "root.bramble-warden",
+      "root.seedmother",
+      "root.sproutcaller",
+      "root.sprout",
+      "vocabulary.defense"
+     ],
+     "answer": {
+      "answer": "Root Sentinel has 5 defense. Defense is a unit's hit points, and Root Sentinel is a Root unit with 5 defense.",
+      "citations": [
+       "root.root-sentinel",
+       "vocabulary.defense"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1403,
+     "output_tokens": 86,
+     "cost_dollars": 0.0001833,
+     "seconds": 1.9088072999948054
+    },
+    {
+     "question_id": "card/root.root-sentinel/attacks",
+     "category": "factual",
+     "context_ids": [
+      "root.root-sentinel",
+      "7.1",
+      "vocabulary.attack-ability",
+      "7.4",
+      "11.1.8",
+      "7.8",
+      "7.10",
+      "9.9",
+      "7.9",
+      "7.2"
+     ],
+     "answer": {
+      "answer": "Root Sentinel has one attack ability it is shown with: Root Slam, which costs 2 Shards and deals 4 damage to the target. The card also has the keyword Anchor, but the context does not say what Anchor does, and it is not an attack ability.",
+      "citations": [
+       "root.root-sentinel",
+       "7.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1640,
+     "output_tokens": 339,
+     "cost_dollars": 0.0003335,
+     "seconds": 2.191614800001844
+    },
+    {
+     "question_id": "card/root.root-sentinel/attack-1",
+     "category": "factual",
+     "context_ids": [
+      "root.root-sentinel",
+      "root.oakheart-guardian",
+      "root.bramble-warden",
+      "root.thornback-ancient",
+      "root.mossmender",
+      "root.sproutcaller",
+      "root.briarwall-sentry",
+      "root.heartwood-shrine",
+      "root.seedmother",
+      "root.verdant-burst"
+     ],
+     "answer": {
+      "answer": "Root Slam costs 2 Shards. It deals 4 damage to the target.",
+      "citations": [
+       "root.root-sentinel"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1427,
+     "output_tokens": 56,
+     "cost_dollars": 0.00017070000000000003,
+     "seconds": 1.1990567000029841
+    },
+    {
+     "question_id": "card/tide.brinesong/faction",
+     "category": "factual",
+     "context_ids": [
+      "tide.brinesong",
+      "3.7",
+      "2.2",
+      "6.1",
+      "tide.brine-adept",
+      "root.briarwall-sentry",
+      "11.1.10",
+      "11.3.5",
+      "vocabulary.token",
+      "8.5"
+     ],
+     "answer": {
+      "answer": "Brinesong is a Tide card. It is a Tide spell that costs 2 Shards.",
+      "citations": [
+       "tide.brinesong"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1599,
+     "output_tokens": 129,
+     "cost_dollars": 0.0002244,
+     "seconds": 1.1871386999991955
+    },
+    {
+     "question_id": "card/tide.brinesong/cost",
+     "category": "factual",
+     "context_ids": [
+      "tide.brinesong",
+      "tide.brine-adept",
+      "tide.brine-ward",
+      "root.briarwall-sentry",
+      "6.8",
+      "tide.coral-font",
+      "root.bramble-warden",
+      "ember.ashborn-drake",
+      "11.4.1",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Brinesong costs 2 Shards, its printed cost. No aura changes it in this context, and overcharge would only lower it by 2 if the player chooses to overcharge it, which the card's text does not offer.",
+      "citations": [
+       "tide.brinesong",
+       "6.8"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1416,
+     "output_tokens": 100,
+     "cost_dollars": 0.0001916,
+     "seconds": 1.2923274000058882
+    },
+    {
+     "question_id": "card/tide.brinesong/effects",
+     "category": "factual",
+     "context_ids": [
+      "tide.brinesong",
+      "6.10",
+      "8.15",
+      "8.8",
+      "8.5",
+      "11.1.3",
+      "8.22",
+      "11.3.4",
+      "8.14",
+      "3.7"
+     ],
+     "answer": {
+      "answer": "Brinesong is a Tide spell costing 2 Shards. When it resolves, your opponent discards 1 card of their choice, and then you draw 1 card.",
+      "citations": [
+       "tide.brinesong"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1920,
+     "output_tokens": 81,
+     "cost_dollars": 0.0002325,
+     "seconds": 1.2144813000049908
+    },
+    {
+     "question_id": "card/tide.coral-font/faction",
+     "category": "factual",
+     "context_ids": [
+      "tide.coral-font",
+      "6.1",
+      "2.2",
+      "3.7",
+      "11.5.3",
+      "11.3.2",
+      "1.1",
+      "11.3.5",
+      "6.3",
+      "11.3.6"
+     ],
+     "answer": {
+      "answer": "Coral Font is a Tide card. It is a Tide relic that costs 3 Shards.",
+      "citations": [
+       "tide.coral-font"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1294,
+     "output_tokens": 178,
+     "cost_dollars": 0.0002184,
+     "seconds": 1.4127498000016203
+    },
+    {
+     "question_id": "card/tide.coral-font/cost",
+     "category": "factual",
+     "context_ids": [
+      "tide.coral-font",
+      "tide.reefkeeper",
+      "6.8",
+      "neutral.binding-thread",
+      "root.briarwall-sentry",
+      "neutral.tempest",
+      "11.4.1",
+      "neutral.crystal-rupture",
+      "root.seedmother",
+      "root.deepening-roots"
+     ],
+     "answer": {
+      "answer": "Coral Font costs 3 Shards to play. Its printed cost is 3 Shards, and the context shows no cost-changing auras or overcharge that would alter that total.",
+      "citations": [
+       "tide.coral-font",
+       "6.8"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1363,
+     "output_tokens": 88,
+     "cost_dollars": 0.00018030000000000002,
+     "seconds": 1.0096950000006473
+    },
+    {
+     "question_id": "card/tide.coral-font/abilities",
+     "category": "factual",
+     "context_ids": [
+      "tide.coral-font",
+      "11.1.11",
+      "6.10",
+      "vocabulary.ability",
+      "8.22",
+      "10.6",
+      "8.5",
+      "11.1.9",
+      "10.5",
+      "11.1.3"
+     ],
+     "answer": {
+      "answer": "Coral Font is a Tide relic that costs 3 Shards. While it is in play, all your units get +1/+2.",
+      "citations": [
+       "tide.coral-font"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1787,
+     "output_tokens": 67,
+     "cost_dollars": 0.0002122,
+     "seconds": 1.124264400001266
+    },
+    {
+     "question_id": "card/tide.reefkeeper/faction",
+     "category": "factual",
+     "context_ids": [
+      "tide.reefkeeper",
+      "3.7",
+      "2.2",
+      "6.1",
+      "11.3.2",
+      "11.3.5",
+      "11.3.4",
+      "6.6",
+      "11.3.6",
+      "11.5.3"
+     ],
+     "answer": {
+      "answer": "Reefkeeper is a Tide unit, so its faction is Tide.",
+      "citations": [
+       "tide.reefkeeper"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1360,
+     "output_tokens": 114,
+     "cost_dollars": 0.000193,
+     "seconds": 1.4319961000001058
+    },
+    {
+     "question_id": "card/tide.reefkeeper/cost",
+     "category": "factual",
+     "context_ids": [
+      "tide.reefkeeper",
+      "tide.coral-font",
+      "root.briarwall-sentry",
+      "tide.brine-adept",
+      "tide.brine-ward",
+      "tide.mire-eel",
+      "tide.shoal-sprite",
+      "tide.rime-snare",
+      "neutral.crystal-rupture",
+      "tide.pearl-oracle"
+     ],
+     "answer": {
+      "answer": "Reefkeeper costs 3 Shards. It is a Tide unit with 6 defense.",
+      "citations": [
+       "tide.reefkeeper"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1358,
+     "output_tokens": 62,
+     "cost_dollars": 0.00016680000000000002,
+     "seconds": 1.0205956999998307
+    },
+    {
+     "question_id": "card/tide.reefkeeper/defense",
+     "category": "factual",
+     "context_ids": [
+      "tide.reefkeeper",
+      "tide.deepcurrent-behemoth",
+      "tide.brine-adept",
+      "root.oakheart-guardian",
+      "root.briarwall-sentry",
+      "tide.mire-eel",
+      "vocabulary.defense",
+      "tide.pearl-oracle",
+      "11.3.4",
+      "tide.shoal-sprite"
+     ],
+     "answer": {
+      "answer": "Reefkeeper has 6 defense.",
+      "citations": [
+       "tide.reefkeeper"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1456,
+     "output_tokens": 45,
+     "cost_dollars": 0.0001681,
+     "seconds": 1.0114991000009468
+    },
+    {
+     "question_id": "card/tide.reefkeeper/attacks",
+     "category": "factual",
+     "context_ids": [
+      "tide.reefkeeper",
+      "7.1",
+      "vocabulary.attack-ability",
+      "11.1.8",
+      "7.4",
+      "7.8",
+      "7.10",
+      "7.2",
+      "11.1.1",
+      "7.9"
+     ],
+     "answer": {
+      "answer": "Reefkeeper has two attack abilities: Spine Lash (costs 2 Shards) deals 4 damage to the target, and Swell (costs 2 Shards) gives all your units +1/+1.",
+      "citations": [
+       "tide.reefkeeper",
+       "7.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1635,
+     "output_tokens": 102,
+     "cost_dollars": 0.0002145,
+     "seconds": 1.2232064999989234
+    },
+    {
+     "question_id": "card/tide.reefkeeper/attack-1",
+     "category": "factual",
+     "context_ids": [
+      "tide.reefkeeper",
+      "root.mossmender",
+      "root.bramble-warden",
+      "neutral.shardling",
+      "tide.deepcurrent-behemoth",
+      "tide.mire-eel",
+      "tide.coral-font",
+      "neutral.crystal-rupture",
+      "tide.receding-wave",
+      "11.2.8"
+     ],
+     "answer": {
+      "answer": "Spine Lash costs 2 Shards and deals 4 damage to the target.",
+      "citations": [
+       "tide.reefkeeper"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1405,
+     "output_tokens": 57,
+     "cost_dollars": 0.000169,
+     "seconds": 0.9180263999951421
+    },
+    {
+     "question_id": "card/tide.reefkeeper/attack-2",
+     "category": "factual",
+     "context_ids": [
+      "tide.reefkeeper",
+      "tide.deepcurrent-behemoth",
+      "tide.brine-adept",
+      "tide.receding-wave",
+      "tide.shoal-sprite",
+      "tide.brine-ward",
+      "tide.coral-font",
+      "tide.rime-snare",
+      "neutral.crystal-rupture",
+      "11.1.4"
+     ],
+     "answer": {
+      "answer": "Swell costs 2 Shards. It gives all your units +1/+1. Reefkeeper itself is a Tide unit that costs 3 Shards with 6 defense.",
+      "citations": [
+       "tide.reefkeeper"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1333,
+     "output_tokens": 87,
+     "cost_dollars": 0.00017680000000000001,
+     "seconds": 1.0757708000019193
+    },
+    {
+     "question_id": "deck/ember-starter/card-count/+ember.kiln-wyrm",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "ember.ashborn-drake",
+      "ember.ash-warden",
+      "ember.blaze-mastiff",
+      "ember.flamebound-zealot",
+      "ember.ashfall-raider",
+      "6.1",
+      "ember.ember-lance",
+      "ember.cinder-pact",
+      "ember.pyre-offering",
+      "neutral.binding-thread",
+      "ember.cinderfall",
+      "ember.cinderling",
+      "neutral.crystal-rupture",
+      "ember.kiln-wyrm",
+      "ember.rise-from-cinders",
+      "ember.roaring-pyre",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "ember.spark-dart"
+     ],
+     "answer": {
+      "answer": "Yes, as far as the rules here go. Every card is either an Ember card or a Neutral card: Ash Warden, Ashborn Drake, Blaze Mastiff, Cinderfall, Cinderling, Ember Lance, Flamebound Zealot, Kiln Wyrm, Pyre Offering, Rise from Cinders, Roaring Pyre, Spark Dart are Ember, and Binding Thread, Crystal Rupture, Shard Construct, Shardling are Neutral. Rule 2.2 allows a deck with cards from one faction plus neutral cards, so the faction requirement is met. The rules I have do not give a deck size or copy limit, so I cannot confirm the deck's size (31 cards as listed) or its copy counts against any such limit.",
+      "citations": [
+       "2.2",
+       "ember.ash-warden",
+       "ember.ashborn-drake",
+       "neutral.binding-thread",
+       "ember.blaze-mastiff",
+       "ember.cinderfall",
+       "ember.cinderling",
+       "neutral.crystal-rupture",
+       "ember.ember-lance",
+       "ember.flamebound-zealot",
+       "ember.kiln-wyrm",
+       "ember.pyre-offering",
+       "ember.rise-from-cinders",
+       "ember.roaring-pyre",
+       "neutral.shard-construct",
+       "neutral.shardling",
+       "ember.spark-dart"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": 0.0,
+     "step_order": null,
+     "input_tokens": 2220,
+     "output_tokens": 1172,
+     "cost_dollars": 0.000808,
+     "seconds": 4.660902199997508
+    },
+    {
+     "question_id": "deck/ember-starter/card-count/+neutral.tempest",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "ember.ashborn-drake",
+      "ember.ash-warden",
+      "ember.blaze-mastiff",
+      "ember.flamebound-zealot",
+      "ember.ashfall-raider",
+      "ember.ember-lance",
+      "ember.pyre-offering",
+      "ember.cinder-pact",
+      "ember.cinderling",
+      "neutral.binding-thread",
+      "ember.cinderfall",
+      "neutral.crystal-rupture",
+      "ember.rise-from-cinders",
+      "ember.roaring-pyre",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "ember.spark-dart",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "Yes, as far as the rules provided go. Rule 2.2 says a deck contains cards from a single faction (Ember, Tide or Root) plus neutral cards. Every card listed is either Ember (Ash Warden, Ashborn Drake, Blaze Mastiff, Cinderfall, Cinderling, Ember Lance, Flamebound Zealot, Pyre Offering, Rise from Cinders, Roaring Pyre, Spark Dart) or Neutral (Binding Thread, Crystal Rupture, Shard Construct, Shardling, Tempest), and the deck is declared as Ember. So the faction requirement is met. The rules provided do not state a deck size or a copy limit, so this ruling does not confirm those.",
+      "citations": [
+       "2.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": 0.0,
+     "step_order": null,
+     "input_tokens": 2097,
+     "output_tokens": 982,
+     "cost_dollars": 0.0007007000000000001,
+     "seconds": 5.224745499996061
+    },
+    {
+     "question_id": "deck/ember-starter/card-count/-ember.roaring-pyre",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "ember.ashborn-drake",
+      "ember.ash-warden",
+      "ember.flamebound-zealot",
+      "ember.pyre-offering",
+      "ember.blaze-mastiff",
+      "ember.ashfall-raider",
+      "ember.ember-lance",
+      "6.1",
+      "ember.cinder-pact",
+      "neutral.binding-thread",
+      "ember.cinderfall",
+      "ember.cinderling",
+      "neutral.crystal-rupture",
+      "ember.rise-from-cinders",
+      "ember.roaring-pyre",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "ember.spark-dart"
+     ],
+     "answer": {
+      "answer": "Yes, as far as the rules I have go. Every card is either Ember or Neutral: the 11 Ember card types (Ash Warden, Ashborn Drake, Blaze Mastiff, Cinderfall, Cinderling, Ember Lance, Flamebound Zealot, Pyre Offering, Rise from Cinders, Roaring Pyre, Spark Dart) and the 4 Neutral card types (Binding Thread, Crystal Rupture, Shard Construct, Shardling). Rule 2.2 allows a deck of one faction plus neutral cards, so the faction check passes. The deck totals 29 cards. My rules do not give a deck size or a copy limit, so I cannot confirm the 29-card count or the two-of-each counts are legal.",
+      "citations": [
+       "2.2",
+       "6.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": 0.0,
+     "step_order": null,
+     "input_tokens": 2094,
+     "output_tokens": 856,
+     "cost_dollars": 0.0006374,
+     "seconds": 4.095026200004213
+    },
+    {
+     "question_id": "deck/ember-starter/card-count/-ember.ember-lance",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "ember.ashborn-drake",
+      "ember.ash-warden",
+      "ember.blaze-mastiff",
+      "6.1",
+      "ember.ashfall-raider",
+      "ember.flamebound-zealot",
+      "ember.ember-lance",
+      "ember.cinder-pact",
+      "8.13",
+      "neutral.binding-thread",
+      "ember.cinderfall",
+      "ember.cinderling",
+      "neutral.crystal-rupture",
+      "ember.pyre-offering",
+      "ember.rise-from-cinders",
+      "ember.roaring-pyre",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "ember.spark-dart"
+     ],
+     "answer": {
+      "answer": "The context cannot confirm full legality. Every card is Ember or Neutral, so the faction rule is met: a deck may contain cards from a single faction plus neutral cards. However, the context has no rules on deck size or the number of copies allowed per card, and the list has 1 Ember Lance and 2 of each other card, so those checks cannot be made here.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 0.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 2214,
+     "output_tokens": 541,
+     "cost_dollars": 0.0004919,
+     "seconds": 3.590823200000159
+    },
+    {
+     "question_id": "deck/root-starter/card-count/+neutral.binding-thread",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "root.bramble-warden",
+      "6.1",
+      "neutral.binding-thread",
+      "root.deepening-roots",
+      "neutral.crystal-rupture",
+      "2.4",
+      "2.3",
+      "3.2",
+      "2.1",
+      "root.heartwood-shrine",
+      "root.mossmender",
+      "root.oakheart-guardian",
+      "root.renewing-sap",
+      "root.root-sentinel",
+      "root.seedmother",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "root.sproutcaller",
+      "neutral.tempest",
+      "root.thornback-ancient",
+      "root.verdant-burst"
+     ],
+     "answer": {
+      "answer": "No, this deck is not legal. It contains 31 cards: fifteen cards with 2 copies each (30 cards) plus 1 Tempest. A deck must contain exactly 30 cards, so one card must be removed. The other rules are met: no card has more than 2 copies, and every card is either Root or Neutral, which is allowed for a Root deck.",
+      "citations": [
+       "2.1",
+       "2.3",
+       "2.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 2146,
+     "output_tokens": 690,
+     "cost_dollars": 0.0005596,
+     "seconds": 3.516467900000862
+    },
+    {
+     "question_id": "deck/root-starter/card-count/+root.briarwall-sentry",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "root.bramble-warden",
+      "root.briarwall-sentry",
+      "6.1",
+      "neutral.binding-thread",
+      "2.1",
+      "2.3",
+      "root.root-sentinel",
+      "ember.ash-warden",
+      "root.heartwood-shrine",
+      "neutral.crystal-rupture",
+      "root.deepening-roots",
+      "root.mossmender",
+      "root.oakheart-guardian",
+      "root.renewing-sap",
+      "root.seedmother",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "root.sproutcaller",
+      "neutral.tempest",
+      "root.thornback-ancient",
+      "root.verdant-burst"
+     ],
+     "answer": {
+      "answer": "No, not as built. The deck has 31 cards (1 Binding Thread, 2 Bramble Warden, 1 Briarwall Sentry, 2 Crystal Rupture, 2 Deepening Roots, 2 Heartwood Shrine, 2 Mossmender, 2 Oakheart Guardian, 2 Renewing Sap, 2 Root Sentinel, 2 Seedmother, 2 Shard Construct, 2 Shardling, 2 Sproutcaller, 1 Tempest, 2 Thornback Ancient, 2 Verdant Burst), but a deck must contain exactly 30 cards. Remove one card to make it legal. The rest is fine: all cards are Root or Neutral, which meets the single-faction rule, and no card has more than 2 copies. Note that removing the single Tempest or Binding Thread would also keep the 2-copy limit intact.",
+      "citations": [
+       "2.1",
+       "2.2",
+       "2.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 2269,
+     "output_tokens": 773,
+     "cost_dollars": 0.0006134,
+     "seconds": 3.290606199996546
+    },
+    {
+     "question_id": "deck/root-starter/card-count/-root.heartwood-shrine",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "root.bramble-warden",
+      "6.1",
+      "neutral.binding-thread",
+      "root.deepening-roots",
+      "neutral.crystal-rupture",
+      "2.4",
+      "2.3",
+      "3.2",
+      "2.1",
+      "root.heartwood-shrine",
+      "root.mossmender",
+      "root.oakheart-guardian",
+      "root.renewing-sap",
+      "root.root-sentinel",
+      "root.seedmother",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "root.sproutcaller",
+      "neutral.tempest",
+      "root.thornback-ancient",
+      "root.verdant-burst"
+     ],
+     "answer": {
+      "answer": "No, the deck is not legal. It contains 29 cards, but a deck must contain exactly 30. Add one more card to reach 30. The rest of the list is fine: every card is Root or Neutral, and no card has more than 2 copies (Tempest has 1).",
+      "citations": [
+       "2.1",
+       "2.2",
+       "2.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 2146,
+     "output_tokens": 511,
+     "cost_dollars": 0.00047010000000000004,
+     "seconds": 2.847296300002199
+    },
+    {
+     "question_id": "deck/root-starter/card-count/-neutral.tempest",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "root.bramble-warden",
+      "6.1",
+      "neutral.binding-thread",
+      "root.deepening-roots",
+      "neutral.crystal-rupture",
+      "2.4",
+      "2.1",
+      "2.3",
+      "3.2",
+      "root.heartwood-shrine",
+      "root.mossmender",
+      "root.oakheart-guardian",
+      "root.renewing-sap",
+      "root.root-sentinel",
+      "root.seedmother",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "root.sproutcaller",
+      "root.thornback-ancient",
+      "root.verdant-burst"
+     ],
+     "answer": {
+      "answer": "No, not as built. The deck has 29 cards, but a deck must contain exactly 30 cards. Count: 1 Binding Thread, 2 each of the other 14 listed cards, 29 in total. Add one more card to reach 30. Any Root or Neutral card works, as long as it doesn't bring a card above 2 copies. For example, a second Binding Thread would make 30. The rest of the list is legal: it uses only Root and Neutral cards, which is allowed, and no card has more than 2 copies.",
+      "citations": [
+       "2.1",
+       "2.2",
+       "2.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 2094,
+     "output_tokens": 696,
+     "cost_dollars": 0.0005574,
+     "seconds": 3.6775565999996616
+    },
+    {
+     "question_id": "deck/tide-starter/card-count/+tide.spring-tide",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "tide.brine-adept",
+      "tide.brinesong",
+      "6.1",
+      "neutral.binding-thread",
+      "tide.coral-font",
+      "tide.spring-tide",
+      "tide.rime-snare",
+      "tide.brine-ward",
+      "2.1",
+      "neutral.crystal-rupture",
+      "tide.deepcurrent-behemoth",
+      "tide.mire-eel",
+      "tide.moonpull",
+      "tide.pearl-oracle",
+      "tide.receding-wave",
+      "tide.reefkeeper",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "tide.shoal-sprite"
+     ],
+     "answer": {
+      "answer": "No, this deck is not legal as listed. The list has 31 cards, but a deck must contain exactly 30 cards. Remove one card to reach 30. The faction rule is satisfied: every card is either Tide or Neutral (Binding Thread, Crystal Rupture, Shard Construct and Shardling are Neutral), so the faction makeup is fine.",
+      "citations": [
+       "2.1",
+       "2.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 2199,
+     "output_tokens": 492,
+     "cost_dollars": 0.0004659,
+     "seconds": 2.547873999996227
+    },
+    {
+     "question_id": "deck/tide-starter/card-count/+neutral.tempest",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "tide.brine-adept",
+      "neutral.binding-thread",
+      "tide.brinesong",
+      "tide.coral-font",
+      "tide.brine-ward",
+      "tide.rime-snare",
+      "tide.spring-tide",
+      "2.3",
+      "2.1",
+      "neutral.crystal-rupture",
+      "tide.deepcurrent-behemoth",
+      "tide.mire-eel",
+      "tide.moonpull",
+      "tide.pearl-oracle",
+      "tide.receding-wave",
+      "tide.reefkeeper",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "tide.shoal-sprite",
+      "neutral.tempest"
+     ],
+     "answer": {
+      "answer": "No, the deck is not legal. It contains 31 cards, but a deck must contain exactly 30. Counting the list gives 31 cards (the 2× entries contribute 2 each, the 1× entries contribute 1 each). Remove one card to reach 30. The other checks pass: the non-neutral cards are all Tide, the neutral cards are allowed in any deck, and no card appears more than 2 times.",
+      "citations": [
+       "2.1",
+       "2.2",
+       "2.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 2241,
+     "output_tokens": 674,
+     "cost_dollars": 0.0005611,
+     "seconds": 3.7227522999965004
+    },
+    {
+     "question_id": "deck/tide-starter/card-count/-tide.shoal-sprite",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "tide.brine-adept",
+      "neutral.binding-thread",
+      "6.1",
+      "tide.brinesong",
+      "tide.coral-font",
+      "2.3",
+      "tide.rime-snare",
+      "tide.brine-ward",
+      "tide.spring-tide",
+      "neutral.crystal-rupture",
+      "tide.deepcurrent-behemoth",
+      "tide.mire-eel",
+      "tide.moonpull",
+      "tide.pearl-oracle",
+      "tide.receding-wave",
+      "tide.reefkeeper",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "tide.shoal-sprite"
+     ],
+     "answer": {
+      "answer": "Yes, this deck is legal under the rules given. It is a Tide deck: every card is either Tide or Neutral (Binding Thread, Crystal Rupture, Shard Construct and Shardling are Neutral; the rest are Tide), which is allowed. No card appears more than twice: the most copies of any card is 2, and Shoal Sprite and Spring Tide appear once each. The context does not state a minimum or exact deck size, so the deck's 29 cards cannot be checked against one.",
+      "citations": [
+       "2.2",
+       "2.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 0.0,
+     "citation_precision": 0.0,
+     "step_order": null,
+     "input_tokens": 2202,
+     "output_tokens": 840,
+     "cost_dollars": 0.0006402000000000001,
+     "seconds": 4.314847200002987
+    },
+    {
+     "question_id": "deck/tide-starter/card-count/-tide.pearl-oracle",
+     "category": "deck-building",
+     "context_ids": [
+      "2.2",
+      "tide.brine-adept",
+      "neutral.binding-thread",
+      "tide.brinesong",
+      "tide.coral-font",
+      "tide.brine-ward",
+      "tide.rime-snare",
+      "tide.spring-tide",
+      "2.3",
+      "2.1",
+      "neutral.crystal-rupture",
+      "tide.deepcurrent-behemoth",
+      "tide.mire-eel",
+      "tide.moonpull",
+      "tide.pearl-oracle",
+      "tide.receding-wave",
+      "tide.reefkeeper",
+      "neutral.shard-construct",
+      "neutral.shardling",
+      "tide.shoal-sprite"
+     ],
+     "answer": {
+      "answer": "No, the deck is not legal. It contains 29 cards, but a deck must contain exactly 30. The deck passes the other checks: every card is Tide or neutral, and no card has more than 2 copies. Adding one more card (for example, a third copy of a card that is already at 2 copies is not allowed, so add a different Tide or neutral card that is below the limit) would make it legal.",
+      "citations": [
+       "2.1",
+       "2.2",
+       "2.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 2189,
+     "output_tokens": 570,
+     "cost_dollars": 0.0005038999999999999,
+     "seconds": 2.86496569999872
+    },
+    {
+     "question_id": "rule/2.2",
+     "category": "simple-rule",
+     "context_ids": [
+      "2.2",
+      "6.1",
+      "3.7",
+      "2.1",
+      "2.3",
+      "5.1.3",
+      "vocabulary.owner",
+      "3.2",
+      "3.4",
+      "2.4"
+     ],
+     "answer": {
+      "answer": "No, not from more than one faction. A deck contains cards from a single faction (Ember, Tide or Root) plus neutral cards, so you may mix neutral cards in freely but all faction cards must come from one faction.",
+      "citations": [
+       "2.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1189,
+     "output_tokens": 93,
+     "cost_dollars": 0.0001654,
+     "seconds": 1.1580212999979267
+    },
+    {
+     "question_id": "rule/2.3",
+     "category": "simple-rule",
+     "context_ids": [
+      "2.3",
+      "2.1",
+      "2.2",
+      "5.1.3",
+      "11.2.3",
+      "vocabulary.owner",
+      "9.10",
+      "6.1",
+      "3.2",
+      "6.2"
+     ],
+     "answer": {
+      "answer": "No. A deck may contain at most 2 copies of the same card. A deck must also contain exactly 30 cards, all from a single faction (Ember, Tide or Root) plus neutral cards.",
+      "citations": [
+       "2.3",
+       "2.1",
+       "2.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 1293,
+     "output_tokens": 95,
+     "cost_dollars": 0.00017680000000000001,
+     "seconds": 1.069529300002614
+    },
+    {
+     "question_id": "rule/3.1",
+     "category": "simple-rule",
+     "context_ids": [
+      "3.1",
+      "3.7",
+      "3.4",
+      "3.3",
+      "3.2",
+      "3.8",
+      "3.5",
+      "4.1",
+      "3.6",
+      "1.1"
+     ],
+     "answer": {
+      "answer": "Each player has four zones: their deck, their hand, their board (units and relics), and their graveyard.",
+      "citations": [
+       "3.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1326,
+     "output_tokens": 56,
+     "cost_dollars": 0.0001606,
+     "seconds": 1.0476713000025484
+    },
+    {
+     "question_id": "rule/3.2",
+     "category": "simple-rule",
+     "context_ids": [
+      "3.2",
+      "3.7",
+      "3.4",
+      "5.1.2",
+      "5.5.1",
+      "1.1",
+      "2.2",
+      "5.1.3",
+      "5.5.2",
+      "5.3.1"
+     ],
+     "answer": {
+      "answer": "Your deck is face down. Nobody knows the order of the cards, so neither you nor your opponent can know it.",
+      "citations": [
+       "3.2"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1337,
+     "output_tokens": 60,
+     "cost_dollars": 0.00016370000000000002,
+     "seconds": 1.2788892000025953
+    },
+    {
+     "question_id": "rule/4.3",
+     "category": "simple-rule",
+     "context_ids": [
+      "4.3",
+      "4.1",
+      "11.4.1",
+      "neutral.shard-construct",
+      "root.mossmender",
+      "11.4.2",
+      "11.2.8",
+      "6.1",
+      "5.2.2",
+      "4.2"
+     ],
+     "answer": {
+      "answer": "Shards pay for playing cards and for attack abilities.",
+      "citations": [
+       "4.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 1.0,
+     "step_order": null,
+     "input_tokens": 1342,
+     "output_tokens": 43,
+     "cost_dollars": 0.00015570000000000002,
+     "seconds": 1.3659522000016295
+    },
+    {
+     "question_id": "rule/5.1.2",
+     "category": "simple-rule",
+     "context_ids": [
+      "3.7",
+      "5.1.3",
+      "5.1.2",
+      "4.1",
+      "3.1",
+      "5.2.3",
+      "5.3.1",
+      "1.4",
+      "2.2",
+      "5.2.2"
+     ],
+     "answer": {
+      "answer": "Deck building: build your deck from cards of a single faction (Ember, Tide or Root) plus neutral cards. Setup: shuffle your deck and draw 5 cards. You may once mulligan: shuffle your whole hand back into your deck, then draw one card fewer, so you hold 4 cards. Your opponent's faction is known to you from the start, but not their decklist or hand.",
+      "citations": [
+       "2.2",
+       "5.1.2",
+       "5.1.3",
+       "3.7"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.25,
+     "step_order": null,
+     "input_tokens": 1342,
+     "output_tokens": 430,
+     "cost_dollars": 0.00034920000000000003,
+     "seconds": 2.2023554000043077
+    },
+    {
+     "question_id": "rule/5.5.2",
+     "category": "simple-rule",
+     "context_ids": [
+      "5.5.2",
+      "10.6",
+      "9.9",
+      "9.11",
+      "11.1.3",
+      "8.22",
+      "7.5",
+      "7.4",
+      "8.10",
+      "11.1.11"
+     ],
+     "answer": {
+      "answer": "You do. During your opponent's turn, you are the non-active player, and you make the choices that rules or effects ask of you while they resolve. That includes deciding whether to intercept an attack that targets one of your units, and choosing an echo's new target (if it has a target) or which cards to discard when an effect asks for that.",
+      "citations": [
+       "5.5.2",
+       "7.5",
+       "11.1.3"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 1872,
+     "output_tokens": 570,
+     "cost_dollars": 0.00047220000000000004,
+     "seconds": 3.201824800002214
+    },
+    {
+     "question_id": "rule/6.3",
+     "category": "simple-rule",
+     "context_ids": [
+      "6.3",
+      "11.4.1",
+      "6.8",
+      "11.2.2",
+      "11.4.5",
+      "11.2.8",
+      "8.16",
+      "11.4.2",
+      "3.8",
+      "11.2.7"
+     ],
+     "answer": {
+      "answer": "Playing a card: first you pay its cost. Its cost is its printed cost (or the cost of its next Fracture step), plus every cost change from auras, and minus 2 if you overcharge it. If the total is below 0, it costs 0. Overcharging is optional: when you play a card with Overcharge you may choose to overcharge it, and it then costs 2 Shards less, never below 0. Overcharge only reduces the cost of playing the card, never the cost of an attack ability. Then the card is resolved: a unit or relic arrives on the board and its Arrival abilities trigger; a spell applies its effect, then goes to the graveyard. A Fracture card instead applies its next step, and after a step that is not the last one it returns to its owner's hand instead of going to the graveyard, unless the hand is full, in which case it goes to the graveyard and its progress is lost. A Fracture card with a sacrifice cost pays it at each step.",
+      "citations": [
+       "6.8",
+       "11.4.1",
+       "11.4.5",
+       "6.3",
+       "11.2.2",
+       "11.2.7",
+       "11.2.8"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.14285714285714285,
+     "step_order": null,
+     "input_tokens": 1670,
+     "output_tokens": 361,
+     "cost_dollars": 0.0003475,
+     "seconds": 2.3740152999962447
+    },
+    {
+     "question_id": "rule/6.7",
+     "category": "simple-rule",
+     "context_ids": [
+      "6.7",
+      "8.8",
+      "11.2.7",
+      "8.13",
+      "vocabulary.die",
+      "11.5.3",
+      "11.2.2",
+      "vocabulary.return-to-hand",
+      "11.3.2",
+      "8.20"
+     ],
+     "answer": {
+      "answer": "When a card is returned to hand, it loses all of its modifications and all of its damage (rule 6.7; rule 8.8 applies the same to units and relics returned by a Return to hand effect). It does not die, so nothing that triggers on dying happens. If your hand is full, the card goes to the graveyard instead, still without dying.",
+      "citations": [
+       "6.7",
+       "8.8"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1348,
+     "output_tokens": 134,
+     "cost_dollars": 0.0002018,
+     "seconds": 1.1662638999987394
+    },
+    {
+     "question_id": "rule/8.3",
+     "category": "simple-rule",
+     "context_ids": [
+      "vocabulary.sacrifice",
+      "11.3.3",
+      "8.3",
+      "8.16",
+      "8.22",
+      "11.3.6",
+      "3.8",
+      "11.1.11",
+      "ember.pyre-offering",
+      "ember.cinder-pact"
+     ],
+     "answer": {
+      "answer": "To sacrifice a unit means to destroy one of your own units, whether as a cost of a card or as an effect. The sacrificed unit dies. A sacrifice is never partial: you can only play a card or use an ability if you can make every sacrifice it asks for. If you have more units than the effect asks for, you choose which one is sacrificed. An anchored unit can be sacrificed; it counts as sacrificed and the sacrifice is still paid, but it stays on the board, so it frees no place.",
+      "citations": [
+       "vocabulary.sacrifice",
+       "8.3",
+       "8.16",
+       "11.3.3",
+       "3.8"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.2,
+     "step_order": null,
+     "input_tokens": 1626,
+     "output_tokens": 209,
+     "cost_dollars": 0.00026710000000000004,
+     "seconds": 1.3281130000032135
+    },
+    {
+     "question_id": "rule/11.3.3",
+     "category": "simple-rule",
+     "context_ids": [
+      "11.3.3",
+      "11.3.2",
+      "11.3.4",
+      "11.3.6",
+      "3.8",
+      "11.3.1",
+      "11.3.5",
+      "7.10",
+      "8.16",
+      "7.9"
+     ],
+     "answer": {
+      "answer": "While the unit is protected, nothing can make it leave the board: no destruction, no return to hand, no sacrifice, and no death at 0 defense. If an effect tries to make it leave, only that part of the effect is ignored, and the rest of the card still applies normally. If you sacrifice the anchored unit to pay a cost, the sacrifice still counts as paid, so the card's effect applies, but the unit stays on the board.",
+      "citations": [
+       "11.3.2",
+       "11.3.3",
+       "8.16"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.3333333333333333,
+     "step_order": null,
+     "input_tokens": 1680,
+     "output_tokens": 381,
+     "cost_dollars": 0.0003585,
+     "seconds": 3.1092333999986295
+    },
+    {
+     "question_id": "rule/11.3.6",
+     "category": "simple-rule",
+     "context_ids": [
+      "11.3.6",
+      "11.3.2",
+      "11.3.4",
+      "11.3.5",
+      "6.6",
+      "6.10",
+      "11.3.1",
+      "vocabulary.die",
+      "11.1.5",
+      "8.8"
+     ],
+     "answer": {
+      "answer": "Yes. Once the protection is over, the unit can be destroyed, returned to hand or sacrificed normally again. Anchor protects a unit from its arrival until the start of its controller's next turn. While protected it can take damage and debuffs, but nothing can make it leave the board: no destruction, no return to hand, no sacrifice, and no death at 0 defense. If it drops to 0 defense while protected it is doomed, staying on the board and still able to intercept and attack; if its defense goes back above 0 it is no longer doomed. If the protection ends with its defense still at 0, it is destroyed at the end of that turn, unless a Turn end ability heals it first.",
+      "citations": [
+       "11.3.1",
+       "11.3.2",
+       "11.3.4",
+       "11.3.5",
+       "11.3.6"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.2,
+     "step_order": null,
+     "input_tokens": 1446,
+     "output_tokens": 266,
+     "cost_dollars": 0.0002776,
+     "seconds": 2.4846950999999535
+    },
+    {
+     "question_id": "rule/11.4.5",
+     "category": "simple-rule",
+     "context_ids": [
+      "11.4.5",
+      "11.4.1",
+      "8.16",
+      "11.4.2",
+      "6.8",
+      "11.4.3",
+      "ember.ember-lance",
+      "7.2",
+      "7.10",
+      "4.3"
+     ],
+     "answer": {
+      "answer": "No. Overcharge only reduces the cost of playing the card, never the cost of an attack ability. When a card with Overcharge is played, the player may choose to overcharge it, which makes it cost 2 Shards less (never below 0). Overcharge does not touch attack ability costs.",
+      "citations": [
+       "11.4.5",
+       "11.4.1"
+      ],
+      "answerable": true
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": 1.0,
+     "correct_refusal": null,
+     "citation_recall": 1.0,
+     "citation_precision": 0.5,
+     "step_order": null,
+     "input_tokens": 1622,
+     "output_tokens": 123,
+     "cost_dollars": 0.00022370000000000002,
+     "seconds": 1.2162984000024153
+    },
+    {
+     "question_id": "unanswerable/keyword/rampage/1",
+     "category": "unanswerable",
+     "context_ids": [
+      "9.9",
+      "7.9",
+      "7.2",
+      "3.6",
+      "7.3",
+      "vocabulary.attack-ability",
+      "11.1.3",
+      "root.sprout",
+      "vocabulary.ability",
+      "8.5"
+     ],
+     "answer": {
+      "answer": "The context does not define the Rampage keyword, so I cannot rule on what it does.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1623,
+     "output_tokens": 47,
+     "cost_dollars": 0.00018580000000000002,
+     "seconds": 1.0002050000039162
+    },
+    {
+     "question_id": "unanswerable/keyword/rampage/2",
+     "category": "unanswerable",
+     "context_ids": [
+      "7.2",
+      "7.8",
+      "9.9",
+      "7.10",
+      "8.10",
+      "7.9",
+      "8.18",
+      "7.4",
+      "7.1",
+      "7.5"
+     ],
+     "answer": {
+      "answer": "The context does not include a rule or card for Rampage, so I can't say how it changes attacks. The rules provided cover general attacking, interception, freeze and attack abilities, but nothing about Rampage.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1826,
+     "output_tokens": 125,
+     "cost_dollars": 0.00024510000000000005,
+     "seconds": 1.8327560000034282
+    },
+    {
+     "question_id": "unanswerable/keyword/rampage/3",
+     "category": "unanswerable",
+     "context_ids": [
+      "neutral.tempest",
+      "7.2",
+      "11.5.2",
+      "7.8",
+      "7.10",
+      "11.1.8",
+      "vocabulary.defense",
+      "8.8",
+      "7.5",
+      "9.9"
+     ],
+     "answer": {
+      "answer": "The rules I have do not cover Rampage, so I can't say what happens when Tempest hits a unit with it. Tempest's card text says only that it destroys all units, and I have no rule for Rampage to apply to that.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1642,
+     "output_tokens": 226,
+     "cost_dollars": 0.00027720000000000007,
+     "seconds": 1.887976099998923
+    },
+    {
+     "question_id": "unanswerable/keyword/lifebind/1",
+     "category": "unanswerable",
+     "context_ids": [
+      "8.8",
+      "11.3.2",
+      "8.5",
+      "9.3",
+      "9.4",
+      "11.3.6",
+      "11.1.9",
+      "vocabulary.ability",
+      "3.6",
+      "9.9"
+     ],
+     "answer": {
+      "answer": "The provided rules do not define a keyword called Lifebind, so I cannot say what it does. The context covers return to hand, Modify, Death, Departure, Anchor protection, Echo, tokens and Attack triggers, but nothing about Lifebind.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1598,
+     "output_tokens": 103,
+     "cost_dollars": 0.0002113,
+     "seconds": 1.2006257999964873
+    },
+    {
+     "question_id": "unanswerable/keyword/lifebind/2",
+     "category": "unanswerable",
+     "context_ids": [
+      "7.8",
+      "8.18",
+      "8.10",
+      "7.2",
+      "7.10",
+      "7.9",
+      "9.9",
+      "7.4",
+      "7.1",
+      "11.1.1"
+     ],
+     "answer": {
+      "answer": "The context does not include a rule or card for Lifebind, so I cannot say how it affects attacks.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1796,
+     "output_tokens": 103,
+     "cost_dollars": 0.00023110000000000003,
+     "seconds": 1.2194987999973819
+    },
+    {
+     "question_id": "unanswerable/keyword/lifebind/3",
+     "category": "unanswerable",
+     "context_ids": [
+      "11.5.2",
+      "neutral.tempest",
+      "11.3.6",
+      "11.1.1",
+      "11.1.5",
+      "11.1.8",
+      "8.21",
+      "vocabulary.defense",
+      "11.5.4",
+      "6.10"
+     ],
+     "answer": {
+      "answer": "The context does not include the Lifebind keyword or any card with Lifebind, so I cannot rule on what happens to a Lifebind unit hit by Tempest. The context only says Tempest destroys all units. It does not say whether Lifebind changes that result.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1346,
+     "output_tokens": 262,
+     "cost_dollars": 0.0002656,
+     "seconds": 2.557101899998088
+    },
+    {
+     "question_id": "unanswerable/card/tidecaller-siren/1",
+     "category": "unanswerable",
+     "context_ids": [
+      "tide.reefkeeper",
+      "tide.brine-adept",
+      "tide.receding-wave",
+      "tide.coral-font",
+      "tide.brine-ward",
+      "tide.mire-eel",
+      "tide.brinesong",
+      "tide.pearl-oracle",
+      "tide.riptide-hex",
+      "tide.rime-snare"
+     ],
+     "answer": {
+      "answer": "The context does not include a card called Tidecaller Siren, so I cannot state its cost.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1317,
+     "output_tokens": 49,
+     "cost_dollars": 0.00015620000000000003,
+     "seconds": 1.101858900001389
+    },
+    {
+     "question_id": "unanswerable/card/tidecaller-siren/2",
+     "category": "unanswerable",
+     "context_ids": [
+      "9.9",
+      "8.8",
+      "3.6",
+      "11.1.3",
+      "11.1.9",
+      "7.2",
+      "7.9",
+      "11.1.11",
+      "11.1.4",
+      "10.6"
+     ],
+     "answer": {
+      "answer": "The context does not include the card text for Tidecaller Siren, so I cannot say what it does.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1561,
+     "output_tokens": 50,
+     "cost_dollars": 0.0001811,
+     "seconds": 0.94038780000119
+    },
+    {
+     "question_id": "unanswerable/card/tidecaller-siren/3",
+     "category": "unanswerable",
+     "context_ids": [
+      "2.3",
+      "2.2",
+      "ember.roaring-pyre",
+      "ember.flamebound-zealot",
+      "8.13",
+      "ember.cinder-pact",
+      "ember.ash-warden",
+      "ember.ember-lance",
+      "ember.pyre-offering",
+      "ember.cinderling"
+     ],
+     "answer": {
+      "answer": "The rules I have do not include a card called Tidecaller Siren, so I cannot confirm its faction or whether it can go in an Ember deck. The general limit is at most 2 copies of the same card in a deck, but whether this card is legal in an Ember deck depends on its faction, which I cannot see here.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1401,
+     "output_tokens": 361,
+     "cost_dollars": 0.00032060000000000004,
+     "seconds": 2.4204642999975476
+    },
+    {
+     "question_id": "unanswerable/mechanic/overdrive-phase/1",
+     "category": "unanswerable",
+     "context_ids": [
+      "11.4.4",
+      "4.2",
+      "11.4.3",
+      "11.4.2",
+      "5.3.1",
+      "5.3.2",
+      "11.4.5",
+      "11.4.1",
+      "11.3.6",
+      "7.5"
+     ],
+     "answer": {
+      "answer": "The context does not describe an Overdrive phase, so I can't rule on how it works. The rules provided cover Overcharge (11.4), the Shards refill step (4.2), the main phase (5.3), Anchor (11.3.6) and Intercept (7.5).",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1368,
+     "output_tokens": 144,
+     "cost_dollars": 0.0002088,
+     "seconds": 1.3762088000003132
+    },
+    {
+     "question_id": "unanswerable/mechanic/overdrive-phase/2",
+     "category": "unanswerable",
+     "context_ids": [
+      "8.10",
+      "5.3.2",
+      "11.4.2",
+      "5.5.1",
+      "11.3.5",
+      "5.5.2",
+      "11.2.3",
+      "9.5",
+      "11.4.4",
+      "8.19"
+     ],
+     "answer": {
+      "answer": "The context does not describe an Overdrive phase, so I cannot say when it can be used. The rules provided cover Freeze, turn ends, Overcharge, Anchor, Fracture, triggers and the opponent's turn, but none mention an Overdrive phase.",
+      "citations": [],
+      "answerable": false
+     },
+     "format_failures": [],
+     "valid_answer": 1.0,
+     "answered": null,
+     "correct_refusal": 1.0,
+     "citation_recall": null,
+     "citation_precision": null,
+     "step_order": null,
+     "input_tokens": 1458,
+     "output_tokens": 106,
+     "cost_dollars": 0.0001988,
+     "seconds": 2.6301233999984106
+    }
+   ]
+  }
+ ]
+}
