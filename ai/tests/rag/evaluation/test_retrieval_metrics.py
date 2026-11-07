@@ -79,11 +79,17 @@ def test_every_metric_says_what_it_does_how_and_what_it_represents():
         assert metric.description.represents.strip(), metric.key
 
 
-def test_describes_each_cutoff_by_what_its_first_k_chunks_are():
-    assert "the prompt (the 10 chunks the model will read)" in RecallAtK(10).description.represents
-    assert "what a retriever passes to the next step" in BinaryNdcgAtK(20).description.represents
+def test_describes_each_metric_at_its_cutoff():
+    assert "counts as much at rank 10 as at rank 1, and not at all at rank 11" in RecallAtK(10).description.represents
+    assert "sit high in the first 20, not just somewhere in them" in BinaryNdcgAtK(20).description.represents
     assert "is at rank 20 gets 100% on Recall@20, but only 0.23 here" in BinaryNdcgAtK(20).description.represents
     assert "the first 7 chunks" in RecallAtK(7).description.represents, "a k the evaluation does not report"
+
+
+def test_describes_every_metric_in_general_terms_not_by_what_the_arbiter_does_with_the_chunks():
+    for metric in RETRIEVAL_METRICS:
+        description = metric.description
+        assert "prompt" not in description.what + description.how + description.represents, metric.key
 
 
 def test_lists_recall_and_binary_ndcg_at_10_and_20_then_the_reciprocal_rank_each_named_by_its_key():
