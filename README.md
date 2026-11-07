@@ -30,7 +30,7 @@ To host it on Google Cloud Run: [`engine/README.md`](engine/README.md), then [`f
 | `engine/core` | The rules engine: Java 21, no framework ([entry points and scenario service](engine/core/README.md)) |
 | `engine/api` | The game server: Spring Boot, REST and WebSocket |
 | `engine/dataset`, `engine/corpus` | The Arbiter's evaluation questions with their answer keys, and its RAG chunks |
-| `ai/` | The AI layer: Python, the dataset's wording and the RAG ([`ai/README.md`](ai/README.md)) |
+| `ai/` | The AI layer: Python, the dataset's wording, the RAG and the Arbiter's answers ([`ai/README.md`](ai/README.md)) |
 | `evals/` | The evaluation datasets and every saved evaluation |
 | `frontend/` | The client: Angular, with the game and the benchmark lab |
 | `AGENTS.md`, `.claude/` | What coding agents read: instructions, skills, hooks, review agents |
@@ -59,4 +59,4 @@ Most of the code is written by coding agents, mostly Claude Code, and I make the
 
 Phase 2 is done: the rules, 47 cards and three decks, an engine that plays every rule, effect and keyword, two bots that never see hidden cards, the game server and the client.
 
-Phase 3, the RAG Arbiter, is in progress. Its evaluation dataset has 668 questions, and the engine writes every answer key. Its retrieval (BM25 and embeddings fused by RRF, the cards' cross-references, a cross-encoder reranker) puts 71.1% of the rules and cards a question must cite in its top 10, on the dev questions (October 2026). Generating the answers and grading them come next. Details: the Status of [`AGENTS.md`](AGENTS.md), and the [roadmap](docs/design.md).
+Phase 3, the RAG Arbiter, is in progress. Its evaluation dataset has 668 questions, and the engine writes every answer key. Its retrieval (BM25 and embeddings fused by RRF, the cards' cross-references, a cross-encoder reranker) puts 71.1% of the rules and cards a question must cite in its top 10, on the dev questions (October 2026). The Arbiter answers with Claude Haiku 5.5 from that top 10 and the cards the question names; grading the answers comes next. Details: the Status of [`AGENTS.md`](AGENTS.md), and the [roadmap](docs/design.md).

@@ -28,4 +28,8 @@ class Technique(ABC):
 
     @abstractmethod
     def process(self, question: str, chunk_ids: list[str]) -> list[str]:
-        """The chunk ids it hands on for `question`, from those the step before handed it: none for a retriever."""
+        """The chunk ids it returns for `question`, from those the step before handed it: none for a retriever."""
+
+    def hand_on(self, chunk_ids: list[str]) -> list[str]:
+        """What the next step reads of the chunk ids it returned: all of them, unless the step says otherwise."""
+        return chunk_ids

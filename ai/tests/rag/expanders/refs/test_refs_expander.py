@@ -36,36 +36,10 @@ def test_follows_the_refs_one_level_deep():
     assert "8.14" not in expanded, "8.5's own ref"
 
 
-def test_finds_a_card_whatever_its_case():
-    assert RefsExpander("refs", CHUNKS).expand_chunks("what does ASH WARDEN do?", [])[0] == "ember.ash-warden"
 
 
-def test_finds_a_card_before_a_possessive():
-    expanded = RefsExpander("refs", CHUNKS).expand_chunks("What does Ash Warden's Cinder Bite do?", [])
-
-    assert expanded[0] == "ember.ash-warden"
 
 
-def test_finds_no_card_inside_another_word():
-    expander = RefsExpander("refs", [*CHUNKS, card("ember.cinder", "Cinder")])
-
-    assert expander.expand_chunks("My Cinderling died.", []) == ["ember.cinderling", "9.3"]
-
-
-def test_finds_the_longer_of_two_card_names_that_start_alike():
-    expander = RefsExpander("refs", [*CHUNKS, card("ember.cinder", "Cinder"), card("ember.cinder-pact", "Cinder Pact")])
-
-    assert expander.expand_chunks("Can I play Cinder Pact?", []) == ["ember.cinder-pact"]
-
-
-def test_finds_no_card_through_a_letter_that_only_case_folding_reads_as_its_name():
-    assert RefsExpander("refs", CHUNKS).expand_chunks("What does Tempeſt do?", []) == []
-
-
-def test_finds_no_vocabulary_term_by_its_name():
-    destroy = Chunk("vocabulary.destroy", "term", "Destroy", "**Destroy**: board to graveyard.", (), "t", "h")
-
-    assert RefsExpander("refs", [*CHUNKS, destroy]).expand_chunks("Can I destroy an anchored unit?", []) == []
 
 
 def test_keeps_each_chunk_once_where_it_first_comes():

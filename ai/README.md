@@ -1,6 +1,6 @@
 # Shardbound AI
 
-The Python side of the project: the code that calls or evaluates models (design doc §3.1). It holds one step of the Arbiter's evaluation dataset, the wording and the split (`dataset/`), and the Arbiter's RAG, built step by step (`rag/`). The eval harness comes next, in the same `uv` project.
+The Python side of the project: the code that calls or evaluates models (design doc §3.1). It holds one step of the Arbiter's evaluation dataset, the wording and the split (`dataset/`), the Arbiter's RAG, built step by step (`rag/`), and the Arbiter itself, which answers from the RAG's context (`arbiter/`). The evaluation of its answers comes next, in `arbiter/evaluation/`.
 
 ```bash
 # from ai/
@@ -11,6 +11,7 @@ uv run python -m rag evaluate --description "…"    # score every retriever on 
 uv run python -m rag compare <recorded> <new>      # two evaluations run by run; --max-drop fails on a lower recall
 uv run python -m rag evaluate --baseline --description "…"   # the baseline only, as CI does (rag/baseline.py)
 uv run python -m rag check-evaluation              # CI's "Evaluation is fresh": does this branch commit its evaluation?
+uv run python -m arbiter ask "…"                   # answer one question: the baseline's context, then Claude Haiku 5.5
 ```
 
 ## What `dataset/` does
@@ -97,6 +98,9 @@ retriever random, answer None on v2 dev, 61 answerable questions
 rag/
 ├── __main__.py                 the command line: index, evaluate, compare; it calls a service and prints
 ├── chunks.py                   the chunks engine/corpus writes
+├── named_cards.py              NamedCardFinder: the cards a question names, for the expander and the context
+├── context.py                  ContextSelector: the first 10 ranked (PROMPT_SIZE), then the named cards past them
+├── pipeline.py                 Pipeline, build_pipeline: a run's layers, then the context, for the Arbiter
 ├── comparison/                 two saved evaluations, run by run: comparison_service.py, comparison_table.py
 ├── gate/                       what CI asks of a pull request: retrieval_inputs.py (the files an evaluation depends
 │                               on), git_history.py, fresh_evaluation.py (a change commits its evaluation)
@@ -120,8 +124,9 @@ rag/
 │   ├── __init__.py             Expander: expand_chunks(question, chunk ids) → them and the chunks it adds
 │   ├── registry.py             every expander by name
 │   └── refs/                   refs_expander.py (the named cards and the refs)
-├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common
-├── baseline.py                 BASELINE, the pipeline the Arbiter would serve and CI checks against main
+├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common;
+│                               hand_on, what the next step reads (a retriever's top 20)
+├── baseline.py                 BASELINE, the pipeline the Arbiter answers with and CI checks against main
 ├── device.py                   where the models run: read_device() (RAG_DEVICE, "cpu" by default);
 │                               describe_device(), what an evaluation records
 ├── rerankers/
@@ -139,7 +144,6 @@ rag/
     │                           does, how, and what it represents
     ├── retrieval_metrics.py    RetrievalMetric: score(relevant ranks) → one question's value; RecallAtK(k),
     │                           BinaryNdcgAtK(k), ReciprocalRank(); RETRIEVAL_METRICS, every one scored; CUTOFFS
-    │                           (answer_metrics.py will join it)
     ├── scores.py               QuestionResult, Scores, Report; score_question, score_group (a run or a category);
     │                           GROUP_VALUE_DESCRIPTIONS; list_metric_descriptions() (every value described)
     ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "expand": null, "rerank": null, …}
@@ -149,12 +153,39 @@ rag/
 ```
 
 - A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`.
-- **The pipeline is three steps** (`technique.py`): retriever, expand, rerank. Each technique extends `Technique`, through `Retriever`, `Expander` or `Reranker`, and gets its name from its registry: an expander (`refs`, `RefsExpander`) adds to what it is handed the cards the question names and the refs of all of them; a reranker (`minilm-l6`, `MiniLMReranker`, or `qwen3-reranker-0.6b`, `Qwen3Reranker`, each loading its own model through `CrossEncoderReranker`) returns every candidate it is handed, reordered, the prompt keeping the first 10. A retriever hands the next step its first 20 chunks (`CANDIDATE_COUNT`), every other step its whole list.
+- **The pipeline is three steps** (`technique.py`), then the context: retriever, expand, rerank. Each technique extends `Technique`, through `Retriever`, `Expander` or `Reranker`, and gets its name from its registry: an expander (`refs`, `RefsExpander`) adds to what it is handed the cards the question names and the refs of all of them; a reranker (`minilm-l6`, `MiniLMReranker`, or `qwen3-reranker-0.6b`, `Qwen3Reranker`, each loading its own model through `CrossEncoderReranker`) returns every candidate it is handed, reordered, the context keeping the first 10. A retriever hands the next step its first 20 chunks (`CANDIDATE_COUNT`), every other step its whole list (`hand_on`). The cards a question names are found by `NamedCardFinder` (`named_cards.py`), which both the expander and the context use.
+- **The context is what the RAG hands the Arbiter** (`context.py`): the first 10 chunks of the ranking (`PROMPT_SIZE`), then the cards the question names that the reranker ranked past them. `Pipeline` (`pipeline.py`) runs the techniques a run's layers name, the baseline's for the Arbiter, then the context. The evaluation scores the ranking, so the context does not change the retrieval metrics: it is judged with the answers.
 - **`evaluate` builds the tree of every pipeline** (`stages.py`): each retriever is a node, and under each node, each technique of the next step makes a child, the step skipped makes none. A `Stage` holds its technique, its parent and what it handed on for each question, so going up the parents gives the run's name and what each step did. Every node is computed once and is a run: 6 per retriever with `refs`, `minilm-l6` and `qwen3-reranker-0.6b`, so the benchmark explorer can build any pipeline. A run's list is what its last step handed on: the retriever's whole ranking, the ~41 candidates of the expansion, or the 20 or ~41 a reranker reordered. Each question also keeps how long its pipeline took (`seconds`), and each score block the latency's p50 and p95.
 - **A retrieval metric extends `RetrievalMetric`** and is one entry of `RETRIEVAL_METRICS` (`list_retrieval_metrics()`): `score_question` gives each question its value, `score_group` averages it, and the report table and the evaluation file show it, with no other change. Its key `name.k` is written `{"name": {"k": …}}`, with `mean_` in a group's scores. The values of a group that are not a metric's mean, the number of questions and of candidates, the recall curve and the latency, are computed by `score_group` itself, and described in `GROUP_VALUE_DESCRIPTIONS` beside it. A test fails when a value of the scores has no description.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
 - **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), the device the models ran on (`"cpu"` or the GPU's name, then torch's build, since the latency depends on it), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
+
+## What `arbiter/` does
+
+The Arbiter answers a rules question (design doc §5.2): `arbiter.py` asks the RAG's pipeline for the context, then a generator writes the answer from it.
+
+```bash
+# from ai/, with the index built, the database running and Claude's key in CLAUDE_KEY
+uv run python -m arbiter ask "I have Ash Warden on my board, and my opponent has no unit. What happens if I cast Roaring Pyre and then cast Tempest?"
+```
+
+It prints the context it read, the answer, its citations, whether it found one, any reply that was no answer, and the tokens.
+
+| Module | Role |
+|---|---|
+| `arbiter/__main__.py` | The command line: `ask`, with the baseline's pipeline and generator |
+| `arbiter/arbiter.py` | `Arbiter`: the pipeline's context, as `ContextChunk`s, then the generator's answer; `build_arbiter` builds it on the indexed chunks |
+| `arbiter/reply_text.py` | The reply as `ask` prints it |
+| `arbiter/generation/prompt.py` | The prompt, the same for every question: the instructions, the context's cards then its rules and terms, each in a tag that carries its id, then the question |
+| `arbiter/generation/answer.py` | `Answer`, `{answer, citations, answerable}`, and its JSON schema |
+| `arbiter/generation/__init__.py` | `Generator`: one model and its settings; `generate_answer` validates the reply and tries once more when it is no answer (`MAX_ATTEMPTS`), counting each failure |
+| `arbiter/generation/completion.py` | `Completion`: the model's text, why it stopped and its tokens (`Usage`) |
+| `arbiter/generation/claude/` | `ClaudeGenerator`: Anthropic's API with structured outputs; the key is read from `CLAUDE_KEY`. Claude takes no temperature: each question gets one sample, which the cache keeps |
+| `arbiter/generation/completion_cache.py` | Every completion kept in `ai/.cache/arbiter/`, by the generator's settings, the prompt and the attempt: a rerun costs nothing |
+| `arbiter/generation/registry.py` | Every generator by name; `BASELINE_GENERATOR` is `claude-haiku-5.5`, at medium effort |
+
+`tests/arbiter/test_imports.py` checks three rules: `generation/` reads no RAG type, the RAG reads nothing of the Arbiter, and nothing but `arbiter/evaluation/` will import the evaluation. The tests call no model: `ScriptedGenerator` replies in their place.
 
 ## Running the RAG on a new machine
 

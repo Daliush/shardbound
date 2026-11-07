@@ -28,7 +28,7 @@ An open-source portfolio project for AI and agent engineering. An invented 1v1 t
 | `engine/api` | Spring Boot | REST for resources (cards, decks, games, the Arbiter's evaluations), WebSocket protocol for live games; later MCP and gRPC |
 | `engine/dataset` | Java 21, on `engine/core` | Every question of the evaluation dataset with its answer key: recipes played by the engine, factual and deck questions, simple-rule and unanswerable questions written once |
 | `engine/corpus` | Java 21, on `engine/core` | The Arbiter's knowledge base: the rules, vocabulary terms and cards as chunks with their refs, written to `ai/.corpus/chunks.jsonl` for the Python RAG index |
-| `ai/` | Python (uv) | The dataset's wording (Luna 6) and dev / test split (`ai/dataset`); the RAG's retrievers and their retrieval metrics (`ai/rag`); later the chat orchestrator, LoRA, LLM and Jev bots, eval harness |
+| `ai/` | Python (uv) | The dataset's wording (Luna 6) and dev / test split (`ai/dataset`); the RAG's retrievers and their retrieval metrics (`ai/rag`); the Arbiter's answers (`ai/arbiter`: generation now, evaluation next); later the chat orchestrator, LoRA, LLM and Jev bots, eval harness |
 | `evals/datasets/` | JSONL | The dataset versions; the final files are `dataset-dev.jsonl` and `dataset-test.jsonl`, built by `scripts/build-dataset.sh` |
 | `evals/reports/` | JSON | One file per evaluation, `<version>/<split>/<timestamp>.json`, written by `python -m rag evaluate`, served by `engine/api` to the benchmark explorer |
 | `frontend/` | Angular | Test UI first, polished UI later, results pages and answer comparator |
@@ -53,7 +53,7 @@ Language rule: compute-heavy code and business logic go to Java; code that calls
 7. **LoRA learns how to arbitrate, not the cards.** Facts come from RAG. The patch experiment retrains nothing.
 8. **Only host a model whose weights we change.** Only the LoRA Arbiter needs a GPU, and only locally.
 9. **No AI online.** The site has precomputed results, an answer comparator and games against MCTS on Cloud Run CPU. The Arbiter runs locally through `docker compose --profile demo up`, which must work without a GPU.
-10. **Jev is peripheral**: the opponent's System 1, the router, an optional guardrail and the reranker experiment. It sits behind a `DecisionModel` interface with a fallback, and nothing in the Arbiter, RAG, LoRA or judge depends on it.
+10. **Jev is peripheral**: the opponent's System 1, the router, an optional guardrail, the reranker experiment and a variant of the key-fact extractor. It sits behind a `DecisionModel` interface with a fallback, and nothing in the Arbiter, RAG, LoRA or judge depends on it.
 11. **Destructive MCP tools are flagged statically** with `destructiveHint` and require user confirmation.
 12. **No leakage into published numbers.** The dataset is split by interaction (train / dev / test), cards are also held out between train and test, the RAG is tuned on dev only, and the prompt stays generic. One test set serves every configuration. Every RAG variant is benchmarked and shown in the benchmark explorer (`docs/design.md` §6.2, §8.2).
 
