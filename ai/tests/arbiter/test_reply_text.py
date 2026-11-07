@@ -10,7 +10,7 @@ ANSWER = Answer(answer="Every unit is destroyed.", citations=["neutral.tempest",
 
 
 def test_prints_the_context_the_answer_its_citations_and_tokens():
-    reply = Reply("What does Tempest do?", CONTEXT, Generation(ANSWER, [], Usage(1200, 300)))
+    reply = Reply("What does Tempest do?", CONTEXT, Generation(ANSWER, [], Usage(1200, 300), 2.4))
 
     assert format_reply(reply) == (
         "Context (2 chunks): 8.2, neutral.tempest\n"
@@ -19,17 +19,17 @@ def test_prints_the_context_the_answer_its_citations_and_tokens():
         "\n"
         "Citations: neutral.tempest, 8.2\n"
         "Answerable: yes\n"
-        "Tokens: 1200 in, 300 out")
+        "Tokens: 1200 in, 300 out, in 2.4 s")
 
 
 def test_prints_the_failure_before_a_second_attempt_s_answer():
-    reply = Reply("?", CONTEXT, Generation(ANSWER, ["stopped on max_tokens: EOF"], Usage(2400, 600)))
+    reply = Reply("?", CONTEXT, Generation(ANSWER, ["stopped on max_tokens: EOF"], Usage(2400, 600), 4.8))
 
     assert "Answerable: yes\nValid on attempt 2, after:\n  stopped on max_tokens: EOF\n" in format_reply(reply)
 
 
 def test_prints_every_failure_when_no_attempt_gave_an_answer():
-    reply = Reply("?", [], Generation(None, ["stopped on refusal: EOF", "stopped on refusal: EOF"], Usage(10, 0)))
+    reply = Reply("?", [], Generation(None, ["stopped on refusal: EOF", "stopped on refusal: EOF"], Usage(10, 0), 0.3))
 
     assert format_reply(reply) == (
         "Context (0 chunks): \n"
@@ -37,4 +37,4 @@ def test_prints_every_failure_when_no_attempt_gave_an_answer():
         "No valid answer after 2 attempts:\n"
         "  stopped on refusal: EOF\n"
         "  stopped on refusal: EOF\n"
-        "Tokens: 10 in, 0 out")
+        "Tokens: 10 in, 0 out, in 0.3 s")

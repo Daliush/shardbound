@@ -13,9 +13,10 @@ def test_returns_the_first_valid_answer_with_no_format_failure():
     assert generation.answer == Answer(answer="Ash Warden is destroyed.", citations=["8.2"], answerable=True)
     assert generation.format_failures == []
     assert generation.usage == Usage(100, 20)
+    assert generation.seconds == 1.5
 
 
-def test_tries_once_more_when_the_reply_is_no_answer_and_counts_both_attempts_tokens():
+def test_tries_once_more_when_the_reply_is_no_answer_and_counts_both_attempts_tokens_and_time():
     generator = ScriptedGenerator(['{"answer": "Ash Warden is destroyed."}', VALID_REPLY])
 
     generation = generator.generate_answer(PROMPT)
@@ -23,6 +24,7 @@ def test_tries_once_more_when_the_reply_is_no_answer_and_counts_both_attempts_to
     assert generation.answer is not None
     assert generation.format_failures == ["stopped on end_turn: Field required (citations)"]
     assert generation.usage == Usage(200, 40)
+    assert generation.seconds == 3.0
     assert generator.prompts == [PROMPT, PROMPT]
 
 
@@ -43,13 +45,14 @@ def test_refuses_a_field_the_schema_does_not_have():
     assert generation.format_failures == ["stopped on end_turn: Extra inputs are not permitted (confidence)"]
 
 
-def test_reads_a_cached_completion_instead_of_calling_the_model_again(tmp_path):
+def test_reads_a_cached_completion_instead_of_calling_the_model_again_with_the_time_its_call_took(tmp_path):
     ScriptedGenerator([VALID_REPLY], CompletionCache(tmp_path)).generate_answer(PROMPT)
     generator = ScriptedGenerator([], CompletionCache(tmp_path))
 
     generation = generator.generate_answer(PROMPT)
 
     assert generation.answer is not None
+    assert generation.seconds == 1.5
     assert generator.prompts == []
 
 

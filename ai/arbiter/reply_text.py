@@ -5,7 +5,8 @@ from arbiter.generation import MAX_ATTEMPTS
 
 
 def format_reply(reply: Reply) -> str:
-    """The context it read, its answer, its citations, whether it found one, how its format fared and its tokens."""
+    """The context it read, its answer, its citations, whether it found one, how its format fared, its tokens and
+    its time."""
     context_ids = []
     for chunk in reply.context:
         context_ids.append(chunk.id)
@@ -21,5 +22,6 @@ def format_reply(reply: Reply) -> str:
             lines.append("Valid on attempt 2, after:")
     for failure in generation.format_failures:
         lines.append(f"  {failure}")
-    lines.append(f"Tokens: {generation.usage.input_tokens} in, {generation.usage.output_tokens} out")
+    lines.append(f"Tokens: {generation.usage.input_tokens} in, {generation.usage.output_tokens} out, in "
+                 f"{generation.seconds:.1f} s")
     return "\n".join(lines)

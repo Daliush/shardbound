@@ -4,10 +4,10 @@ from arbiter.generation.prompt import Prompt
 
 SETTINGS = {"model": "claude-haiku-5-5", "effort": "medium", "max_tokens": 16000}
 PROMPT = Prompt("You are the rules referee.", "<question>What does Tempest do?</question>")
-COMPLETION = Completion('{"answer": "It destroys every unit."}', "end_turn", Usage(1200, 300))
+COMPLETION = Completion('{"answer": "It destroys every unit."}', "end_turn", Usage(1200, 300), 2.4)
 
 
-def test_finds_the_completion_it_saved(tmp_path):
+def test_finds_the_completion_it_saved_with_the_time_its_call_took(tmp_path):
     cache = CompletionCache(tmp_path)
 
     cache.save_completion(SETTINGS, PROMPT, 1, COMPLETION)

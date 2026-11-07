@@ -25,14 +25,15 @@ class CompletionCache:
         if not file.exists():
             return None
         record = json.loads(file.read_text(encoding="utf-8"))
-        return Completion(record["text"], record["stop_reason"], Usage(**record["usage"]))
+        return Completion(record["text"], record["stop_reason"], Usage(**record["usage"]), record["seconds"])
 
     def save_completion(self, settings: dict[str, str | int], prompt: Prompt, attempt: int,
                         completion: Completion) -> None:
         file = self._locate(settings, prompt, attempt)
         file.parent.mkdir(parents=True, exist_ok=True)
         record = {"settings": settings, "system": prompt.system, "user": prompt.user, "attempt": attempt,
-                  "text": completion.text, "stop_reason": completion.stop_reason, "usage": asdict(completion.usage)}
+                  "text": completion.text, "stop_reason": completion.stop_reason, "usage": asdict(completion.usage),
+                  "seconds": completion.seconds}
         file.write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
 
     def _locate(self, settings: dict[str, str | int], prompt: Prompt, attempt: int) -> Path:
