@@ -7,6 +7,7 @@ from arbiter.generation import Generation, Generator
 from arbiter.generation.completion_cache import CACHE_FOLDER, CompletionCache
 from arbiter.generation.prompt import ContextChunk, write_prompt
 from arbiter.generation.registry import build_generator
+from rag.chunks import Chunk
 from rag.evaluation.runs import Layers
 from rag.pipeline import Pipeline, build_pipeline
 from rag.repository.chunk_repository import ChunkRepositoryPostgres
@@ -46,7 +47,14 @@ class Arbiter:
 def build_arbiter(layers: Layers, generator_name: str, root: Path) -> Arbiter:
     """The Arbiter of the pipeline `layers` names, on the indexed chunks, and of the generator named, whose completions
     are kept in the repository at `root`."""
+    return Arbiter(build_pipeline(layers, read_indexed_chunks()),
+                   build_generator(generator_name, CompletionCache(root / CACHE_FOLDER)))
+
+
+def read_indexed_chunks() -> list[Chunk]:
+    """Every chunk of the index, which the pipeline's techniques search: never the engine's file, so that the Arbiter
+    reads the corpus its index holds."""
     chunks = ChunkRepositoryPostgres(connect_database()).find_all_chunks()
     if not chunks:
         raise LookupError("No chunks in the database: build the index with `uv run python -m rag index`")
-    return Arbiter(build_pipeline(layers, chunks), build_generator(generator_name, CompletionCache(root / CACHE_FOLDER)))
+    return chunks
