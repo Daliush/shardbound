@@ -17,8 +17,8 @@ const KNOWN_WITHOUT_DESCRIPTION: Known[] = [
 
 /**
  * Every value of one evaluation, as its file describes it: its name, how it is written, and what it does, how and what
- * it represents. Each rule of the lab reads the display: a count is context and never ranks, a time is better lower,
- * a share or a score runs from 0 to 1.
+ * it represents. Each rule of the lab reads the display: a count is context and never ranks, a time and a cost are
+ * better lower, a share or a score runs from 0 to 1.
  */
 export class MetricCatalog {
   private constructor(private readonly known: ReadonlyMap<string,Known>, readonly descriptions: readonly MetricDescription[]) {}
@@ -43,8 +43,13 @@ export class MetricCatalog {
   isContext(path: string): boolean { return this.display(path) === 'count'; }
   /** A time, which depends on the machine it was measured on. */
   isTime(path: string): boolean { return this.display(path) === 'seconds'; }
-  lowerIsBetter(path: string): boolean { return this.isTime(path); }
-  unit(path: string): string { return this.isShare(path) ? '%' : this.display(path) === 'seconds' ? 's' : 'value'; }
+  isCost(path: string): boolean { return this.display(path) === 'dollars'; }
+  lowerIsBetter(path: string): boolean { return this.isTime(path) || this.isCost(path); }
+  unit(path: string): string {
+    if (this.isShare(path)) return '%';
+    if (this.isTime(path)) return 's';
+    return this.isCost(path) ? '$' : 'value';
+  }
 
   /** The top of a bar's scale: 1 for a share or a score, the largest value otherwise. */
   ceiling(path: string, values: readonly (number | null)[]): number {
@@ -53,7 +58,7 @@ export class MetricCatalog {
     for (const value of values) if (value !== null && value > largest) largest = value;
     return largest > 0 ? largest : 1;
   }
-  /** A value's bar, from 0 to 1 of the scale, always longer for a better value: a time's bar shrinks as it grows. */
+  /** A value's bar, from 0 to 1 of the scale, always longer for a better value: the bar of a time or a cost shrinks as it grows. */
   barLength(path: string, value: number | null, ceiling: number): number {
     if (value === null || ceiling <= 0) return 0;
     const share = Math.max(0,Math.min(1,value / ceiling));
@@ -67,6 +72,7 @@ export class MetricCatalog {
       case 'score': return value.toFixed(3);
       case 'count': return Number.isInteger(value) ? value.toLocaleString('en') : value.toFixed(1);
       case 'seconds': return formatSeconds(value);
+      case 'dollars': return '$' + value.toPrecision(2);
       default: return new Intl.NumberFormat('en',{maximumFractionDigits:3}).format(value);
     }
   }
