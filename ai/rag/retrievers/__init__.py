@@ -20,3 +20,7 @@ class Retriever(Technique):
 
     def process(self, question: str, chunk_ids: list[str]) -> list[str]:
         return self.rank_chunks(question)
+
+    def hand_on(self, chunk_ids: list[str]) -> list[str]:
+        """Its first `CANDIDATE_COUNT`."""
+        return chunk_ids[:CANDIDATE_COUNT]

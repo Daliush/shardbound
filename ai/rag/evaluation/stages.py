@@ -32,10 +32,7 @@ class Stage:
     def hand_on(self, question: Question) -> list[str]:
         """What the next step reads for the question: a retriever's first `CANDIDATE_COUNT` chunks, the whole list of
         any other step."""
-        chunk_ids = self.results[question.id].chunk_ids
-        if self.technique.step is Step.RETRIEVER:
-            return chunk_ids[:CANDIDATE_COUNT]
-        return chunk_ids
+        return self.technique.hand_on(self.results[question.id].chunk_ids)
 
     def name_layers(self) -> Layers:
         """The technique of each step of the pipeline, None for a step it skipped."""
