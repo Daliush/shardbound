@@ -92,6 +92,8 @@
 > **v2.37 (October 2026)** — the RAG gate compares a pull request with main only. It used to compare CI's run with the evaluation the pull request itself committed, so it never saw a drop against main. The baseline, the pipeline CI checks, is named once in code; a pull request that changes what retrieval depends on must commit an evaluation of its own code, so main always records one of its own (§9).
 
 > **v2.38 (October 2026)** — the benchmark explorer's page of metrics explains the scores only: the counts and the recall curve, context that never ranks a pipeline, are left out of it. The explorer opens on the best pipeline, and every ranking it shows lists ten pipelines at a time (§8.2).
+>
+> **v2.39 (November 2026)** — the Arbiter answers. The RAG hands it its context: the reranker's 10 chunks, then the cards the question names that the reranker ranked past them, since on v2 dev 6 of the 15 scenario questions lost a card they name. Claude Haiku 5.5 writes the answer from it, with structured outputs; Claude takes no temperature, so each question gets one sample, which a cache keeps. The key-fact extractor gets Jev as a variant, compared with Luna 6 on answers labeled by hand. The Arbiter has its own package, `ai/arbiter`, apart from the RAG (§3.3, §5.2, §5.3, §5.4, §6.2, §6.3, §9, §10).
 
 ---
 
@@ -299,7 +301,7 @@ flowchart LR
 | Local demo mode | Ollama or llama.cpp | Small quantized model + LoRA adapter, runs without a dedicated GPU |
 | API model | Claude Haiku (or equivalent) | Coach, bot's System 2, `api+rag` reference |
 | Judge | API model from a **different family** than the `api+rag` model | Avoids self-preference bias |
-| Question paraphraser, key-fact extractor | API model from a family that no evaluated configuration uses (Luna 6) | Writes the questions' wording, checks the key facts (§6.1, §6.3) |
+| Question paraphraser, key-fact extractor | API model from a family that no evaluated configuration answers with (Luna 6); Jev as a variant of the extractor | Writes the questions' wording, checks the key facts (§6.1, §6.3) |
 | Fast decisions | Jev (TypeSafe AI) | Behind an abstract interface, with a fallback |
 | Observability | Langfuse + OpenTelemetry | End-to-end Java ↔ Python traces |
 | Tests | JUnit 5 + AssertJ (Java), pytest (Python), Playwright (frontend, optional) | Rulings are JUnit tests |
@@ -454,10 +456,10 @@ The Arbiter exists in several versions, and **this is exactly what the evaluatio
   question ─┬→ card names found     → their card chunks
             ├→ BM25                 → list A ┐
             └→ embedding → cosine   → list B ┘→ RRF (k = 60) → top ~20
-  named cards + top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10 → prompt
+  named cards + top ~20 → + refs (one level, deduplicated) → cross-encoder reranker → top 10 + named cards → prompt
   ```
 
-  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The cards a question names are found by their exact names, as whole words, whatever their case, and join the top ~20, so that their refs are followed too; a misspelt name is not caught yet. The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped, and not again after it: the reranker has already ranked them among the candidates, and the prompt keeps its 10 chunks. The prompt holds 10 chunks: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them). Every model, the embedding model and the rerankers, loads in float32 at a pinned revision, on the CPU unless `RAG_DEVICE` names a GPU: in bfloat16, the format the Qwen3 models' weights are stored in, the rankings moved with the batch size and with the build of torch.
+  RRF fuses the two lists by rank (Σ 1 / (60 + rank)), since a BM25 score and a cosine cannot be compared. The cards a question names are found by their exact names, as whole words, whatever their case, and join the top ~20, so that their refs are followed too; a misspelt name is not caught yet. They also go in the prompt when the reranker ranks them past the 10th: the Arbiter cannot rule on a card it does not read, and on v2 dev, 6 of the 15 scenario questions lost a card they name that way (Tempest came 11th). The refs are attached **before** the reranker, so a chunk relevant through its reference is not dropped, and not again after it: the reranker has already ranked them among the candidates, and the prompt keeps its 10 ranked chunks. The prompt holds 10 ranked chunks, then the named cards past them: a chunk is about 40 tokens, so 10 cost about 400, and no question of the dataset needs more than 10 rules (5 would cap 8% of them). Every model, the embedding model and the rerankers, loads in float32 at a pinned revision, on the CPU unless `RAG_DEVICE` names a GPU: in bfloat16, the format the Qwen3 models' weights are stored in, the rankings moved with the batch size and with the build of torch.
 - **Storage**: Postgres + pgvector, the RAG's only source of chunks (the engine's `chunks.jsonl` is only the handoff the index reads), two tables: one row per chunk (its text and refs), and one row per chunk and embedding model (its vector), so several models' vectors sit side by side and are compared without re-embedding; with 191 chunks, an exact scan needs no vector index. BM25 runs in memory (Postgres full-text search is not BM25). Re-indexing recomputes the embeddings of the chunks whose hash changed, and the index records the rulebook's commit. When the FastAPI service arrives (§5.5), indexing becomes one of its endpoints and the handoff file goes: the engine posts its chunks once its batch is done, and the service saves them, answers `202 Accepted` at once and embeds the changed ones **asynchronously**, in the background, since embedding takes about a minute on CPU (longer on a model's first download) and the engine must not wait on it.
 - **Prompt**: instructions (answer only from the context, cite the IDs, say so when the context does not hold the answer), then the context in tags carrying the IDs (cards first, then rules in the reranker's order), then the question in its own tag. The prompt is **the same for every configuration** of the matrix (`base` gets it without the context), and it stays **generic**: a hint aimed at one interaction ("watch rule 11.3.6") would tune the Arbiter to that interaction's test questions.
 - **Output**: one schema for every question, `{answer, citations, answerable}`. `answer` is the natural-language text the user reads, with the citations shown as links: nobody sees JSON. `citations` lists the rule and card IDs in the order they apply. `answerable` lets the Arbiter abstain. Structured outputs through the API for `api+rag`, constrained decoding for local models, validated with Pydantic (one retry; format failures are measured).
@@ -507,7 +509,7 @@ Additional uses of Jev during a game:
 - *score* questions: "how favorable is this position?" → advantage curve shown live in the UI.
 - *noul* questions: "should I mulligan?", "should I intercept this attack?".
 
-**Jev's scope**: it only concerns the AI opponent and a few peripheral pieces (§5.4). The Arbiter, RAG, LoRA and the judge do not depend on it.
+**Jev's scope**: it only concerns the AI opponent and a few peripheral pieces (§5.4). The Arbiter, RAG, LoRA and the judge do not depend on it; Jev is only a variant there: of the reranker and the abstention (experiment 5, §6.4), and of the key-fact extractor (§6.3).
 
 **Watch out**: Jev is a very recent proprietary model (launched mid-September 2026). It sits behind a `DecisionModel` interface with a fallback implementation (LLM with structured output, or a small local classifier), so the project stays usable without an API key.
 
@@ -516,6 +518,7 @@ Additional uses of Jev during a game:
 - **Unified chatbot router**: *choice* question → `coach` / `arbiter-rag` / `arbiter-lora` / `arbiter-rag+lora` / `off_topic`. Replaceable by an LLM with structured output.
 - **MCP guardrail (optional)**: *noul* "was this tool call explicitly requested?", on top of the static annotation (§5.1).
 - **RAG relevance filter**: *noul* "does this chunk help answer the question?" → compared with a classic reranker (experiment 5, §6.4).
+- **Key-fact extractor (variant)**: *choice* question "does this answer state this fact, contradict it, or not mention it?" → compared with Luna 6, the baseline (§6.3).
 
 ### 5.5 Unified chatbot
 
@@ -620,7 +623,7 @@ All configurations except the last one use **the same open base model** (§4.2).
 | Card names | exact, whole words, whatever the case | tolerant of typos (once questions with typos can measure it) |
 | Reranker | MiniLM-L6 cross-encoder | none, Qwen3-Reranker-0.6B, Jev *noul* |
 | Abstention | the `answerable` field | reranker threshold, Jev *noul* |
-| Prompt size | 10 chunks after the reranker | 5, 20 |
+| Prompt size | 10 chunks after the reranker, plus the cards the question names | 5, 20 |
 | Output | API structured outputs / constrained decoding | prompt only |
 
 The whole grid is computed once and stored, retrieval and generation alike, for every configuration. `api+rag` included: any comparison then uses the same RAG on both sides. A run is stored with its configuration, the commit, the device its models ran on (latency depends on it), the index and dataset versions, its metrics and the answer to every question, for the benchmark explorer (§8.2).
@@ -640,7 +643,7 @@ The whole grid is computed once and stored, retrieval and generation alike, for 
 
 An answer is correct when it states every key fact and contradicts none; the share of key facts covered, and of branches covered for "it depends" questions, is published too. Outcome and rules are scored apart: the right outcome with the wrong rules is a guess, the right rules with the wrong outcome is a reasoning error.
 
-**The extractor** only answers closed questions, one per key fact, with the same generic prompt for every question. It comes from a family no evaluated configuration uses, and its error rate is measured on the hand-checked questions.
+**The extractor** only answers closed questions, one per key fact, with the same generic prompt for every question. It comes from a family no evaluated configuration answers with. Luna 6 is the baseline and Jev a variant, behind one interface: each reads one key fact in one answer and says whether the answer states it, contradicts it or does not mention it. Jev writes no answer, but it reranks or abstains in some configurations: those are graded by Luna 6 only, since Jev could miss in an answer what it missed in the chunks. Their error rate is measured on Arbiter answers whose verdicts the maintainer labels by hand, above all how often one reads "states" where the answer does not, which would inflate a score; with their cost and latency, they are compared on dev.
 
 **The judge**: a large model called through an API, not trained, with an explicit rubric. It is **calibrated** against human annotations (judge / human agreement published) and chosen from a **different model family** than the `api+rag` model, to avoid self-preference bias.
 
@@ -657,7 +660,7 @@ An answer is correct when it states every key fact and contradicts none; the sha
 - **3 seeds per adapter.** Training involves randomness: two identical runs with different seeds can differ by a few points. Without several seeds, there is no way to tell whether a 2-point gap comes from the method or from luck. We publish the mean and the spread.
 - **Confidence intervals** by bootstrap, resampling **interactions** rather than questions: the questions of one interaction tend to succeed or fail together, so resampling questions would give intervals too narrow. With 100 to 200 questions per category, they span several points.
 - **Paired tests** (McNemar): all configurations answer the same questions.
-- **Temperature 0** at inference.
+- **Temperature 0** at inference, where the model takes one. Claude Haiku 5.5 takes none: each question gets one sample, which the completion cache keeps, so a rerun reads the same answers.
 
 ### 6.4 Headline experiments
 
@@ -835,7 +838,7 @@ Documented in `docs/dev-workflow.md`, with screenshots and real examples.
   - Agents' instructions (in place): every path that `AGENTS.md`, `CLAUDE.md` and `.claude/` cite exists, on every push or PR (`scripts/check-doc-paths.py`, `.github/workflows/docs.yml`);
   - Content (in place): card and deck schemas, card and deck rules, text templates (`content/tests/`) on every push or PR touching `content/` (`.github/workflows/content.yml`);
   - Java: Maven build, engine JUnit tests (rules, interactions, **one test per ruling**), backend integration tests;
-  - Python (in place): pytest; the RAG gate on every PR (`.github/workflows/rag-gate.yml`): a PR that changes what retrieval depends on must commit an evaluation of its own code (required), and the baseline, evaluated on the 61 answerable dev questions on CPU, is compared with the evaluation main records, a drop of more than 2 points of Recall@10 failing a check the maintainer may accept; once the Arbiter answers, its answer metrics join it;
+  - Python (in place): pytest; the RAG gate on every PR (`.github/workflows/rag-gate.yml`): a PR that changes what retrieval depends on must commit an evaluation of its own code (required), and the baseline, evaluated on the 61 answerable dev questions on CPU, is compared with the evaluation main records, a drop of more than 2 points of Recall@10 failing a check the maintainer may accept; once its answers are evaluated, their metrics join it;
   - Proto: gRPC contract compatibility check (`buf breaking`);
   - Frontend: Angular build and tests;
   - Site deployment (static + Cloud Run CPU) on the main branch;
@@ -870,8 +873,9 @@ shardbound/
 │   └── (repository/)           # later, with Postgres
 ├── ai/                         # Python (uv)
 │   ├── dataset/                # the evaluation dataset's wording and split (§6.1)
-│   ├── chat/                   # orchestrator, coach, Arbiter, router, MCP client
-│   ├── rag/                    # ingestion, retrieval, reranking
+│   ├── chat/                   # orchestrator, coach, router, MCP client
+│   ├── rag/                    # ingestion, retrieval, reranking, the context
+│   ├── arbiter/                # the Arbiter: generation/ answers from the RAG's context, evaluation/ checks the answers (§6.3)
 │   ├── lora/                   # dataset generation, training (3 seeds), configs
 │   ├── serving/                # local serving (vLLM) + CPU demo profile (Ollama / llama.cpp)
 │   ├── bots/                   # LLM, Jev, Jev+LLM bots (gRPC clients)
@@ -889,7 +893,6 @@ shardbound/
 │   └── dev-workflow.md
 ├── evals/
 │   ├── datasets/               # <version>/: the engine's questions, then dataset-dev.jsonl and dataset-test.jsonl
-│   ├── harness/
 │   └── reports/                # <version>/<split>/<timestamp>.json: one file per evaluation, published
 └── .github/workflows/
 ```
@@ -926,7 +929,7 @@ Solid foundations first, then AI, then the polished app. Each phase produces som
 | RAG / LoRA comparison skewed by different models | Same open base model for the whole matrix; the API model only appears as a reference. |
 | Gaps caused by training randomness | 3 seeds per adapter, bootstrap confidence intervals, paired tests. |
 | Judge-biased evals (LLM-as-judge) | The engine writes the key facts and the rules; citations and steps are checked by code; an extractor only answers closed questions about key facts; the judge only grades form, is calibrated against human annotations and comes from a different family than the API model. |
-| Wording or grading that favors one configuration | The paraphraser and the extractor come from a family no evaluated configuration uses; the prompt is the same for every configuration. |
+| Wording or grading that favors one configuration | The paraphraser and the extractor come from a family no evaluated configuration answers with; the prompt is the same for every configuration. |
 | Tuning on the test set | Settings are tuned on dev; test only produces published numbers; the prompt stays generic, with no hint aimed at an interaction. |
 | MCTS cheating with hidden information | Determinization; never clone the raw internal state. |
 | Cost and slowness of simulations with model-based bots | Algorithmic bots by default, model-based tournaments capped and run offline. |
