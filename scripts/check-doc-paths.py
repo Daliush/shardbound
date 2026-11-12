@@ -23,7 +23,6 @@ PLANNED_PATHS = {
     "docs/rulings/": "the design's rulings, created with the first one",
     "dao/game/GameDaoDatabase": "the game server's recipe for a database",
     "dao/notification/GameNotificationDaoDatabase": "the game server's recipe for a database",
-    "ai/arbiter/evaluation/": "the evaluation of the Arbiter's answers, created with its first check",
 }
 """Paths the instructions name before they exist, each with the reason."""
 

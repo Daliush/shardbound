@@ -35,6 +35,15 @@ describe('Metric guide model', () => {
     expect(speed.entries[0].better).toBe('lower');
     expect(speed.entries[0].sample?.rows.map(row => [row.text,row.length])).toEqual([['1.27 s',0],['0.00 s',1]]);
   });
+  it('groups a cost apart from the times, a lower one being better', () => {
+    const runs = RUNS.map(each => ({...each,scores:{...each.scores,overall:{...each.scores.overall,mean_cost_dollars:.00047}}}));
+    const metrics = [...METRICS,described('mean_cost_dollars','Cost','dollars')];
+
+    const groups = buildGuide(MetricCatalog.fromEvaluation({...evaluation(metrics),runs}),runs);
+
+    expect(groups.map(group => group.role)).toEqual(['decides','explains','speed','cost']);
+    expect(groups[3].entries[0].better).toBe('lower');
+  });
   it('describes nothing for an evaluation written before its values described themselves', () => {
     expect(buildGuide(MetricCatalog.fromEvaluation(evaluation()),RUNS)).toEqual([]);
   });

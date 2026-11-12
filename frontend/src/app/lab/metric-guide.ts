@@ -7,7 +7,8 @@ import { MetricCatalog } from './metric-catalog';
 import { SPRINGS } from './springs';
 import { buildGuide } from './metric-guide-model';
 
-const DISPLAY_LABELS: Record<MetricDisplay,string> = {share:'Share · %',score:'Score · 0 to 1',count:'Count',seconds:'Seconds'};
+const DISPLAY_LABELS: Record<MetricDisplay,string> = {share:'Share · %',score:'Score · 0 to 1',count:'Count',seconds:'Seconds',
+  dollars:'US dollars'};
 
 /**
  * Every metric of the evaluation open, as its file describes it: what it does, how it is computed, what it represents,

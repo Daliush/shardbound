@@ -16,6 +16,8 @@ class Display(Enum):
     """A number of things, with one decimal when it is a mean: 61, 41.3."""
     SECONDS = "seconds"
     """A time in seconds: 0.78 s."""
+    DOLLARS = "dollars"
+    """An amount in US dollars, the cost of an answer: $0.00047."""
 
 
 @dataclass(frozen=True)

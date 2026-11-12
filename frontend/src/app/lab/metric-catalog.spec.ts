@@ -31,6 +31,14 @@ describe('Metric catalog', () => {
     expect([catalog.isBounded('mean_recall_at.20'),catalog.isBounded('mean_reciprocal_rank'),catalog.isBounded('mean_candidate_count')]).toEqual([true,true,false]);
     expect([catalog.unit('mean_recall_at.10'),catalog.unit('latency_p50_seconds'),catalog.unit('mean_reciprocal_rank')]).toEqual(['%','s','value']);
   });
+  it('reads a cost in dollars as better lower, like a time', () => {
+    const cost: MetricDescription = {path:'mean_cost_dollars',name:'Cost',display:'dollars',what:'What a question costs.',
+      how:'The tokens at the list price.',represents:'What an answer costs to serve.'};
+    const catalog = MetricCatalog.fromEvaluation(evaluation([cost]));
+
+    expect([catalog.isCost('mean_cost_dollars'),catalog.lowerIsBetter('mean_cost_dollars'),catalog.isTime('mean_cost_dollars')]).toEqual([true,true,false]);
+    expect([catalog.unit('mean_cost_dollars'),catalog.format('mean_cost_dollars',.000467),catalog.format('cost_dollars',.0123)]).toEqual(['$','$0.00047','$0.012']);
+  });
   it('writes a share in percent, a score with three decimals, a count whole or with one decimal, a time in seconds', () => {
     const catalog = MetricCatalog.fromEvaluation(evaluation());
 

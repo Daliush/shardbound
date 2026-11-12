@@ -5,15 +5,21 @@ from pathlib import Path
 
 from rag.repository.evaluation_repository import REPORTS_DIR
 
+EVALUATION_OUTPUTS = (REPORTS_DIR, Path("evals") / "answers")
+"""What the evaluations write, the retrieval's reports and the answers' files: they say nothing about the code that
+scores."""
+
 
 def read_code_commit(root: Path) -> str:
     """
-    The commit the code was evaluated at, "-dirty" when a tracked file had uncommitted changes. The reports are left
-    out: they say nothing about the code that scores.
+    The commit the code was evaluated at, "-dirty" when a tracked file had uncommitted changes. The evaluations'
+    outputs are left out, so that a file of one waiting to be committed does not make the next one dirty.
     """
     commit = run_git(root, "rev-parse", "--short", "HEAD")
-    changes = run_git(root, "status", "--porcelain", "--untracked-files=no", "--", ".",
-                      f":(exclude){REPORTS_DIR.as_posix()}")
+    excluded = []
+    for output in EVALUATION_OUTPUTS:
+        excluded.append(f":(exclude){output.as_posix()}")
+    changes = run_git(root, "status", "--porcelain", "--untracked-files=no", "--", ".", *excluded)
     return f"{commit}-dirty" if changes else commit
 
 

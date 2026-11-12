@@ -23,7 +23,7 @@ export class LabHistory {
   protected readonly reports = signal<Evaluation[]>([]);
   protected readonly loading = signal(false); protected readonly error = signal('');
   protected readonly ceiling = computed(() => this.catalog().ceiling(this.metric(),this.reports().flatMap(report => report.runs.map(run => atPath(run.scores.overall,this.metric())))));
-  /** A time is better lower: its axis is flipped so that up is always better. */
+  /** A time or a cost is better lower: its axis is flipped so that up is always better. */
   protected readonly lower = computed(() => this.catalog().lowerIsBetter(this.metric()));
   /** A time depends on the machine it was measured on: its series are drawn per device. */
   protected readonly time = computed(() => this.catalog().isTime(this.metric()));

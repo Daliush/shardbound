@@ -12,5 +12,9 @@ def repo_root(start: Path | None = None) -> Path:
     raise FileNotFoundError(f"No Shardbound repository above {here}")
 
 
+LATEST_VERSION = "v2"
+"""The dataset version the evaluations read unless told otherwise: move it with each new version."""
+
+
 def dataset_dir(root: Path, version: str) -> Path:
     return root / "evals" / "datasets" / version

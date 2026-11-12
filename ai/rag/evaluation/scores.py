@@ -1,5 +1,5 @@
-"""The result of each question, and the scores of a group of them. Today the retrieval metrics; the answer metrics will
-join them."""
+"""The result of each question, and the scores of a group of them: the retrieval metrics. The answers have their own,
+in `arbiter/evaluation`."""
 
 import math
 from dataclasses import dataclass

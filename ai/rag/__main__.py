@@ -14,7 +14,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from dataset.paths import repo_root
+from dataset.paths import LATEST_VERSION, repo_root
 from rag.baseline import BASELINE
 from rag.comparison.comparison_service import compare_evaluation_files
 from rag.comparison.comparison_table import format_comparison_table
@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> None:
                           help="the baseline's techniques only, and no others: " + describe_baseline())
     evaluate.add_argument("--description", required=True, type=refuse_blank,
                           help="why this evaluation is run, kept in its file for the benchmark explorer")
-    evaluate.add_argument("--version", default="v2")
+    evaluate.add_argument("--version", default=LATEST_VERSION)
     evaluate.add_argument("--split", default="dev", choices=["dev", "test"],
                           help="dev to tune; test only for the published numbers")
     compare = commands.add_parser("compare", help="compare two saved evaluations of one split, run by run")

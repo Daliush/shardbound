@@ -4,8 +4,8 @@ import { MetricCatalog } from './metric-catalog';
 import { DECISION_METRIC, atPath } from './metrics';
 import { pipelineName, runColor } from './presentation';
 
-/** What a value is for: one decides, some explain the winner, the latency says how long. The rest is context, which the guide leaves out. */
-export type MetricRole = 'decides' | 'explains' | 'speed' | 'context';
+/** What a value is for: one decides, some explain the winner, the latency says how long, the cost how much. The rest is context, which the guide leaves out. */
+export type MetricRole = 'decides' | 'explains' | 'speed' | 'cost' | 'context';
 type ShownRole = Exclude<MetricRole,'context'>;
 export interface SampleRow { name: string; color: string; text: string; /** The bar's length, from 0 to 1, longer for a better value. */ length: number; floor: boolean; }
 /** The value in the evaluation open: the top pipeline against the random floor, as bars, or one number when they tie. */
@@ -17,8 +17,9 @@ const GROUPS: Record<ShownRole,{title: string; summary: string}> = {
   decides:{title:'Decides',summary:'The one score we use to pick a pipeline. We chose it before running anything.'},
   explains:{title:'Explains',summary:"They help explain why a pipeline wins or loses. They don't pick the winner."},
   speed:{title:'Speed',summary:'How long a question takes. Lower is better.'},
+  cost:{title:'Cost',summary:'What a question costs. Lower is better.'},
 };
-const ROLES: ShownRole[] = ['decides','explains','speed'];
+const ROLES: ShownRole[] = ['decides','explains','speed','cost'];
 
 /** Every described score of the evaluation, grouped by what it is for, each with its value in this evaluation; counts and the curve are left out. */
 export function buildGuide(catalog: MetricCatalog, runs: EvaluationRun[]): GuideGroup[] {
@@ -50,7 +51,8 @@ function findRole(catalog: MetricCatalog, description: MetricDescription, leader
   if (description.path === DECISION_METRIC) return 'decides';
   const single = leader === undefined || atPath(leader.scores.overall,description.path) !== null;
   if (catalog.isContext(description.path) || !single) return 'context';
-  return catalog.lowerIsBetter(description.path) ? 'speed' : 'explains';
+  if (catalog.isTime(description.path)) return 'speed';
+  return catalog.isCost(description.path) ? 'cost' : 'explains';
 }
 
 function sampleOf(catalog: MetricCatalog, description: MetricDescription, leader: EvaluationRun | undefined, floor: EvaluationRun | undefined): MetricSample | null {

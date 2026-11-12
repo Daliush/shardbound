@@ -1,6 +1,6 @@
 # Shardbound AI
 
-The Python side of the project: the code that calls or evaluates models (design doc §3.1). It holds one step of the Arbiter's evaluation dataset, the wording and the split (`dataset/`), the Arbiter's RAG, built step by step (`rag/`), and the Arbiter itself, which answers from the RAG's context (`arbiter/`). The evaluation of its answers comes next, in `arbiter/evaluation/`.
+The Python side of the project: the code that calls or evaluates models (design doc §3.1). It holds one step of the Arbiter's evaluation dataset, the wording and the split (`dataset/`), the Arbiter's RAG, built step by step (`rag/`), and the Arbiter itself, which answers from the RAG's context (`arbiter/`) and whose answers code scores (`arbiter/evaluation/`).
 
 ```bash
 # from ai/
@@ -12,6 +12,7 @@ uv run python -m rag compare <recorded> <new>      # two evaluations run by run;
 uv run python -m rag evaluate --baseline --description "…"   # the baseline only, as CI does (rag/baseline.py)
 uv run python -m rag check-evaluation              # CI's "Evaluation is fresh": does this branch commit its evaluation?
 uv run python -m arbiter ask "…"                   # answer one question: the baseline's context, then Claude Haiku 5.5
+uv run python -m arbiter.evaluation --description "…"   # answer every dev question and score the answers
 ```
 
 ## What `dataset/` does
@@ -158,7 +159,7 @@ rag/
 - **`evaluate` builds the tree of every pipeline** (`stages.py`): each retriever is a node, and under each node, each technique of the next step makes a child, the step skipped makes none. A `Stage` holds its technique, its parent and what it handed on for each question, so going up the parents gives the run's name and what each step did. Every node is computed once and is a run: 6 per retriever with `refs`, `minilm-l6` and `qwen3-reranker-0.6b`, so the benchmark explorer can build any pipeline. A run's list is what its last step handed on: the retriever's whole ranking, the ~41 candidates of the expansion, or the 20 or ~41 a reranker reordered. Each question also keeps how long its pipeline took (`seconds`), and each score block the latency's p50 and p95.
 - **A retrieval metric extends `RetrievalMetric`** and is one entry of `RETRIEVAL_METRICS` (`list_retrieval_metrics()`): `score_question` gives each question its value, `score_group` averages it, and the report table and the evaluation file show it, with no other change. Its key `name.k` is written `{"name": {"k": …}}`, with `mean_` in a group's scores. The values of a group that are not a metric's mean, the number of questions and of candidates, the recall curve and the latency, are computed by `score_group` itself, and described in `GROUP_VALUE_DESCRIPTIONS` beside it. A test fails when a value of the scores has no description.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` will name the generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), the device the models ran on (`"cpu"` or the GPU's name, then torch's build, since the latency depends on it), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` is null: only the answers' evaluation names a generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), the device the models ran on (`"cpu"` or the GPU's name, then torch's build, since the latency depends on it), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## What `arbiter/` does
@@ -170,22 +171,55 @@ The Arbiter answers a rules question (design doc §5.2): `arbiter.py` asks the R
 uv run python -m arbiter ask "I have Ash Warden on my board, and my opponent has no unit. What happens if I cast Roaring Pyre and then cast Tempest?"
 ```
 
-It prints the context it read, the answer, its citations, whether it found one, any reply that was no answer, and the tokens.
+It prints the context it read, the answer, its citations, whether it found one, any reply that was no answer, the tokens and the time.
 
 | Module | Role |
 |---|---|
 | `arbiter/__main__.py` | The command line: `ask`, with the baseline's pipeline and generator |
-| `arbiter/arbiter.py` | `Arbiter`: the pipeline's context, as `ContextChunk`s, then the generator's answer; `build_arbiter` builds it on the indexed chunks |
+| `arbiter/arbiter.py` | `Arbiter`: the pipeline's context, as `ContextChunk`s, then the generator's answer; `build_arbiter` builds it on the indexed chunks, which `read_indexed_chunks` reads for the evaluation too |
 | `arbiter/reply_text.py` | The reply as `ask` prints it |
 | `arbiter/generation/prompt.py` | The prompt, the same for every question: the instructions, the context's cards then its rules and terms, each in a tag that carries its id, then the question |
 | `arbiter/generation/answer.py` | `Answer`, `{answer, citations, answerable}`, and its JSON schema |
 | `arbiter/generation/__init__.py` | `Generator`: one model and its settings; `generate_answer` validates the reply and tries once more when it is no answer (`MAX_ATTEMPTS`), counting each failure |
-| `arbiter/generation/completion.py` | `Completion`: the model's text, why it stopped and its tokens (`Usage`) |
+| `arbiter/generation/completion.py` | `Completion`: the model's text, why it stopped, its tokens (`Usage`) and how long the call took; `Price`, a model's dollars per million tokens |
 | `arbiter/generation/claude/` | `ClaudeGenerator`: Anthropic's API with structured outputs; the key is read from `CLAUDE_KEY`. Claude takes no temperature: each question gets one sample, which the cache keeps |
-| `arbiter/generation/completion_cache.py` | Every completion kept in `ai/.cache/arbiter/`, by the generator's settings, the prompt and the attempt: a rerun costs nothing |
-| `arbiter/generation/registry.py` | Every generator by name; `BASELINE_GENERATOR` is `claude-haiku-5.5`, at medium effort |
+| `arbiter/generation/completion_cache.py` | Every completion kept in `ai/.cache/arbiter/`, by the generator's settings, the prompt and the attempt, with the time its call took: a rerun costs nothing. A completion cached before step 9 has no time and cannot be read: clear such a cache once |
+| `arbiter/generation/registry.py` | Every generator by name; `BASELINE_GENERATOR` is `claude-haiku-5.5`, at medium effort and its list price |
 
-`tests/arbiter/test_imports.py` checks three rules: `generation/` reads no RAG type, the RAG reads nothing of the Arbiter, and nothing but `arbiter/evaluation/` will import the evaluation. The tests call no model: `ScriptedGenerator` replies in their place.
+`tests/arbiter/test_imports.py` checks three rules: `generation/` reads no RAG type, the RAG reads nothing of the Arbiter, and nothing but `arbiter/evaluation/` imports the evaluation. The tests call no model: `ScriptedGenerator` replies in their place.
+
+## What `arbiter/evaluation/` does
+
+It asks the Arbiter every question of a split, from the baseline's context, then scores each answer against its key with code, no model (design doc §6.3). The key facts come next, with the extractors.
+
+```bash
+# from ai/, with what `arbiter ask` needs
+uv run python -m arbiter.evaluation --description "Step 9: the first checks of the answers"
+```
+
+| Metric | Questions it scores | Value |
+|---|---|---|
+| Valid answers | all | 1 when one of the two tries is an answer in the schema's format |
+| Answered | those with an answer to give | 1 when the answer does not refuse (`answerable` true); 0 when it refuses or with no answer |
+| Correct refusals | those with no answer to give | 1 when the answer refuses; 0 when it answers or with no answer |
+| Citation recall | those with an answer to give | the share of the key's `citations` the answer cites; 0 with no answer |
+| Citation precision | those with an answer to give, whose answer cites a right or a wrong id | the right ids (in the key) over the right and the wrong ones; a rule another event of the trace carries and a card the question names are tolerated, counted neither way |
+| Step order | scenarios whose answer cites rules of two steps or more | the share of pairs of cited rules from two steps cited in the order of the steps |
+
+A step is the rules one key event carries. The answer key lists each rule once, so a rule two key events carry, like 9.3 for two Death abilities, counts at its first step.
+
+| Module | Role |
+|---|---|
+| `arbiter/evaluation/__main__.py` | The command line, its own since nothing of the Arbiter imports its evaluation |
+| `arbiter/evaluation/evaluation_service.py` | The flow: `evaluate_answers` builds the baseline's pipeline once, then for each generator `evaluate_run` asks every question and scores each reply |
+| `arbiter/evaluation/answer_keys.py` | `AnswerKey`: a dataset line, as the metrics read it |
+| `arbiter/evaluation/trace_steps.py` | A scenario's trace read: the rules each event carries, and `find_steps`, the key events' rules grouped by step |
+| `arbiter/evaluation/answer_metrics.py` | `AnswerMetric` and the five metrics, each describing itself; `ANSWER_METRICS` |
+| `arbiter/evaluation/answer_scores.py` | `score_answer`, a question's result; `score_group`, a group's means, how many questions each metric scored, tokens, cost and latency; every value of a group described |
+| `arbiter/evaluation/evaluation_json.py`, `answer_evaluation_repository.py` | The file, shaped like a retrieval evaluation, saved as `evals/answers/<version>/<split>/<timestamp>.json` |
+| `arbiter/evaluation/report_table.py` | What the command prints |
+
+The file records where the RAG's models ran (`device`), and each run is named by its layers, the RAG's techniques then the generator under `answer`, with the generator's settings and price. Each question keeps its context's ids, its answer (null when no try gave one), its failed tries, each metric's value (null when it does not apply), its tokens, its cost and its time. The time is the model call's, which the cache keeps, so a rerun reports the first call's latency.
 
 ## Running the RAG on a new machine
 

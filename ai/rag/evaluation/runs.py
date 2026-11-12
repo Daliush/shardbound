@@ -13,7 +13,7 @@ class Layers:
     What a run evaluates, one name per layer of the Arbiter, in the order a question goes through them: the frontend
     switches between runs by them. Each optional layer is None when the run skipped it: `expand` names the expander
     that adds chunks to the retriever's top, `rerank` the reranker that reorders the candidates, `answer` the
-    generator that answers from them (none yet).
+    generator that answers from them, which only the answers' evaluation (`arbiter/evaluation`) names.
     """
 
     retriever: str

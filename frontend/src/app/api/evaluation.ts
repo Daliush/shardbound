@@ -28,8 +28,11 @@ export interface DatasetQuestion extends Fields {
   citations: string[];
   cards: string[];
 }
-/** How a value is written: a share (72.7%), a score from 0 to 1 (0.663), a count (61, 41.3), a time (1.27 s, 780 ms). */
-export type MetricDisplay = 'share' | 'score' | 'count' | 'seconds';
+/**
+ * How a value is written: a share (72.7%), a score from 0 to 1 (0.663), a count (61, 41.3), a time (1.27 s, 780 ms), an
+ * answer's cost in US dollars ($0.00047).
+ */
+export type MetricDisplay = 'share' | 'score' | 'count' | 'seconds' | 'dollars';
 /** One value of the scores, as the code that computes it describes it (ai/rag/evaluation/metric_description.py). */
 export interface MetricDescription {
   /** Where the value is in the scores of a group: `mean_recall_at.10`, `question_count`. */

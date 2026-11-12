@@ -4,10 +4,15 @@ from collections.abc import Callable
 
 from arbiter.generation import Generator
 from arbiter.generation.claude.claude_generator import ClaudeGenerator
+from arbiter.generation.completion import Price
 from arbiter.generation.completion_cache import CompletionCache
 
+HAIKU_5_5_PRICE = Price(input_per_million=0.10, output_per_million=0.50)
+"""Claude Haiku 5.5's list price in October 2026, for prompts up to 100K tokens: the Arbiter's hold about 2K."""
+
 GENERATOR_FACTORIES: dict[str, Callable[[str, CompletionCache | None], Generator]] = {
-    "claude-haiku-5.5": lambda name, cache: ClaudeGenerator(name, "claude-haiku-5-5", "medium", cache),
+    "claude-haiku-5.5": lambda name, cache: ClaudeGenerator(name, "claude-haiku-5-5", "medium", HAIKU_5_5_PRICE,
+                                                            cache),
 }
 """Name → how to build it from its name and the cache of its completions."""
 
