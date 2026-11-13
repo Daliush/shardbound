@@ -25,7 +25,7 @@ After a refactor, show that the output is unchanged: the same chunks, the same s
 ```
 question ─┬→ BM25                 → list A ┐
           └→ embedding → cosine   → list B ┘→ RRF (k = 60) → top 20
-named cards + top 20 → + refs (one level) → cross-encoder reranker → context (top 10 + named cards) → prompt
+named cards + top 20 → + refs (one level) → cross-encoder reranker → context (top 10 + named cards + their refs) → prompt
 ```
 
 | Step | Techniques | Code |
@@ -34,7 +34,7 @@ named cards + top 20 → + refs (one level) → cross-encoder reranker → conte
 | Retriever | random (the floor), BM25 and its variants, dense, RRF | `ai/rag/retrievers/` |
 | Expand | the cards a question names, then the refs | `ai/rag/expanders/refs/` |
 | Rerank | MiniLM-L6 and Qwen3-Reranker-0.6B, cross-encoders | `ai/rag/rerankers/` |
-| Context | the reranker's 10, then the named cards it ranked past them; as a variant, also the chunks these cards refer to | `ai/rag/contexts/`, run last by `ai/rag/pipeline.py` |
+| Context | the reranker's 10, the named cards it ranked past them, then the chunks these cards refer to; as a variant, without the refs | `ai/rag/contexts/`, run last by `ai/rag/pipeline.py` |
 | Answer | the prompt and its output `{answer, citations, answerable}`, Claude Haiku 5.5 first | `ai/arbiter/generation/`, called by `ai/arbiter/arbiter.py` |
 | Answer evaluation | what code checks (valid answers, answered, correct refusals, citation recall and precision, step order), then the key-fact extractors | `ai/arbiter/evaluation/` |
 | Evaluation | the tree of every pipeline, scored and saved | `ai/rag/evaluation/` |
@@ -93,7 +93,7 @@ Rules the code keeps:
 - **RRF**: a chunk scores Σ 1 / (60 + rank) over the rankings it is in; on a tie, the first rankings' order wins.
 - **Refs expansion**: the candidates, each once, are the chunks of the cards the question names, then the top 20 it is handed, then the refs of all of these, one level deep. Card names are matched exactly, as whole words, on the lowercased question, the longest first, never with `re.IGNORECASE`. Vocabulary terms are never matched.
 - **Reranker**: `rerank_chunks(question, chunk_ids)` returns every candidate reordered, none dropped; the context keeps the first 10. It reads the candidates, never the corpus, and loads its model on the first question, in float32 (the format in which CPU and GPU ranked 6 dev questions alike), on the CPU unless `RAG_DEVICE` names a GPU (`ai/README.md`).
-- **Context**: a step with variants, one `NamedCardsContext` with one setting. `top10-plus-named-cards`, the baseline's: the first 10 chunks of the last step's ranking, then the cards the question names that are not among them, each once. `top10-plus-named-cards-refs`: then the chunks these cards refer to, one level deep, card by card in the question's order; the refs of the top 10's other cards are not followed. The evaluation's tree runs every pipeline with and without each context, and the answers' evaluation answers from each: the dev answers choose the Arbiter's context, not context recall alone, and never the test split's.
+- **Context**: a step with variants, one `NamedCardsContext` with one setting. `top10-plus-named-cards`: the first 10 chunks of the last step's ranking, then the cards the question names that are not among them, each once. `top10-plus-named-cards-refs`, the baseline's, chosen on the dev answers: then the chunks these cards refer to, one level deep, card by card in the question's order; the refs of the top 10's other cards are not followed. The evaluation's tree runs every pipeline with and without each context, and the answers' evaluation answers from each: the dev answers choose the Arbiter's context, not context recall alone, and never the test split's.
 - **Answer** (`ai/arbiter/`, its own package): `generation/` reads no RAG type, only `ContextChunk`s, and nothing but the evaluation, `ai/arbiter/evaluation/`, imports it (`tests/arbiter/test_imports.py`). One prompt for every question, generic; Claude's structured outputs, then Pydantic, one more attempt when a reply is no answer, each failure counted; every completion cached on disk, with the time its call took. The key is read from `CLAUDE_KEY`.
 - **Answer evaluation** (`ai/arbiter/evaluation/`, `python -m arbiter.evaluation`): six metrics, one class each, scored by code, one run per context and generator: valid answers, answered and correct refusals (abstention, one metric on each side of `answerable`), citation recall, citation precision (the right ids over the right and the wrong ones; a rule of the trace and a card the question names tolerated, counted neither way) and step order (the pairs of cited rules from two steps in order; a step is the rules one key event carries). A metric gives None where it does not apply, and a group's mean says how many questions it scored. Like a retrieval metric, each describes itself and the file keeps the descriptions, for the explorer; the file goes to `evals/answers/`, never `evals/reports/`, which the gate and the lab read.
 
