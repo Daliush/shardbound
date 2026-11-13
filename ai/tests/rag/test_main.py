@@ -32,7 +32,8 @@ def test_refuses_to_name_techniques_beside_the_baseline():
 def test_evaluates_only_the_baseline_s_techniques_with_baseline():
     arguments = argparse.Namespace(baseline=True, retrievers=[], expanders=None, rerankers=None, contexts=None)
 
-    assert choose_techniques(arguments) == (["rrf-bm25-dense"], ["refs"], ["minilm-l6"], ["top10-plus-named-cards"])
+    assert choose_techniques(arguments) == (["rrf-bm25-dense"], ["refs"], ["minilm-l6"],
+                                            ["top10-plus-named-cards-refs"])
 
 
 def test_evaluates_every_context_by_default_and_none_with_the_flag_alone():
