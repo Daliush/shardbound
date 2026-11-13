@@ -14,18 +14,22 @@ export interface GuideEntry { description: MetricDescription; role: ShownRole; a
 export interface GuideGroup { role: ShownRole; title: string; summary: string; entries: GuideEntry[]; }
 
 const GROUPS: Record<ShownRole,{title: string; summary: string}> = {
-  decides:{title:'Decides',summary:'The one score we use to pick a pipeline. We chose it before running anything.'},
+  decides:{title:'Decides',summary:'The one score we use to pick a pipeline: what the prompt would hold.'},
   explains:{title:'Explains',summary:"They help explain why a pipeline wins or loses. They don't pick the winner."},
   speed:{title:'Speed',summary:'How long a question takes. Lower is better.'},
   cost:{title:'Cost',summary:'What a question costs. Lower is better.'},
 };
 const ROLES: ShownRole[] = ['decides','explains','speed','cost'];
 
-/** Every described score of the evaluation, grouped by what it is for, each with its value in this evaluation; counts and the curve are left out. */
+/**
+ * Every described score of the evaluation, grouped by what it is for, each with its value in this evaluation; counts
+ * and the curve are left out. Each is sampled on the top pipeline among those that have it: a context has no Recall@20.
+ */
 export function buildGuide(catalog: MetricCatalog, runs: EvaluationRun[]): GuideGroup[] {
-  const leader = findLeader(runs), floor = runs.find(isFloor);
+  const floor = runs.find(isFloor);
   const entries = catalog.descriptions.flatMap(description => {
-    const role = findRole(catalog,description,leader);
+    const scored = runs.filter(run => atPath(run.scores.overall,description.path) !== null), leader = findLeader(scored);
+    const role = findRole(catalog,description,runs.length > 0 && !scored.length);
     return role === 'context' ? [] : [{description,role,anchor:anchorOf(description.path),better:catalog.lowerIsBetter(description.path) ? 'lower' as const : 'higher' as const,
       sample:sampleOf(catalog,description,leader,floor)}];
   });
@@ -47,10 +51,9 @@ export function findLeader(runs: EvaluationRun[]): EvaluationRun | undefined {
   return leader;
 }
 
-function findRole(catalog: MetricCatalog, description: MetricDescription, leader: EvaluationRun | undefined): MetricRole {
+function findRole(catalog: MetricCatalog, description: MetricDescription, unscored: boolean): MetricRole {
   if (description.path === DECISION_METRIC) return 'decides';
-  const single = leader === undefined || atPath(leader.scores.overall,description.path) !== null;
-  if (catalog.isContext(description.path) || !single) return 'context';
+  if (catalog.isContext(description.path) || unscored) return 'context';
   if (catalog.isTime(description.path)) return 'speed';
   return catalog.isCost(description.path) ? 'cost' : 'explains';
 }
@@ -68,6 +71,6 @@ function sampleOf(catalog: MetricCatalog, description: MetricDescription, leader
     text:catalog.format(description.path,values[index]),length:catalog.barLength(description.path,values[index],ceiling),floor:isFloor(run)}))};
 }
 
-/** The pipeline Recall@10 ranks first is the top one, not the best at every metric: on the latency, the floor is faster. */
+/** The pipeline context recall ranks first is the top one, not the best at every metric: on the latency, the floor is faster. */
 function rowName(run: EvaluationRun): string { return isFloor(run) ? 'Random floor' : 'Top pipeline'; }
 

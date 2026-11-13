@@ -21,6 +21,7 @@
       <span class="score-name">{{ metricName(metric()) }}</span>
       @if (lead(); as lead) { <p class="lead-line"><b>{{ lead.text }}</b><span [title]="name(lead.runnerUp.run)">{{ name(lead.runnerUp.run) }}</span></p> }
       @if (multiple(); as multiple) { <p class="floor-line">{{ multiple }}</p> }
+      @if (contextNote(); as note) { <p class="floor-line context-note">{{ note }}</p> }
     </div>
   </section>
 }
@@ -29,7 +30,7 @@
     <label class="search-field"><app-icon name="search" /><input type="search" aria-label="Find a pipeline" placeholder="Find a pipeline…" [value]="search()" (input)="find($event)" /></label>
     <label class="rank-control">Rank by<select [value]="metric()" (change)="rankBy($event)">@for (score of scores(); track score) { <option [value]="score" [selected]="score === metric()">{{ metricName(score) }}</option> }</select></label>
   </div>
-  <div class="leaderboard" role="table" [attr.aria-label]="'Pipelines ranked by ' + metricName(metric()) + '. ' + (lower() ? 'Lower' : 'Higher') + ' is better.'" [style.--metric-columns]="columns().length">
+  <div class="leaderboard" role="table" [attr.aria-label]="'Pipelines ranked by ' + metricName(metric()) + '. ' + (lower() ? 'Lower' : 'Higher') + ' is better.'" [style.--metric-columns]="columns().length + (size() ? 1 : 0)">
     <div class="board-head" role="row">
       <span role="columnheader" class="rank-cell">Rank</span>
       <span role="columnheader" class="pipeline-cell">Pipeline</span>
@@ -38,6 +39,7 @@
           <button class="quiet" [title]="description(column)" (click)="ranked.emit(column)">{{ metricName(column) }}<span class="sort-mark" aria-hidden="true">{{ lower(column) ? '↑' : '↓' }}</span></button>
         </span>
       }
+      @if (size(); as size) { <span role="columnheader" class="metric-cell size-cell" [title]="description(size)">Chunks</span> }
       <span role="columnheader" class="action-cell"><span class="sr-only">Actions</span></span>
     </div>
     <div class="board-rows" role="rowgroup" [labRows]="window()" #motion="labRows">
@@ -51,6 +53,7 @@
           @for (column of columns(); track column) {
             <span role="cell" class="metric-cell" [class.sorted]="column === metric()"><span class="value">{{ format(column,at(row.run,column)) }}</span><span class="track" aria-hidden="true"><i [style.width.%]="column === metric() ? width(row.run,column) : 0"></i></span></span>
           }
+          @if (size(); as size) { <span role="cell" class="metric-cell size-cell"><span class="value">{{ format(size,at(row.run,size)) }}</span></span> }
           <span role="cell" class="action-cell"><button class="quiet" (click)="compared.emit(row.key)" [attr.aria-label]="'Compare ' + name(row.run)" title="Compare"><app-icon name="compare" /></button></span>
         </div>
       } @empty { <p class="empty-search">No pipeline matches “{{ search() }}”.<button class="quiet" (click)="search.set('')">Clear search</button></p> }

@@ -63,7 +63,7 @@ export class MetricsGraph {
     return [{key,anchor:anchorOf(key),rows,shown:pageOf(rows,page),window:windowOf(rows.map(row => row.key),page),domain:axis.domain,ticks:axis.ticks,floor,floorX:inside ? axis.x(floor) : null}];
   }));
   /** The recall curve is drawn when the runs kept it. */
-  protected readonly curves = computed(() => this.runs().some(run => Array.isArray(recallCurve(run.scores.overall))));
+  protected readonly curves = computed(() => this.runs().some(run => recallCurve(run.scores.overall).length > 0));
   private readonly sections = computed(() => [...(this.curves() ? [CONTEXT] : []),...this.axes().map(axis => axis.key)]);
   protected readonly allOpen = computed(() => this.sections().every(section => this.open().has(section)));
   protected isOpen(section: string): boolean { return this.open().has(section); }

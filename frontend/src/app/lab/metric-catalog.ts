@@ -8,6 +8,7 @@ type Known = Pick<MetricDescription,'path' | 'name' | 'display'>;
  * written before each value described itself in its file. Names and displays only, never a text of the lab's own.
  */
 const KNOWN_WITHOUT_DESCRIPTION: Known[] = [
+  {path:'mean_context_recall',name:'Context recall',display:'share'},
   {path:'mean_recall_at.10',name:'Recall@10',display:'share'}, {path:'mean_recall_at.20',name:'Recall@20',display:'share'},
   {path:'mean_reciprocal_rank',name:'MRR',display:'score'}, {path:'question_count',name:'Questions',display:'count'},
   {path:'mean_candidate_count',name:'Candidates',display:'count'}, {path:'mean_recall_curve',name:'Recall curve',display:'share'},

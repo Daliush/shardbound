@@ -1,7 +1,7 @@
 @if (columns().length) {
 <section class="pipeline-flow" aria-labelledby="pipeline-flow-title">
   <h3 id="pipeline-flow-title">How the pipeline found its sources</h3>
-  <p class="flow-intro">Each bar is a chunk at its rank. Cited chunks are joined from stage to stage. The first 10 ranks go into the prompt; the reranker's job is to lift the cited chunks above that line.</p>
+  <p class="flow-intro">Each bar is a chunk at its rank. Cited chunks are joined from stage to stage. The first 10 ranks go into the prompt; the reranker's job is to lift the cited chunks above that line. A context column shows everything the prompt holds.</p>
   <div #canvas class="flow-canvas">
     <svg [attr.viewBox]="'0 0 ' + drawingWidth() + ' ' + height()" [style.min-width.px]="drawingWidth()" [attr.height]="height()" role="img" [attr.aria-label]="description()">
       @for (cut of cuts(); track cut.rank) { <line [attr.x1]="gutter" [attr.x2]="drawingWidth()" [attr.y1]="cut.y" [attr.y2]="cut.y" class="cut" [class.prompt]="cut.rank === 10" /><text [attr.x]="gutter - 6" [attr.y]="cut.y" class="cut-label">{{ cut.rank }}</text> }
@@ -22,7 +22,7 @@
       }
     </svg>
   </div>
-  <div class="flow-legend" aria-hidden="true"><span><i class="cited"></i>Required for the answer (cited)</span><span><i class="card"></i>Card the question involves, not required</span><span><i class="other"></i>Other chunk</span><span><i class="cut-key"></i>10 · prompt, 20 · handed on</span></div>
+  <div class="flow-legend" aria-hidden="true"><span><i class="cited"></i>Required for the answer (cited)</span><span><i class="card"></i>Card the question involves, not required</span><span><i class="other"></i>Other chunk</span><span><i class="cut-key"></i>10 · prompt, 20 · handed on; a context: all in the prompt</span></div>
   @if (cited().length) {
     <div class="rank-table-wrap"><table class="rank-table"><caption>Rank of each cited source at each stage</caption>
       <thead><tr><th scope="col">Cited source</th>@for (column of columns(); track column.stage.label) { <th scope="col">{{ column.stage.label }}</th> }</tr></thead>

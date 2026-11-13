@@ -31,7 +31,7 @@
               @if (entry.sample; as sample) {
                 <figure class="card-sample" data-guide-part>
                   <figcaption><span>In this evaluation</span><small>{{ entry.better === 'lower' ? 'Lower is better: the longer bar is the faster one' : 'Higher is better' }}</small></figcaption>
-                  @if (sample.kind !== 'single') { <p class="sample-leader">Top pipeline, the one Recall@10 ranks first: <b>{{ sample.leader }}</b></p> }
+                  @if (sample.kind !== 'single') { <p class="sample-leader">Top pipeline with this score, by context recall: <b>{{ sample.leader }}</b></p> }
                   @if (sample.kind === 'single') {
                     <p class="sample-single"><strong>{{ sample.rows[0].text }}</strong><span>the same for every pipeline</span></p>
                   } @else {
@@ -51,7 +51,7 @@
           }
         </section>
       }
-      <p class="guide-source"><app-icon name="info" /><span>Each text on this page comes from the code that computes the number, and is saved with it in the evaluation file. The top pipeline is the one Recall@10 ranks first.</span></p>
+      <p class="guide-source"><app-icon name="info" /><span>Each text on this page comes from the code that computes the number, and is saved with it in the evaluation file. The top pipeline is the one context recall ranks first.</span></p>
     </div>
   </div>
 } @else {

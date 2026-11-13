@@ -9,9 +9,10 @@ const NAMES: Record<string, string> = {
   'bm25-atire': 'BM25 · ATIRE', bm25l: 'BM25L', 'bm25+': 'BM25+', random: 'Random baseline',
   'rrf-bm25-dense': 'RRF · BM25 + dense', refs: 'References',
   'minilm-l6': 'MiniLM-L6 cross-encoder', 'qwen3-reranker-0.6b': 'Qwen3-Reranker · 0.6B',
+  'top10-plus-named-cards': 'Top 10 + named cards', 'top10-plus-named-cards-refs': 'Top 10 + named cards + their refs',
 };
 export function variantName(value: string | null): string { return value === null ? 'None' : NAMES[value] ?? value; }
-const LAYER_NAMES: Record<string, string> = {retriever:'Retriever', expand:'Expansion', rerank:'Reranker', answer:'Answer model'};
+const LAYER_NAMES: Record<string, string> = {retriever:'Retriever', expand:'Expansion', rerank:'Reranker', context:'Context', answer:'Answer model'};
 export function layerName(layer: string): string { return LAYER_NAMES[layer] ?? layer[0].toUpperCase() + layer.slice(1); }
 /** The steps a run takes, in order, each with the variant it runs; a skipped step is left out. */
 export function stagesOf(run: EvaluationRun): { layer: string; name: string; variant: string }[] {
@@ -33,7 +34,7 @@ export function pipelineKind(run: EvaluationRun): string {
   const retriever = run.layers['retriever'] ?? '';
   const kind = retriever === 'random' ? 'Random order' : retriever.startsWith('rrf') ? 'Hybrid retrieval'
     : retriever.startsWith('dense') ? 'Dense retrieval' : retriever.startsWith('bm25') ? 'Lexical retrieval' : 'Pipeline';
-  return kind + (run.layers['expand'] ? ' + references' : '') + (run.layers['rerank'] ? ' + reranking' : '') + (run.layers['answer'] ? ' + answer generation' : '');
+  return kind + (run.layers['expand'] ? ' + references' : '') + (run.layers['rerank'] ? ' + reranking' : '') + (run.layers['context'] ? ' + context' : '') + (run.layers['answer'] ? ' + answer generation' : '');
 }
 export function rankedRuns(runs: EvaluationRun[], metric: string, catalog: MetricCatalog) {
   if (catalog.isContext(metric)) return runs.filter(run => !isFloor(run)).map(run => ({run,key:runKey(run.layers),value:atPath(run.scores.overall,metric),rank:null}));

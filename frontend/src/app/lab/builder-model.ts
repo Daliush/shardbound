@@ -11,7 +11,7 @@ export interface StageNode { layer: string; name: string; role: string; families
 /** A step evaluated with one variant only, the answer model so far: drawn as what comes next, never as a choice. */
 export interface FixedStage { layer: string; name: string; value: string | null; }
 
-const ROLES: Record<string,string> = {retriever:'Finds the candidates', expand:'Adds what the question names', rerank:'Reorders the candidates', answer:'Answers from the sources'};
+const ROLES: Record<string,string> = {retriever:'Finds the candidates', expand:'Adds what the question names', rerank:'Reorders the candidates', context:'Chooses what the prompt holds', answer:'Answers from the sources'};
 
 /** The steps a pipeline goes through, each with every variant it was evaluated with, scored with the other steps as drafted. */
 export function stageNodes(runs: EvaluationRun[], draft: Layers): StageNode[] {
@@ -64,7 +64,9 @@ export function bestRun(runs: EvaluationRun[]): EvaluationRun | undefined {
 }
 
 function describe(value: string | null, layer: string): string {
-  if (value === null) return layer === 'rerank' ? 'Keeps the retrieval order' : layer === 'expand' ? 'The retrieved chunks only' : 'Skips this step';
+  if (value === null) return layer === 'rerank' ? 'Keeps the retrieval order' : layer === 'expand' ? 'The retrieved chunks only' : layer === 'context' ? 'The ranking, not cut' : 'Skips this step';
+  if (value === 'top10-plus-named-cards') return 'The first 10 chunks, then the cards the question names';
+  if (value === 'top10-plus-named-cards-refs') return 'The first 10, the named cards, and the rules these cards cite';
   if (value === 'random') return 'Random order · the floor';
   if (value === 'minilm-l6') return 'Cross-encoder · reads the question with each candidate';
   if (value === 'qwen3-reranker-0.6b') return 'LLM cross-encoder · told the task';

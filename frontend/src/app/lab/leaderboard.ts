@@ -2,7 +2,7 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { EvaluationRun } from '../api/evaluation';
 import { Icon } from '../core/icon';
 import { isFloor } from './layer-model';
-import { atPath, leadMetrics } from './metrics';
+import { SIZE_METRIC, atPath, leadMetrics } from './metrics';
 import { MetricCatalog } from './metric-catalog';
 import { Pager } from './pager';
 import { pageOf, windowOf } from './pages';
@@ -39,6 +39,8 @@ export class Leaderboard {
   protected readonly shown = computed(() => pageOf(this.found(),this.page()));
   protected readonly window = computed(() => windowOf(this.found().map(row => row.key),this.page()));
   protected readonly columns = computed(() => leadMetrics(this.scores(),this.metric()));
+  /** The chunks a run returns, after the scores: a context's recall is read with them. Never a rank. */
+  protected readonly size = computed(() => this.runs().some(run => atPath(run.scores.overall,SIZE_METRIC) !== null) ? SIZE_METRIC : null);
   protected readonly champion = computed(() => this.rows()[0]);
   protected readonly floor = computed(() => this.runs().find(isFloor));
   /** How far the best leads the second: "+0.4 pts ahead of #2", or "Tied with #2". */
@@ -52,6 +54,16 @@ export class Leaderboard {
   protected readonly multiple = computed(() => {
     const best = this.champion()?.value ?? null, floor = atPath(this.floor()?.scores.overall,this.metric());
     return best === null || floor === null || floor <= 0 || this.lower() ? null : (best/floor).toFixed(1) + '× the random floor';
+  });
+
+  /**
+   * A context that leads holds more chunks than a ranking's 10, and a bigger context holds more needed chunks by its
+   * size alone: the answers on dev choose the context, not this score.
+   */
+  protected readonly contextNote = computed(() => {
+    const best = this.champion()?.run;
+    if (!best || (best.layers['context'] ?? null) === null) return null;
+    return this.format(SIZE_METRIC,atPath(best.scores.overall,SIZE_METRIC)) + ' chunks in the prompt. A bigger context holds more by its size alone: the answers on dev choose the context.';
   });
 
   protected metricName(metric: string): string { return this.catalog().name(metric); }

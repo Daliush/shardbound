@@ -1,8 +1,8 @@
 import { Fields } from '../api/evaluation';
 
-/** Recall@k for every k from 1 to the longest list of the run, as the report keeps it. */
-export function recallCurve(fields: Fields): number[] {
-  return fields['mean_recall_curve'] as number[];
+/** Recall@k for every k from 1 to the longest list of the run, as the report keeps it; empty after a context, which is no ranking. */
+export function recallCurve(fields: Fields | undefined): number[] {
+  return (fields?.['mean_recall_curve'] as number[] | null | undefined) ?? [];
 }
 /** Once a run exhausts its candidates, recall stays at its reported ceiling. */
 /** How far the chunk budget's slider is filled, from 1 chunk ("0%") to the limit ("100%"). */

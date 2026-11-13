@@ -4,8 +4,9 @@ import { matchingRun } from './presentation';
 /** A stage of the retrieval pipeline, a run of the report found by its layers. `depth` is how many ranks it hands on, or every candidate the next layer reads. */
 export interface PipelineStage { layers: Layers; label: string; role: string; depth: number | 'all'; }
 /**
- * The stages in the order chunks flow through them: a reranker draws every candidate it reordered, the prompt reading its
- * first 10. Qwen3 reorders the same candidates as MiniLM, the baseline: it comes last, as the other reranker.
+ * The stages in the order chunks flow through them: a reranker draws every candidate it reordered, a context every chunk
+ * the prompt holds, the reranker's first 10 then what the context adds. Both contexts cut MiniLM's ranking, the
+ * baseline's. Qwen3 reorders the same candidates as MiniLM: it comes last, as the other reranker.
  */
 export const PIPELINE_STAGES: PipelineStage[] = [
   {layers:{retriever:'bm25'},label:'BM25',role:'Words',depth:20},
@@ -13,8 +14,12 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   {layers:{retriever:'rrf-bm25-dense'},label:'RRF',role:'Both fused',depth:20},
   {layers:{retriever:'rrf-bm25-dense',expand:'refs'},label:'RRF + refs',role:'Candidates',depth:'all'},
   {layers:{retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'},label:'MiniLM',role:'Reranked',depth:'all'},
+  {layers:{retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6',context:'top10-plus-named-cards'},label:'Context',role:'In the prompt',depth:'all'},
+  {layers:{retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6',context:'top10-plus-named-cards-refs'},label:'Context + refs',role:'In the prompt',depth:'all'},
   {layers:{retriever:'rrf-bm25-dense',expand:'refs',rerank:'qwen3-reranker-0.6b'},label:'Qwen3',role:'Other reranker',depth:'all'},
 ];
+/** Whether the stage is a context: the prompt holds all of it, where it holds the first 10 of a ranking. */
+export function isContext(stage: PipelineStage): boolean { return (stage.layers['context'] ?? null) !== null; }
 export type SlotKind = 'cited' | 'card' | 'other';
 /** A rank of a stage. Past the 20 ids a report keeps, only cited chunks are known by name. */
 export interface PipelineSlot { rank: number; chunk: string | null; kind: SlotKind; }

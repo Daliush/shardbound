@@ -14,7 +14,7 @@
             <label class="option">
               <input type="radio" class="sr-only" [name]="'stage-' + node.layer" [checked]="family.chosen" (change)="choose(node.layer,family.pick.value)" />
               <span class="option-text"><strong>{{ family.family }}</strong><small>{{ family.description }}</small></span>
-              <span class="effect" [class]="effectTone(family.pick)" [title]="family.pick.chosen ? 'Recall@10 of this pipeline' : 'Recall@10 would move by this many points'">{{ effect(family.pick) }}</span>
+              <span class="effect" [class]="effectTone(family.pick)" [title]="family.pick.chosen ? 'Context recall of this pipeline' : 'Context recall would move by this many points'">{{ effect(family.pick) }}</span>
             </label>
             @if (family.members.length > 1) {
               <div class="members" role="group" [attr.aria-label]="family.family + ' settings'">
