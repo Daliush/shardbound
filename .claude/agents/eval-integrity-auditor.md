@@ -22,6 +22,6 @@ Check:
 4. The split stays by interaction: no interaction has questions on both sides, and a group keeps its side from one version to the next.
 5. The prompt stays generic and the same for every configuration: no hint aimed at one interaction or one test question.
 6. An evaluation report committed with the change was recorded at a clean commit (its `code` has no `-dirty`), on the dataset version the CLI reads by default, and is a new file rather than an edited one.
-7. A retriever, expander or reranker reads the chunks from the database, never `ai/.corpus/chunks.jsonl`, and the unit tests call no model and start no database.
+7. A retriever, expander, reranker or context reads the chunks from the database, never `ai/.corpus/chunks.jsonl`, and the unit tests call no model and start no database.
 
 Report a list of problems, the most serious first. For each one: the file and line, the rule it breaks (cite the design section or the `AGENTS.md` agreement), why it biases the numbers, and what would fix it. When there is no problem, say "No problem found" and what you checked.

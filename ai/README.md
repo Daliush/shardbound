@@ -7,12 +7,12 @@ The Python side of the project: the code that calls or evaluates models (design 
 uv run pytest                                      # the tests; no model is called
 uv run python -m dataset build v2 --base v1        # word and split a version (scripts/build-dataset.sh runs both steps)
 uv run python -m rag index                         # write the chunks and their vectors into the database
-uv run python -m rag evaluate --description "…"    # score every retriever on the dev questions (or name some)
-uv run python -m rag compare <recorded> <new>      # two evaluations run by run; --max-drop fails on a lower recall
+uv run python -m rag evaluate --description "…"    # score every pipeline and context on the dev questions (or name some)
+uv run python -m rag compare <recorded> <new>      # two evaluations run by run; --max-drop fails on a lower context recall
 uv run python -m rag evaluate --baseline --description "…"   # the baseline only, as CI does (rag/baseline.py)
 uv run python -m rag check-evaluation              # CI's "Evaluation is fresh": does this branch commit its evaluation?
 uv run python -m arbiter ask "…"                   # answer one question: the baseline's context, then Claude Haiku 5.5
-uv run python -m arbiter.evaluation --description "…"   # answer every dev question and score the answers
+uv run python -m arbiter.evaluation --description "…"   # answer every dev question from each context, score the answers
 ```
 
 ## What `dataset/` does
@@ -77,19 +77,20 @@ The tables are created from the entities when missing, never altered: there are 
 **The retrieval metrics** score a retriever, which ranks the chunk ids for a question, best first:
 
 ```text
-retriever random, answer None on v2 dev, 61 answerable questions
+retriever random, expand None, rerank None, context None, answer None on v2 dev, 61 answerable questions
 
-| Questions | Count | Recall@10 | Recall@20 | Binary nDCG@10 | Binary nDCG@20 | MRR | Candidates |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| all | 61 | 8.9% | 11.9% | 0.056 | 0.067 | 0.093 | 191.0 |
+| Questions | Count | Context recall | Recall@10 | Recall@20 | Binary nDCG@10 | Binary nDCG@20 | MRR | Candidates |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| all | 61 | 8.9% | 8.9% | 11.9% | 0.056 | 0.067 | 0.093 | 191.0 |
 | ...
 ```
 
-- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is what the prompt holds after the reranker, 20 the prompt of the 20-chunk variant. It decides between two retrievers.
+- **Context recall** decides: the share of a question's relevant chunks the prompt would hold. For a run that ends with a ranking, its first 10 (`PROMPT_SIZE`), so it is Recall@10; for a run that ends with a context, every chunk of it, read with its number of chunks.
+- **Recall@k** is the share of a question's relevant chunks found among the first k: 10 is the ranked chunks every context keeps, 20 the prompt of the 20-chunk variant.
 - **Binary nDCG@k** says how high the relevant chunks sit among the first k, from 0 to 1. Every relevant chunk gains 1 and any other chunk 0; a gain at rank r is worth 1 / log2(r + 1) (1 first, 0.5 third, 0.29 tenth); the sum is divided by that of the best ranking, every relevant chunk first. A question whose only relevant chunk is tenth keeps its whole Recall@10, but scores 0.29.
 - **MRR** is the mean of 1 / the rank of the first relevant chunk: it says whether the good chunks come first.
 - **The recall curve** (`mean_recall_curve`, in the evaluation's file, not the table) is Recall@k for every k from 1 to the longest list: it compares retrievers at the same number of chunks, such as the refs expansion's 41 candidates against the fusion's top 41. Each question also keeps the rank of each of its relevant chunks (`relevant_ranks`), from which every metric is read.
-- **Candidates** is the mean number of chunks a run ranks. Without a reranker, the retriever's whole list: random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ return all 191; the other BM25 variants return only the chunks sharing a word with the question; the expansion 41 on average. After a reranker, the candidates it reordered: 20, or the expansion's whole list. The share of the relevant chunks among all of them is the last value of the recall curve: after the expansion, the most a reranker could keep.
+- **Candidates** is the mean number of chunks a run ranks. Without a reranker, the retriever's whole list: random, dense-qwen3-0.6b, rrf-bm25-dense, bm25l and bm25+ return all 191; the other BM25 variants return only the chunks sharing a word with the question; the expansion 41 on average. After a reranker, the candidates it reordered: 20, or the expansion's whole list. After a context, the chunks the prompt holds. The share of the relevant chunks among all of them is the last value of the recall curve: after the expansion, the most a reranker could keep.
 - A question's relevant chunks are its `citations`. An unanswerable question has none and is left out. Every question weighs the same.
 - The random retriever is the floor. With 61 questions, one question moves a score by about 1.6 points, and a category of 7 questions is noise: dev says which way to go, test (596 questions) gives the published numbers.
 
@@ -99,9 +100,9 @@ retriever random, answer None on v2 dev, 61 answerable questions
 rag/
 ├── __main__.py                 the command line: index, evaluate, compare; it calls a service and prints
 ├── chunks.py                   the chunks engine/corpus writes
-├── named_cards.py              NamedCardFinder: the cards a question names, for the expander and the context
-├── context.py                  ContextSelector: the first 10 ranked (PROMPT_SIZE), then the named cards past them
-├── pipeline.py                 Pipeline, build_pipeline: a run's layers, then the context, for the Arbiter
+├── named_cards.py              NamedCardFinder: the cards a question names, for the expander and the contexts
+├── pipeline.py                 Pipeline, build_pipeline: the techniques a run's layers name, the context last, for
+│                               the Arbiter; build_ranking_techniques, the ones before the context
 ├── comparison/                 two saved evaluations, run by run: comparison_service.py, comparison_table.py
 ├── gate/                       what CI asks of a pull request: retrieval_inputs.py (the files an evaluation depends
 │                               on), git_history.py, fresh_evaluation.py (a change commits its evaluation)
@@ -125,7 +126,12 @@ rag/
 │   ├── __init__.py             Expander: expand_chunks(question, chunk ids) → them and the chunks it adds
 │   ├── registry.py             every expander by name
 │   └── refs/                   refs_expander.py (the named cards and the refs)
-├── technique.py                Step (retriever, expand, rerank) and Technique, what the three have in common;
+├── contexts/
+│   ├── __init__.py             ContextBuilder: build_context(question, ranked ids) → the chunks the prompt holds;
+│   │                           PROMPT_SIZE
+│   ├── registry.py             every context by name
+│   └── named_cards/            named_cards_context.py (the first 10, the named cards, with or without their refs)
+├── technique.py                Step (retriever, expand, rerank, context) and Technique, what the four have in common;
 │                               hand_on, what the next step reads (a retriever's top 20)
 ├── baseline.py                 BASELINE, the pipeline the Arbiter answers with and CI checks against main
 ├── device.py                   where the models run: read_device() (RAG_DEVICE, "cpu" by default);
@@ -144,7 +150,9 @@ rag/
     ├── metric_description.py   MetricDescription: where a value is, its name, how it is written (Display), what it
     │                           does, how, and what it represents
     ├── retrieval_metrics.py    RetrievalMetric: score(relevant ranks) → one question's value; RecallAtK(k),
-    │                           BinaryNdcgAtK(k), ReciprocalRank(); RETRIEVAL_METRICS, every one scored; CUTOFFS
+    │                           BinaryNdcgAtK(k), ReciprocalRank(), ContextRecall(prompt size), the decision metric;
+    │                           RANKING_METRICS and CONTEXT_METRICS, what scores a ranking and a context
+    │                           (find_step_metrics); CUTOFFS
     ├── scores.py               QuestionResult, Scores, Report; score_question, score_group (a run or a category);
     │                           GROUP_VALUE_DESCRIPTIONS; list_metric_descriptions() (every value described)
     ├── runs.py                 Evaluation, Run and its Layers: {"retriever": "bm25", "expand": null, "rerank": null, …}
@@ -154,12 +162,13 @@ rag/
 ```
 
 - A retriever extends `Retriever`. Adding a BM25 variant is one line of `bm25_variants.py`, a dense model one line of `embedding_models.py`; the registry names them `bm25-…` and `dense-<model>`. A fusion is one registry entry naming the retrievers it fuses, built as they are alone: `rrf-bm25-dense`.
-- **The pipeline is three steps** (`technique.py`), then the context: retriever, expand, rerank. Each technique extends `Technique`, through `Retriever`, `Expander` or `Reranker`, and gets its name from its registry: an expander (`refs`, `RefsExpander`) adds to what it is handed the cards the question names and the refs of all of them; a reranker (`minilm-l6`, `MiniLMReranker`, or `qwen3-reranker-0.6b`, `Qwen3Reranker`, each loading its own model through `CrossEncoderReranker`) returns every candidate it is handed, reordered, the context keeping the first 10. A retriever hands the next step its first 20 chunks (`CANDIDATE_COUNT`), every other step its whole list (`hand_on`). The cards a question names are found by `NamedCardFinder` (`named_cards.py`), which both the expander and the context use.
-- **The context is what the RAG hands the Arbiter** (`context.py`): the first 10 chunks of the ranking (`PROMPT_SIZE`), then the cards the question names that the reranker ranked past them. `Pipeline` (`pipeline.py`) runs the techniques a run's layers name, the baseline's for the Arbiter, then the context. The evaluation scores the ranking, so the context does not change the retrieval metrics: it is judged with the answers.
-- **`evaluate` builds the tree of every pipeline** (`stages.py`): each retriever is a node, and under each node, each technique of the next step makes a child, the step skipped makes none. A `Stage` holds its technique, its parent and what it handed on for each question, so going up the parents gives the run's name and what each step did. Every node is computed once and is a run: 6 per retriever with `refs`, `minilm-l6` and `qwen3-reranker-0.6b`, so the benchmark explorer can build any pipeline. A run's list is what its last step handed on: the retriever's whole ranking, the ~41 candidates of the expansion, or the 20 or ~41 a reranker reordered. Each question also keeps how long its pipeline took (`seconds`), and each score block the latency's p50 and p95.
-- **A retrieval metric extends `RetrievalMetric`** and is one entry of `RETRIEVAL_METRICS` (`list_retrieval_metrics()`): `score_question` gives each question its value, `score_group` averages it, and the report table and the evaluation file show it, with no other change. Its key `name.k` is written `{"name": {"k": …}}`, with `mean_` in a group's scores. The values of a group that are not a metric's mean, the number of questions and of candidates, the recall curve and the latency, are computed by `score_group` itself, and described in `GROUP_VALUE_DESCRIPTIONS` beside it. A test fails when a value of the scores has no description.
+- **The pipeline is four steps** (`technique.py`): retriever, expand, rerank, context. Each technique extends `Technique`, through `Retriever`, `Expander`, `Reranker` or `ContextBuilder`, and gets its name from its registry: an expander (`refs`, `RefsExpander`) adds to what it is handed the cards the question names and the refs of all of them; a reranker (`minilm-l6`, `MiniLMReranker`, or `qwen3-reranker-0.6b`, `Qwen3Reranker`, each loading its own model through `CrossEncoderReranker`) returns every candidate it is handed, reordered, the context keeping the first 10. A retriever hands the next step its first 20 chunks (`CANDIDATE_COUNT`), every other step its whole list (`hand_on`). The cards a question names are found by `NamedCardFinder` (`named_cards.py`), which both the expander and the contexts use.
+- **The context is what the RAG hands the Arbiter**, the last step (`contexts/`): a `ContextBuilder` chooses, in the ranking it is handed, the chunks the prompt holds, and nothing cuts them again. Both contexts are one class, `NamedCardsContext`, with one setting. `top10-plus-named-cards`, the baseline's, keeps the first 10 chunks of the ranking (`PROMPT_SIZE`), then the cards the question names that the reranker ranked past them. `top10-plus-named-cards-refs` then adds the chunks these cards refer to, one level deep, card by card in the question's order: the reranker ranks the rules a card relies on low, and the cut drops them. `Pipeline` (`pipeline.py`) runs the techniques a run's layers name, the baseline's for the Arbiter, the context last; `build_pipeline` refuses layers that name no context.
+- **Context recall (`ContextRecall`) decides, on every run** (`find_step_metrics`): a run that ends with a ranking gets it on its first `PROMPT_SIZE` chunks, Recall@10, then every metric of its order (`RANKING_METRICS`); a run that ends with a context gets it on every chunk of it, then Recall@10 and nDCG@10, the ranking's it cuts when that ranking holds 10 chunks or more (`CONTEXT_METRICS`). A context has no metric of an order past them and no recall curve, keeps every chunk of it in `top_chunk_ids` where a ranking keeps 20, and its `Candidates` is the number of chunks the prompt holds. Which context the Arbiter serves is chosen on the dev answers, never on the test split's.
+- **`evaluate` builds the tree of every pipeline** (`stages.py`): each retriever is a node, and under each node, each technique of the next step makes a child, the step skipped makes none. A `Stage` holds its technique, its parent and what it handed on for each question, so going up the parents gives the run's name and what each step did. Every node is computed once and is a run: 6 per retriever with `refs`, `minilm-l6` and `qwen3-reranker-0.6b`, and each of these again with each of the two contexts, 18 in all, so the benchmark explorer can build any pipeline. A run's list is what its last step handed on: the retriever's whole ranking, the ~41 candidates of the expansion, the 20 or ~41 a reranker reordered, or the chunks of a context. Each question also keeps how long its pipeline took (`seconds`), and each score block the latency's p50 and p95.
+- **A retrieval metric extends `RetrievalMetric`** and is one entry of `RANKING_METRICS`, which scores a ranking (`RETRIEVAL_METRICS`, `list_retrieval_metrics()`, the metrics of its order, after context recall), or of `CONTEXT_METRICS`, which scores a context, or of both: `score_question` gives each question its value, `score_group` averages it, and the report table and the evaluation file show it, with no other change. Its key `name.k` is written `{"name": {"k": …}}`, with `mean_` in a group's scores. The values of a group that are not a metric's mean, the number of questions and of candidates, the recall curve and the latency, are computed by `score_group` itself, and described in `GROUP_VALUE_DESCRIPTIONS` beside it. A test fails when a value of the scores has no description.
 - The database is the RAG's, not only dense retrieval's: `chunks` (a chunk, its name and its refs, which the refs expansion reads) and `chunk_embeddings` (one vector per chunk and model). Each table has a repository contract and its Postgres implementation; the tests use in-memory ones.
-- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` is null: only the answers' evaluation names a generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), the device the models ran on (`"cpu"` or the GPU's name, then torch's build, since the latency depends on it), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores and recall curve overall and by category, and each question's first 20 chunks, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
+- **Each `evaluate` is one evaluation**, a list of runs; each run is named by its layers: `{"retriever": "bm25", "expand": "refs", "rerank": null, "context": null, "answer": null}`, one technique per step, null for a step it skipped; `answer` is null: only the answers' evaluation names a generator. The evaluation is saved as a new file, `evals/reports/<version>/<split>/<timestamp>.json` (UTC, e.g. `v1/dev/2026-10-15T10-42-07Z.json`), never overwritten: the dataset, the time, the code commit (`-dirty` when a tracked file outside `evals/reports/` had uncommitted changes), the device the models ran on (`"cpu"` or the GPU's name, then torch's build, since the latency depends on it), its description (why it was run: `--description` is required and cannot be blank), the description of every value it scores (`metrics`: its path in a group's scores, its name, how it is written (`display`), what it does, how, and what it represents, as the code that computes it writes it), then per run its description (what each of its techniques does, which each writes from its settings), its scores, and for a run that ends with a ranking its recall curve, overall and by category, and each question's first 20 chunks, or every chunk of a context, the rank of each of its relevant chunks and its metrics, so the benchmark explorer can switch between runs and compare questions. There is no index: the game server lists a split's timestamps and serves each document as written (`GET /api/evaluations/{version}/{split}` and `…/{timestamp}`).
 - `EvaluationRepository` saves an evaluation; `EvaluationRepositoryFile` writes it in the repository. A bucket will be one more implementation: `evaluation_json.py` gives the document and its name, a repository only stores them.
 
 ## What `arbiter/` does
@@ -190,11 +199,12 @@ It prints the context it read, the answer, its citations, whether it found one, 
 
 ## What `arbiter/evaluation/` does
 
-It asks the Arbiter every question of a split, from the baseline's context, then scores each answer against its key with code, no model (design doc §6.3). The key facts come next, with the extractors.
+It asks the Arbiter every question of a split, from each context of the baseline's ranking, then scores each answer against its key with code, no model (design doc §6.3): one run per context and generator, so that two contexts are compared on the answers they give. The key facts come next, with the extractors.
 
 ```bash
 # from ai/, with what `arbiter ask` needs
 uv run python -m arbiter.evaluation --description "Step 9: the first checks of the answers"
+uv run python -m arbiter.evaluation --contexts top10-plus-named-cards --description "…"   # one context only
 ```
 
 | Metric | Questions it scores | Value |
@@ -211,15 +221,15 @@ A step is the rules one key event carries. The answer key lists each rule once, 
 | Module | Role |
 |---|---|
 | `arbiter/evaluation/__main__.py` | The command line, its own since nothing of the Arbiter imports its evaluation |
-| `arbiter/evaluation/evaluation_service.py` | The flow: `evaluate_answers` builds the baseline's pipeline once, then for each generator `evaluate_run` asks every question and scores each reply |
+| `arbiter/evaluation/evaluation_service.py` | The flow: `evaluate_answers` builds the baseline's ranking techniques once, then for each context and generator `evaluate_run` asks every question and scores each reply |
 | `arbiter/evaluation/answer_keys.py` | `AnswerKey`: a dataset line, as the metrics read it |
 | `arbiter/evaluation/trace_steps.py` | A scenario's trace read: the rules each event carries, and `find_steps`, the key events' rules grouped by step |
-| `arbiter/evaluation/answer_metrics.py` | `AnswerMetric` and the five metrics, each describing itself; `ANSWER_METRICS` |
+| `arbiter/evaluation/answer_metrics.py` | `AnswerMetric` and the six metrics, each describing itself; `ANSWER_METRICS` |
 | `arbiter/evaluation/answer_scores.py` | `score_answer`, a question's result; `score_group`, a group's means, how many questions each metric scored, tokens, cost and latency; every value of a group described |
 | `arbiter/evaluation/evaluation_json.py`, `answer_evaluation_repository.py` | The file, shaped like a retrieval evaluation, saved as `evals/answers/<version>/<split>/<timestamp>.json` |
 | `arbiter/evaluation/report_table.py` | What the command prints |
 
-The file records where the RAG's models ran (`device`), and each run is named by its layers, the RAG's techniques then the generator under `answer`, with the generator's settings and price. Each question keeps its context's ids, its answer (null when no try gave one), its failed tries, each metric's value (null when it does not apply), its tokens, its cost and its time. The time is the model call's, which the cache keeps, so a rerun reports the first call's latency.
+The file records where the RAG's models ran (`device`), and each run is named by its layers, the RAG's techniques, its context among them, then the generator under `answer`, with the generator's settings and price. Each question keeps its context's ids, its answer (null when no try gave one), its failed tries, each metric's value (null when it does not apply), its tokens, its cost and its time. The time is the model call's, which the cache keeps, so a rerun reports the first call's latency.
 
 ## Running the RAG on a new machine
 
