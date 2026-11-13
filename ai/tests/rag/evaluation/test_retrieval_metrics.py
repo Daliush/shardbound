@@ -2,8 +2,10 @@ import math
 
 import pytest
 
-from rag.evaluation.retrieval_metrics import (RETRIEVAL_METRICS, BinaryNdcgAtK, RecallAtK, ReciprocalRank,
-                                              find_relevant_ranks)
+from rag.evaluation.retrieval_metrics import (CONTEXT_METRICS, RANKING_METRICS, RETRIEVAL_METRICS, BinaryNdcgAtK,
+                                              ContextRecall, RecallAtK, ReciprocalRank, find_relevant_ranks,
+                                              find_step_metrics)
+from rag.technique import Step
 
 RELEVANT = frozenset({"11.3.2", "11.3.3", "11.5.4", "neutral.tempest"})
 """The example we worked through: 11.3.2 first, Tempest third, 11.5.4 twelfth, 11.3.3 not ranked."""
@@ -105,3 +107,40 @@ def test_lists_recall_and_binary_ndcg_at_10_and_20_then_the_reciprocal_rank_each
     assert paths == ["mean_recall_at.10", "mean_recall_at.20", "mean_binary_ndcg_at.10", "mean_binary_ndcg_at.20",
                      "mean_reciprocal_rank"], "a group's scores hold each mean at mean_ and the key"
     assert names == ["Recall@10", "Recall@20", "Binary nDCG@10", "Binary nDCG@20", "MRR"]
+
+
+def test_scores_the_share_of_the_relevant_chunks_a_context_holds_wherever_they_are():
+    assert ContextRecall(None).score(RANKS) == 0.75, "11.3.3 is not in it; 11.5.4, twelfth, is"
+    assert ContextRecall(None).score({"8.2": 25}) == 1.0
+    assert ContextRecall(None).score({"8.2": None}) == 0.0
+
+
+def test_scores_a_ranking_on_the_chunks_the_prompt_would_hold_its_recall_at_10():
+    assert ContextRecall(10).score(RANKS) == 0.5, "11.5.4 is twelfth"
+    for relevant_ranks in (RANKS, {"8.2": 10}, {"8.2": 11}, {"8.2": None, "8.3": 1}):
+        assert ContextRecall(10).score(relevant_ranks) == RecallAtK(10).score(relevant_ranks)
+
+
+def test_scores_a_ranking_with_context_recall_then_every_metric_of_its_order_and_a_context_with_three():
+    keys = []
+    for metric in find_step_metrics(Step.RERANK):
+        keys.append(metric.key)
+    context_keys = []
+    for metric in find_step_metrics(Step.CONTEXT):
+        context_keys.append(metric.key)
+
+    assert find_step_metrics(Step.RETRIEVER) == RANKING_METRICS
+    assert keys == ["context_recall", "recall_at.10", "recall_at.20", "binary_ndcg_at.10", "binary_ndcg_at.20",
+                    "reciprocal_rank"]
+    assert find_step_metrics(Step.CONTEXT) == CONTEXT_METRICS
+    assert context_keys == ["context_recall", "recall_at.10", "binary_ndcg_at.10"]
+
+
+def test_names_and_describes_the_context_recall_the_same_way_for_a_ranking_and_a_context():
+    for context_recall in (ContextRecall(10), ContextRecall(None)):
+        assert context_recall.key == "context_recall"
+        assert context_recall.description.path == "mean_context_recall"
+        assert context_recall.description.name == "Context recall"
+        assert "For a ranking, it is Recall@10" in context_recall.description.how
+        assert "It decides between pipelines" in context_recall.description.represents
+    assert ContextRecall(10).description == ContextRecall(None).description

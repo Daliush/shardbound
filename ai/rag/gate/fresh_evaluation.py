@@ -60,7 +60,8 @@ def has_baseline_run(evaluation: dict) -> bool:
 
 
 def describe_baseline() -> str:
-    """"rrf-bm25-dense + refs + minilm-l6": the baseline's techniques, in a question's order."""
+    """"rrf-bm25-dense + refs + minilm-l6 + top10-plus-named-cards": the baseline's techniques, in a question's
+    order."""
     names = []
     for name in asdict(BASELINE).values():
         if name is not None:

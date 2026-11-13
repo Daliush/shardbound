@@ -1,7 +1,8 @@
 """The RAG's command line, from ai/. It only reads the arguments, calls a service and prints:
 
 uv run python -m rag index                                    # chunks and vectors into the database (indexing)
-uv run python -m rag evaluate --description "Why it is run"   # each retriever, expanded or not, reranked or not
+uv run python -m rag evaluate --description "Why it is run"   # each retriever, expanded or not, reranked or not,
+                                                              # each of these with and without each context
 uv run python -m rag evaluate bm25 dense-qwen3-0.6b --rerankers minilm-l6 --description "Why it is run"
 uv run python -m rag evaluate bm25 --expanders --rerankers --description "Why it is run"   # a flag alone: none of them
 uv run python -m rag evaluate --baseline --description "Why it is run"   # the baseline's techniques only (baseline.py)
@@ -18,6 +19,7 @@ from dataset.paths import LATEST_VERSION, repo_root
 from rag.baseline import BASELINE
 from rag.comparison.comparison_service import compare_evaluation_files
 from rag.comparison.comparison_table import format_comparison_table
+from rag.contexts.registry import list_context_names
 from rag.evaluation.evaluation_json import name_evaluation
 from rag.evaluation.evaluation_service import evaluate_all
 from rag.evaluation.report_table import format_report_table
@@ -45,6 +47,9 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--rerankers", nargs="*", choices=list_reranker_names(), metavar="reranker",
                           help="each retriever runs again with each of them, every one by default; --rerankers alone "
                                "for none: " + ", ".join(list_reranker_names()))
+    evaluate.add_argument("--contexts", nargs="*", choices=list_context_names(), metavar="context",
+                          help="each pipeline runs again with each of them, every one by default; --contexts alone "
+                               "for none: " + ", ".join(list_context_names()))
     evaluate.add_argument("--baseline", action="store_true",
                           help="the baseline's techniques only, and no others: " + describe_baseline())
     evaluate.add_argument("--description", required=True, type=refuse_blank,
@@ -56,7 +61,8 @@ def main(argv: list[str] | None = None) -> None:
     compare.add_argument("recorded", type=Path, help="the evaluation to compare with, such as the one a commit records")
     compare.add_argument("new", type=Path)
     compare.add_argument("--max-drop", type=float, metavar="points",
-                         help="fail when a run's Recall@10 lost more than these points")
+                         help="fail when a run's context recall (Recall@10 against an evaluation recorded before it) lost "
+                              "more than these points")
     check = commands.add_parser("check-evaluation", help="fail when this pull request changes a file retrieval depends "
                                                          "on and commits no evaluation of its own code")
     check.add_argument("--base", default="origin/main", help="the branch the pull request goes into")
@@ -77,42 +83,44 @@ def main(argv: list[str] | None = None) -> None:
         print(str(bool(find_retrieval_changes(GitHistoryLocal(root).list_changed_files(arguments.base)))).lower())
     else:
         if arguments.baseline and (arguments.retrievers or arguments.expanders is not None
-                                   or arguments.rerankers is not None):
+                                   or arguments.rerankers is not None or arguments.contexts is not None):
             parser.error("--baseline names its own techniques: name none with it")
-        retrievers, expanders, rerankers = choose_techniques(arguments)
-        evaluation = evaluate_all(retrievers, expanders, rerankers, root,
+        retrievers, expanders, rerankers, contexts = choose_techniques(arguments)
+        evaluation = evaluate_all(retrievers, expanders, rerankers, contexts, root,
                                   arguments.version, arguments.split, arguments.description,
                                   EvaluationRepositoryFile(root))
         for run in evaluation.runs:
-            print(f"retriever {run.layers.retriever}, expand {run.layers.expand}, rerank {run.layers.rerank}, answer "
-                  f"{run.layers.answer} on {arguments.version} {arguments.split}, "
+            print(f"retriever {run.layers.retriever}, expand {run.layers.expand}, rerank {run.layers.rerank}, context "
+                  f"{run.layers.context}, answer {run.layers.answer} on {arguments.version} {arguments.split}, "
                   f"{run.report.overall.question_count} answerable questions\n{run.description}\n")
             print(format_report_table(run.report) + "\n")
         print(f"Saved as {name_evaluation(evaluation)}")
 
 
 def compare_and_report(recorded: Path, new: Path, max_drop: float | None) -> None:
-    """Prints how each run moved; with `max_drop`, stops with status 1 when a run's Recall@10 lost more."""
+    """Prints how each run moved; with `max_drop`, stops with status 1 when a run's decision metric lost more."""
     comparison = compare_evaluation_files(recorded, new)
     print(format_comparison_table(comparison))
     if max_drop is None:
         return
     drops = comparison.find_drops(max_drop)
     for run in drops:
-        print(f"{run.name}: Recall@10 lost {run.count_lost_points():.1f} points, more than {max_drop:g}. If that is "
+        print(f"{run.name}: {run.metric_name} lost {run.count_lost_points():.1f} points, more than {max_drop:g}. If that is "
               f"meant, record a new evaluation with this change (scripts/evaluate.sh).", file=sys.stderr)
     if drops:
         sys.exit(1)
 
 
-def choose_techniques(arguments: argparse.Namespace) -> tuple[list[str], list[str], list[str]]:
-    """The retrievers, expanders and rerankers to evaluate: the baseline's with --baseline, else those named, every
-    one of a step by default."""
+def choose_techniques(arguments: argparse.Namespace) -> tuple[list[str], list[str], list[str], list[str]]:
+    """The retrievers, expanders, rerankers and contexts to evaluate: the baseline's with --baseline, else those named,
+    every one of a step by default."""
     if arguments.baseline:
-        return [BASELINE.retriever], name_layer(BASELINE.expand), name_layer(BASELINE.rerank)
+        return ([BASELINE.retriever], name_layer(BASELINE.expand), name_layer(BASELINE.rerank),
+                name_layer(BASELINE.context))
     expanders = list_expander_names() if arguments.expanders is None else arguments.expanders
     rerankers = list_reranker_names() if arguments.rerankers is None else arguments.rerankers
-    return arguments.retrievers or list_retriever_names(), expanders, rerankers
+    contexts = list_context_names() if arguments.contexts is None else arguments.contexts
+    return arguments.retrievers or list_retriever_names(), expanders, rerankers, contexts
 
 
 def name_layer(technique: str | None) -> list[str]:

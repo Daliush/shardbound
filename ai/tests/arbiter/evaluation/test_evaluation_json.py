@@ -11,7 +11,8 @@ from rag.evaluation.runs import Layers
 from tests.arbiter.evaluation.answer_key_examples import answer_citing
 
 EVALUATED_AT = datetime(2026, 11, 8, 10, 42, 7, tzinfo=timezone.utc)
-LAYERS = Layers(retriever="rrf-bm25-dense", expand="refs", rerank="minilm-l6", answer="claude-haiku-5.5")
+LAYERS = Layers(retriever="rrf-bm25-dense", expand="refs", rerank="minilm-l6", context="top10-plus-named-cards",
+                answer="claude-haiku-5.5")
 
 
 def build_result(answered: bool) -> AnswerResult:
@@ -43,7 +44,7 @@ def test_writes_the_shape_of_a_retrieval_evaluation_with_the_layers_of_the_answe
     assert document["device"] == "cpu, torch 2.14.1+cpu"
     run = document["runs"][0]
     assert run["layers"] == {"retriever": "rrf-bm25-dense", "expand": "refs", "rerank": "minilm-l6",
-                             "answer": "claude-haiku-5.5"}
+                             "context": "top10-plus-named-cards", "answer": "claude-haiku-5.5"}
     assert run["generator"] == {"settings": {"model": "claude-haiku-5-5", "effort": "medium"},
                                 "price": {"input_per_million": 0.10, "output_per_million": 0.50}}
     assert list(run["scores"]) == ["overall", "by_category"]

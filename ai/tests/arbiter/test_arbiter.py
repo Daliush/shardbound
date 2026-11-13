@@ -1,7 +1,7 @@
 from arbiter.arbiter import Arbiter
 from arbiter.generation.prompt import ContextChunk
 from rag.chunks import Chunk
-from rag.context import ContextSelector
+from rag.contexts.named_cards.named_cards_context import NamedCardsContext
 from rag.pipeline import Pipeline
 from tests.arbiter.generation.scripted_generator import VALID_REPLY, ScriptedGenerator
 from tests.rag.retrievers.fixed_ranking import FixedRanking
@@ -13,7 +13,8 @@ QUESTION = "What does Tempest do?"
 
 def test_answers_from_the_context_its_pipeline_retrieves():
     generator = ScriptedGenerator([VALID_REPLY])
-    arbiter = Arbiter(Pipeline([FixedRanking(["8.2"])], ContextSelector(CHUNKS), CHUNKS), generator)
+    context = NamedCardsContext("named-cards", CHUNKS, follow_refs=False)
+    arbiter = Arbiter(Pipeline([FixedRanking(["8.2"])], context, CHUNKS), generator)
 
     reply = arbiter.answer_question(QUESTION)
 

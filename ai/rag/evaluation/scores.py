@@ -6,7 +6,9 @@ from dataclasses import dataclass
 
 from rag.evaluation.metric_description import Display, MetricDescription
 from rag.evaluation.questions import Question
-from rag.evaluation.retrieval_metrics import CUTOFFS, RETRIEVAL_METRICS, RecallAtK, find_relevant_ranks
+from rag.evaluation.retrieval_metrics import (CUTOFFS, RANKING_METRICS, RecallAtK, find_relevant_ranks,
+                                              find_step_metrics)
+from rag.technique import Step
 
 LATENCY_MEANING = "How long a user waits for the chunks, on the computer that ran the evaluation. Lower is better."
 
@@ -23,7 +25,8 @@ GROUP_VALUE_DESCRIPTIONS = [
         how="Count the chunks in the list the pipeline's last step returns, then take the average over all the "
             "questions.",
         represents="Context, not a score to win: a list of every chunk would hold every needed chunk. Read it with the "
-                   "end of the recall curve."),
+                   "end of the recall curve. After a context, it is the number of chunks the prompt holds: read it "
+                   "with the context recall, which a bigger context raises by itself."),
     MetricDescription(
         path="mean_recall_curve", name="Recall curve", display=Display.SHARE,
         what="Recall for every list length, from 1 chunk to the whole list.",
@@ -32,7 +35,8 @@ GROUP_VALUE_DESCRIPTIONS = [
         represents="It compares pipelines at the same number of chunks. Its last point is the share of the needed "
                    "chunks found anywhere in the list. After the expansion, that is the most a reranker could keep, "
                    "since a reranker only reorders what it gets; after a retriever alone, a reranker gets only its "
-                   "first 20."),
+                   "first 20. A context has none: the prompt holds all of it, so its order past the first chunks "
+                   "is no ranking."),
     MetricDescription(
         path="latency_p50_seconds", name="Latency p50", display=Display.SECONDS,
         what="How long a typical question takes.",
@@ -56,13 +60,15 @@ class QuestionResult:
     question_id: str
     category: str
     top_chunk_ids: list[str]
+    """The first 20 chunks of a ranking, or every chunk of a context: what the prompt holds."""
     relevant_ranks: dict[str, int | None]
     """Each relevant chunk's rank in the whole list the retriever returned, None when it left it out: every metric is
     read from them, and the comparator sees where a chunk landed past the first 20."""
     metric_values: dict[str, float]
-    """Each retrieval metric's value for this question, by the metric's key: `recall_at.10`."""
+    """The value of each metric the run was scored with for this question, by the metric's key: `recall_at.10`."""
     candidate_count: int
-    """How many chunks the run ranked: the retriever's whole list, or the candidates the reranker reordered."""
+    """How many chunks the run returned: the retriever's whole list, the candidates the reranker reordered, or the
+    chunks of the context."""
     seconds: float
     """How long every step of the run took for this question."""
 
@@ -73,12 +79,13 @@ class Scores:
 
     question_count: int
     metric_means: dict[str, float]
-    """Each retrieval metric averaged over the questions, by the metric's key."""
+    """Each metric the run was scored with, averaged over the questions, by the metric's key."""
     mean_candidate_count: float
-    mean_recall_curve: list[float]
+    mean_recall_curve: list[float] | None
     """Recall@k averaged over the questions, for every k from 1 to the longest list a question got, the first value
     being Recall@1. Past its end it stays at its last value, the share of the relevant chunks among every chunk ranked:
-    after the expansion, the most a reranker could keep. It compares retrievers at the same number of chunks."""
+    after the expansion, the most a reranker could keep. It compares retrievers at the same number of chunks. None
+    after a context, which is no ranking."""
     latency_p50_seconds: float
     latency_p95_seconds: float
 
@@ -91,47 +98,52 @@ class Report:
 
 
 def list_metric_descriptions() -> list[MetricDescription]:
-    """Every value the scores of a group hold, described: each retrieval metric, then the values only a group has."""
+    """Every value the scores of a group hold, described: each retrieval metric, context recall first, then the values
+    only a group has."""
     descriptions = []
-    for metric in RETRIEVAL_METRICS:
+    for metric in RANKING_METRICS:
         descriptions.append(metric.description)
     descriptions.extend(GROUP_VALUE_DESCRIPTIONS)
     return descriptions
 
 
-def score_question(question: Question, ranked_ids: list[str], seconds: float) -> QuestionResult:
-    """One question's result: the rank of each of its relevant chunks in `ranked_ids`, then the value of each retrieval
-    metric, read from these ranks."""
-    relevant_ranks = find_relevant_ranks(ranked_ids, question.relevant_ids)
+def score_question(question: Question, chunk_ids: list[str], seconds: float, step: Step) -> QuestionResult:
+    """One question's result, from the chunks the run's last step, `step`, returned: the rank of each of its relevant
+    chunks, then the value of each metric of that step, read from these ranks. A context keeps every chunk, a ranking
+    its first 20."""
+    relevant_ranks = find_relevant_ranks(chunk_ids, question.relevant_ids)
     metric_values = {}
-    for metric in RETRIEVAL_METRICS:
+    for metric in find_step_metrics(step):
         metric_values[metric.key] = metric.score(relevant_ranks)
-    return QuestionResult(question_id=question.id, category=question.category,
-                          top_chunk_ids=ranked_ids[:max(CUTOFFS)], relevant_ranks=relevant_ranks,
-                          metric_values=metric_values, candidate_count=len(ranked_ids), seconds=seconds)
+    kept = chunk_ids if step is Step.CONTEXT else chunk_ids[:max(CUTOFFS)]
+    return QuestionResult(question_id=question.id, category=question.category, top_chunk_ids=kept,
+                          relevant_ranks=relevant_ranks, metric_values=metric_values, candidate_count=len(chunk_ids),
+                          seconds=seconds)
 
 
-def score_group(results: list[QuestionResult]) -> Scores:
+def score_group(results: list[QuestionResult], step: Step) -> Scores:
     """
-    The scores of a group of questions: all the questions of a run, or those of one category. Each retrieval metric is
-    averaged over the questions, every question weighing the same whatever its number of relevant chunks. The values
-    that are not the mean of a metric are computed here too: the number of questions, the mean number of candidates,
-    the recall curve, and the latency p50 and p95, read from the time each question took.
+    The scores of a group of questions: all the questions of a run, or those of one category, whose last step is
+    `step`. Each metric the run was scored with is averaged over the questions, every question weighing the same
+    whatever its number of relevant chunks. The values that are not the mean of a metric are computed here too: the
+    number of questions, the mean number of candidates, the recall curve of a ranking, and the latency p50 and p95,
+    read from the time each question took.
     """
     seconds = list_seconds(results)
+    curve = None if step is Step.CONTEXT else average_recall_curve(results)
     return Scores(question_count=len(results),
                   metric_means=average_metric_values(results),
                   mean_candidate_count=average_candidate_count(results),
-                  mean_recall_curve=average_recall_curve(results),
+                  mean_recall_curve=curve,
                   latency_p50_seconds=find_percentile(seconds, 50),
                   latency_p95_seconds=find_percentile(seconds, 95))
 
 
 def average_metric_values(results: list[QuestionResult]) -> dict[str, float]:
-    """Each retrieval metric's value averaged over the questions, by the metric's key."""
+    """Each metric's value averaged over the questions, by the metric's key: the metrics the first question was scored
+    with, which every question of a run was scored with."""
     means = {}
-    for metric in RETRIEVAL_METRICS:
-        key = metric.key
+    for key in results[0].metric_values:
         total = 0.0
         for result in results:
             total += result.metric_values[key]

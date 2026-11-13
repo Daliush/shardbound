@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from rag.chunks import Chunk
+from rag.contexts.registry import build_context
 from rag.device import describe_device
 from rag.evaluation.code_commit import read_code_commit
 from rag.evaluation.questions import Question, read_questions
@@ -20,10 +21,16 @@ from rag.retrievers.registry import build_retriever
 from rag.technique import Step, Technique
 
 
-def evaluate_all(retriever_names: list[str], expander_names: list[str], reranker_names: list[str], root: Path,
-                 version: str, split: str, description: str, evaluation_repository: EvaluationRepository) -> Evaluation:
+STEPS_AFTER_RETRIEVAL = [Step.EXPAND, Step.RERANK, Step.CONTEXT]
+"""The steps a retriever's chunks go through, in this order, each one skipped or not."""
+
+
+def evaluate_all(retriever_names: list[str], expander_names: list[str], reranker_names: list[str],
+                 context_names: list[str], root: Path, version: str, split: str, description: str,
+                 evaluation_repository: EvaluationRepository) -> Evaluation:
     """
-    Every pipeline the techniques named make, on the questions of `dataset-<split>.jsonl`; saved by
+    Every pipeline the techniques named make, each with and without each context, on the questions of
+    `dataset-<split>.jsonl`; saved by
     `evaluation_repository` as a new document, with the `description` of why it was run. Every technique reads the
     indexed chunks from the database, never the engine's file: a run can't mix two versions of the corpus.
     """
@@ -33,11 +40,13 @@ def evaluate_all(retriever_names: list[str], expander_names: list[str], reranker
     if not chunks:
         raise LookupError("No chunks in the database: build the index with `uv run python -m rag index`")
     questions = read_questions(root, version, split)
-    techniques_after_retrieval: dict[Step, list[Technique]] = {Step.EXPAND: [], Step.RERANK: []}
+    techniques_after_retrieval: dict[Step, list[Technique]] = {Step.EXPAND: [], Step.RERANK: [], Step.CONTEXT: []}
     for expander_name in expander_names:
         techniques_after_retrieval[Step.EXPAND].append(build_expander(expander_name, chunks))
     for reranker_name in reranker_names:
         techniques_after_retrieval[Step.RERANK].append(build_reranker(reranker_name, chunks))
+    for context_name in context_names:
+        techniques_after_retrieval[Step.CONTEXT].append(build_context(context_name, chunks))
     evaluation = Evaluation(version=version, split=split, evaluated_at=evaluated_at, code_commit=code_commit,
                             device=describe_device(), description=description, metrics=list_metric_descriptions(),
                             runs=evaluate_combinations(retriever_names, chunks, techniques_after_retrieval, questions))
@@ -61,7 +70,7 @@ def evaluate_combinations(retriever_names: list[str], chunks: list[Chunk],
     for retriever_name in retriever_names:
         retrieved = apply(build_retriever(retriever_name, chunks), None, answerable)
         runs.append(score(retrieved))
-        runs += continue_with(retrieved, [Step.EXPAND, Step.RERANK], techniques_after_retrieval, answerable)
+        runs += continue_with(retrieved, STEPS_AFTER_RETRIEVAL, techniques_after_retrieval, answerable)
     return runs
 
 
@@ -94,15 +103,18 @@ def apply(technique: Technique, parent: Stage | None, questions: list[Question])
 
 
 def score(stage: Stage) -> Run:
-    """The node's run: its metrics on every question, then the scores of all of them and of each category."""
+    """The node's run: the metrics of its last step on every question, then the scores of all of them and of each
+    category. A context is scored as any list of chunks, and on what it holds."""
+    step = stage.technique.step
     results = []
     results_by_category: dict[str, list[QuestionResult]] = {}
     for step_result in stage.results.values():
-        result = score_question(step_result.question, step_result.chunk_ids, stage.sum_seconds(step_result.question))
+        result = score_question(step_result.question, step_result.chunk_ids, stage.sum_seconds(step_result.question),
+                                step)
         results.append(result)
         results_by_category.setdefault(result.category, []).append(result)
     by_category = {}
     for category in sorted(results_by_category):
-        by_category[category] = score_group(results_by_category[category])
-    report = Report(overall=score_group(results), by_category=by_category, questions=results)
+        by_category[category] = score_group(results_by_category[category], step)
+    report = Report(overall=score_group(results, step), by_category=by_category, questions=results)
     return Run(stage.name_layers(), stage.describe(), report)

@@ -1,6 +1,6 @@
 from arbiter.evaluation.evaluation_service import describe_run, evaluate_run
 from rag.chunks import Chunk
-from rag.context import ContextSelector
+from rag.contexts.named_cards.named_cards_context import NamedCardsContext
 from rag.evaluation.runs import Layers
 from rag.pipeline import Pipeline
 from tests.arbiter.evaluation.answer_key_examples import ASH_WARDEN, RAMPAGE
@@ -9,12 +9,12 @@ from tests.rag.retrievers.fixed_ranking import FixedRanking
 
 CHUNKS = [Chunk("8.2", "rule", None, "[8. Effects] **Destroy**: board to graveyard.", (), "r", "h"),
           Chunk("ember.ash-warden", "card", "Ash Warden", "Ash Warden: Ember unit.", ("11.1.1",), "c", "h")]
-PIPELINE_LAYERS = Layers(retriever="fixed", rerank="minilm-l6")
+PIPELINE_LAYERS = Layers(retriever="fixed", rerank="minilm-l6", context="named-cards")
 REFUSAL = '{"answer": "The context does not say.", "citations": [], "answerable": false}'
 
 
 def build_pipeline() -> Pipeline:
-    return Pipeline([FixedRanking(["8.2"])], ContextSelector(CHUNKS), CHUNKS)
+    return Pipeline([FixedRanking(["8.2"])], NamedCardsContext("named-cards", CHUNKS, follow_refs=False), CHUNKS)
 
 
 def test_asks_the_arbiter_every_question_from_its_pipeline_s_context_and_scores_each_answer():
@@ -34,14 +34,14 @@ def test_asks_the_arbiter_every_question_from_its_pipeline_s_context_and_scores_
 def test_names_the_run_by_the_pipeline_s_layers_and_the_generator_with_its_settings_and_price():
     run = evaluate_run(PIPELINE_LAYERS, build_pipeline(), ScriptedGenerator([VALID_REPLY]), [ASH_WARDEN])
 
-    assert run.layers == Layers(retriever="fixed", rerank="minilm-l6", answer="scripted")
-    assert run.description == "The context of fixed + minilm-l6; then scripted replies"
+    assert run.layers == Layers(retriever="fixed", rerank="minilm-l6", context="named-cards", answer="scripted")
+    assert run.description == "The context of fixed + minilm-l6 + named-cards; then scripted replies"
     assert run.generator_settings == {"model": "scripted"}
     assert run.price == SCRIPTED_PRICE
 
 
 def test_describes_the_pipeline_by_the_techniques_it_does_not_skip():
-    layers = Layers(retriever="rrf-bm25-dense", expand="refs", rerank="minilm-l6")
+    layers = Layers(retriever="rrf-bm25-dense", rerank="minilm-l6", context="top10-plus-named-cards")
 
-    assert describe_run(layers, ScriptedGenerator([])) == ("The context of rrf-bm25-dense + refs + minilm-l6; then "
-                                                          "scripted replies")
+    assert describe_run(layers, ScriptedGenerator([])) == ("The context of rrf-bm25-dense + minilm-l6 + "
+                                                          "top10-plus-named-cards; then scripted replies")

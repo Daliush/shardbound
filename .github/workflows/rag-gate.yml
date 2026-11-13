@@ -8,9 +8,11 @@ name: RAG gate
 # commit with those files as the pull request has them, holding a run of the baseline. So main always records an
 # evaluation of its own code, the one the next pull request is compared with.
 #
-# "Recall@10 against main", not required: evaluates the baseline (ai/rag/baseline.py) on the CPU and compares it with
-# the evaluation main records. It fails when a run lost more than 2 points of Recall@10, a drop the maintainer may
-# accept; the job's summary shows the table and the questions ranked differently.
+# "Context recall against main", not required: evaluates the baseline (ai/rag/baseline.py) on the CPU and compares it
+# with the evaluation main records. It fails when a run lost more than 2 points of context recall (of Recall@10 when
+# main's evaluation was recorded before context recall, the same value for a ranking), a drop the maintainer may
+# accept; the job's summary shows the table and the questions ranked differently, and each run's number of chunks,
+# which it does not check: a context that grows by mistake raises its context recall.
 on:
   pull_request:
 
@@ -33,7 +35,7 @@ jobs:
         run: uv run python -m rag check-evaluation --base "origin/${{ github.base_ref }}"
 
   recall-against-main:
-    name: Recall@10 against main
+    name: Context recall against main
     runs-on: ubuntu-latest
     services:
       db:

@@ -6,7 +6,7 @@ storage writes this same document:
  "device": "cpu", "description": "Step 3: BM25 and its variants",
  "metrics": [{"path": "mean_recall_at.10", "name": "Recall@10", "display": "share", "what": …, "how": …,
               "represents": …}, …],
- "runs": [{"layers": {"retriever": "bm25", "answer": null},
+ "runs": [{"layers": {"retriever": "bm25", "expand": null, "rerank": null, "context": null, "answer": null},
            "description": "BM25 (lucene formula, k1 = 1.5, b = 0.75, stemmed words, stop words kept)",
            "scores": {"overall": {…}, "by_category": {…}},
            "questions": [{"question_id": …, "top_chunk_ids": […], …}]}]}

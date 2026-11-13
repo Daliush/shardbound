@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from rag.evaluation.evaluation_json import convert_evaluation_to_json, convert_scores, name_evaluation
@@ -39,9 +40,9 @@ def test_writes_the_dataset_the_time_the_code_the_device_and_why_once_then_each_
     assert document["device"] == "cpu"
     assert document["description"] == "Step 3: BM25"
     assert [run["layers"] for run in document["runs"]] == [
-        {"retriever": "random", "expand": None, "rerank": None, "answer": None},
-        {"retriever": "bm25", "expand": None, "rerank": None, "answer": None}]
-    assert list(document["runs"][0]["layers"]) == ["retriever", "expand", "rerank", "answer"], "a question's order"
+        {"retriever": "random", "expand": None, "rerank": None, "context": None, "answer": None},
+        {"retriever": "bm25", "expand": None, "rerank": None, "context": None, "answer": None}]
+    assert list(document["runs"][0]["layers"]) == ["retriever", "expand", "rerank", "context", "answer"], "in order"
     assert [run["description"] for run in document["runs"]] == ["what random does", "what bm25 does"]
     assert document["runs"][1]["scores"]["overall"]["mean_recall_at"] == {"10": 1.0, "20": 1.0}
     assert document["runs"][1]["questions"][0]["top_chunk_ids"] == ["2.2", "2.1"]
@@ -73,8 +74,18 @@ def test_writes_every_metric_description_once_before_the_runs_its_display_by_nam
                                     "what": "The share…", "how": "The number…", "represents": "How much…"}]
 
 
-def test_describes_every_value_the_scores_of_a_group_hold_and_nothing_else():
-    written = convert_scores(build_evaluation(["bm25"]).runs[0].report.overall)
+def test_writes_a_context_s_recall_after_the_metrics_of_any_list_and_none_for_a_ranking():
+    scores = build_evaluation(["bm25"]).runs[0].report.overall
+    of_a_context = replace(scores, metric_means={**scores.metric_means, "context_recall": 0.75})
+
+    assert list(convert_scores(of_a_context))[3:5] == ["mean_reciprocal_rank", "mean_context_recall"]
+    assert convert_scores(of_a_context)["mean_context_recall"] == 0.75
+    assert "mean_context_recall" not in convert_scores(scores)
+
+
+def test_describes_every_value_the_scores_of_a_context_hold_and_nothing_else():
+    scores = build_evaluation(["bm25"]).runs[0].report.overall
+    written = convert_scores(replace(scores, metric_means={**scores.metric_means, "context_recall": 0.75}))
     paths = []
     for name, value in written.items():
         if isinstance(value, dict):
