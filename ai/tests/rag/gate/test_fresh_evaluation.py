@@ -4,7 +4,8 @@ from pathlib import Path
 from rag.gate.fresh_evaluation import check_fresh_evaluation
 from rag.gate.git_history import GitHistory
 
-BASELINE_LAYERS = {"retriever": "rrf-bm25-dense", "expand": "refs", "rerank": "minilm-l6", "answer": None}
+BASELINE_LAYERS = {"retriever": "rrf-bm25-dense", "expand": "refs", "rerank": "minilm-l6",
+                   "context": "top10-plus-named-cards-refs", "answer": None}
 EVALUATION = "evals/reports/v2/dev/2026-10-26T10-00-00Z.json"
 
 
@@ -106,4 +107,4 @@ def test_fails_an_evaluation_without_a_run_of_the_baseline(tmp_path: Path):
     verdict = check_fresh_evaluation(history, tmp_path, "origin/main")
 
     assert not verdict.passed
-    assert "rrf-bm25-dense + refs + minilm-l6" in verdict.message
+    assert "rrf-bm25-dense + refs + minilm-l6 + top10-plus-named-cards-refs" in verdict.message

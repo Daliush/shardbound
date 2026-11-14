@@ -12,12 +12,12 @@ What each step does and why lives in `docs/design.md` §5.2 and §6, `ai/README.
 | Step | Command, from the root | Needs | Writes |
 |---|---|---|---|
 | Dataset | `bash scripts/build-dataset.sh <version> --base <previous>` | JDK 21, uv, `LUNA_BASE_URL`, `LUNA_MODEL`, `LUNA_API_KEY` | `evals/datasets/<version>/` |
-| Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--expanders expander…] [--rerankers reranker…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
+| Chunks, index, evaluation | `bash scripts/evaluate.sh --description "<why>" [retriever…] [--expanders expander…] [--rerankers reranker…] [--contexts context…] [--version <v>] [--split dev]` | JDK 21, uv, Docker running | `ai/.corpus/chunks.jsonl`, the database, `evals/reports/<v>/<split>/<timestamp>.json` |
 | Served | the game server, `GET /api/evaluations/<v>/<split>` then `/<timestamp>` | the server running | nothing |
 | Answer | from `ai/`, `uv run python -m arbiter ask "<question>"` | the index built, the database running, `CLAUDE_KEY` | `ai/.cache/arbiter/` |
-| Answers' evaluation | from `ai/`, `uv run python -m arbiter.evaluation --description "<why>"` | the same | `evals/answers/<version>/<split>/<timestamp>.json` |
+| Answers' evaluation | from `ai/`, `uv run python -m arbiter.evaluation --description "<why>" [--contexts context…]` | the same | `evals/answers/<version>/<split>/<timestamp>.json` |
 
-`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every pipeline the techniques make, each retriever expanded or not and reranked or not, on the latest dataset's dev split by default (a flag alone, `--expanders` or `--rerankers`, for none of them; the first run of a reranker downloads its model). The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything. On the CPU, Qwen3-Reranker takes about 50 s a question, so an evaluation that runs it after every retriever takes hours: name the rerankers (`--rerankers minilm-l6`) to leave it out, or run them on a GPU (below).
+`evaluate.sh` runs `build-index.sh`, then `python -m rag evaluate` with its arguments: every pipeline the techniques make, each retriever expanded or not and reranked or not, each of these with and without each context, on the latest dataset's dev split by default (a flag alone, `--expanders`, `--rerankers` or `--contexts`, for none of them; an evaluation meant to be committed keeps the baseline's context, since the gate looks for a run of the baseline's exact layers; the first run of a reranker downloads its model). The description is required and kept in the evaluation: say why it is run ("Step 7: the reranker"), so that the benchmark explorer can show why each was run. `--split test` is only for the published numbers, never to choose anything. On the CPU, Qwen3-Reranker takes about 50 s a question, so an evaluation that runs it after every retriever takes hours: name the rerankers (`--rerankers minilm-l6`) to leave it out, or run them on a GPU (below).
 
 If `docker version` shows no server, ask the maintainer to start Docker Desktop. Do not reset it.
 
@@ -32,6 +32,7 @@ The models, the embedding model and the rerankers, run on the CPU unless `RAG_DE
 | A card | The chunks and a new dataset version: factual questions and scenarios read the cards. |
 | A recipe, or a written question | A new dataset version. |
 | A retriever or a metric (`ai/rag`) | `evaluate.sh` alone. |
+| A context (`ai/rag/contexts/`) | `evaluate.sh`, then the answers' evaluation, each at a clean commit: a context changes its retrieval runs and the prompt each answer is written from. |
 | The prompt, a generator or an answer metric (`ai/arbiter`) | `uv run pytest` in `ai/`, then the answers' evaluation, at a clean commit. |
 | An entity (`ai/rag/repository/entities.py`) | `docker compose down -v` from the root, then `evaluate.sh`: the tables are never altered, so the database starts empty and every chunk is embedded again. An embedding model's new format needs no reset: its vectors are kept under another key, and every chunk is embedded again. |
 
@@ -52,7 +53,7 @@ A pull request that changes a file retrieval depends on (`ai/rag/gate/retrieval_
 
 - **Dataset**: compare the engine's five files with the base version's, by id. Only the questions you expect should be new, gone or changed. "N reworded now" counts the new or changed templates; read each new wording against its template (the arrival order, a number, who acts). The manifest should say `"sources_clean": true`. `uv run pytest` in `ai/` checks every version.
 - **Chunks**: copy `ai/.corpus/chunks.jsonl` before the run and diff it after. `qwen3-0.6b: N chunks embedded` should count exactly the chunks whose text changed; 0 when none did.
-- **Evaluation**: compare with the previous report, run by run. Only questions whose wording or relevant chunks changed should score differently. From `ai/`, `uv run python -m rag compare <old report> <new report>` prints each run's Recall@10 and Recall@20 before and after, and the questions it ranks differently.
+- **Evaluation**: compare with the previous report, run by run. Only questions whose wording or relevant chunks changed should score differently. From `ai/`, `uv run python -m rag compare <old report> <new report>` prints each run's context recall and number of chunks before and after (Recall@10 against a report recorded before context recall), and the questions it ranks differently.
 
   A question whose id changed shows as ranked differently. A run made only to check something leaves a report all the same: delete it unless it is meant to be committed.
 - **Answers**: the command prints a row per category. Every reply should be a valid answer (a format failure is listed with the question); the cost and the latency should stay near the last file's; each metric says how many questions it scored, and a `–` means none. A rerun reads the cache, so it costs nothing and gives the same answers.

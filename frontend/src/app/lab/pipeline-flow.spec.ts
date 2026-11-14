@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { EvaluationRun } from '../api/evaluation';
 import { CardBook } from '../game/card-book';
 import { PipelineFlow } from './pipeline-flow';
-import { citedChunks, columnSummary, pipelineColumns } from './pipeline-model';
+import { citedChunks, columnSummary, isContext, pipelineColumns } from './pipeline-model';
 
 function run(layers: EvaluationRun['layers'], top: string[], ranks: Record<string,number | null>, count: number): EvaluationRun {
   return {layers,scores:{overall:{},by_category:{}},questions:[{question_id:'q',category:'interaction',top_chunk_ids:top,recall_at:{'10':0,'20':0},reciprocal_rank:0,relevant_ranks:ranks,candidate_count:count}]};
@@ -16,6 +16,7 @@ const runs = [
   run({retriever:'random'},top,{'11.1.1':1,'8.5':2,'8.18':3},191),
 ];
 const reranked = run({retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6'},top,{'11.1.1':2,'8.5':23,'8.18':null},25);
+const context = run({retriever:'rrf-bm25-dense',expand:'refs',rerank:'minilm-l6',context:'top10-plus-named-cards-refs'},[...top.slice(0,11),'8.5'],{'11.1.1':2,'8.5':12,'8.18':null},12);
 
 describe('Pipeline stages of a question', () => {
   it('orders the stages, leaves out the ones not evaluated, and draws the top 20 or every candidate', () => {
@@ -37,6 +38,12 @@ describe('Pipeline stages of a question', () => {
     expect(columnSummary(expanded)).toEqual(['2 of 3 cited','8.18 missing']);
     expect(citedChunks([bm25,expanded])).toEqual(['11.1.1','8.5','8.18']);
   });
+  it('draws a context after the reranker it cuts, with every chunk the prompt holds', () => {
+    const columns = pipelineColumns([reranked,context],'q',[]);
+    expect(columns.map(column => [column.stage.label,column.slots.length,isContext(column.stage)])).toEqual([['MiniLM',25,false],['Context + refs',12,true]]);
+    expect(columns[1].slots[11]).toEqual({rank:12,chunk:'8.5',kind:'cited'});
+    expect(columnSummary(columns[1])).toEqual(['2 of 3 cited','8.18 missing']);
+  });
   it('leaves out a question no stage evaluated', () => {
     expect(pipelineColumns(runs,'unknown',[])).toEqual([]);
   });
@@ -56,6 +63,13 @@ describe('Pipeline flow', () => {
     const rows = [...host.querySelectorAll('.rank-table tbody tr')].map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent?.trim()));
     expect(rows).toEqual([['#29','#21'],['#3','#24'],['#155','—']]);
     expect(host.querySelector('.rank-table tbody tr td.in-prompt')?.textContent).toBe('#3');
+  });
+  it('counts a chunk a context adds past the tenth as in the prompt, and one a reranker ranks there as handed on', async () => {
+    const fixture = TestBed.createComponent(PipelineFlow);
+    fixture.componentRef.setInput('id','q'); fixture.componentRef.setInput('runs',[reranked,context]);
+    await fixture.whenStable();
+    const cells = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.rank-table tbody tr')].map(row => [...row.querySelectorAll('td')].map(cell => cell.className + ' ' + cell.textContent?.trim()));
+    expect(cells).toEqual([['in-prompt #2','in-prompt #2'],['handed-on #23','in-prompt #12'],['missing —','missing —']]);
   });
   it('widens the drawing with its columns, so that no caption runs into the next one', async () => {
     const stages: EvaluationRun['layers'][] = [{retriever:'bm25'},{retriever:'dense-qwen3-0.6b'},{retriever:'rrf-bm25-dense'},{retriever:'rrf-bm25-dense',expand:'refs'},

@@ -10,10 +10,12 @@ class Step(Enum):
     RETRIEVER = "retriever"
     EXPAND = "expand"
     RERANK = "rerank"
+    CONTEXT = "context"
 
 
 class Technique(ABC):
-    """One way of doing a step: a retriever, an expander or a reranker, under the name its registry gives it."""
+    """One way of doing a step: a retriever, an expander, a reranker or a context, under the name its registry gives
+    it."""
 
     step: Step
 

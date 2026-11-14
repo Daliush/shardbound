@@ -6,7 +6,7 @@ import { PipelineBuilder } from './pipeline-builder';
 
 function run(layers: Layers, recall: number, candidates: number): EvaluationRun {
   return {layers:{retriever:layers['retriever'] ?? null,expand:layers['expand'] ?? null,rerank:layers['rerank'] ?? null,answer:null},questions:[],
-    scores:{overall:{mean_recall_at:{'10':recall},mean_reciprocal_rank:recall/2,mean_candidate_count:candidates,question_count:61},by_category:{}}};
+    scores:{overall:{mean_context_recall:recall,mean_recall_at:{'10':recall},mean_reciprocal_rank:recall/2,mean_candidate_count:candidates,question_count:61},by_category:{}}};
 }
 const RUNS = [
   run({retriever:'random'},.09,191), run({retriever:'bm25'},.53,118), run({retriever:'bm25-robertson'},.57,112),
@@ -29,13 +29,22 @@ describe('Builder model', () => {
     expect(stageNodes(RUNS,{}).map(node => node.layer)).toEqual(['retriever','expand','rerank']);
     expect(fixedStages(RUNS)).toEqual([{layer:'answer',name:'Answer model',value:null}]);
   });
+  it('draws the context as a step of its own, named, described, and counted by the chunks the prompt holds', () => {
+    const cut: EvaluationRun = {...run({retriever:'bm25'},.53,12),layers:{retriever:'bm25',expand:null,rerank:null,context:'top10-plus-named-cards',answer:null}};
+    const context = stageNodes([...RUNS,cut],{retriever:'bm25'}).at(-1)!;
+
+    expect([context.layer,context.name,context.role]).toEqual(['context','Context','Chooses what the prompt holds']);
+    expect(context.families.map(family => [family.family,family.description])).toEqual([
+      ['None','The ranking, not cut'],['Top 10 + named cards','The first 10 chunks, then the cards the question names']]);
+    expect(flowCounts([...RUNS,cut],{retriever:'bm25',context:'top10-plus-named-cards'},['retriever','expand','rerank','context'])).toEqual([118,118,118,12]);
+  });
   it('counts the chunks leaving each step from the recorded pipeline cut after it', () => {
     expect(flowCounts(RUNS,{retriever:'bm25',expand:null,rerank:'minilm-l6'},['retriever','expand','rerank'])).toEqual([118,118,20]);
   });
   it('ranks a pipeline among the others, ties sharing a rank and the floor left out, and starts from the best', () => {
-    expect(rankOf(RUNS,RUNS[4],'mean_recall_at.10',false)).toBe(3);
-    expect(rankOf(RUNS,RUNS[2],'mean_recall_at.10',false)).toBe(3);
-    expect(rankOf(RUNS,RUNS[0],'mean_recall_at.10',false)).toBeNull();
+    expect(rankOf(RUNS,RUNS[4],'mean_context_recall',false)).toBe(3);
+    expect(rankOf(RUNS,RUNS[2],'mean_context_recall',false)).toBe(3);
+    expect(rankOf(RUNS,RUNS[0],'mean_context_recall',false)).toBeNull();
     expect(bestRun(RUNS)).toBe(RUNS[6]);
   });
 });

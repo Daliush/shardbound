@@ -39,6 +39,29 @@ describe('Leaderboard', () => {
     expect(names(host)).toEqual(Array.from({length:10},(_,index) => 'bm25-' + (13-index)));
     expect(host.querySelector('app-pager .range .sr-only')?.textContent).toBe('11–20');
   });
+  it('shows the chunks of each pipeline after its scores, a column it never ranks by, when the file has them', async () => {
+    const sized = RUNS.map(each => ({...each,scores:{...each.scores,overall:{...each.scores.overall,mean_candidate_count:12.2}}}));
+    const fixture = TestBed.createComponent(Leaderboard);
+    fixture.componentRef.setInput('runs',sized); fixture.componentRef.setInput('scores',['mean_recall_at.10']); fixture.componentRef.setInput('metric','mean_recall_at.10');
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('.board-head .size-cell')?.textContent).toBe('Chunks');
+    expect(host.querySelector('.board-head .size-cell button')).toBeNull();
+    expect(host.querySelector('.board-row .size-cell')?.textContent?.trim()).toBe('12.2');
+    expect((await board('mean_recall_at.10')).host.querySelector('.size-cell')).toBeNull();
+  });
+  it('says a context that leads is read with its size, since the answers choose the context', async () => {
+    const context: EvaluationRun = {layers:{retriever:'rrf',context:'top10-plus-named-cards-refs',answer:null},questions:[],
+      scores:{overall:{mean_recall_at:{'10':.5,'20':.5},mean_candidate_count:19.7},by_category:{}}};
+    const fixture = TestBed.createComponent(Leaderboard);
+    fixture.componentRef.setInput('runs',[...RUNS,context]); fixture.componentRef.setInput('scores',['mean_recall_at.10']); fixture.componentRef.setInput('metric','mean_recall_at.10');
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('.context-note')?.textContent).toBe('19.7 chunks in the prompt. A bigger context holds more by its size alone: the answers on dev choose the context.');
+    expect((await board('mean_recall_at.10')).host.querySelector('.context-note')).toBeNull();
+  });
   it('keeps the page open when the ranking metric changes, so the pipelines that cross its edge come and go', async () => {
     const {fixture,host} = await board('mean_recall_at.10');
     host.querySelector<HTMLButtonElement>('app-pager button[aria-label="Next 10"]')!.click(); await fixture.whenStable();

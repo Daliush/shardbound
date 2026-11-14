@@ -4,7 +4,8 @@ from rag.comparison.comparison_service import Comparison, RunComparison
 
 
 def format_comparison_table(comparison: Comparison) -> str:
-    lines = ["| Run | Recall@10 | Recall@20 | Questions ranked differently |", "|---|---:|---:|---|"]
+    lines = ["| Run | Decided by | Before -> after | Chunks | Questions ranked differently |",
+             "|---|---|---:|---:|---|"]
     for run in comparison.runs:
         lines.append(format_row(run))
     if comparison.new_run_names:
@@ -14,5 +15,5 @@ def format_comparison_table(comparison: Comparison) -> str:
 
 def format_row(run: RunComparison) -> str:
     reranked = ", ".join(run.reranked_question_ids) or "none"
-    return (f"| {run.name} | {run.recall_at_10_before:.1%} -> {run.recall_at_10_after:.1%} "
-            f"| {run.recall_at_20_before:.1%} -> {run.recall_at_20_after:.1%} | {reranked} |")
+    return (f"| {run.name} | {run.metric_name} | {run.before:.1%} -> {run.after:.1%} "
+            f"| {run.candidates_before:.1f} -> {run.candidates_after:.1f} | {reranked} |")

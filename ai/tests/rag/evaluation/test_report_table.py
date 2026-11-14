@@ -24,3 +24,17 @@ def test_formats_one_row_for_all_the_questions_then_one_per_category():
         "| interaction | 1 | 50.0% | 50.0% | 0.700 | 0.700 | 1.000 | 41.0 |",
         "| simple-rule | 1 | 100.0% | 100.0% | 0.500 | 0.500 | 0.500 | 20.0 |",
     ]
+
+
+def test_shows_context_recall_first_and_only_the_metrics_a_context_was_scored_with():
+    scores = Scores(question_count=2, metric_means={"context_recall": 0.849, "recall_at.10": 0.75,
+                                                    "binary_ndcg_at.10": 0.6},
+                    mean_candidate_count=19.7, mean_recall_curve=None, latency_p50_seconds=0.0,
+                    latency_p95_seconds=0.0)
+    report = Report(overall=scores, by_category={}, questions=[])
+
+    assert format_report_table(report).splitlines() == [
+        "| Questions | Count | Context recall | Recall@10 | Binary nDCG@10 | Candidates |",
+        "|---|---:|---:|---:|---:|---:|",
+        "| all | 2 | 84.9% | 75.0% | 0.600 | 19.7 |",
+    ]

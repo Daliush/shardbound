@@ -6,4 +6,5 @@ slower pipeline is a variant.
 
 from rag.evaluation.runs import Layers
 
-BASELINE = Layers(retriever="rrf-bm25-dense", expand="refs", rerank="minilm-l6")
+BASELINE = Layers(retriever="rrf-bm25-dense", expand="refs", rerank="minilm-l6",
+                  context="top10-plus-named-cards-refs")

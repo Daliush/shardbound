@@ -45,9 +45,10 @@ export class RecallChart implements OnDestroy {
   ngOnDestroy(): void { this.observer?.disconnect(); }
   /** Recall@k at the budget: a point of the recall curve, written as the curve is. */
   protected formatRecall(value: number | null): string { return this.catalog().format('mean_recall_curve',value); }
-  protected readonly all = computed(() => this.runs().map(run => {
-    const scores = this.category() ? run.scores.by_category[this.category()] : run.scores.overall;
-    return {key:runKey(run.layers),name:pipelineName(run),color:runColor(run),curve:recallCurve(scores),summary:candidateSummary(scores,this.catalog()),description:run.description,random:isFloor(run),variant:isVariant(run)};
+  /** Every run that ends with a ranking: a context has no curve, since the prompt holds all of it. */
+  protected readonly all = computed(() => this.runs().flatMap(run => {
+    const scores = this.category() ? run.scores.by_category[this.category()] : run.scores.overall, curve = recallCurve(scores);
+    return curve.length ? [{key:runKey(run.layers),name:pipelineName(run),color:runColor(run),curve,summary:candidateSummary(scores,this.catalog()),description:run.description,random:isFloor(run),variant:isVariant(run)}] : [];
   }));
   protected readonly maximum = computed(() => Math.max(1,...this.all().map(series => series.curve.length)));
   protected readonly limit = computed(() => this.full() ? this.maximum() : Math.min(70,this.maximum()));

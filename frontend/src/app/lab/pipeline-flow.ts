@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { EvaluationRun } from '../api/evaluation';
 import { Settings } from '../core/settings';
 import { ChunkChip } from './chunk-chip';
-import { PipelineColumn, PipelineSlot, citedChunks, columnSummary, pipelineColumns } from './pipeline-model';
+import { PipelineColumn, PipelineSlot, citedChunks, columnSummary, isContext, pipelineColumns } from './pipeline-model';
 
 /**
  * Pixels of the drawing: a rank every STEP, columns GAP apart after a GUTTER for the cut labels. A column is never
@@ -75,7 +75,7 @@ export class PipelineFlow implements OnDestroy {
   /** In the prompt, among the ranks the stage hands on, past them, or never returned. */
   protected rankPlace(column: PipelineColumn, chunk: string): string {
     const rank = column.ranks[chunk] ?? null;
-    return rank === null ? 'missing' : rank <= 10 ? 'in-prompt' : rank <= column.slots.length ? 'handed-on' : 'beyond';
+    return rank === null ? 'missing' : rank <= 10 || isContext(column.stage) ? 'in-prompt' : rank <= column.slots.length ? 'handed-on' : 'beyond';
   }
   private anchor(item: {column: PipelineColumn; boxY: number; boxHeight: number}, chunk: string, x: number): [number,number] | null {
     const rank = item.column.ranks[chunk] ?? null;

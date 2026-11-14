@@ -3,12 +3,13 @@ import math
 import pytest
 
 from rag.chunks import Chunk
-from rag.evaluation.evaluation_service import apply, continue_with, evaluate_combinations, score
+from rag.evaluation.evaluation_service import (STEPS_AFTER_RETRIEVAL, apply, continue_with, evaluate_combinations,
+                                               score)
 from rag.evaluation.questions import Question
 from rag.evaluation.runs import Layers
 from rag.retrievers import Retriever
 from rag.technique import Step
-from tests.rag.evaluation.fake_techniques import CardAddingExpander, ReversingReranker
+from tests.rag.evaluation.fake_techniques import CardAddingExpander, FirstChunkContext, ReversingReranker
 
 QUESTIONS = [
     Question("rule/2.2", "simple-rule", "Two factions in one deck?", True, frozenset({"2.2"})),
@@ -109,9 +110,57 @@ def test_asks_only_the_answerable_questions_and_runs_each_retriever_then_every_p
     chunks = [Chunk("2.1", "rule", None, "[2. Deck building] A deck contains exactly 30 cards.", (), "r", "h1"),
               Chunk("2.2", "rule", None, "[2. Deck building] A deck holds cards of one faction.", (), "r", "h2")]
 
-    runs = evaluate_combinations(["random", "bm25"], chunks, {Step.EXPAND: [], Step.RERANK: [ReversingReranker()]},
-                                 QUESTIONS)
+    techniques = {Step.EXPAND: [], Step.RERANK: [ReversingReranker()], Step.CONTEXT: []}
+
+    runs = evaluate_combinations(["random", "bm25"], chunks, techniques, QUESTIONS)
 
     assert [run.layers for run in runs] == [Layers(retriever="random"), Layers(retriever="random", rerank="reversing"),
                                             Layers(retriever="bm25"), Layers(retriever="bm25", rerank="reversing")]
     assert runs[0].report.overall.question_count == 2
+
+
+def test_builds_each_pipeline_with_and_without_each_context_the_context_last():
+    techniques = {Step.EXPAND: [], Step.RERANK: [ReversingReranker()], Step.CONTEXT: [FirstChunkContext()]}
+
+    runs = continue_with(apply(FixedRetriever(), None, ANSWERABLE), STEPS_AFTER_RETRIEVAL, techniques, ANSWERABLE)
+
+    assert [run.layers for run in runs] == [
+        Layers(retriever="fixed", context="first-chunk"),
+        Layers(retriever="fixed", rerank="reversing"),
+        Layers(retriever="fixed", rerank="reversing", context="first-chunk")]
+    assert runs[2].description == "fixed rankings; its top 20 reversed; cut to its first chunk, then rule 11.3.3"
+
+
+def test_scores_a_ranking_s_context_recall_on_its_first_ten_chunks():
+    ranking = score(apply(FixedRetriever(), None, ANSWERABLE)).report
+
+    [deck_question, anchor_question] = ranking.questions
+    assert deck_question.metric_values["context_recall"] == 1.0
+    assert anchor_question.metric_values["context_recall"] == 0.5, "11.3.3 is 21st"
+    assert ranking.overall.metric_means["context_recall"] == ranking.overall.metric_means["recall_at.10"]
+
+
+def test_scores_a_context_on_every_chunk_it_holds_and_keeps_no_metric_of_an_order_past_ten():
+    context = score(apply(FirstChunkContext(), apply(FixedRetriever(), None, ANSWERABLE), ANSWERABLE)).report
+
+    [deck_question, anchor_question] = context.questions
+    assert deck_question.top_chunk_ids == ["2.1", "11.3.3"]
+    assert deck_question.metric_values["context_recall"] == 0.0, "2.2 was second"
+    assert anchor_question.relevant_ranks == {"11.3.2": 1, "11.3.3": 2}
+    assert anchor_question.metric_values["context_recall"] == 1.0
+    assert list(context.overall.metric_means) == ["context_recall", "recall_at.10", "binary_ndcg_at.10"]
+    assert context.overall.metric_means["context_recall"] == 0.5
+    assert context.overall.mean_candidate_count == 2, "the size of the context"
+    assert context.overall.mean_recall_curve is None
+    assert context.by_category["interaction"].metric_means["context_recall"] == 1.0
+
+
+def test_keeps_every_chunk_of_a_context_and_a_ranking_s_first_twenty():
+    long_context = FirstChunkContext()
+    long_context.build_context = lambda question, ranked: [*ranked, "11.3.3"]
+    retrieved = apply(FixedRetriever(), None, ANSWERABLE)
+
+    [_, anchor_question] = score(apply(long_context, retrieved, ANSWERABLE)).report.questions
+
+    assert len(anchor_question.top_chunk_ids) == 21, "the retriever handed on 20, the context added one"
+    assert len(score(retrieved).report.questions[1].top_chunk_ids) == 20

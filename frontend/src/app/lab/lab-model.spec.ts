@@ -1,6 +1,7 @@
-import { EvaluationQuestion, EvaluationRun } from '../api/evaluation';
+import { Evaluation, EvaluationQuestion, EvaluationRun } from '../api/evaluation';
 import { decodeRun, isFloor, layerNames, runKey, variants } from './layer-model';
-import { countDifferences, differences, metrics } from './metrics';
+import { MetricCatalog } from './metric-catalog';
+import { DECISION_METRIC, candidateSummary, countDifferences, differences, metrics, questionMetric, withContextRecall } from './metrics';
 import { readState, writeState } from './url-state';
 function question(id: string, value: number): EvaluationQuestion { return {question_id:id,category:'rule',top_chunk_ids:['1.1','ember.ash-warden'],recall_at:{'10':value},reciprocal_rank:.5,relevant_ranks:{},candidate_count:2}; }
 function run(layers: EvaluationRun['layers'], questions: EvaluationQuestion[] = []): EvaluationRun { return {layers,scores:{overall:{mean_recall_at:{'10':.5},latency_ms:12.5,quality:{custom_metric:.3}},by_category:{}},questions}; }
@@ -27,6 +28,36 @@ describe('Lab metrics', () => {
   it('compares only matching questions with both values and counts ties', () => {
     const rows = differences(run({},[question('a',.8),question('b',.2),question('c',.4),question('missing',1)]),run({},[question('a',.3),question('b',.7),question('c',.4)]),'mean_recall_at.10');
     expect(rows.map(row => row.id)).toEqual(['a','c','b']); expect(countDifferences(rows)).toEqual({a:1,tie:1,b:1});
+  });
+});
+describe('Context recall, the decision metric', () => {
+  const catalog = MetricCatalog.fromEvaluation(null);
+  const evaluation = (runs: EvaluationRun[]): Evaluation => ({dataset:{version:'v2',split:'dev'},evaluated_at:'2026-11-07T23:27:39Z',code:'74b9fa7',runs});
+  it('gives a file recorded before it its Recall@10, overall, by category and per question, the value it has for a ranking', () => {
+    const old: EvaluationRun = {...run({retriever:'bm25'},[question('a',.4)]),scores:{overall:{mean_recall_at:{'10':.5}},by_category:{rule:{mean_recall_at:{'10':.4}}}}};
+
+    const [filled] = withContextRecall(evaluation([old])).runs;
+
+    expect(filled.scores.overall['mean_context_recall']).toBe(.5);
+    expect(filled.scores.by_category['rule']['mean_context_recall']).toBe(.4);
+    expect(questionMetric(filled.questions[0],DECISION_METRIC)).toBe(.4);
+    expect(metrics([filled])[0]).toBe(DECISION_METRIC);
+  });
+  it('describes it in such a file by the file\'s own text of Recall@10, which it is', () => {
+    const recall = {path:'mean_recall_at.10',name:'Recall@10',display:'share' as const,what:'The share found in the first 10.',how:'Count…',represents:'Whether…'};
+
+    const filled = withContextRecall({...evaluation([run({retriever:'bm25'})]),metrics:[recall]});
+
+    expect(filled.metrics).toEqual([{...recall,path:'mean_context_recall',name:'Context recall'},recall]);
+  });
+  it('leaves a file that records it as written', () => {
+    const recorded = evaluation([{...run({retriever:'bm25'}),scores:{overall:{mean_context_recall:.849,mean_recall_at:{'10':.711}},by_category:{}}}]);
+
+    expect(withContextRecall(recorded)).toBe(recorded);
+  });
+  it('sums a context up by what the prompt holds, since it has no recall curve', () => {
+    expect(candidateSummary({mean_context_recall:.849,mean_candidate_count:19.7,mean_recall_curve:null},catalog)).toBe('84.9% of 19.7 chunks in the prompt');
+    expect(candidateSummary({mean_candidate_count:41.2,mean_recall_curve:[.5,.937]},catalog)).toBe('93.7% of 41.2 candidates');
   });
 });
 describe('Lab URL', () => {

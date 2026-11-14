@@ -7,11 +7,11 @@ import { anchorOf, buildGuide, findLeader } from './metric-guide-model';
 function described(path: string, name: string, display: MetricDescription['display']): MetricDescription {
   return {path,name,display,what:name + ' does this.',how:name + ' is computed so.',represents:name + ' stands for that.'};
 }
-const METRICS = [described('mean_recall_at.10','Recall@10','share'),described('mean_binary_ndcg_at.10','Binary nDCG@10','score'),
+const METRICS = [described('mean_context_recall','Context recall','share'),described('mean_recall_at.10','Recall@10','share'),described('mean_binary_ndcg_at.10','Binary nDCG@10','score'),
   described('latency_p95_seconds','Latency p95','seconds'),described('question_count','Questions','count'),
   described('mean_candidate_count','Candidates','count'),described('mean_recall_curve','Recall curve','share')];
 function run(retriever: string, recall: number, ndcg: number, candidates: number, seconds: number, rerank: string | null = null): EvaluationRun {
-  return {layers:{retriever,rerank,answer:null},questions:[],scores:{by_category:{},overall:{mean_recall_at:{'10':recall},mean_binary_ndcg_at:{'10':ndcg},
+  return {layers:{retriever,rerank,answer:null},questions:[],scores:{by_category:{},overall:{mean_context_recall:recall,mean_recall_at:{'10':recall},mean_binary_ndcg_at:{'10':ndcg},
     latency_p95_seconds:seconds,question_count:61,mean_candidate_count:candidates,mean_recall_curve:[recall/2,recall,recall]}}};
 }
 const RUNS = [run('random',.089,.056,191,0),run('bm25',.533,.5,191,.01),run('rrf-bm25-dense',.727,.623,41.3,1.27,'minilm-l6')];
@@ -24,9 +24,9 @@ describe('Metric guide model', () => {
     const groups = buildGuide(MetricCatalog.fromEvaluation(evaluation(METRICS)),RUNS);
 
     expect(groups.map(group => [group.role,group.entries.map(entry => entry.description.name)])).toEqual([
-      ['decides',['Recall@10']],['explains',['Binary nDCG@10']],['speed',['Latency p95']]]);
+      ['decides',['Context recall']],['explains',['Recall@10','Binary nDCG@10']],['speed',['Latency p95']]]);
   });
-  it('samples each value on the top pipeline by Recall@10 against the random floor, a longer bar always better', () => {
+  it('samples each value on the top pipeline by context recall against the random floor, a longer bar always better', () => {
     const [decides,explains,speed] = buildGuide(MetricCatalog.fromEvaluation(evaluation(METRICS)),RUNS);
 
     expect(findLeader(RUNS)?.layers['rerank']).toBe('minilm-l6');
@@ -43,6 +43,18 @@ describe('Metric guide model', () => {
 
     expect(groups.map(group => group.role)).toEqual(['decides','explains','speed','cost']);
     expect(groups[3].entries[0].better).toBe('lower');
+  });
+  it('samples a score a context lacks on the top pipeline that has it, so that a context leading hides none', () => {
+    const context: EvaluationRun = {layers:{retriever:'rrf-bm25-dense',rerank:'minilm-l6',context:'top10-plus-named-cards-refs',answer:null},questions:[],
+      scores:{by_category:{},overall:{mean_context_recall:.849,mean_recall_at:{'10':.727},latency_p95_seconds:1.27,question_count:61,mean_candidate_count:19.7,mean_recall_curve:null}}};
+    const runs = [...RUNS,context];
+
+    const groups = buildGuide(MetricCatalog.fromEvaluation({...evaluation(METRICS),runs}),runs);
+
+    expect(groups.map(group => [group.role,group.entries.map(entry => entry.description.name)])).toEqual([
+      ['decides',['Context recall']],['explains',['Recall@10','Binary nDCG@10']],['speed',['Latency p95']]]);
+    expect(groups[0].entries[0].sample?.leader).toContain('Top 10 + named cards + their refs');
+    expect(groups[1].entries[1].sample?.leader).toBe('RRF · BM25 + dense + MiniLM-L6 cross-encoder');
   });
   it('describes nothing for an evaluation written before its values described themselves', () => {
     expect(buildGuide(MetricCatalog.fromEvaluation(evaluation()),RUNS)).toEqual([]);
@@ -61,12 +73,12 @@ describe('Metric guide', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect([...host.querySelectorAll('.metric-card h3')].map(title => title.textContent)).toEqual(
-      ['Recall@10','Binary nDCG@10','Latency p95']);
+      ['Context recall','Recall@10','Binary nDCG@10','Latency p95']);
     const ndcg = host.querySelector('#metric-mean-binary-ndcg-at-10')!;
     expect(ndcg.querySelector('.card-what')?.textContent).toBe('Binary nDCG@10 does this.');
     expect([...ndcg.querySelectorAll('.facet p')].map(text => text.textContent)).toEqual(['Binary nDCG@10 is computed so.','Binary nDCG@10 stands for that.']);
     expect(ndcg.querySelector('.display-badge')?.textContent).toBe('Score · 0 to 1');
-    expect(host.querySelectorAll('.rail-item')).toHaveLength(3);
+    expect(host.querySelectorAll('.rail-item')).toHaveLength(4);
   });
   it('offers the latest evaluation when the open one describes nothing', async () => {
     const fixture = TestBed.createComponent(MetricGuide);

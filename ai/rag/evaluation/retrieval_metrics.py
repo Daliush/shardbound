@@ -1,13 +1,16 @@
 """
 The retrieval metrics of one question: how well a ranking holds the chunks it needs. Each is read from the ranks of
 the question's relevant chunks in the ranking, which `find_relevant_ranks` finds once, and says what it does, how and
-what it represents. `RETRIEVAL_METRICS` lists every metric the evaluation scores.
+what it represents. Context recall decides; `find_step_metrics` says which metrics score what a step returns:
+`RANKING_METRICS` a ranking, `CONTEXT_METRICS` a context.
 """
 
 import math
 from abc import ABC, abstractmethod
 
+from rag.contexts import PROMPT_SIZE
 from rag.evaluation.metric_description import Display, MetricDescription
+from rag.technique import Step
 
 CUTOFFS = (10, 20)
 """The k of Recall@k and binary nDCG@k. The share of the relevant chunks a run ranks at all, however many chunks, is
@@ -117,6 +120,38 @@ class ReciprocalRank(RetrievalMetric):
         return 1 / first_rank if first_rank is not None else 0.0
 
 
+class ContextRecall(RetrievalMetric):
+    """
+    The decision metric: the share of a question's relevant chunks the prompt would hold. A run that ends with a
+    context hands the prompt all of it: `prompt_size` is None. A run that ends with a ranking would hand it its first
+    `prompt_size` chunks, so there it is Recall@10.
+    """
+
+    def __init__(self, prompt_size: int | None) -> None:
+        super().__init__(
+            key="context_recall", name="Context recall", display=Display.SHARE,
+            what="Out of the chunks a question needs, the share the prompt would hold.",
+            how=f"The chunks a question needs are the ones its answer key cites. A run that ends with a context hands "
+                f"the prompt every chunk of it; a run that ends with a ranking would hand it its first {PROMPT_SIZE}. "
+                f"Count how many of the needed chunks are among them, then divide by how many there are: 6 held out "
+                f"of 7 gives 86%. Then take the average over all the questions. For a ranking, it is Recall@"
+                f"{PROMPT_SIZE}.",
+            represents=f"Whether the prompt holds what the answer needs: an answer cannot rely on a chunk it does not "
+                       f"read. It decides between pipelines. Between rankings, every prompt holds {PROMPT_SIZE} "
+                       f"chunks; a context holds more, so read it with its number of chunks: a context of every chunk "
+                       f"would score 100%.")
+        self._prompt_size = prompt_size
+
+    def score(self, relevant_ranks: dict[str, int | None]) -> float:
+        """The share of the relevant chunks among the first `prompt_size`, or at any rank when it is None: 6 of 7
+        gives 0.86."""
+        held = 0
+        for rank in relevant_ranks.values():
+            if rank is not None and (self._prompt_size is None or rank <= self._prompt_size):
+                held += 1
+        return held / len(relevant_ranks)
+
+
 def list_retrieval_metrics() -> list[RetrievalMetric]:
     """Recall at each cutoff, binary nDCG at each cutoff, then the reciprocal rank: the order a report shows them in."""
     metrics: list[RetrievalMetric] = []
@@ -129,3 +164,21 @@ def list_retrieval_metrics() -> list[RetrievalMetric]:
 
 
 RETRIEVAL_METRICS = list_retrieval_metrics()
+"""The metrics that read a ranking's order: Recall and binary nDCG at each cutoff, then the reciprocal rank."""
+
+RANKING_METRICS: list[RetrievalMetric] = [ContextRecall(PROMPT_SIZE), *RETRIEVAL_METRICS]
+"""The metrics of a run that ends with a ranking: context recall, its first `PROMPT_SIZE` chunks, then the others. It
+holds a metric of every key, in the order a report shows them."""
+
+CONTEXT_METRICS: list[RetrievalMetric] = [ContextRecall(None), RecallAtK(PROMPT_SIZE), BinaryNdcgAtK(PROMPT_SIZE)]
+"""The metrics of a run that ends with a context: context recall, every chunk of it, then Recall and binary nDCG at
+`PROMPT_SIZE`, which a context keeps from the ranking it cuts when that ranking holds `PROMPT_SIZE` chunks or more.
+Past its `PROMPT_SIZE`th chunk, a context's order is no ranking any step reads, so the metrics of a longer cutoff and
+the reciprocal rank are left out."""
+
+
+def find_step_metrics(step: Step) -> list[RetrievalMetric]:
+    """The metrics that score what a technique of `step` returns."""
+    if step is Step.CONTEXT:
+        return CONTEXT_METRICS
+    return RANKING_METRICS
