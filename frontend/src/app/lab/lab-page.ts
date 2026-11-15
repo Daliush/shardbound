@@ -24,13 +24,16 @@ import { SPRING_PROPERTIES, placeMarker } from './springs';
 import { Settings } from '../core/settings';
 import { deviceName, pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
 import { RecallChart } from './recall-chart';
+import { filmExample } from './film/film-model';
+import { PipelineFilm } from './film/pipeline-film';
+import { StepChain } from './step-chain';
 import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './url-state';
 
 @Component({
   selector:'app-lab-page',
-  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber],
+  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber,PipelineFilm,StepChain],
   host:{'[style]':'springs'},
-  templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
+  templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-nav.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
 export class LabPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute); private readonly router = inject(Router); private readonly evaluations = inject(Evaluations);
@@ -46,8 +49,16 @@ export class LabPage implements OnDestroy {
   protected readonly deviceName = deviceName;
   protected readonly at = atPath; protected readonly kind = pipelineKind;
   protected readonly copyMessage = signal('');
-  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'builder',label:'Build',icon:'build'},{id:'compare',label:'Compare',icon:'compare'},{id:'metrics',label:'Metrics',icon:'chart'},{id:'guide',label:'Our metrics',icon:'info'}];
-  protected readonly evidence = [{id:'categories',label:'By category'},{id:'questions',label:'Questions'},{id:'history',label:'History'}];
+  /** The film that explains a pipeline: it opens by itself on a first visit, then waits for "How it works". */
+  protected readonly filmOpen = signal(!filmSeen());
+  /** Whether the evaluation has what the film tells: without it, neither the film nor its button shows. */
+  protected readonly filmReady = computed(() => filmExample(this.runs(),this.dataset()) !== null);
+  protected openFilm(): void { this.filmOpen.set(true); }
+  protected closeFilm(): void { markFilmSeen(); this.filmOpen.set(false); }
+  protected markFilmSeenNow(): void { markFilmSeen(); }
+  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'builder',label:'Build',icon:'build'},{id:'compare',label:'Compare',icon:'compare'},{id:'explore',label:'Explore',icon:'search'}];
+  /** The pages for a closer look, under Explore: what each score means first. */
+  protected readonly explore = [{id:'guide',label:'Guide'},{id:'metrics',label:'All metrics'},{id:'categories',label:'By category'},{id:'questions',label:'Questions'},{id:'history',label:'History'}];
   /** The lab's springs, for every transition of its views. */
   protected readonly springs = SPRING_PROPERTIES;
   protected readonly color = runColor;
@@ -65,12 +76,16 @@ export class LabPage implements OnDestroy {
     for (const row of this.ranked()) { if (chosen.length < 2 && !chosen.includes(row.run)) chosen.push(row.run); }
     return chosen;
   });
+  /** The scores either compared pipeline has: a score neither recorded would only show two dashes. */
+  protected readonly comparedMetrics = computed(() => this.metrics().filter(metric => this.comparison().some(run => atPath(run.scores.overall,metric) !== null)));
   protected readonly ranked = computed(() => rankedRuns(this.runs(),this.rankingMetric(),this.catalog()));
   protected readonly baseline = computed(() => this.runs().find(isFloor));
   protected readonly graphRuns = computed(() => [...this.runs()].sort((a,b) => Number(isFloor(a))-Number(isFloor(b))));
   protected readonly activeView = computed(() => this.state().tab === 'head-to-head' ? 'compare' : this.state().tab);
-  protected readonly title = computed(() => ({leaderboard:'Which pipeline finds the rules best?',metrics:'Every metric, one at a time',guide:'Our metrics',compare:'Compare combinations',builder:'Build a pipeline',questions:'Explore the evidence',categories:'Scores by category',history:'Evaluation history'}[this.activeView()] ?? 'Benchmark'));
-  protected readonly subtitle = computed(() => ({leaderboard:this.ranked().length + ' pipelines, the same ' + this.count() + ' questions. The best one first.',metrics:'How much context each pipeline needs, then each score on its own axis.',guide:'What each score measures, how it is computed, and what it stands for.',compare:'Two pipelines. The same questions. A clear comparison.',builder:'Change a step and watch the score move. Every number is a recorded run.',questions:'Inspect the sources retrieved for each question.',categories:'Understand performance across question types.',history:'Follow recorded results over time.'}[this.activeView()] ?? ''));
+  /** The main tab the page belongs to: Explore holds the pages for a closer look. */
+  protected readonly section = computed(() => this.explore.some(view => view.id === this.activeView()) ? 'explore' : this.activeView());
+  protected readonly title = computed(() => ({leaderboard:'Which pipeline finds the rules best?',metrics:'Every score, one at a time',guide:'What each score means',compare:'Two pipelines, side by side',builder:'Build a pipeline',questions:'Every question, every source',categories:'Scores by kind of question',history:'Evaluations over time'}[this.activeView()] ?? 'Benchmark'));
+  protected readonly subtitle = computed(() => ({leaderboard:this.ranked().length + ' pipelines, the same ' + this.count() + ' questions.',builder:'Pick a variant for each step. Every score is a recorded run.'}[this.activeView()] ?? ''));
   protected readonly categories = computed(() => [...new Set(this.runs().flatMap(run => run.questions.map(question => question.category)))].sort());
   protected readonly count = computed(() => Number(this.runs()[0]?.scores.overall['question_count'] ?? 0));
   protected readonly times = computed(() => this.splitTimes()[this.state().split] ?? []);
@@ -100,7 +115,7 @@ export class LabPage implements OnDestroy {
   private readonly indicator = viewChild.required<ElementRef<HTMLElement>>('indicator');
   constructor() {
     effect(() => { this.reportRequest(); untracked(() => void this.load(this.state(),this.query()['pins'] === undefined)); });
-    afterRenderEffect(() => this.slideIndicator(this.activeView()));
+    afterRenderEffect(() => this.slideIndicator(this.section()));
   }
   ngOnDestroy(): void { this.generation++; }
   protected async load(state = this.state(), defaultPins = false): Promise<void> {
@@ -194,4 +209,7 @@ export class LabPage implements OnDestroy {
   protected async share(): Promise<void> { try { await navigator.clipboard.writeText(location.href); this.copied.set(true); this.copyMessage.set('Link copied.'); } catch { this.copyMessage.set('Copy the URL from your browser to share this view.'); } }
 }
 
-
+const FILM_SEEN = 'shardbound.lab.film-seen';
+/** Whether this browser already watched or closed the film; a browser that keeps nothing counts as a first visit. */
+function filmSeen(): boolean { try { return localStorage.getItem(FILM_SEEN) === '1'; } catch { return false; } }
+function markFilmSeen(): void { try { localStorage.setItem(FILM_SEEN,'1'); } catch { /* kept nowhere: the film plays again next visit */ } }

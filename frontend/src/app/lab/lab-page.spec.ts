@@ -3,8 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LabPage } from './lab-page';
-function navButton(host: HTMLElement, label: string): HTMLButtonElement {
-  return [...host.querySelectorAll<HTMLButtonElement>('.lab-nav button')].find(button => button.textContent?.trim() === label)!;
+function navButton(host: HTMLElement, label: string, nav = '.lab-nav'): HTMLButtonElement {
+  return [...host.querySelectorAll<HTMLButtonElement>(nav + ' button')].find(button => button.textContent?.trim() === label)!;
 }
 describe('LabPage loading', () => {
   beforeEach(() => TestBed.configureTestingModule({imports:[LabPage],providers:[provideHttpClient(),provideHttpClientTesting(),provideRouter([])]}));
@@ -39,13 +39,18 @@ describe('LabPage loading', () => {
     ]}));
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('.leaderboard')).not.toBeNull(); });
     http.expectOne('/api/datasets/v2/dev').flush('{"id":"q","category":"rule","question":"How many HP?","answerable":true,"key_facts":[],"citations":[],"cards":[]}\n');
+    await fixture.whenStable();
+    expect([fixture.nativeElement.querySelector('app-pipeline-film'),fixture.nativeElement.querySelector('.how')]).toEqual([null,null]);
     navButton(fixture.nativeElement,'Compare').click();
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('.comparison-picker')).not.toBeNull(); });
     const selects = fixture.nativeElement.querySelectorAll('.comparison-picker select') as NodeListOf<HTMLSelectElement>;
     expect(selects[0].selectedOptions[0].textContent).toContain('Qwen3');
     expect(selects[1].selectedOptions[0].textContent).toBe('BM25');
-    navButton(fixture.nativeElement,'Metrics').click();
+    navButton(fixture.nativeElement,'Explore').click();
+    await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('app-metric-guide')).not.toBeNull(); });
+    navButton(fixture.nativeElement,'All metrics','.explore-nav').click();
     await vi.waitFor(async () => { await fixture.whenStable(); expect(fixture.nativeElement.querySelector('app-metrics-graph')).not.toBeNull(); });
+    http.match('/api/cards').forEach(request => request.flush([]));
     http.verify();
   });
 });

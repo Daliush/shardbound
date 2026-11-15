@@ -1,0 +1,18 @@
+/*
+ * A term of the caption the viewer can point at, underlined with dots; its definition rises over the caption, above
+ * the term, kept inside the player (PipelineFilm.define).
+ */
+.player { position: relative; }
+.term { cursor: help; border-radius: 3px; text-decoration: underline dotted #c3b5ffb3; text-decoration-thickness: 1.5px; text-underline-offset: .24em;
+  transition: color 140ms ease, text-decoration-color 140ms ease; }
+.term:hover, .term:focus-visible { color: #fff; text-decoration-color: var(--accent); }
+.term:focus { outline: none; }
+.term:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.definition { position: absolute; z-index: 5; width: min(20rem, calc(100% - 24px)); padding: .7rem .85rem .75rem; border-radius: 12px; pointer-events: none;
+  font-size: .84rem; line-height: 1.45; color: var(--ink); background: #2b3548; box-shadow: inset 0 1px 0 #ffffff1a, 0 0 0 1px #c3b5ff33, 0 18px 36px -16px #000;
+  visibility: hidden; opacity: 0; translate: 0 4px; transition: opacity 140ms ease, translate 180ms var(--ease-out), visibility 0s 180ms; }
+.definition.shown { visibility: visible; opacity: 1; translate: 0 0; transition: opacity 140ms ease, translate 180ms var(--ease-out); }
+.definition strong { display: block; margin-bottom: .25rem; font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.definition::after { content: ''; position: absolute; top: 100%; left: var(--arrow); width: 10px; height: 10px; translate: -50% -5px; rotate: 45deg; background: #2b3548; box-shadow: 1px 1px 0 #c3b5ff33; }
+@media (prefers-reduced-motion: reduce) { .definition { translate: none; } }

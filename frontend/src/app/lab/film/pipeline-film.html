@@ -1,0 +1,134 @@
+@if (example(); as example) {
+<section class="film" [class.tall]="tall()" aria-label="How a pipeline works">
+  <div #player class="player">
+  <div #screen class="screen" [class.done]="last()" [style.--ratio]="layout().width + ' / ' + layout().height" (click)="next()">
+    <div #stage class="stage" aria-hidden="true" [class.numbered]="numbered()" [style.width.px]="layout().width" [style.height.px]="layout().height"
+      [style.transform]="'translate(' + fit().x + 'px,' + fit().y + 'px) scale(' + fit().scale + ')'">
+      <div class="lamp"></div>
+
+      <div class="question" data-f="question" [style]="at(layout().question)">
+        <small>A player asks</small>
+        <p>{{ example.question }}</p>
+      </div>
+
+      @for (step of steps(); track step.layer; let i = $index) {
+        <div class="rail-step" data-f="step" [style]="at(layout().steps[i])">
+          <span class="rail-icon"><i data-glow></i><app-icon [name]="step.icon" /></span>
+          <span class="rail-text"><strong>{{ step.name }}</strong><small>{{ step.role }}</small></span>
+        </div>
+      }
+
+      <p class="bench-label" data-f="bench-label" [style]="at(layout().bench,20)">{{ bench() }}</p>
+      <p class="tally" data-f="tally" [style]="at(layout().tally)">
+        <small>Needed</small>@for (entry of tally(); track entry.text) { <span><i [class]="entry.tone"></i><b>{{ entry.count }}</b> {{ entry.text }}</span> }
+      </p>
+      <span class="tray-label" data-f="tray" [style]="at(layout().trayLabel)">Cut</span>
+      @for (rank of weights; track $index; let i = $index) { <span class="rank-number" data-f="ranks" [style]="at(layout().rankNumber(i + 1))">{{ i + 1 }}</span> }
+      <div class="cut" data-f="cut" [style.top.px]="layout().cut" [style.left.px]="layout().bench.x" [style.width.px]="layout().bench.w"><span class="range">{{ range() }}</span><span>↑ Top 10 reach the prompt</span></div>
+
+      <div class="prompt" data-f="prompt" [style]="at(layout().prompt)">
+        <strong>Prompt</strong><small>What the LLM reads</small>
+      </div>
+
+      <div class="result" data-f="result" [style]="at(layout().result)">
+        <small>Context recall</small>
+        <p class="fraction"><b>{{ example.best.held }}</b><span>/ {{ example.needed.length }}</span><em>{{ percent(example.best.held,example.needed.length) }}</em></p>
+        @if (missed().length) {
+          <div class="missed-row">
+            <span class="missed-label">Missed</span>
+            @for (id of missed(); track id) { <span class="ghost" data-f="missed">{{ faction(id) ? book.name(id) : '§ ' + id }}</span> }
+          </div>
+        }
+        <p class="average" data-f="average"><b>{{ format(example.best.score) }}</b> over {{ example.questionCount }} questions</p>
+      </div>
+
+      @for (side of [0,1]; track side) {
+        <div class="side" data-f="side" [class.rival]="side === 1" [style]="at(layout().sides[side])">
+          <small>{{ side === 0 ? 'Best pipeline' : 'Dense retrieval alone' }}</small>
+          <div class="chips">
+            @if (side === 0) { @for (step of steps(); track step.layer) { <span>{{ step.name }}</span> } }
+            @else { <span>Retriever · {{ denseName() }}</span> }
+          </div>
+          <div class="side-foot" data-f="side-foot">
+            <span class="dots">@for (id of example.needed; track id; let i = $index) { <i [class.on]="i < (side === 0 ? example.best.held : example.dense.held)"></i> }</span>
+            <b>{{ side === 0 ? example.best.held : example.dense.held }} of {{ example.needed.length }} needed</b>
+          </div>
+          <p class="side-score" data-f="side-score"><b>{{ format(side === 0 ? example.best.score : example.dense.score) }}</b> over {{ example.questionCount }} questions</p>
+        </div>
+      }
+      @for (id of example.dense.top; track id; let i = $index) {
+        <div class="slip copy" data-f="dense-slip" [attr.data-kind]="faction(id) ? 'card' : 'rule'" [attr.data-faction]="faction(id)" [class.needed]="example.needed.includes(id)" [style]="at(sideSlot(1,i,example.dense.top.length))">
+          @if (example.needed.includes(id)) { <i class="glow"></i> }
+          <span class="label">@if (faction(id)) { <b>{{ book.name(id) }}</b> } @else { <b>§ {{ id }}</b><small>{{ rule(id) }}</small> }</span>
+        </div>
+      }
+
+      @for (card of metricCards(); track card.name; let i = $index) {
+        <div class="metric" [attr.data-f]="'metric-' + i" [style]="at(layout().metric(i))">
+          <small>{{ card.name }}</small><strong>{{ card.value }}</strong><p>{{ card.rule }}</p>
+        </div>
+      }
+      @for (weight of weights; track $index; let i = $index) {
+        <span class="weight" data-f="weight" [class.hit]="lastTop()[i]" [style.left.px]="rowAt(i + 1).x + rowAt(i + 1).w - 52" [style.top.px]="rowAt(i + 1).y" [style.height.px]="rowAt(i + 1).h">×{{ weight }}</span>
+      }
+      @if (firstHit() >= 0) {
+        <span class="first" data-f="first" [style]="at(rowAt(firstHit() + 1))"><b>First needed · rank {{ firstHit() + 1 }}</b></span>
+      }
+
+      <div class="outro" data-f="outro">
+        <strong>{{ example.pipelineCount }} pipelines</strong>
+        <span>{{ example.questionCount }} questions · every score recorded</span>
+      </div>
+
+      @for (chunk of chunks(); track chunk.key; let i = $index) {
+        <div class="slip" data-slip [attr.data-kind]="chunk.kind" [attr.data-faction]="chunk.faction" [class.needed]="chunk.needed" [class.cut]="cutKeys().has(chunk.key)">
+          @if (chunk.needed) { <i class="glow"></i> }
+          <b class="num">{{ tags()[i] }}</b>
+          @if (chunk.id; as id) {
+            <span class="label" data-label>
+              @switch (chunk.kind) {
+                @case ('card') { <b>{{ book.name(id) }}</b> }
+                @case ('term') { <b>{{ term(id) }}</b> }
+                @default { <b>§ {{ id }}</b><small>{{ rule(id) }}</small> }
+              }
+            </span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="caption" aria-live="polite">
+    <!-- Every caption, unseen, in the same place: the box is as tall as the longest, so the stage and Next never move. -->
+    @for (beat of beats(); track beat.at) { <div class="caption-line sizer" aria-hidden="true"><p class="eyebrow">{{ title(beat.chapter) }}</p><p class="text">{{ beat.text }}</p></div> }
+    @for (shown of captions(); track shown.at; let first = $first) {
+      <div class="caption-line" animate.enter="caption-in">
+        @if (first) { <p class="eyebrow">{{ title(shown.chapter) }}</p> }
+        <p class="text">@for (part of shown.parts; track $index) {@if (part.term; as term) {<span class="term" tabindex="0" [attr.aria-description]="term.definition"
+          (pointerenter)="define(term,$event)" (pointerleave)="undefine($event)" (focus)="define(term,$event)" (click)="define(term,$event)" (blur)="undefine()">{{ part.text }}</span>} @else {<span>{{ part.text }}</span>}}</p>
+      </div>
+    }
+  </div>
+  <!-- The definition of the term pointed at: one box for every term, out of the caption, which reads itself aloud. -->
+  <div #definition class="definition" aria-hidden="true" [class.shown]="hintOpen()" [style.left.px]="hint()?.left ?? 0" [style.bottom.px]="hint()?.bottom ?? 0"
+    [style.--arrow]="(hint()?.arrow ?? 0) + 'px'"><strong>{{ hint()?.term?.phrase }}</strong>{{ hint()?.term?.definition }}</div>
+
+  <div class="controls">
+    <button class="round back" (click)="previous()" [disabled]="chapterIndex() <= 0" aria-label="Previous step" title="Previous step"><app-icon name="arrow" /></button>
+    <div class="chapters" role="group" aria-label="Steps">
+      @for (chapter of chapters(); track chapter.id; let i = $index) {
+        <button class="chapter" [attr.aria-label]="chapter.title" [attr.data-title]="chapter.title" [attr.aria-current]="chapterIndex() === i ? 'step' : null" (click)="openChapter(i)"><span class="track"><i data-fill></i></span></button>
+      }
+    </div>
+    <span class="count" aria-hidden="true">{{ chapterIndex() + 1 }} / {{ chapters().length }}</span>
+    @if (last()) {
+      <button class="round" (click)="replay()" aria-label="Watch again" title="Watch again"><app-icon name="replay" /></button>
+      <button class="step-button" (click)="explore()">Explore the leaderboard<app-icon name="arrow" /></button>
+    } @else {
+      <button class="step-button" [class.nudge]="!advanced()" (click)="next()">Next<app-icon name="arrow" /></button>
+    }
+    <button class="round close" (click)="close()" aria-label="Close the film" title="Close"><app-icon name="close" /></button>
+  </div>
+  </div>
+</section>
+}

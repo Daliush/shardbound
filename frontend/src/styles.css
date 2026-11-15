@@ -52,3 +52,5 @@ dialog::backdrop { background: color-mix(in srgb, var(--obsidian-950) 85%, trans
 html[data-reduced-motion='true'] *, html[data-reduced-motion='true'] *::before, html[data-reduced-motion='true'] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 html[data-hidden='true'] * { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) { html:not([data-reduced-motion='false']) *, html:not([data-reduced-motion='false']) *::before, html:not([data-reduced-motion='false']) *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+/* On a phone the lab's film takes the whole screen: the page under it stays still (lab/film/pipeline-film.css). */
+@media (max-width: 619.98px) { html:has(app-pipeline-film) { overflow: hidden; } }

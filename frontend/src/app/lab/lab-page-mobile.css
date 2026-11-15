@@ -1,42 +1,39 @@
 @media(max-width:1000px) {
   .lab-page { padding-inline: 1.75rem; }
-  .view-heading h1 { font-size: 1.8rem; }
   .lab-top { flex-wrap: wrap; }
   .comparison-table-head,.comparison-metric { gap: 1.2rem; }
 }
 @media(max-width:700px) {
-  .lab-page { padding: 1.4rem 1rem; }
-  .lab-top { margin-bottom: .6rem; }
-  .report-controls { width: 100%; overflow-x: auto; }
-  .report-controls { scrollbar-width: none; }
-  .report-controls select { flex: none; font-size: .68rem; padding-inline: .45rem; white-space: nowrap; }
-  .share { flex: none; font-size: 0; gap: 0; padding-inline: .6rem; }
-  .share app-icon { font-size: .9rem; }
-  .lab-wordmark { font-size: 1.2rem; }
-  .benchmark-label { font-size: .78rem; }
-  .lab-nav { gap: 1.1rem; }
-  .lab-nav button { font-size: .76rem; gap: .4rem; padding-block: .85rem; }
-  .lab-nav button app-icon { width: 15px; height: 15px; }
-  .view-heading { margin: 1.4rem 0 1.2rem; }
-  .view-heading h1 { font-size: 1.7rem; }
-  .view-heading p { font-size: .78rem; line-height: 1.7; }
+  .lab-page { padding: 1.2rem 1rem 2rem; }
+  .lab-top { gap: .8rem; margin-bottom: 1.1rem; }
+  .lab-wordmark { font-size: 1.4rem; }
+  .benchmark-label { font-size: .74rem; }
+  .lab-tools { width: 100%; }
+  .report-controls { flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .report-controls select { flex: none; font-size: .7rem; padding-inline: .45rem; white-space: nowrap; }
+  .how { padding: 0; width: 38px; font-size: 0; gap: 0; justify-content: center; }
+  .how app-icon { width: 15px; height: 15px; margin-left: 2px; }
+  .lab-nav { width: 100%; }
+  .lab-nav button { flex: 1; padding: 0 .55rem; font-size: .76rem; gap: .35rem; }
+  .lab-nav button app-icon { width: 14px; height: 14px; }
+  .view-heading { margin: 1.5rem 0 1.2rem; }
+  .view-heading p { font-size: .8rem; line-height: 1.6; }
   .sort-control { gap: .4rem; font-size: 0; }
   .sort-control select { max-width: 155px; font-size: .73rem; padding-inline: .5rem; }
-  .evaluation-info { grid-template-columns: 1fr; gap: 1.2rem; }
-  .evaluation-info select { max-width: 320px; }
-  .comparison-pickers { gap: .75rem; margin-bottom: 1.5rem; }
-  .comparison-picker { padding: 1rem .75rem; gap: .6rem; }
-  .comparison-picker > span { font-size: .7rem; }
-  .comparison-picker select { font-size: .76rem; padding-inline: .55rem; }
+  .evaluation-info { grid-template-columns: 1fr; gap: 1rem; }
+  .comparison-pickers { grid-template-columns: 1fr; gap: .75rem; margin-bottom: 1.5rem; }
+  .comparison-picker { padding: 1rem; gap: .6rem; }
   .comparison-table-head { display: none; }
   .comparison-metric { grid-template-columns: 1fr 1fr .75fr; gap: .75rem; padding-block: 1.25rem; }
   .metric-caption { grid-column: 1/-1; }
   .metric-caption small { max-width: none; margin-top: .2rem; }
   .compared-score strong { font-size: 1.4rem; }
   .delta { font-size: .9rem; }
-  .comparison-note { font-size: .7rem; }
   .question-filters { grid-template-columns: 1fr; }
   .question-row { grid-template-columns: 1fr 20px; gap: .5rem; }
   .question-row > .question-category { grid-row: 2; }
   .question-row app-icon { grid-column: 2; grid-row: 1; }
 }
+/* On a phone the film is fixed over the page: it fades out, since a moving theater would carry it along. */
+@media (max-width: 619.98px) { .theater-out { animation-name: theater-fade; } }
+@keyframes theater-fade { to { opacity: 0; } }

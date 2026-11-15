@@ -1,0 +1,20 @@
+/* Four tabs, under a marker that glides from one to the next on a spring. */
+.lab-nav { position: relative; display: flex; align-items: center; gap: .25rem; width: fit-content; max-width: 100%; padding: 4px; border-radius: 999px; background: var(--lab-surface); overflow-x: auto; scrollbar-width: none; }
+.lab-nav::-webkit-scrollbar { display: none; }
+.lab-nav button { position: relative; z-index: 1; flex: none; min-height: 40px; padding: 0 1.15rem; gap: .5rem; border: 0; border-radius: 999px; font-size: .84rem; color: var(--muted); background: transparent; transition: color 180ms ease; }
+.lab-nav button:hover:not(:disabled) { color: var(--text); background: transparent; border: 0; }
+.lab-nav button[aria-current] { color: var(--text); }
+.lab-nav button app-icon { width: 16px; height: 16px; }
+.lab-nav button[aria-current] app-icon { color: var(--lab-accent); }
+.tab-indicator { position: absolute; left: 0; top: 4px; bottom: 4px; width: 0; border-radius: 999px; pointer-events: none; background: var(--lab-subtle); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--white) 6%, transparent), 0 6px 14px -8px var(--black); }
+.tab-indicator[data-placed] { transition: transform var(--spring-snappy-duration) var(--spring-snappy), width var(--spring-snappy-duration) var(--spring-snappy); }
+.explore-nav { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .9rem; animation: how-in 300ms var(--ease-out) both; }
+.explore-nav button { min-height: 34px; padding: 0 .85rem; border: 1px solid transparent; border-radius: 999px; font-size: .78rem; color: var(--muted); background: transparent; transition: color 160ms ease, background 160ms ease; }
+.explore-nav button:hover:not(:disabled) { color: var(--text); background: var(--lab-surface); border-color: transparent; }
+.explore-nav button[aria-current] { color: var(--text); background: var(--lab-surface); border-color: color-mix(in srgb, var(--lab-accent) 40%, transparent); }
+
+.view-heading { margin: 2.2rem 0 1.6rem; }
+.view-heading h1 { margin: 0; font: 600 clamp(2rem, 4vw, 2.7rem)/1.08 var(--font-title); letter-spacing: -.015em; }
+.view-heading p { margin: .55rem 0 0; color: var(--muted); font-size: .88rem; }
+.view-content { min-height: 350px; }
+

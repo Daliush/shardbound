@@ -18,12 +18,14 @@ export class ChunkChip {
   readonly id = input.required<string>();
   protected readonly book = inject(CardBook);
   protected readonly inspect = inject(Inspect);
-  protected readonly rule = computed(() => {
-    const id = this.id();
-    if (!/^\d+(\.\d+)*$/.test(id)) return null;
-    const section = id.startsWith('11.') ? id.split('.').slice(0,2).join('.') : id.split('.')[0];
-    const file = RULE_FILES[section];
-    return file ? {name:file[1],url:'https://github.com/Daliush/shardbound/blob/main/docs/rules/' + file[0]} : null;
-  });
+  protected readonly rule = computed(() => ruleSection(this.id()));
+}
+
+/** The rulebook section a rule chunk belongs to, "Effects" for 8.5, with its file; null for a card or a term. */
+export function ruleSection(id: string): { name: string; url: string } | null {
+  if (!/^\d+(\.\d+)*$/.test(id)) return null;
+  const section = id.startsWith('11.') ? id.split('.').slice(0,2).join('.') : id.split('.')[0];
+  const file = RULE_FILES[section];
+  return file ? {name:file[1],url:'https://github.com/Daliush/shardbound/blob/main/docs/rules/' + file[0]} : null;
 }
 

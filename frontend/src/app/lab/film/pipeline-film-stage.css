@@ -1,0 +1,62 @@
+/*
+ * The stage is a screen: it stays dark in both themes. One lamp hangs over the ranking, a little left of center; the
+ * needed chunks are the only gold on it, the thing the pipeline is looking for.
+ */
+.stage {
+  --ink: #ebe7f1; --dim: #9ba7ba; --edge: #3a465a; --paper: #283244; --paper-hi: #313d51; --deep: #121822;
+  --gold: #f2cd84; --gold-soft: #f2cd8433; --accent: #c3b5ff;
+  --ember: #ff9a63; --tide: #6fdde3; --root: #a8d98b; --neutral: #c3b5ff;
+  position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; color: var(--ink); font-family: var(--font-ui);
+  background:
+    radial-gradient(70% 60% at 50% -8%, #f6e7c81c, transparent 70%),
+    radial-gradient(120% 90% at 50% 45%, transparent 55%, #05080d99),
+    linear-gradient(180deg, #1c2431, #151b25 70%, #12171f);
+}
+.lamp { position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E"); }
+[data-f] { position: absolute; visibility: hidden; }
+
+/* The question, as the player asked it. */
+.question { padding: 16px 18px; border-radius: 16px; background: linear-gradient(180deg, var(--paper-hi), var(--paper)); box-shadow: inset 0 1px 0 #ffffff14, 0 18px 30px -18px #000; }
+.question small { display: block; margin-bottom: 8px; font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.question p { margin: 0; font-size: 15px; line-height: 1.45; text-wrap: pretty; }
+.tall .question { padding: 11px 14px; }
+.tall .question p { font-size: 14px; line-height: 1.4; }
+
+/* The best pipeline's steps: the one at work lights up. */
+.rail-step { display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 14px; }
+.rail-icon { position: relative; flex: none; display: grid; place-content: center; width: 36px; height: 36px; border-radius: 50%; color: var(--accent); background: #c3b5ff1a; box-shadow: inset 0 0 0 1px #c3b5ff40; }
+.rail-icon app-icon { position: relative; width: 18px; height: 18px; }
+.rail-icon i { position: absolute; inset: -5px; border-radius: 50%; opacity: 0; background: radial-gradient(circle, #c3b5ff55, transparent 70%); box-shadow: 0 0 0 1px #c3b5ff99; }
+.rail-text { display: grid; gap: 2px; }
+.rail-text strong { font-size: 15px; font-weight: 500; }
+.rail-text small { font-size: 12px; color: var(--dim); }
+.tall .rail-step { flex-direction: column; justify-content: center; gap: 3px; padding: 0; }
+.tall .rail-icon { width: 22px; height: 22px; }
+.tall .rail-icon app-icon { width: 12px; height: 12px; }
+.tall .rail-text small { display: none; }
+.tall .rail-text strong { font-size: 11.5px; }
+
+.bench-label { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
+.cut { height: 0; border-top: 1px dashed #c3b5ff80; }
+.cut .range { right: auto; left: 0; color: var(--dim); }
+/* Where the 8 needed chunks are: gold in the top 10, outlined lower, dashed once cut. */
+.tally { display: flex; align-items: center; gap: 14px; margin: 0; font-size: 12px; color: var(--dim); white-space: nowrap; }
+.tally small { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.tally span { display: inline-flex; align-items: center; gap: 6px; }
+.tally b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tally i { width: 9px; height: 9px; border-radius: 3px; border: 1px dashed #f2cd8499; }
+.tally i.on { border: 0; background: var(--gold); box-shadow: 0 0 8px #f2cd8466; }
+.tally i.low { border: 1px solid var(--gold); }
+.tray-label { display: grid; align-content: center; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.tall .tally { gap: 10px; font-size: 11px; }
+.rank-number { display: grid; place-content: center end; font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--dim); }
+.cut span { position: absolute; right: 0; bottom: 4px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+
+/* The prompt: a raised folio the chosen chunks land on. */
+.prompt { padding: 14px 16px; border-radius: 18px; background: linear-gradient(180deg, #2b3548, #222b3a); box-shadow: inset 0 1px 0 #ffffff1a, inset 0 0 0 1px #c3b5ff2e, 0 24px 40px -24px #000; }
+.prompt strong { display: block; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.prompt small { font-size: 12px; color: var(--dim); }
+.tall .prompt { padding: 8px 12px; }
+.tall .prompt strong { display: inline; margin-right: 8px; }
+
