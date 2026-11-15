@@ -9,6 +9,7 @@ import { pageOf, windowOf } from './pages';
 import { pipelineKind, pipelineName, rankedRuns, runColor, stagesOf } from './presentation';
 import { RollingNumber } from './rolling-number';
 import { RowMotion } from './row-motion';
+import { StepChain } from './step-chain';
 
 /**
  * The lab's first page: the best pipeline by the metric chosen, then every pipeline ranked ten at a time. Ranking by
@@ -16,7 +17,7 @@ import { RowMotion } from './row-motion';
  * that falls into it comes in from above.
  */
 @Component({
-  selector:'app-leaderboard', imports:[Icon,Pager,RollingNumber,RowMotion],
+  selector:'app-leaderboard', imports:[Icon,Pager,RollingNumber,RowMotion,StepChain],
   templateUrl:'./leaderboard.html', styleUrls:['./leaderboard.css','./leaderboard-board.css','./leaderboard-mobile.css'],
 })
 export class Leaderboard {
@@ -63,7 +64,7 @@ export class Leaderboard {
   protected readonly contextNote = computed(() => {
     const best = this.champion()?.run;
     if (!best || (best.layers['context'] ?? null) === null) return null;
-    return this.format(SIZE_METRIC,atPath(best.scores.overall,SIZE_METRIC)) + ' chunks in the prompt. A bigger context holds more by its size alone: the answers on dev choose the context.';
+    return {size:this.format(SIZE_METRIC,atPath(best.scores.overall,SIZE_METRIC)) + ' chunks in the prompt',why:'A bigger context holds more by its size alone: the answers on dev choose the context.'};
   });
 
   protected metricName(metric: string): string { return this.catalog().name(metric); }

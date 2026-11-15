@@ -1,13 +1,12 @@
 @if (champion(); as best) {
   <section class="champion" aria-labelledby="champion-title" [style.--run]="color(best.run)">
     <div class="champion-body">
-      <p class="eyebrow"><app-icon name="ranking" />Best pipeline<span>by {{ metricName(metric()) }}</span></p>
+      <p class="eyebrow"><app-icon name="ranking" />Best pipeline</p>
       <div class="identity-stage">
         @for (current of [best]; track current.key) {
           <div class="identity" animate.enter="identity-in" animate.leave="identity-out">
-            <h2 id="champion-title">{{ name(current.run) }}</h2>
-            <ol class="stage-chain" aria-label="Its steps">@for (stage of stages(current.run); track stage.layer) { <li><small>{{ stage.name }}</small><span>{{ stage.variant }}</span></li> }</ol>
-            <p class="kind" [title]="current.run.description ?? ''">{{ kind(current.run) }}</p>
+            <app-step-chain [layers]="current.run.layers" />
+            <h2 id="champion-title" class="sr-only">{{ name(current.run) }}</h2>
           </div>
         }
       </div>
@@ -19,9 +18,12 @@
     <div class="champion-score">
       <strong class="score"><app-rolling-number [text]="format(metric(),best.value)" [value]="best.value" [better]="null" /></strong>
       <span class="score-name">{{ metricName(metric()) }}</span>
-      @if (lead(); as lead) { <p class="lead-line"><b>{{ lead.text }}</b><span [title]="name(lead.runnerUp.run)">{{ name(lead.runnerUp.run) }}</span></p> }
-      @if (multiple(); as multiple) { <p class="floor-line">{{ multiple }}</p> }
-      @if (contextNote(); as note) { <p class="floor-line context-note">{{ note }}</p> }
+      @if (description(metric()); as what) { <p class="score-what">{{ what }}</p> }
+      <div class="score-facts">
+        @if (lead(); as lead) { <p class="lead-line"><b>{{ lead.text }}</b></p> }
+        @if (multiple(); as multiple) { <p class="floor-line">{{ multiple }}</p> }
+        @if (contextNote(); as note) { <p class="floor-line context-note" [title]="note.why">{{ note.size }}</p> }
+      </div>
     </div>
   </section>
 }
@@ -47,8 +49,8 @@
         <div class="board-row" role="row" [attr.data-row-key]="row.key" [class.leading]="row.rank === 1" (animate.enter)="motion.enter($event,row.key)" (animate.leave)="motion.leave($event,row.key)">
           <span role="cell" class="rank-cell"><app-rolling-number [text]="rankText(row.rank)" [value]="row.rank" better="lower" /></span>
           <span role="rowheader" class="pipeline-cell">
-            <button class="quiet pipeline-name" (click)="built.emit(row.key)" [title]="'Open ' + name(row.run) + ' in Build'"><i class="run-dot" [style.background]="color(row.run)"></i><span>{{ name(row.run) }}</span></button>
-            <small [title]="row.run.description || kind(row.run)">{{ kind(row.run) }}</small>
+            <button class="quiet pipeline-name" (click)="built.emit(row.key)" [title]="'Open ' + name(row.run) + ' in Build'"><span>{{ name(row.run) }}</span></button>
+            <app-step-chain [layers]="row.run.layers" [compact]="true" />
           </span>
           @for (column of columns(); track column) {
             <span role="cell" class="metric-cell" [class.sorted]="column === metric()"><span class="value">{{ format(column,at(row.run,column)) }}</span><span class="track" aria-hidden="true"><i [style.width.%]="column === metric() ? width(row.run,column) : 0"></i></span></span>
