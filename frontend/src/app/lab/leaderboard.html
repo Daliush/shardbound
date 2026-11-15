@@ -1,7 +1,7 @@
 @if (champion(); as best) {
   <section class="champion" aria-labelledby="champion-title" [style.--run]="color(best.run)">
     <div class="champion-body">
-      <p class="eyebrow"><app-icon name="ranking" />Best pipeline</p>
+      <p class="eyebrow">Best pipeline</p>
       <div class="identity-stage">
         @for (current of [best]; track current.key) {
           <div class="identity" animate.enter="identity-in" animate.leave="identity-out">
@@ -11,8 +11,8 @@
         }
       </div>
       <div class="champion-actions">
-        <button class="primary" (click)="built.emit(best.key)"><app-icon name="build" />Open in Build</button>
-        @if (lead()) { <button class="quiet" (click)="compared.emit(best.key)"><app-icon name="compare" />Compare with #2</button> }
+        <button class="primary" (click)="built.emit(best.key)">Open in Build</button>
+        @if (lead()) { <button class="quiet" (click)="compared.emit(best.key)">Compare with #2</button> }
       </div>
     </div>
     <div class="champion-score">
@@ -49,11 +49,10 @@
         <div class="board-row" role="row" [attr.data-row-key]="row.key" [class.leading]="row.rank === 1" (animate.enter)="motion.enter($event,row.key)" (animate.leave)="motion.leave($event,row.key)">
           <span role="cell" class="rank-cell"><app-rolling-number [text]="rankText(row.rank)" [value]="row.rank" better="lower" /></span>
           <span role="rowheader" class="pipeline-cell">
-            <button class="quiet pipeline-name" (click)="built.emit(row.key)" [title]="'Open ' + name(row.run) + ' in Build'"><span>{{ name(row.run) }}</span></button>
-            <app-step-chain [layers]="row.run.layers" [compact]="true" />
+            <button class="quiet pipeline-name" (click)="built.emit(row.key)" [title]="'Open ' + name(row.run) + ' in Build'"><b>{{ head(row.run) }}</b>@if (tail(row.run); as tail) {<span>→ {{ tail }}</span>}</button>
           </span>
           @for (column of columns(); track column) {
-            <span role="cell" class="metric-cell" [class.sorted]="column === metric()"><span class="value">{{ format(column,at(row.run,column)) }}</span><span class="track" aria-hidden="true"><i [style.width.%]="column === metric() ? width(row.run,column) : 0"></i></span></span>
+            <span role="cell" class="metric-cell" [class.sorted]="column === metric()" [class.empty]="at(row.run,column) === null"><span class="value">{{ format(column,at(row.run,column)) }}</span><span class="track" aria-hidden="true"><i [style.width.%]="column === metric() ? width(row.run,column) : 0"></i></span></span>
           }
           @if (size(); as size) { <span role="cell" class="metric-cell size-cell"><span class="value">{{ format(size,at(row.run,size)) }}</span></span> }
           <span role="cell" class="action-cell"><button class="quiet" (click)="compared.emit(row.key)" [attr.aria-label]="'Compare ' + name(row.run)" title="Compare"><app-icon name="compare" /></button></span>

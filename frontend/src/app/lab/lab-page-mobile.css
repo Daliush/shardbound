@@ -11,7 +11,7 @@
   .lab-tools { width: 100%; }
   .report-controls { flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .report-controls select { flex: none; font-size: .7rem; padding-inline: .45rem; white-space: nowrap; }
-  .how { padding: 0; width: 38px; font-size: 0; gap: 0; justify-content: center; }
+  .how { padding: 0; width: 36px; font-size: 0; gap: 0; justify-content: center; }
   .how app-icon { width: 15px; height: 15px; margin-left: 2px; }
   .lab-nav { width: 100%; }
   .lab-nav button { flex: 1; padding: 0 .55rem; font-size: .76rem; gap: .35rem; }

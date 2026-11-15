@@ -56,7 +56,7 @@ export class LabPage implements OnDestroy {
   protected openFilm(): void { this.filmOpen.set(true); }
   protected closeFilm(): void { markFilmSeen(); this.filmOpen.set(false); }
   protected markFilmSeenNow(): void { markFilmSeen(); }
-  protected readonly views = [{id:'leaderboard',label:'Leaderboard',icon:'ranking'},{id:'builder',label:'Build',icon:'build'},{id:'compare',label:'Compare',icon:'compare'},{id:'explore',label:'Explore',icon:'search'}];
+  protected readonly views = [{id:'leaderboard',label:'Leaderboard'},{id:'builder',label:'Build'},{id:'compare',label:'Compare'},{id:'explore',label:'Explore'}];
   /** The pages for a closer look, under Explore: what each score means first. */
   protected readonly explore = [{id:'guide',label:'Guide'},{id:'metrics',label:'All metrics'},{id:'categories',label:'By category'},{id:'questions',label:'Questions'},{id:'history',label:'History'}];
   /** The lab's springs, for every transition of its views. */

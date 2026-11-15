@@ -1,7 +1,7 @@
 <section class="lab-page">
   <app-coming-soon />
   <header class="lab-top">
-    <div class="lab-wordmark"><app-icon name="lab" /><span>Lab</span><span class="identity-divider"></span><span class="benchmark-label">Rules retrieval benchmark</span></div>
+    <div class="lab-wordmark"><span>Lab</span><span class="identity-divider"></span><span class="benchmark-label">Rules retrieval benchmark</span></div>
     <div class="lab-tools">
       @if (!filmOpen() && filmReady()) { <button class="how" (click)="openFilm()" animate.enter="how-in"><app-icon name="play" />How it works</button> }
       <div class="report-controls">
@@ -22,7 +22,7 @@
 
   <nav #nav class="lab-nav" aria-label="Benchmark pages">
     <span #indicator class="tab-indicator" aria-hidden="true"></span>
-    @for (view of views; track view.id) { <button [attr.data-tab]="view.id" [attr.aria-current]="section() === view.id ? 'page' : null" (click)="update({tab:view.id === 'explore' ? 'guide' : view.id,question:''})"><app-icon [name]="view.icon" />{{ view.label }}</button> }
+    @for (view of views; track view.id) { <button [attr.data-tab]="view.id" [attr.aria-current]="section() === view.id ? 'page' : null" (click)="update({tab:view.id === 'explore' ? 'guide' : view.id,question:''})">{{ view.label }}</button> }
   </nav>
   @if (section() === 'explore') {
     <nav class="explore-nav" aria-label="Explore">

@@ -1,43 +1,39 @@
 :host { display: block; --row-height: 64px; }
 
 /*
- * The best pipeline. Its score is the brightest thing on the page, lit from the top right; its steps read left to
- * right. The score rolls when the ranking metric changes.
+ * The best pipeline, on the page itself: its steps in words, and its score, the one thing in gold, the first thing the
+ * eye meets. The score rolls when the ranking metric changes.
  */
-.champion { position: relative; display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,auto); gap: 2.5rem; align-items: center; padding: 2rem 2.2rem; margin-bottom: 2.4rem; border-radius: 24px; overflow: hidden; isolation: isolate;
-  background: radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--lab-accent) 16%, transparent), transparent 60%), linear-gradient(180deg, color-mix(in srgb, var(--lab-surface) 100%, var(--white) 3%), var(--lab-surface));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--white) 7%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--lab-accent) 20%, transparent), 0 30px 60px -40px var(--black); }
-.champion-body { min-width: 0; display: grid; gap: 1.2rem; }
-.eyebrow { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--lab-accent); }
-.eyebrow app-icon { width: 15px; height: 15px; }
+.champion { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,320px); gap: 2.5rem; align-items: start; padding-bottom: 2.2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--line); }
+.champion-body { min-width: 0; display: grid; gap: 1.1rem; }
+.eyebrow { margin: 0; font-size: .82rem; font-weight: 500; color: var(--muted); }
 .identity-stage { position: relative; display: grid; }
 .identity { grid-area: 1 / 1; display: grid; gap: .9rem; min-width: 0; }
-.identity h2 { margin: 0; max-width: 52ch; font: 400 .82rem/1.5 var(--font-ui); letter-spacing: 0; color: var(--muted); text-wrap: pretty; }
-.champion-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
-.champion-actions button { min-height: 40px; font-size: .8rem; border-radius: 999px; padding-inline: 1rem; transition: scale 160ms var(--ease-out), background 160ms ease; }
+.champion-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .3rem; }
+.champion-actions button { min-height: 38px; font-size: .82rem; border-radius: 8px; padding-inline: .95rem; transition: scale 160ms var(--ease-out), background 160ms ease; }
 .champion-actions button:active { scale: .97; }
-.champion-actions app-icon { width: 15px; height: 15px; }
-.champion-actions .quiet { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
+.champion-actions .quiet { color: var(--muted); }
+.champion-actions .quiet:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border-color: transparent; }
 .champion-score { display: grid; justify-items: end; text-align: right; }
-.score { font: 500 clamp(3.2rem, 7vw, 5rem)/.95 var(--font-ui); letter-spacing: -.05em; font-variant-numeric: tabular-nums;
-  background: linear-gradient(200deg, var(--white), color-mix(in srgb, var(--lab-accent) 55%, var(--text))); -webkit-background-clip: text; background-clip: text; color: transparent; }
-:host-context(html[data-theme='light']) .score { background: none; color: var(--text); }
-.score-name { margin-top: .5rem; font-size: .82rem; font-weight: 500; }
-.score-what { max-width: 30ch; margin: .2rem 0 0; font-size: .74rem; line-height: 1.45; color: var(--muted); }
-.score-facts { display: grid; justify-items: end; gap: .2rem; margin-top: 1rem; }
-.lead-line, .floor-line { margin: 0; font-size: .74rem; color: var(--muted); }
-.lead-line b { font-weight: 500; color: var(--heal); }
+.score { font: 500 clamp(3.4rem, 7vw, 5.2rem)/.9 var(--font-ui); letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: var(--lab-gold); }
+.score-name { margin-top: .7rem; font-size: .88rem; font-weight: 500; }
+.score-what { max-width: 32ch; margin: .25rem 0 0; font-size: .78rem; line-height: 1.5; color: var(--muted); }
+.score-facts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .2rem 1.1rem; margin-top: .9rem; }
+.lead-line, .floor-line { margin: 0; font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lead-line b { font-weight: 500; color: var(--text); }
 .context-note { cursor: help; text-decoration: underline dotted color-mix(in srgb, var(--muted) 60%, transparent); text-underline-offset: 3px; }
 .identity-in { animation: identity-in var(--spring-bouncy-duration, .6s) var(--spring-bouncy, var(--ease-spring)) both; }
 .identity-out { animation: identity-out 200ms var(--ease-out) both; pointer-events: none; }
-@keyframes identity-in { from { opacity: 0; translate: 0 12px; filter: blur(4px); } }
-@keyframes identity-out { to { opacity: 0; translate: 0 -8px; filter: blur(4px); } }
+@keyframes identity-in { from { opacity: 0; translate: 0 10px; filter: blur(3px); } }
+@keyframes identity-out { to { opacity: 0; translate: 0 -6px; filter: blur(3px); } }
 
 /* Finding a pipeline and choosing what ranks them. */
-.board-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .8rem; }
+.board-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .6rem; }
 .search-field { position: relative; display: flex; align-items: center; }
-.search-field app-icon { position: absolute; left: .9rem; width: 16px; height: 16px; color: var(--muted); }
-.search-field input { width: 260px; padding-left: 2.5rem; border-radius: 999px; font-size: .8rem; background: var(--lab-surface); border-color: transparent; transition: width var(--spring-snappy-duration, .4s) var(--spring-snappy, ease), box-shadow 160ms ease; }
-.search-field input:focus { width: 320px; box-shadow: 0 0 0 1px var(--lab-accent); outline: none; }
-.rank-control { display: flex; align-items: center; gap: .7rem; font-size: .76rem; color: var(--muted); }
-.rank-control select { border-radius: 999px; font-size: .8rem; background: var(--lab-surface); border-color: transparent; }
+.search-field app-icon { position: absolute; left: .75rem; width: 15px; height: 15px; color: var(--muted); }
+.search-field input { width: 260px; min-height: 36px; padding: .3rem .8rem .3rem 2.2rem; border: 1px solid var(--line); border-radius: 8px; font-size: .82rem; background: transparent; transition: border-color 160ms ease; }
+.search-field input:hover { border-color: color-mix(in srgb, var(--text) 30%, transparent); }
+.search-field input:focus { border-color: var(--text); outline: none; }
+.rank-control { display: flex; align-items: center; gap: .6rem; font-size: .8rem; color: var(--muted); }
+.rank-control select { min-height: 36px; padding: .3rem .7rem; border: 1px solid var(--line); border-radius: 8px; font-size: .82rem; background: transparent; }
+.rank-control select:hover { border-color: color-mix(in srgb, var(--text) 30%, transparent); }
