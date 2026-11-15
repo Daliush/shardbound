@@ -5,16 +5,16 @@
  * here, so every view of the lab follows without a colour of its own; neutral cards turn silver instead of lilac.
  */
 :root:has(app-lab-page) {
-  --lab-bg: #1a1917;
-  --obsidian-950: #1a1917;
-  --obsidian-900: #201f1c;
-  --obsidian-800: #292824;
-  --obsidian-700: #35332e;
-  --lab-surface: #201f1c;
-  --lab-subtle: #292824;
+  --lab-bg: #151412;
+  --obsidian-950: #151412;
+  --obsidian-900: #1d1c19;
+  --obsidian-800: #272521;
+  --obsidian-700: #33312b;
+  --lab-surface: #1d1c19;
+  --lab-subtle: #272521;
   --text: #ecebe5;
   --muted: #a7a49b;
-  --line: #3a3833;
+  --line: #37352f;
   --lab-accent: #e9e7e0;
   --lab-accent-soft: #2e2d29;
   --accent: #e9e7e0;
@@ -43,26 +43,39 @@
   /* Elevation, from the same light: a lit top edge, a shadow that falls down and away. */
   --lab-edge: inset 0 1px 0 #ffffff0d;
   --lab-raised: inset 0 1px 0 #ffffff0d, 0 1px 0 #00000040, 0 14px 28px -20px #000000b3;
-  --lab-light: #fff1dc0d;
   --lab-shade: #00000033;
-  --lab-grain: .045;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
-    radial-gradient(110% 70% at 0% 0%, var(--lab-light), transparent 62%),
-    radial-gradient(120% 90% at 100% 100%, var(--lab-shade), transparent 60%),
+  /*
+   * A painting of the game's world faint above a dim ground: Ember's dusk at night, Tide's morning mist by day. The
+   * light is what makes the mode: it comes from where the painting's sun is (--sun-x, --sun-y, measured on the image),
+   * warm at dusk, white in the morning, strongest round the sun and falling off across the page. The painting and its
+   * sun scroll away; the light of the sky (--ambient) stays on the screen.
+   */
+  --lab-horizon: url('/portals/ember.webp');
+  --lab-veil: linear-gradient(to bottom, #151412b3, #151412dc 40%, #151412 70%);
+  --sun-x: 15vw;
+  --sun-y: 16.1vw;
+  --sun-glow: radial-gradient(circle at var(--sun-x) var(--sun-y), #ff9c4c40, #ff9c4c14 24vw, transparent 60vw);
+  --ambient: radial-gradient(120% 95% at 6% -14%, #ff9c4c1c, transparent 62%);
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>") repeat fixed,
+    radial-gradient(120% 90% at 100% 100%, var(--lab-shade), transparent 60%) fixed,
+    var(--ambient) fixed,
+    var(--sun-glow) scroll,
+    var(--lab-veil) top center / 100% 56.25vw no-repeat scroll,
+    var(--lab-horizon) top center / 100% auto no-repeat scroll,
     var(--lab-bg);
-  background-attachment: fixed;
 }
 :root[data-theme='light']:has(app-lab-page) {
-  --lab-bg: #f3f3f0;
-  --obsidian-950: #f3f3f0;
-  --obsidian-900: #fafaf8;
-  --obsidian-800: #e8e7e3;
-  --obsidian-700: #dad9d4;
-  --lab-surface: #fafaf8;
-  --lab-subtle: #ebeae6;
-  --text: #1f1e1b;
-  --muted: #5f5d57;
-  --line: #d6d5cf;
+  --lab-bg: #d8d8d2;
+  --obsidian-950: #d8d8d2;
+  --obsidian-900: #efefeb;
+  --obsidian-800: #e4e4df;
+  --obsidian-700: #cbcbc4;
+  --lab-surface: #efefeb;
+  --lab-subtle: #e3e3dd;
+  --text: #1c1b18;
+  --muted: #54524c;
+  --line: #bfbeb6;
   --lab-accent: #24231f;
   --lab-accent-soft: #e5e4df;
   --accent: #24231f;
@@ -88,8 +101,30 @@
   --contender-3: #8a5584;
   --lab-edge: inset 0 1px 0 #ffffff;
   --lab-raised: inset 0 1px 0 #ffffff, 0 1px 2px #2a26200f, 0 12px 26px -20px #2a262040;
-  --lab-light: #ffffffcc;
-  --lab-shade: #2a262012;
+  --lab-shade: #2a26201a;
+  --lab-horizon: url('/portals/tide.webp');
+  --lab-veil: linear-gradient(to bottom, #d8d8d240, #d8d8d299 40%, #d8d8d2 72%);
+  --sun-x: 67.8vw;
+  --sun-y: 15.6vw;
+  --sun-glow: radial-gradient(circle at var(--sun-x) var(--sun-y), #fffef8f2, #fffdf6b3 16vw, #fffdf600 64vw);
+  --ambient: radial-gradient(130% 110% at 74% -14%, #ffffffb8, transparent 68%);
 }
 :root:has(app-lab-page) :focus-visible { outline-color: var(--text); }
 :root:has(app-lab-page) ::selection { background: var(--lab-gold); color: var(--lab-bg); }
+/* The site's backdrop would cover the painting: the lab paints its own ground. */
+:root:has(app-lab-page) app-backdrop { display: none; }
+
+/*
+ * Switching between light and dark, the new scene spreads out from its own sun, soft-edged, over the old one
+ * (core/settings.ts starts the transition; the lab asks for it with data-theme-transition).
+ */
+@property --reveal { syntax: '<length>'; inherits: false; initial-value: 0px; }
+:root:has(app-lab-page)::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
+:root:has(app-lab-page)::view-transition-new(root) {
+  --origin: var(--sun-x) calc(var(--sun-y) - var(--scroll-y, 0px));
+  -webkit-mask-image: radial-gradient(circle at var(--origin), #000 var(--reveal), transparent calc(var(--reveal) + 40vmax));
+  mask-image: radial-gradient(circle at var(--origin), #000 var(--reveal), transparent calc(var(--reveal) + 40vmax));
+  mix-blend-mode: normal;
+  animation: sun-reveal 1400ms cubic-bezier(.55, 0, .25, 1) both;
+}
+@keyframes sun-reveal { from { --reveal: -40vmax; } to { --reveal: 100vmax; } }

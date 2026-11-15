@@ -23,6 +23,7 @@ export class Settings implements OnDestroy {
   private readonly systemMotion = signal(this.query?.matches ?? false);
   readonly reducedMotion = computed(() => this.preferences().motion === 'on' || (this.preferences().motion === 'system' && this.systemMotion()));
   readonly tilt = signal({ x: 0, y: 0 });
+  private appliedTheme: string | null = null;
   private readonly motionChanged = (event: MediaQueryListEvent) => this.systemMotion.set(event.matches);
   private readonly visibilityChanged = () => { document.documentElement.dataset['hidden'] = String(document.hidden); };
   private readonly orientationChanged = (event: DeviceOrientationEvent) => {
@@ -38,9 +39,23 @@ export class Settings implements OnDestroy {
       const settings = this.preferences();
       try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { /* Private browsing may deny storage. */ }
       document.documentElement.dataset['reducedMotion'] = String(this.reducedMotion());
-      document.documentElement.dataset['theme'] = this.theme();
+      this.applyTheme(this.theme());
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', this.theme() === 'dark' ? '#252d3a' : '#e6e3dc');
     });
+  }
+
+  /**
+   * Sets the theme on the document. A page that asks for it with data-theme-transition has a change of theme played
+   * as a view transition, which its own styles animate (lab/lab-theme.css); the scroll is kept for them in --scroll-y.
+   */
+  private applyTheme(theme: string): void {
+    const root = document.documentElement, previous = this.appliedTheme;
+    this.appliedTheme = theme;
+    const apply = () => { root.dataset['theme'] = theme; };
+    const transitions = document as Document & { startViewTransition?: (update: () => void) => unknown };
+    if (previous === null || previous === theme || this.reducedMotion() || !root.hasAttribute('data-theme-transition') || !transitions.startViewTransition) { apply(); return; }
+    root.style.setProperty('--scroll-y', window.scrollY + 'px');
+    transitions.startViewTransition(apply);
   }
 
   update(changes: Partial<Preferences>): void { this.preferences.update(value => ({ ...value, ...changes })); }

@@ -116,8 +116,10 @@ export class LabPage implements OnDestroy {
   constructor() {
     effect(() => { this.reportRequest(); untracked(() => void this.load(this.state(),this.query()['pins'] === undefined)); });
     afterRenderEffect(() => this.slideIndicator(this.section()));
+    // A change of theme spreads out from the painting's sun (lab-theme.css).
+    document.documentElement.setAttribute('data-theme-transition','');
   }
-  ngOnDestroy(): void { this.generation++; }
+  ngOnDestroy(): void { this.generation++; document.documentElement.removeAttribute('data-theme-transition'); }
   protected async load(state = this.state(), defaultPins = false): Promise<void> {
     const generation = ++this.generation;
     this.loading.set(true); this.error.set('');

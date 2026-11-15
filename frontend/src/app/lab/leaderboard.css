@@ -15,7 +15,9 @@
 .champion-actions .quiet { color: var(--muted); }
 .champion-actions .quiet:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border-color: transparent; }
 .champion-score { display: grid; justify-items: end; text-align: right; }
-.score { font: 500 clamp(3.4rem, 7vw, 5.2rem)/.9 var(--font-ui); letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: var(--lab-gold); }
+/* Gold that catches the light from the top left: brighter on its upper edge, deeper below. */
+.score { font: 500 clamp(3.4rem, 7vw, 5.2rem)/.9 var(--font-ui); letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: var(--lab-gold);
+  background: linear-gradient(170deg, color-mix(in srgb, var(--lab-gold) 62%, var(--white)) 8%, var(--lab-gold) 46%, color-mix(in srgb, var(--lab-gold) 78%, var(--black)) 96%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .score-name { margin-top: .7rem; font-size: .88rem; font-weight: 500; }
 .score-what { max-width: 32ch; margin: .25rem 0 0; font-size: .78rem; line-height: 1.5; color: var(--muted); }
 .score-facts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .2rem 1.1rem; margin-top: .9rem; }
