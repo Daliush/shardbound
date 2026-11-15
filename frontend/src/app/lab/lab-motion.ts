@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnDestroy, afterRenderEffect, inject, input } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, afterRenderEffect, inject, input, untracked } from '@angular/core';
 import { gsap } from 'gsap';
 import { Settings } from '../core/settings';
 import { SPRINGS, still } from './springs';
@@ -14,7 +14,8 @@ export class LabMotion implements OnDestroy {
     afterRenderEffect(() => {
       this.labMotion();
       this.animation?.revert();
-      if (still(this.settings)) return;
+      // Only a change of view replays it: a change of settings, such as the theme, must not.
+      if (untracked(() => still(this.settings))) return;
       const host = this.element.nativeElement;
       this.animation = gsap.context(() => {
         gsap.from(host, { opacity: 0, y: 12, duration: SPRINGS.gentle.duration, ease: SPRINGS.gentle.ease, clearProps: 'opacity,transform' });
