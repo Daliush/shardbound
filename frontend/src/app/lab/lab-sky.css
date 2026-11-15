@@ -15,14 +15,14 @@
 .morning { background-image: url('/portals/tide.webp'); opacity: var(--morning); }
 
 .sun { position: absolute; left: 0; top: 0; translate: var(--sun-x) var(--sun-y); transition: translate var(--moved); }
-.sun > i { position: absolute; left: 0; top: 0; display: block; translate: -50% -50%; color: var(--light-haze); background: radial-gradient(closest-side, currentColor, transparent);
+.sun i { position: absolute; left: 0; top: 0; display: block; translate: -50% -50%; color: var(--light-haze); background: radial-gradient(closest-side, currentColor, transparent);
   -webkit-mask: var(--clouds) center / 100% 100%; mask: var(--clouds) center / 100% 100%; transition: color var(--moved), translate var(--moved), rotate var(--moved); }
 .halo { width: 80vw; height: 90vw; }
 .haze { width: 150vw; height: 58vw; translate: calc(-50% + var(--haze-dx)) calc(-50% + 5vw); }
 .core { width: 46vw; height: 26vw; color: var(--light-core); }
 
 /* Rays of uneven width and strength, fanning out from the sun; a second set sways the other way, slower. */
-.sun > .rays { width: 130vw; height: 130vw; color: var(--ray); rotate: var(--rays-from); filter: blur(5px); animation: sway 19s ease-in-out infinite alternate;
+.fan > .rays { width: 130vw; height: 130vw; color: var(--ray); rotate: var(--rays-from); filter: blur(5px); animation: sway 19s ease-in-out infinite alternate;
   background: conic-gradient(transparent 0deg, currentColor 4deg, transparent 8deg 13deg, color-mix(in srgb, currentColor 60%, transparent) 16deg, transparent 19deg 26deg,
     currentColor 31deg, transparent 37deg 44deg, color-mix(in srgb, currentColor 45%, transparent) 46deg, transparent 48deg 57deg,
     color-mix(in srgb, currentColor 80%, transparent) 62deg, transparent 68deg 76deg, color-mix(in srgb, currentColor 55%, transparent) 79deg, transparent 82deg 92deg,
@@ -30,14 +30,23 @@
     color-mix(in srgb, currentColor 70%, transparent) 128deg, transparent 134deg);
   -webkit-mask: radial-gradient(closest-side, transparent 3%, #000 12%, transparent 92%), var(--clouds) center / 100% 100%; -webkit-mask-composite: source-in;
   mask: radial-gradient(closest-side, transparent 3%, #000 12%, transparent 92%) intersect, var(--clouds) center / 100% 100%; }
-.sun > .rays.second { animation: sway 27s ease-in-out infinite alternate-reverse, breathe 11s ease-in-out infinite;
+.fan > .rays.second { animation: sway 27s ease-in-out infinite alternate-reverse, breathe 11s ease-in-out infinite;
   background: conic-gradient(transparent 0deg 9deg, color-mix(in srgb, currentColor 50%, transparent) 10.5deg, transparent 12deg 22deg,
     color-mix(in srgb, currentColor 70%, transparent) 24deg, transparent 26.5deg 39deg, color-mix(in srgb, currentColor 40%, transparent) 40.5deg, transparent 42deg 53deg,
     currentColor 55deg, transparent 58deg 71deg, color-mix(in srgb, currentColor 55%, transparent) 73deg, transparent 75deg 88deg,
     color-mix(in srgb, currentColor 65%, transparent) 90deg, transparent 93deg 107deg, color-mix(in srgb, currentColor 45%, transparent) 108.5deg, transparent 110deg 119deg,
     color-mix(in srgb, currentColor 60%, transparent) 121deg, transparent 123deg); }
 /* In the morning, the shade between the shafts is what shows them on a bright sky. */
-.sun > .rays.shade { color: var(--ray-shade); rotate: calc(var(--rays-from) + 7deg); animation-duration: 23s; }
+.fan > .rays.shade { color: var(--ray-shade); rotate: calc(var(--rays-from) + 7deg); animation-duration: 23s; }
 
+/*
+ * The fan of rays, round the sun. On a change of theme it swings on past where the rays will rest, the way the sun
+ * travels, then settles back: clockwise towards the morning, the other way towards dusk.
+ */
+.fan { position: absolute; left: 0; top: 0; }
+:host-context(html[data-theme-switching][data-theme='light']) .fan { animation: swing-morning var(--switch-time, 1.8s) var(--sun-ease, ease-in-out); }
+:host-context(html[data-theme-switching][data-theme='dark']) .fan { animation: swing-dusk var(--switch-time, 1.8s) var(--sun-ease, ease-in-out); }
+@keyframes swing-morning { 55% { rotate: 24deg; } }
+@keyframes swing-dusk { 55% { rotate: -24deg; } }
 @keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
 @keyframes breathe { 50% { opacity: .55; } }
