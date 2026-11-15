@@ -33,7 +33,7 @@ import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './u
   selector:'app-lab-page',
   imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber,PipelineFilm,StepChain],
   host:{'[style]':'springs'},
-  templateUrl:'./lab-page.html',styleUrls:['./lab-page.css','./lab-nav.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
+  templateUrl:'./lab-page.html',styleUrls:['./lab-sky.css','./lab-page.css','./lab-nav.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
 export class LabPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute); private readonly router = inject(Router); private readonly evaluations = inject(Evaluations);
@@ -116,7 +116,7 @@ export class LabPage implements OnDestroy {
   constructor() {
     effect(() => { this.reportRequest(); untracked(() => void this.load(this.state(),this.query()['pins'] === undefined)); });
     afterRenderEffect(() => this.slideIndicator(this.section()));
-    // A change of theme spreads out from the painting's sun (lab-theme.css).
+    // A change of theme moves the sun across the sky (lab-sky.css).
     document.documentElement.setAttribute('data-theme-transition','');
   }
   ngOnDestroy(): void { this.generation++; document.documentElement.removeAttribute('data-theme-transition'); }

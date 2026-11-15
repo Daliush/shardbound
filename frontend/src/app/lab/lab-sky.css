@@ -1,0 +1,43 @@
+/*
+ * The sky above the lab, under its content: a painting of the game's world, faint, and the light of its sun. The light
+ * is made of soft pieces seen through a cloudy noise, a stretched core, a halo, a haze drifting to one side, and rays of
+ * uneven width that sway slowly, so it falls in patches like real light. On a change of theme the sun glides to its
+ * place in the other painting, its rays swing round and its light changes colour (the tokens are in lab-theme.css).
+ */
+:host {
+  --clouds: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000' preserveAspectRatio='none'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='.0035 .006' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.7 0 0 0 -.15'/></filter><rect width='100%' height='100%' filter='url(%23c)'/></svg>");
+  --moved: var(--switch-time, 1.8s) var(--sun-ease, ease-in-out);
+}
+.sky { position: absolute; top: 0; left: 0; z-index: -1; width: 100%; height: max(130vh, 80vw); overflow: hidden; pointer-events: none; }
+.painting { position: absolute; inset: 0 0 auto; aspect-ratio: 16 / 9; background: center top / cover no-repeat; transition: opacity var(--moved);
+  -webkit-mask-image: linear-gradient(#000 22%, transparent 72%); mask-image: linear-gradient(#000 22%, transparent 72%); }
+.dusk { background-image: url('/portals/ember.webp'); opacity: var(--dusk); }
+.morning { background-image: url('/portals/tide.webp'); opacity: var(--morning); }
+
+.sun { position: absolute; left: 0; top: 0; translate: var(--sun-x) var(--sun-y); transition: translate var(--moved); }
+.sun > i { position: absolute; left: 0; top: 0; display: block; translate: -50% -50%; color: var(--light-haze); background: radial-gradient(closest-side, currentColor, transparent);
+  -webkit-mask: var(--clouds) center / 100% 100%; mask: var(--clouds) center / 100% 100%; transition: color var(--moved), translate var(--moved), rotate var(--moved); }
+.halo { width: 80vw; height: 90vw; }
+.haze { width: 150vw; height: 58vw; translate: calc(-50% + var(--haze-dx)) calc(-50% + 5vw); }
+.core { width: 46vw; height: 26vw; color: var(--light-core); }
+
+/* Rays of uneven width and strength, fanning out from the sun; a second set sways the other way, slower. */
+.sun > .rays { width: 130vw; height: 130vw; color: var(--ray); rotate: var(--rays-from); filter: blur(5px); animation: sway 19s ease-in-out infinite alternate;
+  background: conic-gradient(transparent 0deg, currentColor 4deg, transparent 8deg 13deg, color-mix(in srgb, currentColor 60%, transparent) 16deg, transparent 19deg 26deg,
+    currentColor 31deg, transparent 37deg 44deg, color-mix(in srgb, currentColor 45%, transparent) 46deg, transparent 48deg 57deg,
+    color-mix(in srgb, currentColor 80%, transparent) 62deg, transparent 68deg 76deg, color-mix(in srgb, currentColor 55%, transparent) 79deg, transparent 82deg 92deg,
+    currentColor 97deg, transparent 103deg 111deg, color-mix(in srgb, currentColor 40%, transparent) 114deg, transparent 117deg 124deg,
+    color-mix(in srgb, currentColor 70%, transparent) 128deg, transparent 134deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 3%, #000 12%, transparent 92%), var(--clouds) center / 100% 100%; -webkit-mask-composite: source-in;
+  mask: radial-gradient(closest-side, transparent 3%, #000 12%, transparent 92%) intersect, var(--clouds) center / 100% 100%; }
+.sun > .rays.second { animation: sway 27s ease-in-out infinite alternate-reverse, breathe 11s ease-in-out infinite;
+  background: conic-gradient(transparent 0deg 9deg, color-mix(in srgb, currentColor 50%, transparent) 10.5deg, transparent 12deg 22deg,
+    color-mix(in srgb, currentColor 70%, transparent) 24deg, transparent 26.5deg 39deg, color-mix(in srgb, currentColor 40%, transparent) 40.5deg, transparent 42deg 53deg,
+    currentColor 55deg, transparent 58deg 71deg, color-mix(in srgb, currentColor 55%, transparent) 73deg, transparent 75deg 88deg,
+    color-mix(in srgb, currentColor 65%, transparent) 90deg, transparent 93deg 107deg, color-mix(in srgb, currentColor 45%, transparent) 108.5deg, transparent 110deg 119deg,
+    color-mix(in srgb, currentColor 60%, transparent) 121deg, transparent 123deg); }
+/* In the morning, the shade between the shafts is what shows them on a bright sky. */
+.sun > .rays.shade { color: var(--ray-shade); rotate: calc(var(--rays-from) + 7deg); animation-duration: 23s; }
+
+@keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+@keyframes breathe { 50% { opacity: .55; } }
