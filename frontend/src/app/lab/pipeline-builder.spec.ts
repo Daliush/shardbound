@@ -82,4 +82,12 @@ describe('Pipeline builder', () => {
     expect(host.querySelector('.output .not-run')?.textContent).toContain('Not run yet');
     expect(host.querySelector('.builder-actions .primary')).toBeNull();
   });
+  it('stands the marker on the dot of the pipeline drawn, in its lane', async () => {
+    const {fixture,host} = await builder({retriever:'bm25',expand:'refs',rerank:null,answer:null});
+    const place = (element: Element) => [(element as HTMLElement).style.left,(element as HTMLElement).style.getPropertyValue('--lane')];
+    const raised = [...host.querySelectorAll<HTMLButtonElement>('.strip .dot')].find(dot => place(dot)[1] === '1')!;
+
+    raised.click(); await fixture.whenStable();
+    expect(place(host.querySelector('.strip .you')!)).toEqual(place(raised));
+  });
 });
