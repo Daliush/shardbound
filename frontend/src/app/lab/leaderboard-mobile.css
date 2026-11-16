@@ -4,13 +4,14 @@
 }
 @media (max-width: 760px) {
   :host { --row-height: 62px; }
-  .champion { grid-template-columns: minmax(0,1fr); gap: 1.4rem; align-items: start; }
+  /* One column, in the desktop's reading order: the pipeline under its label, then its score, then what to do with it. */
+  .champion { grid-template-columns: minmax(0,1fr); gap: .8rem; align-items: start; }
   .champion-body { display: contents; }
   .eyebrow { order: 1; }
-  .champion-score { order: 2; justify-items: start; text-align: left; }
+  .identity-stage { order: 2; }
+  .champion-score { order: 3; margin-top: 1rem; justify-items: start; text-align: left; }
   .score-facts { justify-content: flex-start; }
-  .identity-stage { order: 3; }
-  .champion-actions { order: 4; }
+  .champion-actions { order: 4; margin-top: .6rem; }
   .board-toolbar { gap: .6rem; }
   .search-field { flex: 1; min-width: 0; }
   .search-field input { width: 100%; min-width: 0; }
