@@ -1,9 +1,13 @@
 :host { display: block; min-width: 0; }
-.chain { display: flex; flex-wrap: wrap; gap: .7rem 0; margin: 0; padding: 0; list-style: none; }
-li { position: relative; display: grid; gap: .1rem; min-width: 0; line-height: 1.3; }
-/* The arrow into each step after the first, at the height of the variants: a wrapped line starts with it. */
-li + li { margin-left: .55rem; padding-left: 1.55rem; }
-li + li::before { content: '→'; position: absolute; left: .2rem; bottom: 0; font-size: .9rem; color: var(--muted); }
+.chain { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+li { position: relative; display: grid; grid-template-columns: 32px minmax(0,1fr); align-items: center; gap: .75rem; min-width: 0; }
+/* The wire into each step after the first, dashed like the Build tab's, from the node above to this one. */
+li + li::before { content: ''; position: absolute; left: 15px; bottom: calc(100% - 2px); height: calc(.65rem + 4px); width: 2px;
+  background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--muted) 60%, transparent) 0 4px, transparent 4px 7px); }
+.node { display: grid; place-content: center; width: 32px; height: 32px; border-radius: 50%; color: var(--text); background: var(--lab-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 45%, transparent); }
+.node app-icon { width: 15px; height: 15px; }
+.text { display: grid; gap: .05rem; min-width: 0; line-height: 1.3; }
 small { font-size: .74rem; color: var(--muted); }
-b { font-size: .95rem; font-weight: 500; white-space: nowrap; }
+b { font-size: .95rem; font-weight: 500; overflow-wrap: anywhere; }
+.off .node { color: var(--muted); box-shadow: none; outline: 1px dashed var(--line); outline-offset: -1px; }
 .off b { color: var(--muted); font-weight: 400; }
