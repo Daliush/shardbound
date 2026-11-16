@@ -41,7 +41,7 @@ export function countText(target: Countable, number: number): string {
     .digits { display: inline-flex; }
     .place { position: relative; display: inline-block; }
     /* A gradient through --glyph-fill: each glyph clips it to its own text, as WebKit clips no text of an inline block. */
-    .glyph { display: inline-block; background-image: var(--glyph-fill, none); -webkit-background-clip: text; background-clip: text; }
+    .glyph { display: inline-block; white-space: pre; background-image: var(--glyph-fill, none); -webkit-background-clip: text; background-clip: text; }
   `,
 })
 export class RollingNumber implements OnDestroy {
