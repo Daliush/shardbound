@@ -24,6 +24,7 @@ import { SPRING_PROPERTIES, placeMarker } from './springs';
 import { Settings } from '../core/settings';
 import { deviceName, pipelineName, pipelineKind, rankedRuns, runColor } from './presentation';
 import { RecallChart } from './recall-chart';
+import { FilmInvite } from './film/film-invite';
 import { filmExample } from './film/film-model';
 import { PipelineFilm } from './film/pipeline-film';
 import { StepChain } from './step-chain';
@@ -31,7 +32,7 @@ import { DATASET_VERSIONS, LAB_TABS, LabState, readState, writeState } from './u
 
 @Component({
   selector:'app-lab-page',
-  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber,PipelineFilm,StepChain],
+  imports:[Icon,Categories,CategoryCurves,HeadToHead,QuestionDetail,LabHistory,Leaderboard,MetricsGraph,MetricGuide,PipelineBuilder,ComingSoon,LabMotion,RecallChart,RollingNumber,FilmInvite,PipelineFilm,StepChain],
   host:{'[style]':'springs'},
   templateUrl:'./lab-page.html',styleUrls:['./lab-sky.css','./lab-page.css','./lab-nav.css','./lab-compare.css','./lab-evidence.css','./lab-page-mobile.css','./lab-exploration.css'],
 })
@@ -49,11 +50,14 @@ export class LabPage implements OnDestroy {
   protected readonly deviceName = deviceName;
   protected readonly at = atPath; protected readonly kind = pipelineKind;
   protected readonly copyMessage = signal('');
-  /** The film that explains a pipeline: it opens by itself on a first visit, then waits for "How it works". */
-  protected readonly filmOpen = signal(!filmSeen());
-  /** Whether the evaluation has what the film tells: without it, neither the film nor its button shows. */
+  /** The film that explains a pipeline: a first visit offers it, then it waits for "How it works". */
+  protected readonly filmOpen = signal(false);
+  /** Whether the offer of the film shows: on each visit until the film is seen or declined. */
+  protected readonly filmOffered = signal(!filmSeen());
+  /** Whether the evaluation has what the film tells: without it, neither the film, its offer nor its button shows. */
   protected readonly filmReady = computed(() => filmExample(this.runs(),this.dataset()) !== null);
-  protected openFilm(): void { this.filmOpen.set(true); }
+  protected openFilm(): void { this.filmOffered.set(false); this.filmOpen.set(true); }
+  protected declineFilm(): void { markFilmSeen(); this.filmOffered.set(false); }
   protected closeFilm(): void { markFilmSeen(); this.filmOpen.set(false); }
   protected markFilmSeenNow(): void { markFilmSeen(); }
   protected readonly views = [{id:'leaderboard',label:'Leaderboard'},{id:'builder',label:'Build'},{id:'compare',label:'Compare'},{id:'explore',label:'Explore'}];
@@ -212,6 +216,6 @@ export class LabPage implements OnDestroy {
 }
 
 const FILM_SEEN = 'shardbound.lab.film-seen';
-/** Whether this browser already watched or closed the film; a browser that keeps nothing counts as a first visit. */
+/** Whether this browser already watched, closed or declined the film; a browser that keeps nothing counts as a first visit. */
 function filmSeen(): boolean { try { return localStorage.getItem(FILM_SEEN) === '1'; } catch { return false; } }
-function markFilmSeen(): void { try { localStorage.setItem(FILM_SEEN,'1'); } catch { /* kept nowhere: the film plays again next visit */ } }
+function markFilmSeen(): void { try { localStorage.setItem(FILM_SEEN,'1'); } catch { /* kept nowhere: the film is offered again next visit */ } }

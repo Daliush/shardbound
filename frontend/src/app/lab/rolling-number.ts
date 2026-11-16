@@ -40,7 +40,8 @@ export function countText(target: Countable, number: number): string {
     :host(.better) { --tint: var(--heal); } :host(.worse) { --tint: var(--alert); }
     .digits { display: inline-flex; }
     .place { position: relative; display: inline-block; }
-    .glyph { display: inline-block; }
+    /* A gradient through --glyph-fill: each glyph clips it to its own text, as WebKit clips no text of an inline block. */
+    .glyph { display: inline-block; white-space: pre; background-image: var(--glyph-fill, none); -webkit-background-clip: text; background-clip: text; }
   `,
 })
 export class RollingNumber implements OnDestroy {

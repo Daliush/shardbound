@@ -105,7 +105,7 @@
       <div class="caption-line" animate.enter="caption-in">
         @if (first) { <p class="eyebrow">{{ title(shown.chapter) }}</p> }
         <p class="text">@for (part of shown.parts; track $index) {@if (part.term; as term) {<span class="term" tabindex="0" [attr.aria-description]="term.definition"
-          (pointerenter)="define(term,$event)" (pointerleave)="undefine($event)" (focus)="define(term,$event)" (click)="define(term,$event)" (blur)="undefine()">{{ part.text }}</span>} @else {<span>{{ part.text }}</span>}}</p>
+          (pointerenter)="define(term,$event)" (pointerup)="define(term,$event)" (pointerleave)="leave($event)" (focus)="define(term,$event)" (click)="define(term,$event)" (blur)="blurred(term)">{{ part.text }}</span>} @else {<span>{{ part.text }}</span>}}</p>
       </div>
     }
   </div>

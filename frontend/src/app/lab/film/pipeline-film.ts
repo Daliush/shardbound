@@ -208,11 +208,12 @@ export class PipelineFilm implements OnDestroy {
   }
 
   /**
-   * Shows a term's definition above it, inside the player. A mouse shows it on hover; a finger, on a tap, since a touch
-   * enters and leaves at once.
+   * Shows a term's definition above it, inside the player. A mouse shows it on hover; a finger, as it lifts, since a touch
+   * enters and leaves at once and iOS may turn a tap into a hover that sends no click.
    */
   protected define(term: FilmTerm, event: Event): void {
-    if (event.type === 'pointerenter' && (event as PointerEvent).pointerType !== 'mouse') return;
+    const pointer = (event as PointerEvent).pointerType;
+    if ((event.type === 'pointerenter' && pointer !== 'mouse') || (event.type === 'pointerup' && pointer === 'mouse')) return;
     const player = this.player()?.nativeElement, box = this.definition()?.nativeElement, word = (event.currentTarget as HTMLElement).getClientRects()[0];
     if (!player || !box || !word) return;
     const frame = player.getBoundingClientRect(), width = box.offsetWidth, middle = word.left + word.width/2 - frame.left;
@@ -220,7 +221,9 @@ export class PipelineFilm implements OnDestroy {
     this.hint.set({term,left,bottom:frame.bottom - word.top + 8,arrow:Math.max(16,Math.min(width - 16,middle - left))});
     this.hintOpen.set(true);
   }
-  protected undefine(event?: PointerEvent): void { if (!event || event.pointerType === 'mouse') this.hintOpen.set(false); }
+  protected leave(event: PointerEvent): void { if (event.pointerType === 'mouse') this.hintOpen.set(false); }
+  /** Focus leaving a term hides its definition, but not the one of the term tapped since. */
+  protected blurred(term: FilmTerm): void { if (this.hint()?.term === term) this.hintOpen.set(false); }
   /** A press anywhere but on a term hides its definition. */
   protected away(event: PointerEvent): void { if (!(event.target as HTMLElement).closest('.term')) this.hintOpen.set(false); }
 

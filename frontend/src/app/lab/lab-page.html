@@ -7,7 +7,7 @@
   <header class="lab-top">
     <div class="lab-wordmark"><span>Lab</span><span class="identity-divider"></span><span class="benchmark-label">Rules retrieval benchmark</span></div>
     <div class="lab-tools">
-      @if (!filmOpen() && filmReady()) { <button class="how" (click)="openFilm()" animate.enter="how-in"><app-icon name="play" />How it works</button> }
+      @if (!filmOpen() && !filmOffered() && filmReady()) { <button class="how" (click)="openFilm()" animate.enter="how-in"><app-icon name="play" />How it works</button> }
       <div class="report-controls">
         <label><span class="sr-only">Dataset</span><select [value]="state().version" (change)="update({version:value($event),split:'',timestamp:'',run:'',pins:[],question:''})">@for (version of versions; track version) { <option [value]="version">Dataset {{ version }}</option> }</select></label>
         <label><span class="sr-only">Split</span><select [value]="state().split || 'dev'" (change)="update({split:value($event),timestamp:'',run:'',pins:[],question:''})"><option value="dev">Development</option><option value="test">Test</option></select></label>
@@ -18,6 +18,7 @@
   </header>
   @if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> }
 
+  @if (filmOffered() && filmReady()) { <app-film-invite animate.enter="how-in" animate.leave="invite-out" (watched)="openFilm()" (declined)="declineFilm()" /> }
   @if (filmOpen() && filmReady()) {
     <div class="theater" animate.leave="theater-out">
       <app-pipeline-film [runs]="runs()" [dataset]="dataset()" [catalog]="catalog()" (closed)="closeFilm()" (explored)="closeFilm()" (ended)="markFilmSeenNow()" />
