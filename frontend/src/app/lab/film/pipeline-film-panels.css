@@ -1,6 +1,6 @@
 /* Context recall on this question. */
 .result { padding: 0 16px; }
-.result > small { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.result > small { font-size: 12px; font-weight: 500; color: var(--gold); }
 .fraction { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
 .fraction b { font-size: 46px; font-weight: 500; letter-spacing: -.04em; color: var(--gold); line-height: 1; }
 .fraction span { font-size: 22px; color: var(--dim); }
@@ -10,16 +10,16 @@
 .ghost { position: relative; padding: 3px 8px; border-radius: 7px; border: 1px dashed #f2cd8499; font-size: 11.5px; color: #f2cd84cc; }
 .average { position: relative; margin: 14px 0 0; font-size: 12.5px; color: var(--dim); }
 .average b { font-size: 18px; font-weight: 500; color: var(--ink); margin-right: 4px; }
-.tall .result { padding: 18px 20px; border-radius: 18px; background: #1b2230e6; }
+.tall .result { padding: 18px 20px; border-radius: 10px; background: #1c1b18e6; }
 .tall .fraction b { font-size: 56px; }
 
 /* Best pipeline against dense retrieval alone, on the same question. */
-.side { padding: 14px 14px; border-radius: 18px; background: linear-gradient(180deg, #2b3548, #222b3a); box-shadow: inset 0 1px 0 #ffffff1a, inset 0 0 0 1px #c3b5ff38, 0 24px 40px -24px #000; }
+.side { padding: 14px 14px; border-radius: 10px; background: linear-gradient(180deg, #2a2824, #201f1c); box-shadow: inset 0 1px 0 #ffffff1a, inset 0 0 0 1px #d9d5ca38, 0 24px 40px -24px #000; }
 .side.rival { box-shadow: inset 0 1px 0 #ffffff12, inset 0 0 0 1px var(--edge), 0 24px 40px -24px #000; }
-.side > small { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.side > small { font-size: 12px; font-weight: 500; color: var(--accent); }
 .side.rival > small { color: var(--dim); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.chips span { padding: 2px 7px; border-radius: 999px; font-size: 10.5px; color: var(--ink); background: #ffffff0f; }
+.chips span { padding: 2px 7px; border-radius: 4px; font-size: 10.5px; color: var(--ink); background: #ffffff0f; }
 .side-foot { left: 14px; right: 14px; bottom: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
 .side-foot b { font-weight: 500; }
 .dots { display: flex; gap: 4px; }
@@ -30,8 +30,8 @@
 .tall .side-foot { bottom: 40px; }
 
 /* The scores that read a ranking. */
-.metric { padding: 14px 16px; border-radius: 16px; background: linear-gradient(180deg, #2b3548, #222b3a); box-shadow: inset 0 1px 0 #ffffff14, inset 0 0 0 1px var(--edge); }
-.metric small { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.metric { padding: 14px 16px; border-radius: 10px; background: linear-gradient(180deg, #2a2824, #201f1c); box-shadow: inset 0 1px 0 #ffffff14, inset 0 0 0 1px var(--edge); }
+.metric small { font-size: 12px; font-weight: 500; color: var(--accent); }
 .metric strong { display: block; margin: 4px 0 2px; font-size: 32px; font-weight: 500; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .metric p { margin: 0; font-size: 12px; color: var(--dim); }
 .tall .metric { padding: 8px 12px; }
@@ -40,7 +40,7 @@
 .weight { display: grid; place-content: center end; width: 44px; z-index: 2; font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--dim); }
 .weight.hit { color: var(--gold); font-weight: 600; }
 .first { z-index: 3; border-radius: 8px; box-shadow: 0 0 0 2px var(--gold), 0 0 22px #f2cd8455; pointer-events: none; }
-.first b { position: absolute; right: 8px; top: 50%; translate: 0 -50%; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: #1b1407; background: var(--gold); }
+.first b { position: absolute; right: 8px; top: 50%; translate: 0 -50%; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; color: #1b1407; background: var(--gold); }
 
 .outro { inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; }
 .outro strong { font: 600 64px/1 var(--font-title); letter-spacing: -.01em; background: linear-gradient(180deg, #fff6e4, #d9c7a2); -webkit-background-clip: text; background-clip: text; color: transparent; }

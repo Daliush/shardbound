@@ -34,14 +34,14 @@
       </section>
     }
     <div class="wire" aria-hidden="true"><i class="flow"></i><span class="spark" data-spark></span><span class="wire-label">{{ promptLabel() }}</span></div>
-    <div class="source prompt-end"><span class="step"><app-icon name="scroll" /></span><div><strong>The prompt</strong><small>What the Arbiter reads</small></div></div>
+    <div class="source prompt-end"><span class="step"><app-icon name="scroll" /></span><div><strong>The prompt</strong><small>What the LLM reads</small></div></div>
     @for (stage of fixed(); track stage.layer) { <p class="next-step"><span>Next</span>{{ stage.name }} · {{ stage.value === null ? 'not evaluated yet' : variant(stage.value) }}</p> }
   </div>
 
   <aside class="output" [class.missing]="!match()" data-output aria-live="polite" aria-labelledby="output-title">
     <h3 id="output-title">Your pipeline</h3>
     @if (match(); as run) {
-      <strong class="big"><app-rolling-number [text]="format(decision,at(run,decision))" [value]="at(run,decision)" /></strong>
+      <strong class="big" [class.best]="isBest()"><app-rolling-number [text]="format(decision,at(run,decision))" [value]="at(run,decision)" /></strong>
       <span class="big-name" [title]="description(decision)">{{ metricName(decision) }}</span>
       <p class="standing">@if (rank() !== null) { <b>#<app-rolling-number [text]="rankText(rank())" [value]="rank()" better="lower" /></b> of {{ pipelines().length }} pipelines } @else { The random floor, not ranked }</p>
       @if (change(decision); as change) { <p class="change" [class]="change.tone">{{ change.text }}<small>since your last pick</small></p> }
@@ -59,8 +59,8 @@
       }
     </div>
     <div class="builder-actions">
-      @if (match(); as run) { <button class="primary" (click)="compared.emit(key(run))"><app-icon name="compare" />Compare in detail</button> }
-      <button class="quiet" [disabled]="isBest()" (click)="startFromBest()"><app-icon name="ranking" />Start from the best</button>
+      @if (match(); as run) { <button class="primary" (click)="compared.emit(key(run))">Compare in detail</button> }
+      <button class="quiet" [disabled]="isBest()" (click)="startFromBest()">Start from the best</button>
     </div>
   </aside>
 </div>

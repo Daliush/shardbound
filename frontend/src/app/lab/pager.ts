@@ -17,7 +17,7 @@ import { RollingNumber } from './rolling-number';
     :host([hidden]) { display: none; }
     .range { display: inline-flex; align-items: baseline; gap: .35rem; min-width: 5.6rem; justify-content: center; font-size: .78rem; font-variant-numeric: tabular-nums; }
     .range small { font-size: .7rem; }
-    .step { min-height: 34px; min-width: 34px; padding: .3rem; border-radius: 999px; color: var(--text); transition: background 160ms ease, scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
+    .step { min-height: 34px; min-width: 34px; padding: .3rem; border-radius: 6px; color: var(--text); transition: background 160ms ease, scale var(--spring-bouncy-duration, .4s) var(--spring-bouncy, ease); }
     .step:hover:not(:disabled) { background: var(--lab-subtle); border-color: transparent; }
     .step:active:not(:disabled) { scale: .88; }
     .step app-icon { width: 16px; height: 16px; }

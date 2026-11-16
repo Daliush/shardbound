@@ -2,7 +2,7 @@
 @media (max-width: 960px) {
   .builder { grid-template-columns: minmax(0,1fr); }
   .output { position: sticky; top: auto; bottom: .6rem; z-index: 3; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: .1rem 1rem; padding: .9rem 1.1rem;
-    background: color-mix(in srgb, var(--lab-surface) 92%, transparent); backdrop-filter: blur(12px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lab-accent) 40%, transparent), 0 -10px 30px -12px var(--black); }
+    background: color-mix(in srgb, var(--lab-surface) 92%, transparent); backdrop-filter: blur(12px); box-shadow: inset 0 0 0 1px var(--line), 0 -10px 30px -12px var(--black); }
   .output h3, .not-run, .scoreboard, .builder-actions { grid-column: 1 / -1; }
   .output h3 { margin-bottom: .2rem; }
   .big { grid-row: 2 / span 3; font-size: 2.4rem; }
@@ -11,10 +11,7 @@
   .builder-actions { grid-template-columns: 1fr 1fr; margin-top: .6rem; }
 }
 @media (max-width: 700px) {
-  .steps { padding: 1.1rem 1rem; border-radius: 20px; }
   .choices { margin-left: 0; grid-template-columns: 1fr; }
-  .standing-strip { padding: 1rem; }
-  .strip { margin-inline: .4rem; }
   .builder-actions { grid-template-columns: 1fr; }
   .builder-actions .quiet { display: none; }
 }

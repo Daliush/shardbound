@@ -1,7 +1,6 @@
 import { Component, ElementRef, OnDestroy, afterRenderEffect, computed, inject, input, output, signal, untracked } from '@angular/core';
 import { gsap } from 'gsap';
 import { EvaluationRun, MetricDisplay } from '../api/evaluation';
-import { Icon } from '../core/icon';
 import { Settings } from '../core/settings';
 import { MetricCatalog } from './metric-catalog';
 import { SPRINGS } from './springs';
@@ -15,7 +14,7 @@ const DISPLAY_LABELS: Record<MetricDisplay,string> = {share:'Share · %',score:'
  * and its value for the best pipeline and the random floor. The texts are the evaluation's, never the lab's.
  */
 @Component({
-  selector:'app-metric-guide', imports:[Icon],
+  selector:'app-metric-guide', imports:[],
   templateUrl:'./metric-guide.html', styleUrls:['./metric-guide.css','./metric-guide-card.css','./metric-guide-mobile.css'],
 })
 export class MetricGuide implements OnDestroy {

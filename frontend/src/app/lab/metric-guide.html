@@ -25,8 +25,8 @@
               </header>
               <p class="card-what" data-guide-part>{{ entry.description.what }}</p>
               <div class="card-facets" data-guide-part>
-                <section class="facet"><h4><app-icon name="build" />How it's computed</h4><p>{{ entry.description.how }}</p></section>
-                <section class="facet"><h4><app-icon name="eye" />Why it matters</h4><p>{{ entry.description.represents }}</p></section>
+                <section class="facet"><h4>How it's computed</h4><p>{{ entry.description.how }}</p></section>
+                <section class="facet"><h4>Why it matters</h4><p>{{ entry.description.represents }}</p></section>
               </div>
               @if (entry.sample; as sample) {
                 <figure class="card-sample" data-guide-part>
@@ -51,12 +51,11 @@
           }
         </section>
       }
-      <p class="guide-source"><app-icon name="info" /><span>Each text on this page comes from the code that computes the number, and is saved with it in the evaluation file. The top pipeline is the one context recall ranks first.</span></p>
+      <p class="guide-source"><span>Each text on this page comes from the code that computes the number, and is saved with it in the evaluation file. The top pipeline is the one context recall ranks first.</span></p>
     </div>
   </div>
 } @else {
   <div class="guide-empty">
-    <app-icon name="info" />
     <h2>This evaluation was recorded before its metrics described themselves.</h2>
     <p>Its scores still show everywhere else in the lab. The latest evaluation describes every value it holds.</p>
     <button (click)="latest.emit()">Open the latest evaluation</button>
