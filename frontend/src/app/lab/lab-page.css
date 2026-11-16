@@ -24,6 +24,8 @@
 .theater { margin-bottom: 2.4rem; interpolate-size: allow-keywords; }
 .theater-out { animation: theater-out 320ms var(--ease-out) both; overflow: hidden; }
 @keyframes theater-out { from { height: auto; } to { height: 0; opacity: 0; margin-bottom: 0; translate: 0 -8px; } }
+.invite-out { animation: invite-out 240ms var(--ease-out) both; overflow: hidden; interpolate-size: allow-keywords; pointer-events: none; }
+@keyframes invite-out { from { height: auto; } to { height: 0; padding-block: 0; border-width: 0; margin-bottom: 0; opacity: 0; } }
 
 summary { cursor: pointer; font-size: .82rem; list-style: none; display: flex; align-items: center; gap: .65rem; padding: 1rem 0; color: var(--muted); transition: color 160ms ease; }
 summary:hover { color: var(--text); }

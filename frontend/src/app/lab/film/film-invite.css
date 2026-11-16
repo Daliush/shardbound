@@ -1,0 +1,11 @@
+/* A card above the tabs: it offers the film and covers nothing. */
+:host {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem 1.2rem; margin-bottom: 1.6rem;
+  padding: .65rem .65rem .65rem 1.1rem; border: 1px solid var(--line); border-radius: var(--lab-radius, 12px);
+  background: var(--lab-surface); box-shadow: var(--lab-raised);
+}
+p { flex: 1 1 18rem; margin: 0; font-size: .86rem; line-height: 1.5; color: var(--muted); }
+strong { font-weight: 500; color: var(--text); }
+.actions { display: flex; align-items: center; gap: .3rem; }
+button { min-height: 36px; gap: .45rem; padding-inline: .95rem; border-radius: 8px; font-size: .82rem; }
+button app-icon { width: 13px; height: 13px; }
