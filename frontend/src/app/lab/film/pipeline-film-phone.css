@@ -1,0 +1,13 @@
+/*
+ * On a phone the film takes the whole screen, so that the stage, its caption and Next show together: the stage fits
+ * what the caption and the controls leave it (PipelineFilm.fit). The page under it stays still (styles.css).
+ */
+@media (max-width: 619.98px) {
+  :host { position: fixed; top: 0; left: 0; width: 100dvw; height: 100dvh; z-index: 90; animation: film-in 280ms var(--ease-out) both; }
+  .film, .film .player { height: 100%; border-radius: 0; }
+  .player { display: flex; flex-direction: column; box-shadow: none; padding-top: env(safe-area-inset-top); }
+  .screen { flex: 1 1 0; min-height: 0; aspect-ratio: auto; }
+  .controls { padding-bottom: max(.8rem, env(safe-area-inset-bottom)); }
+}
+@keyframes film-in { from { opacity: 0; scale: .98; } }
+@media (prefers-reduced-motion: reduce) { :host { animation: none; } }

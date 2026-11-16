@@ -11,19 +11,19 @@ import { zoomedAxis } from './metrics-graph';
 import { matchingRun, pipelineName, variantName } from './presentation';
 import { RollingNumber } from './rolling-number';
 import { SPRINGS, placeMarker, still } from './springs';
+import { STEP_NAMES } from './steps';
 
 /** How far apart, in percent of the strip, two dots of one lane must sit. */
 const DOT_GAP = 1.4, LANES = 4;
-/** The width under which the pipeline runs top to bottom (pipeline-builder-mobile.css). */
-const VERTICAL = '(max-width: 1060px)';
 
 /**
- * The pipeline drawn as it runs, left to right: the question, each step with every variant it was evaluated with, the
+ * The pipeline drawn as it runs, top to bottom: the question, each step with every variant it was evaluated with, the
  * prompt. A click changes a step and the recorded score of the new pipeline rolls in; each choice says how the score
  * would move. Only recorded runs are shown, never an estimate: a combination that was not run says so.
  */
 @Component({
   selector:'app-pipeline-builder', imports:[Icon,RollingNumber],
+  host:{'(window:resize)':'placePills()'},
   templateUrl:'./pipeline-builder.html', styleUrls:['./pipeline-builder-flow.css','./pipeline-builder.css','./pipeline-builder-output.css','./pipeline-builder-scores.css','./pipeline-builder-mobile.css'],
 })
 export class PipelineBuilder implements OnDestroy {
@@ -44,6 +44,8 @@ export class PipelineBuilder implements OnDestroy {
   protected readonly pipelines = computed(() => this.runs().filter(run => !isFloor(run)));
   protected readonly best = computed(() => bestRun(this.runs()));
   protected readonly tiles = computed(() => metrics(this.runs()).filter(metric => metric !== DECISION_METRIC && !this.catalog().isContext(metric)));
+  /** The other scores this pipeline has: a context has no ranking scores past its first 10, so they are left out. */
+  protected readonly shownTiles = computed(() => this.tiles().filter(metric => !this.match() || this.at(this.match(),metric) !== null));
   protected readonly rank = computed(() => { const run = this.match(); return run ? rankOf(this.runs(),run,DECISION_METRIC,false) : null; });
   /** Every pipeline on one strip by the decision metric, spread over lanes so that close scores stay apart. */
   protected readonly strip = computed(() => {
@@ -60,9 +62,10 @@ export class PipelineBuilder implements OnDestroy {
     const floor = atPath(this.runs().find(isFloor)?.scores.overall,DECISION_METRIC);
     return {axis,dots,lanes:Math.min(LANES,ends.length),floor,floorX:floor !== null && floor >= axis.domain[0] ? axis.x(floor) : null};
   });
+  /** The dot of the pipeline picked, which the marker stands on. */
   protected readonly marker = computed(() => {
-    const run = this.match(), strip = this.strip(), value = run ? atPath(run.scores.overall,DECISION_METRIC) : null;
-    return strip && value !== null && !isFloor(run!) ? strip.axis.x(Math.max(strip.axis.domain[0],value)) : null;
+    const run = this.match();
+    return run ? this.strip()?.dots.find(dot => dot.key === runKey(run.layers)) ?? null : null;
   });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly settings = inject(Settings);
@@ -92,6 +95,12 @@ export class PipelineBuilder implements OnDestroy {
   protected lower(metric: string): boolean { return this.catalog().lowerIsBetter(metric); }
   protected key(run: EvaluationRun): string { return runKey(run.layers); }
   protected chunks(count: number | null): string { return count === null ? '—' : Math.round(count).toString(); }
+  protected icon(layer: string): string { return STEP_NAMES[layer]?.icon ?? 'build'; }
+  /** What reaches the prompt: a context's every chunk, or a ranking's first 10. */
+  protected promptLabel(): string {
+    const last = this.counts().at(-1) ?? null;
+    return (this.draft()['context'] ?? null) !== null ? this.chunks(last) + ' chunks' : 'Top 10 of ' + this.chunks(last);
+  }
   protected rankText(rank: number | null): string { return rank === null ? '—' : String(rank); }
 
   /** What a choice would do to the decision score: "+4.2", "−3.1", or the score itself for the choice made. */
@@ -128,12 +137,12 @@ export class PipelineBuilder implements OnDestroy {
   protected tileRank(metric: string): number | null { const run = this.match(); return run ? rankOf(this.runs(),run,metric,this.lower(metric)) : null; }
 
   /** Each step's pill glides to the choice made, growing or shrinking to its size. */
-  private placePills(): void {
+  protected placePills(): void {
     for (const choices of this.host.nativeElement.querySelectorAll<HTMLElement>('[data-choices]')) {
       const pill = choices.querySelector<HTMLElement>('[data-pill]'), chosen = choices.querySelector<HTMLElement>('[data-chosen]');
       if (!pill) continue;
       if (!chosen) { pill.style.opacity = '0'; continue; }
-      placeMarker(pill,{x:0,y:chosen.offsetTop,height:chosen.offsetHeight},this.settings);
+      placeMarker(pill,{x:chosen.offsetLeft,y:chosen.offsetTop,width:chosen.offsetWidth,height:chosen.offsetHeight},this.settings);
     }
   }
   /** A spark runs down the wires each time the pipeline changes, as if the question went through it again. */
@@ -144,8 +153,7 @@ export class PipelineBuilder implements OnDestroy {
     if (first || still(this.settings)) return;
     const host = this.host.nativeElement;
     this.motion.add(() => {
-      const along = typeof matchMedia === 'function' && matchMedia(VERTICAL).matches ? 'top' : 'left';
-      gsap.fromTo(host.querySelectorAll('[data-spark]'),{[along]:'0%',opacity:0},{keyframes:[{opacity:1,duration:.08},{[along]:'100%',duration:.32,ease:'power1.in'},{opacity:0,duration:.08}],stagger:.12});
+      gsap.fromTo(host.querySelectorAll('[data-spark]'),{top:'0%',opacity:0},{keyframes:[{opacity:1,duration:.08},{top:'100%',duration:.26,ease:'power1.in'},{opacity:0,duration:.08}],stagger:.1});
       const output = host.querySelector('[data-output]');
       if (output) gsap.fromTo(output,{scale:.97},{scale:1,delay:.38,duration:SPRINGS.bouncy.duration,ease:SPRINGS.bouncy.ease,clearProps:'transform'});
     });

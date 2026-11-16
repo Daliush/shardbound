@@ -1,4 +1,6 @@
-<section class="recall-explorer" [class.compact]="compact()" aria-label="Recall at each chunk budget">
+<!-- A context has no curve: with no ranking among the runs, there is nothing to draw. -->
+@if (all().length) {
+<section class="recall-explorer" [class.compact]="compact()" [class.titled]="titled()" aria-label="Recall at each chunk budget">
   <header class="curve-heading">
     <div>@if (titled()) { <h2>{{ category() ? humanize(category()) : 'How much context is enough?' }}</h2> }<p>{{ compact() ? 'Recall at the same chunk budget' : 'Give every pipeline the same number of chunks. See how many cited sources it finds.' }} @if (sample() !== null) { <span>{{ sample() }} questions</span> }</p></div>
     @if (!compact() && maximum() > 70) { <div class="range-toggle" aria-label="Chart range"><button [attr.aria-pressed]="!full()" (click)="full.set(false)">1–70</button><button [attr.aria-pressed]="full()" (click)="full.set(true)">1–{{ maximum() }}</button></div> }
@@ -39,3 +41,4 @@
       </aside> }
   </div>
 </section>
+}

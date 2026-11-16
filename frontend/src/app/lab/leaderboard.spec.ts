@@ -59,7 +59,8 @@ describe('Leaderboard', () => {
     await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
 
-    expect(host.querySelector('.context-note')?.textContent).toBe('19.7 chunks in the prompt. A bigger context holds more by its size alone: the answers on dev choose the context.');
+    expect(host.querySelector('.context-note')?.textContent).toBe('19.7 chunks in the prompt');
+    expect(host.querySelector('.context-note')?.getAttribute('title')).toBe('A bigger context holds more by its size alone: the answers on dev choose the context.');
     expect((await board('mean_recall_at.10')).host.querySelector('.context-note')).toBeNull();
   });
   it('keeps the page open when the ranking metric changes, so the pipelines that cross its edge come and go', async () => {

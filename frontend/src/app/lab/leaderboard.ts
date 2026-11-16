@@ -9,6 +9,7 @@ import { pageOf, windowOf } from './pages';
 import { pipelineKind, pipelineName, rankedRuns, runColor, stagesOf } from './presentation';
 import { RollingNumber } from './rolling-number';
 import { RowMotion } from './row-motion';
+import { StepChain } from './step-chain';
 
 /**
  * The lab's first page: the best pipeline by the metric chosen, then every pipeline ranked ten at a time. Ranking by
@@ -16,7 +17,7 @@ import { RowMotion } from './row-motion';
  * that falls into it comes in from above.
  */
 @Component({
-  selector:'app-leaderboard', imports:[Icon,Pager,RollingNumber,RowMotion],
+  selector:'app-leaderboard', imports:[Icon,Pager,RollingNumber,RowMotion,StepChain],
   templateUrl:'./leaderboard.html', styleUrls:['./leaderboard.css','./leaderboard-board.css','./leaderboard-mobile.css'],
 })
 export class Leaderboard {
@@ -63,7 +64,7 @@ export class Leaderboard {
   protected readonly contextNote = computed(() => {
     const best = this.champion()?.run;
     if (!best || (best.layers['context'] ?? null) === null) return null;
-    return this.format(SIZE_METRIC,atPath(best.scores.overall,SIZE_METRIC)) + ' chunks in the prompt. A bigger context holds more by its size alone: the answers on dev choose the context.';
+    return {size:this.format(SIZE_METRIC,atPath(best.scores.overall,SIZE_METRIC)) + ' chunks in the prompt',why:'A bigger context holds more by its size alone: the answers on dev choose the context.'};
   });
 
   protected metricName(metric: string): string { return this.catalog().name(metric); }
@@ -76,7 +77,10 @@ export class Leaderboard {
     const ceiling = this.catalog().ceiling(metric,this.runs().map(other => atPath(other.scores.overall,metric)));
     return this.catalog().barLength(metric,atPath(run.scores.overall,metric),ceiling) * 100;
   }
-  protected rankText(rank: number | null): string { return rank === null ? '—' : rank.toString().padStart(2,'0'); }
+  protected rankText(rank: number | null): string { return rank === null ? '—' : rank.toString(); }
+  /** A pipeline as its steps in words: the retriever first, then each step it runs after it. */
+  protected head(run: EvaluationRun): string { return stagesOf(run)[0]?.variant ?? pipelineName(run); }
+  protected tail(run: EvaluationRun): string { return stagesOf(run).slice(1).map(stage => stage.variant).join(' → '); }
   protected find(event: Event): void { this.search.set((event.target as HTMLInputElement).value); this.page.set(0); }
   protected rankBy(event: Event): void { this.ranked.emit((event.target as HTMLSelectElement).value); }
   private gap(value: number): string { return this.catalog().isShare(this.metric()) ? '+' + (value*100).toFixed(1) + ' pts' : this.format(this.metric(),value); }

@@ -6,7 +6,7 @@ import { pipelineName, runColor } from './presentation';
 import { RecallChart } from './recall-chart';
 import { budgetFill, recallCurve } from './recall-model';
 
-/** One recall chart per category, read at one shared chunk budget, with one legend that focuses a pipeline in all of them. */
+/** One recall chart per category, read at one shared chunk budget, with a folded legend that focuses a pipeline in all of them. */
 @Component({
   selector:'app-category-curves', imports:[RecallChart],
   template:`
@@ -14,7 +14,9 @@ import { budgetFill, recallCurve } from './recall-model';
       <label><span>Chunk budget <strong>k = {{ k() }}</strong></span><input type="range" aria-label="Chunk budget for every category" [attr.aria-valuetext]="k() + ' chunks'" min="1" [max]="limit()" [value]="k()" [style.--range-progress]="progress()" (input)="setBudget($event)" /></label>
       <div class="presets">@for (preset of presets; track preset) { <button [attr.aria-pressed]="k() === preset" [disabled]="limit() < preset" (click)="budget.set(preset)">{{ preset }}</button> }</div>
     </div>
-    <div class="shared-legend" aria-label="Highlight a pipeline in every category">@for (item of legend(); track item.key) { <button class="quiet" [class.faded]="focused() !== null && focused() !== item.key" [attr.aria-pressed]="focused() === item.key" (click)="toggle(item.key)"><i [style.background]="item.color"></i>{{ item.name }}</button> }</div>
+    <details class="legend-fold"><summary>Follow one pipeline in every category <small>{{ legend().length }} pipelines</small></summary>
+      <div class="shared-legend" aria-label="Highlight a pipeline in every category">@for (item of legend(); track item.key) { <button class="quiet" [class.faded]="focused() !== null && focused() !== item.key" [attr.aria-pressed]="focused() === item.key" (click)="toggle(item.key)"><i [style.background]="item.color"></i>{{ item.name }}</button> }</div>
+    </details>
     <div class="curves">@for (category of categories(); track category) { <app-recall-chart [runs]="runs()" [category]="category" [compact]="true" [catalog]="catalog()" [(budget)]="budget" [(focused)]="focused" /> }</div>`,
   styleUrl:'./category-curves.css',
 })

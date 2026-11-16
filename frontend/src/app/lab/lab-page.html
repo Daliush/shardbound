@@ -1,22 +1,40 @@
 <section class="lab-page">
+  <div class="sky" aria-hidden="true">
+    <i class="painting dusk"></i><i class="painting morning"></i>
+    <div class="sun"><i class="halo"></i><i class="haze"></i><div class="fan"><i class="rays shade"></i><i class="rays"></i><i class="rays second"></i></div><i class="core"></i></div>
+  </div>
   <app-coming-soon />
   <header class="lab-top">
-    <div class="lab-wordmark"><app-icon name="lab" /><span>Lab</span><span class="identity-divider"></span><span class="benchmark-label">AI benchmark</span></div>
-    <div class="report-controls">
-      <label><span class="sr-only">Dataset</span><select [value]="state().version" (change)="update({version:value($event),split:'',timestamp:'',run:'',pins:[],question:''})">@for (version of versions; track version) { <option [value]="version">Dataset {{ version }}</option> }</select></label>
-      <label><span class="sr-only">Split</span><select [value]="state().split || 'dev'" (change)="update({split:value($event),timestamp:'',run:'',pins:[],question:''})"><option value="dev">Development</option><option value="test">Test</option></select></label>
-      <label class="report-select"><span class="sr-only">Evaluation</span><select aria-label="Report" [value]="state().timestamp" [disabled]="!times().length" (change)="update({timestamp:value($event),question:''})">@for (timestamp of times(); track timestamp) { <option [value]="timestamp" [selected]="timestamp === state().timestamp">{{ date(timestamp) }}</option> }</select></label>
-      <button class="quiet share" (click)="share()"><app-icon name="link" />{{ copied() ? 'Copied' : 'Share' }}</button>
+    <div class="lab-wordmark"><span>Lab</span><span class="identity-divider"></span><span class="benchmark-label">Rules retrieval benchmark</span></div>
+    <div class="lab-tools">
+      @if (!filmOpen() && filmReady()) { <button class="how" (click)="openFilm()" animate.enter="how-in"><app-icon name="play" />How it works</button> }
+      <div class="report-controls">
+        <label><span class="sr-only">Dataset</span><select [value]="state().version" (change)="update({version:value($event),split:'',timestamp:'',run:'',pins:[],question:''})">@for (version of versions; track version) { <option [value]="version">Dataset {{ version }}</option> }</select></label>
+        <label><span class="sr-only">Split</span><select [value]="state().split || 'dev'" (change)="update({split:value($event),timestamp:'',run:'',pins:[],question:''})"><option value="dev">Development</option><option value="test">Test</option></select></label>
+        <label class="report-select"><span class="sr-only">Evaluation</span><select aria-label="Report" [value]="state().timestamp" [disabled]="!times().length" (change)="update({timestamp:value($event),question:''})">@for (timestamp of times(); track timestamp) { <option [value]="timestamp" [selected]="timestamp === state().timestamp">{{ date(timestamp) }}</option> }</select></label>
+      </div>
+      <button class="share" (click)="share()" [attr.aria-label]="copied() ? 'Link copied' : 'Copy a link to this view'" [title]="copied() ? 'Link copied' : 'Copy a link to this view'"><app-icon [name]="copied() ? 'check' : 'link'" /></button>
     </div>
   </header>
   @if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> }
+
+  @if (filmOpen() && filmReady()) {
+    <div class="theater" animate.leave="theater-out">
+      <app-pipeline-film [runs]="runs()" [dataset]="dataset()" [catalog]="catalog()" (closed)="closeFilm()" (explored)="closeFilm()" (ended)="markFilmSeenNow()" />
+    </div>
+  }
+
   <nav #nav class="lab-nav" aria-label="Benchmark pages">
     <span #indicator class="tab-indicator" aria-hidden="true"></span>
-    @for (view of views; track view.id) { <button class="quiet" [attr.data-tab]="view.id" [attr.aria-current]="activeView() === view.id ? 'page' : null" (click)="update({tab:view.id,question:''})"><app-icon [name]="view.icon" />{{ view.label }}</button> }
-    <span class="nav-divider" aria-hidden="true"></span>
-    @for (view of evidence; track view.id) { <button class="quiet evidence" [attr.data-tab]="view.id" [attr.aria-current]="activeView() === view.id ? 'page' : null" (click)="update({tab:view.id})">{{ view.label }}</button> }
+    @for (view of views; track view.id) { <button [attr.data-tab]="view.id" [attr.aria-current]="section() === view.id ? 'page' : null" (click)="update({tab:view.id === 'explore' ? 'guide' : view.id,question:''})">{{ view.label }}</button> }
   </nav>
-  <header class="view-heading" [labMotion]="activeView()"><h1>{{ title() }}</h1><p>{{ subtitle() }}</p></header>
+  @if (section() === 'explore') {
+    <nav class="explore-nav" aria-label="Explore">
+      @for (view of explore; track view.id) { <button [attr.aria-current]="activeView() === view.id ? 'page' : null" (click)="update({tab:view.id})">{{ view.label }}</button> }
+    </nav>
+  }
+
+  <header class="view-heading" [labMotion]="activeView()"><h1>{{ title() }}</h1>@if (subtitle()) { <p>{{ subtitle() }}</p> }</header>
   @if (error()) { <div class="load-error" role="alert"><app-icon name="info" /><div><h2>Evaluation unavailable</h2><p>{{ error() }}</p><button (click)="load()">Try again</button></div></div> }
   @if (loading()) { <div class="loading-state" role="status" aria-label="Loading evaluation"><div class="skeleton skeleton-hero"></div>@for (row of [0,1,2,3,4]; track row) { <div class="skeleton"></div> }<span class="sr-only">Reading the evaluation…</span></div> }
   @else if (report(); as report) {
@@ -29,17 +47,24 @@
         @case ('guide') { <app-metric-guide [catalog]="catalog()" [runs]="runs()" (latest)="openLatest()" /> }
         @case ('compare') {
           @if (comparison().length >= 2) {
-            <div class="comparison-pickers">@for (run of comparison(); track $index; let i = $index) { <label class="comparison-picker" [class.side-b]="i === 1"><span><b>{{ i === 0 ? 'A' : 'B' }}</b>Combination {{ i === 0 ? 'A' : 'B' }}</span><select [attr.aria-label]="'Combination ' + (i === 0 ? 'A' : 'B')" [value]="key(run.layers)" (change)="changeComparison(i,value($event))">@for (option of runs(); track key(option.layers)) { <option [value]="key(option.layers)" [selected]="key(option.layers) === key(run.layers)">{{ name(option) }}</option> }</select><small class="run-description" [title]="run.description || kind(run)">{{ run.description || kind(run) }}</small><small>{{ candidateSummary(run.scores.overall) }}</small></label> }</div>
+            <div class="comparison-pickers">@for (run of comparison(); track $index; let i = $index) {
+              <label class="comparison-picker" [class.side-b]="i === 1">
+                <span class="picker-head"><b>{{ i === 0 ? 'A' : 'B' }}</b>Pipeline {{ i === 0 ? 'A' : 'B' }}</span>
+                <select [attr.aria-label]="'Pipeline ' + (i === 0 ? 'A' : 'B')" [value]="key(run.layers)" (change)="changeComparison(i,value($event))">@for (option of runs(); track key(option.layers)) { <option [value]="key(option.layers)" [selected]="key(option.layers) === key(run.layers)">{{ name(option) }}</option> }</select>
+                <app-step-chain [layers]="run.layers" />
+                <small>{{ candidateSummary(run.scores.overall) }}</small>
+              </label>
+            }</div>
             <app-recall-chart [catalog]="catalog()" [runs]="comparison()" />
-            <div class="comparison-table" [labMotion]="state().pins.join('.')"><div class="comparison-table-head"><span>Metric</span><span>Combination A</span><span>Combination B</span><span>Difference A − B</span></div>@for (metric of metrics(); track metric) { <div class="comparison-metric" role="group" [attr.aria-label]="metricName(metric)"><div class="metric-caption"><strong>{{ metricName(metric) }}</strong><small>{{ description(metric) }}</small></div>@for (run of comparison(); track $index; let i = $index) { <div class="compared-score" [class.side-b]="i === 1"><span class="sr-only">Combination {{ i === 0 ? 'A' : 'B' }}: </span><strong><app-rolling-number [text]="format(metric,at(run.scores.overall,metric))" [value]="at(run.scores.overall,metric)" [better]="contextMetric(metric) ? null : lower(metric) ? 'lower' : 'higher'" /></strong><div class="comparison-track"><i [style.width.%]="scoreWidth(run,metric)"></i></div></div> }<span class="delta" [class.favors-a]="advantage(metric) === 'a'" [class.favors-b]="advantage(metric) === 'b'"><span class="sr-only">Difference A minus B: </span>{{ deltaText(metric) }}<small>{{ contextMetric(metric) ? 'Context only' : advantage(metric) === 'tie' ? 'No advantage' : 'Favors ' + advantage(metric).toUpperCase() }}</small></span></div> }</div>
-            <p class="comparison-note">Same evaluation, same questions. Differences are descriptive, not a statistical significance claim.</p>
-            <details class="detail-disclosure"><summary>Inspect question-by-question differences<app-icon name="chevron" /></summary><div class="detail-body"><label class="sort-control">Metric<select [value]="state().metric" (change)="update({metric:value($event)})">@for (metric of scoreMetrics(); track metric) { <option [value]="metric" [selected]="metric === rankingMetric()">{{ metricName(metric) }}</option> }</select></label><app-head-to-head [catalog]="catalog()" [runs]="comparison()" [metric]="state().metric" (opened)="openQuestion($event)" /></div></details>
-          } @else { <div class="empty-state"><h2>Two combinations make a comparison.</h2><p>This evaluation needs at least two recorded combinations.</p><button (click)="update({tab:'leaderboard'})">View leaderboard</button></div> }
+            <div class="comparison-table" [labMotion]="state().pins.join('.')"><div class="comparison-table-head"><span>Score</span><span>Pipeline A</span><span>Pipeline B</span><span>A − B</span></div>@for (metric of comparedMetrics(); track metric) { <div class="comparison-metric" role="group" [attr.aria-label]="metricName(metric)"><div class="metric-caption"><strong>{{ metricName(metric) }}</strong><small>{{ description(metric) }}</small></div>@for (run of comparison(); track $index; let i = $index) { <div class="compared-score" [class.side-b]="i === 1"><span class="sr-only">Pipeline {{ i === 0 ? 'A' : 'B' }}: </span><strong><app-rolling-number [text]="format(metric,at(run.scores.overall,metric))" [value]="at(run.scores.overall,metric)" [better]="contextMetric(metric) ? null : lower(metric) ? 'lower' : 'higher'" /></strong><div class="comparison-track"><i [style.width.%]="scoreWidth(run,metric)"></i></div></div> }<span class="delta" [class.favors-a]="advantage(metric) === 'a'" [class.favors-b]="advantage(metric) === 'b'"><span class="sr-only">Difference A minus B: </span>{{ deltaText(metric) }}<small>{{ contextMetric(metric) ? 'Size, not a score' : advantage(metric) === 'tie' ? 'Even' : advantage(metric).toUpperCase() + ' is better' }}</small></span></div> }</div>
+            <p class="comparison-note">Same questions for both. Differences are descriptive, not tested for significance.</p>
+            <details class="detail-disclosure"><summary>Question by question<app-icon name="chevron" /></summary><div class="detail-body"><label class="sort-control">Score<select [value]="state().metric" (change)="update({metric:value($event)})">@for (metric of scoreMetrics(); track metric) { <option [value]="metric" [selected]="metric === rankingMetric()">{{ metricName(metric) }}</option> }</select></label><app-head-to-head [catalog]="catalog()" [runs]="comparison()" [metric]="state().metric" (opened)="openQuestion($event)" /></div></details>
+          } @else { <div class="empty-state"><h2>Two pipelines make a comparison.</h2><p>This evaluation needs at least two recorded pipelines.</p><button (click)="update({tab:'leaderboard'})">View leaderboard</button></div> }
         }
         @case ('builder') { <app-pipeline-builder [catalog]="catalog()" [runs]="runs()" [initial]="builderLayers()" (changed)="update({run:key($event)},true)" (compared)="compareRun($event)" /> }
-        @case ('categories') { <app-category-curves [catalog]="catalog()" [runs]="graphRuns()" [categories]="categories()" /><details class="detail-disclosure"><summary>Compare category scores</summary><app-categories [catalog]="catalog()" [multiples]="state().multiples" (modeChanged)="update({multiples:$event})" [runs]="runs()" [metric]="state().metric" [pins]="state().pins" (selected)="selectRun($event)" (pinned)="pin($event)" /></details> }
+        @case ('categories') { <app-category-curves [catalog]="catalog()" [runs]="graphRuns()" [categories]="categories()" /><details class="detail-disclosure"><summary>Compare category scores<app-icon name="chevron" /></summary><app-categories [catalog]="catalog()" [multiples]="state().multiples" (modeChanged)="update({multiples:$event})" [runs]="runs()" [metric]="state().metric" [pins]="state().pins" (selected)="selectRun($event)" (pinned)="pin($event)" /></details> }
         @case ('questions') {
-          <div class="question-filters"><label>Find a question<input type="search" placeholder="Question, ID or retrieved chunk" [value]="state().search" (input)="update({search:value($event)},true)" /></label><label>Category<select [value]="state().category" (change)="update({category:value($event)})"><option value="">All categories</option>@for (category of categories(); track category) { <option [value]="category">{{ humanize(category) }}</option> }</select></label></div>
+          <div class="question-filters"><label class="search-box"><app-icon name="search" /><span class="sr-only">Find a question</span><input type="search" placeholder="Find a question, an ID or a chunk" [value]="state().search" (input)="update({search:value($event)},true)" /></label><label><span class="sr-only">Category</span><select [value]="state().category" (change)="update({category:value($event)})"><option value="">All categories</option>@for (category of categories(); track category) { <option [value]="category">{{ humanize(category) }}</option> }</select></label></div>
           @if (state().question) { <app-question-detail [id]="state().question" [question]="dataset().get(state().question)" [runs]="runs()" (closed)="update({question:''})" /> }
           <div class="question-list" [class.compact]="!!state().question"><p class="list-count">{{ questions().length }} questions</p>@for (question of questions(); track question.question_id) { <button class="question-row quiet" [attr.aria-expanded]="state().question === question.question_id" (click)="openQuestion(question.question_id)"><span class="question-label">@if (dataset().get(question.question_id); as asked) { <span class="question-text">{{ asked.question }}</span> }<code>{{ question.question_id }}</code></span><span class="question-category">{{ humanize(question.category) }}</span><app-icon name="chevron" /></button> } @empty { <p class="empty-state">No questions match these filters.</p> }</div>
         }
@@ -47,7 +72,7 @@
       }
     </div>
     }
-    <details class="evaluation-details"><summary>About this benchmark<app-icon name="info" /></summary><div class="evaluation-info"><div><h2>Measured, not estimated.</h2>@if (report.description) { <p class="report-description">{{ report.description }}</p> }<p>Every score comes from a recorded evaluation of the Shardbound rules retriever.</p><p>{{ state().split === 'test' ? 'Test results are reserved for published numbers, not for choosing a pipeline.' : 'Development results are for tuning. Use the test split for published numbers.' }} @if (count()) { This report covers {{ count() }} questions. }</p></div><div><p>Code <a [href]="'https://github.com/Daliush/shardbound/commit/' + report.code" target="_blank" rel="noreferrer">{{ report.code.slice(0,7) }}</a></p><p [title]="report.device ?? 'cpu'">Ran on {{ deviceName(report) }}</p><p>Dataset {{ state().version }} · {{ state().split === 'test' ? 'Test' : 'Development' }} · {{ date(report.evaluated_at) }}</p></div></div></details>
-    @if (extraReportFields().length || extraRunFields().length) { <details class="extra-fields"><summary>Additional evaluation fields</summary>@for (entry of extraReportFields(); track entry[0]) { <h3>{{ humanize(entry[0]) }}</h3><pre>{{ generic(entry[1]) }}</pre> }@for (entry of extraRunFields(); track entry[0]) { <h3>{{ humanize(entry[0]) }}</h3><pre>{{ generic(entry[1]) }}</pre> }</details> }
+    <details class="evaluation-details"><summary>About this evaluation<app-icon name="chevron" /></summary><div class="evaluation-info"><div>@if (report.description) { <p class="report-description">{{ report.description }}</p> }<p>{{ state().split === 'test' ? 'Test results are kept for the published numbers, never for choosing a pipeline.' : 'Development results are for tuning. The test split holds the published numbers.' }}</p></div><div><p>Code <a [href]="'https://github.com/Daliush/shardbound/commit/' + report.code" target="_blank" rel="noreferrer">{{ report.code.slice(0,7) }}</a></p><p [title]="report.device ?? 'cpu'">Ran on {{ deviceName(report) }}</p><p>Dataset {{ state().version }} · {{ state().split === 'test' ? 'Test' : 'Development' }} · {{ date(report.evaluated_at) }}@if (count()) { · {{ count() }} questions }</p></div></div></details>
+    @if (extraReportFields().length || extraRunFields().length) { <details class="extra-fields"><summary>Additional evaluation fields<app-icon name="chevron" /></summary>@for (entry of extraReportFields(); track entry[0]) { <h3>{{ humanize(entry[0]) }}</h3><pre>{{ generic(entry[1]) }}</pre> }@for (entry of extraRunFields(); track entry[0]) { <h3>{{ humanize(entry[0]) }}</h3><pre>{{ generic(entry[1]) }}</pre> }</details> }
   } @else if (!error()) { <div class="empty-state"><app-icon name="lab" /><h2>Not evaluated yet.</h2><p>There are no evaluations for {{ state().version }} / {{ state().split }}.</p><button (click)="update({split:state().split === 'test' ? 'dev' : 'test',timestamp:''})">Try the other split</button></div> }
 </section>

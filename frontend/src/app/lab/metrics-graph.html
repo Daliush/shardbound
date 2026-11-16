@@ -2,7 +2,7 @@
   <p>One question at a time, one metric at a time. No combined score.</p>
   <div class="toolbar-actions">
     <label>Question category<select [value]="category()" (change)="category.set(value($event))"><option value="">All questions</option>@for (item of categories(); track item) { <option [value]="item">{{ humanize(item) }}</option> }</select></label>
-    <button class="quiet fold-all" (click)="toggleAll()">{{ allOpen() ? 'Collapse all' : 'Expand all' }}</button>
+    <button class="fold-all" (click)="toggleAll()">{{ allOpen() ? 'Collapse all' : 'Expand all' }}</button>
   </div>
 </div>
 <div class="metric-plots">

@@ -40,6 +40,12 @@ const PATHS: Record<string, string> = {
   volume: 'M3 9h4l5-5v16l-5-5H3Z M16 8a6 6 0 0 1 0 8 M19 4a11 11 0 0 1 0 16',
   pin: 'M7 3h10l-2 7 4 4H5l4-4Z M12 14v8',
   arrow: 'M3 12h17 M14 5l7 7-7 7',
+  rerank: 'M7 20V4 M3 8l4-4 4 4 M17 4v16 M13 16l4 4 4-4',
+  scroll: 'M6 3h12v18H6Z M9 8h6 M9 12h6 M9 16h4',
+  play: 'M7 4.5v15l12.5-7.5Z',
+  pause: 'M8 5v14 M16 5v14',
+  replay: 'M4 12a8 8 0 1 0 2.5-5.8 M4 4v4.5h4.5',
+  ask: 'M4 5h16v11H10l-6 4Z M9 10.5h.01 M12 10.5h.01 M15 10.5h.01',
 };
 
 @Component({

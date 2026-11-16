@@ -1,0 +1,186 @@
+/*
+ * The lab's own look, on /lab only. Neutral graphite (dark) or paper (light) under one soft light from the top left,
+ * controls in ink, and one accent, gold, kept for what is best or needed: the leader, the chunks a question needs.
+ * IBM Plex sets the interface and the numbers; the site's Cormorant keeps the titles. The game's tokens are redefined
+ * here, so every view of the lab follows without a colour of its own; neutral cards turn silver instead of lilac.
+ */
+:root:has(app-lab-page) {
+  --lab-bg: #151412;
+  --obsidian-950: #151412;
+  --obsidian-900: #1d1c19;
+  --obsidian-800: #272521;
+  --obsidian-700: #33312b;
+  --lab-surface: #1d1c19;
+  --lab-subtle: #272521;
+  --text: #ecebe5;
+  --muted: #a7a49b;
+  --line: #37352f;
+  --lab-accent: #e9e7e0;
+  --lab-accent-soft: #2e2d29;
+  --accent: #e9e7e0;
+  --prism: #dcd9d1;
+  --prism-light: #f1efe9;
+  --prism-deep: #8b887f;
+  --lab-gold: #edc678;
+  --heal: #9fcb8b;
+  --damage: #e8907f;
+  --alert: #e8907f;
+  --chart-0: #9db8cc;
+  --chart-1: #d29a72;
+  --chart-2: #a7c38f;
+  --chart-3: #c9a2c4;
+  --chart-4: #84bdb1;
+  --chart-5: #d48f97;
+  --chart-6: #8fa0d0;
+  --chart-7: #bba68a;
+  --chart-8: #a9adb8;
+  --contender-0: #8fb6d9;
+  --contender-1: #dd8f98;
+  --contender-2: #a7c38f;
+  --contender-3: #c9a2c4;
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-number: 'IBM Plex Mono', ui-monospace, monospace;
+  /* Elevation, from the same light: a lit top edge, a shadow that falls down and away. */
+  --lab-edge: inset 0 1px 0 #ffffff0d;
+  --lab-raised: inset 0 1px 0 #ffffff0d, 0 1px 0 #00000040, 0 14px 28px -20px #000000b3;
+  --lab-shade: #00000033;
+  /*
+   * Controls: a raised surface lit on its top edge, with an edge of at least 3:1 against the ground (WCAG 1.4.11), so
+   * that a button or a field reads as one at a glance. The primary action stays solid ink.
+   */
+  --control: #24221e;
+  --control-hover: #2f2d28;
+  --control-edge: #6b675d;
+  --control-edge-hover: #918c80;
+  --control-shine: #ffffff14;
+  --control-shadow: #00000059;
+  --control-shadow-far: #00000073;
+  --control-lit: inset 0 1px 0 var(--control-shine);
+  --control-drop: 0 1px 0 var(--control-shadow), 0 2px 6px -2px var(--control-shadow-far);
+  /*
+   * The sky above the page (lab-sky.css): a painting of the game's world faint over a dim ground, Ember's dusk at
+   * night, Tide's morning mist by day, lit by the painting's sun (--sun-x, --sun-y, measured on the image). The light
+   * makes the mode: warm from the top left at dusk, white from the top right in the morning.
+   */
+  --sun-x: 15vw;
+  --sun-y: 16.1vw;
+  --rays-from: 62deg;
+  --haze-dx: 20vw;
+  --light-core: #ffa45c3d;
+  --light-haze: #ff9a4a1f;
+  --ray: #ffb46e17;
+  --ray-shade: #00000000;
+  --dusk: .11;
+  --morning: 0;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>") repeat fixed,
+    radial-gradient(120% 90% at 100% 100%, var(--lab-shade), transparent 60%) fixed,
+    var(--lab-bg);
+}
+:root[data-theme='light']:has(app-lab-page) {
+  --lab-bg: #d8d8d2;
+  --obsidian-950: #d8d8d2;
+  --obsidian-900: #efefeb;
+  --obsidian-800: #e4e4df;
+  --obsidian-700: #cbcbc4;
+  --lab-surface: #efefeb;
+  --lab-subtle: #e3e3dd;
+  --text: #1c1b18;
+  --muted: #54524c;
+  --line: #bfbeb6;
+  --lab-accent: #24231f;
+  --lab-accent-soft: #e5e4df;
+  --accent: #24231f;
+  --prism: #2b2a26;
+  --prism-light: #1d1c19;
+  --prism-deep: #6a675f;
+  --lab-gold: #8a6416;
+  --heal: #3d7a33;
+  --damage: #a8402f;
+  --alert: #a8402f;
+  --chart-0: #3f6e8c;
+  --chart-1: #a5582c;
+  --chart-2: #557a3d;
+  --chart-3: #8a5584;
+  --chart-4: #2f7d70;
+  --chart-5: #a6475a;
+  --chart-6: #4a5ea0;
+  --chart-7: #7d6440;
+  --chart-8: #6a6f7a;
+  --contender-0: #2f6690;
+  --contender-1: #a3415a;
+  --contender-2: #557a3d;
+  --contender-3: #8a5584;
+  --lab-edge: inset 0 1px 0 #ffffff;
+  --lab-raised: inset 0 1px 0 #ffffff, 0 1px 2px #2a26200f, 0 12px 26px -20px #2a262040;
+  --lab-shade: #2a26201a;
+  --control: #fbfbf9;
+  --control-hover: #ffffff;
+  --control-edge: #7c7a71;
+  --control-edge-hover: #4f4d47;
+  --control-shine: #ffffff;
+  --control-shadow: #2a262017;
+  --control-shadow-far: #2a26202e;
+  --sun-x: 67.8vw;
+  --sun-y: 15.6vw;
+  --rays-from: 112deg;
+  --haze-dx: -18vw;
+  --light-core: #fffef8e6;
+  --light-haze: #fffdf694;
+  --ray: #ffffff66;
+  --ray-shade: #3e4c5a14;
+  --dusk: 0;
+  --morning: .74;
+}
+:root:has(app-lab-page) :focus-visible { outline-color: var(--text); }
+:root:has(app-lab-page) ::selection { background: var(--lab-gold); color: var(--lab-bg); }
+/*
+ * Every button, field and menu of the lab that has no style of its own is a raised control: tabs, rows, chips and the
+ * dots of a plot say they are flat (box-shadow: none), and the film keeps its own controls. Pressing a control sinks it.
+ */
+html app-lab-page :where(button:not(.quiet):not(.primary):not(app-pipeline-film *), select, input[type='search'], input[type='text']) {
+  background-color: var(--control); border-color: var(--control-edge); box-shadow: var(--control-lit), var(--control-drop);
+  transition: background-color 140ms ease, border-color 140ms ease, scale 140ms var(--ease-out);
+}
+html app-lab-page :where(button:not(.quiet):not(.primary):not(app-pipeline-film *), select):hover:not(:disabled) { background-color: var(--control-hover); border-color: var(--control-edge-hover); }
+html app-lab-page :where(button, select):active:not(:disabled) { scale: .97; }
+html app-lab-page :where(input[type='search'], input[type='text']):focus { border-color: var(--text); outline: none; }
+/* The site's backdrop would cover the painting: the lab paints its own ground. */
+:root:has(app-lab-page) app-backdrop { display: none; }
+
+/*
+ * Switching between light and dark, the colours of the page move from one mode to the other while the sun glides
+ * across the sky (lab-sky.css): core/settings.ts marks the document with data-theme-switching for the length of it,
+ * when the lab asks for it with data-theme-transition. The colours are registered so that they can move.
+ */
+@property --lab-bg { syntax: '<color>'; inherits: true; initial-value: #151412; }
+@property --obsidian-950 { syntax: '<color>'; inherits: true; initial-value: #151412; }
+@property --obsidian-900 { syntax: '<color>'; inherits: true; initial-value: #1d1c19; }
+@property --obsidian-800 { syntax: '<color>'; inherits: true; initial-value: #272521; }
+@property --lab-surface { syntax: '<color>'; inherits: true; initial-value: #1d1c19; }
+@property --lab-subtle { syntax: '<color>'; inherits: true; initial-value: #272521; }
+@property --text { syntax: '<color>'; inherits: true; initial-value: #ecebe5; }
+@property --muted { syntax: '<color>'; inherits: true; initial-value: #a7a49b; }
+@property --line { syntax: '<color>'; inherits: true; initial-value: #37352f; }
+@property --lab-accent { syntax: '<color>'; inherits: true; initial-value: #e9e7e0; }
+@property --prism { syntax: '<color>'; inherits: true; initial-value: #dcd9d1; }
+@property --lab-gold { syntax: '<color>'; inherits: true; initial-value: #edc678; }
+@property --control { syntax: '<color>'; inherits: true; initial-value: #24221e; }
+@property --control-hover { syntax: '<color>'; inherits: true; initial-value: #2f2d28; }
+@property --control-edge { syntax: '<color>'; inherits: true; initial-value: #6b675d; }
+@property --control-edge-hover { syntax: '<color>'; inherits: true; initial-value: #918c80; }
+@property --control-shine { syntax: '<color>'; inherits: true; initial-value: #ffffff14; }
+@property --control-shadow { syntax: '<color>'; inherits: true; initial-value: #00000059; }
+@property --control-shadow-far { syntax: '<color>'; inherits: true; initial-value: #00000073; }
+:root[data-theme-switching]:has(app-lab-page) {
+  /* The ground, the surfaces and the controls move with the sun; the ink fades too, a little later and over less time,
+     centred on the moment the ground is half way, so that it crosses the ground's grey quickly. */
+  transition: --lab-bg var(--switch-time) var(--switch-ease), --obsidian-950 var(--switch-time) var(--switch-ease), --obsidian-900 var(--switch-time) var(--switch-ease),
+    --obsidian-800 var(--switch-time) var(--switch-ease), --lab-surface var(--switch-time) var(--switch-ease), --lab-subtle var(--switch-time) var(--switch-ease),
+    --line var(--switch-time) var(--switch-ease), --lab-gold var(--switch-time) var(--switch-ease),
+    --control var(--switch-time) var(--switch-ease), --control-hover var(--switch-time) var(--switch-ease), --control-edge var(--switch-time) var(--switch-ease),
+    --control-edge-hover var(--switch-time) var(--switch-ease), --control-shine var(--switch-time) var(--switch-ease), --control-shadow var(--switch-time) var(--switch-ease),
+    --control-shadow-far var(--switch-time) var(--switch-ease),
+    --text var(--ink-time) ease-in-out var(--ink-delay), --muted var(--ink-time) ease-in-out var(--ink-delay), --lab-accent var(--ink-time) ease-in-out var(--ink-delay), --prism var(--ink-time) ease-in-out var(--ink-delay);
+}
+:root:has(app-lab-page) { --switch-time: 1.8s; --switch-ease: cubic-bezier(.7, 0, .3, 1); --sun-ease: cubic-bezier(.45, 0, .25, 1); --ink-time: .8s; --ink-delay: .5s; }

@@ -1,0 +1,9 @@
+:host { display: block; min-width: 0; }
+.chain { display: flex; flex-wrap: wrap; gap: .7rem 0; margin: 0; padding: 0; list-style: none; }
+li { position: relative; display: grid; gap: .1rem; min-width: 0; line-height: 1.3; }
+/* The arrow into each step after the first, at the height of the variants: a wrapped line starts with it. */
+li + li { margin-left: .55rem; padding-left: 1.55rem; }
+li + li::before { content: '→'; position: absolute; left: .2rem; bottom: 0; font-size: .9rem; color: var(--muted); }
+small { font-size: .74rem; color: var(--muted); }
+b { font-size: .95rem; font-weight: 500; white-space: nowrap; }
+.off b { color: var(--muted); font-weight: 400; }
