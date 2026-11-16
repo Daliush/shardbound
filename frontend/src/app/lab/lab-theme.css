@@ -45,6 +45,16 @@
   --lab-raised: inset 0 1px 0 #ffffff0d, 0 1px 0 #00000040, 0 14px 28px -20px #000000b3;
   --lab-shade: #00000033;
   /*
+   * Controls: a raised surface lit on its top edge, with an edge of at least 3:1 against the ground (WCAG 1.4.11), so
+   * that a button or a field reads as one at a glance. The primary action stays solid ink.
+   */
+  --control: #24221e;
+  --control-hover: #2f2d28;
+  --control-edge: #6b675d;
+  --control-edge-hover: #918c80;
+  --control-lit: inset 0 1px 0 #ffffff14;
+  --control-drop: 0 1px 0 #00000059, 0 2px 6px -2px #00000073;
+  /*
    * The sky above the page (lab-sky.css): a painting of the game's world faint over a dim ground, Ember's dusk at
    * night, Tide's morning mist by day, lit by the painting's sun (--sun-x, --sun-y, measured on the image). The light
    * makes the mode: warm from the top left at dusk, white from the top right in the morning.
@@ -101,6 +111,12 @@
   --lab-edge: inset 0 1px 0 #ffffff;
   --lab-raised: inset 0 1px 0 #ffffff, 0 1px 2px #2a26200f, 0 12px 26px -20px #2a262040;
   --lab-shade: #2a26201a;
+  --control: #fbfbf9;
+  --control-hover: #ffffff;
+  --control-edge: #7c7a71;
+  --control-edge-hover: #4f4d47;
+  --control-lit: inset 0 1px 0 #ffffff;
+  --control-drop: 0 1px 0 #2a262017, 0 2px 6px -2px #2a26202e;
   --sun-x: 67.8vw;
   --sun-y: 15.6vw;
   --rays-from: 112deg;
@@ -114,6 +130,17 @@
 }
 :root:has(app-lab-page) :focus-visible { outline-color: var(--text); }
 :root:has(app-lab-page) ::selection { background: var(--lab-gold); color: var(--lab-bg); }
+/*
+ * Every button, field and menu of the lab that has no style of its own is a raised control: tabs, rows, chips and the
+ * dots of a plot say they are flat (box-shadow: none), and the film keeps its own controls. Pressing a control sinks it.
+ */
+html app-lab-page :where(button:not(.quiet):not(.primary):not(app-pipeline-film *), select, input[type='search'], input[type='text']) {
+  background-color: var(--control); border-color: var(--control-edge); box-shadow: var(--control-lit), var(--control-drop);
+  transition: background-color 140ms ease, border-color 140ms ease, scale 140ms var(--ease-out);
+}
+html app-lab-page :where(button:not(.quiet):not(.primary):not(app-pipeline-film *), select):hover:not(:disabled) { background-color: var(--control-hover); border-color: var(--control-edge-hover); }
+html app-lab-page :where(button, select):active:not(:disabled) { scale: .97; }
+html app-lab-page :where(input[type='search'], input[type='text']):focus { border-color: var(--text); outline: none; }
 /* The site's backdrop would cover the painting: the lab paints its own ground. */
 :root:has(app-lab-page) app-backdrop { display: none; }
 

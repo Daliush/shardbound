@@ -1,7 +1,6 @@
 /* Each section, under a rule, folds on itself: a header that names it and, folded, its best pipeline; the body glides open. */
 .toolbar-actions { display: flex; align-items: center; gap: .75rem; }
-.fold-all { min-height: 36px; padding-inline: .9rem; border-radius: 8px; font-size: .8rem; color: var(--muted); }
-.fold-all:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border-color: transparent; }
+.fold-all { min-height: 36px; padding-inline: .9rem; border-radius: 8px; font-size: .82rem; }
 .metric-plot { min-width: 0; border-top: 1px solid var(--line); }
 .metric-plot:last-child { border-bottom: 1px solid var(--line); }
 .plot-head { display: grid; grid-template-columns: minmax(0,auto) minmax(0,1fr) 20px; align-items: center; gap: 1.2rem; width: 100%; min-height: 64px; padding: .9rem .4rem; border: 0; border-radius: 0; text-align: left; font-weight: 400; background: transparent; transition: background 160ms ease; }

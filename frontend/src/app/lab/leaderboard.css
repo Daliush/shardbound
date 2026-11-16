@@ -10,10 +10,7 @@
 .identity-stage { position: relative; display: grid; }
 .identity { grid-area: 1 / 1; display: grid; gap: .9rem; min-width: 0; }
 .champion-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .3rem; }
-.champion-actions button { min-height: 38px; font-size: .82rem; border-radius: 8px; padding-inline: .95rem; transition: scale 160ms var(--ease-out), background 160ms ease; }
-.champion-actions button:active { scale: .97; }
-.champion-actions .quiet { color: var(--muted); }
-.champion-actions .quiet:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border-color: transparent; }
+.champion-actions button { min-height: 38px; font-size: .82rem; border-radius: 8px; padding-inline: .95rem; }
 .champion-score { display: grid; justify-items: end; text-align: right; }
 /* Gold that catches the light from the top left: brighter on its upper edge, deeper below. */
 .score { font: 500 clamp(3.4rem, 7vw, 5.2rem)/.9 var(--font-ui); letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: var(--lab-gold);
@@ -33,9 +30,7 @@
 .board-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .6rem; }
 .search-field { position: relative; display: flex; align-items: center; }
 .search-field app-icon { position: absolute; left: .75rem; width: 15px; height: 15px; color: var(--muted); }
-.search-field input { width: 260px; min-height: 36px; padding: .3rem .8rem .3rem 2.2rem; border: 1px solid var(--line); border-radius: 8px; font-size: .82rem; background: transparent; transition: border-color 160ms ease; }
-.search-field input:hover { border-color: color-mix(in srgb, var(--text) 30%, transparent); }
-.search-field input:focus { border-color: var(--text); outline: none; }
+.search-field input { width: 260px; min-height: 36px; padding: .3rem .8rem .3rem 2.2rem; border-radius: 8px; font-size: .82rem; }
+.search-field input:hover { border-color: var(--control-edge-hover); }
 .rank-control { display: flex; align-items: center; gap: .6rem; font-size: .8rem; color: var(--muted); }
-.rank-control select { min-height: 36px; padding: .3rem .7rem; border: 1px solid var(--line); border-radius: 8px; font-size: .82rem; background: transparent; }
-.rank-control select:hover { border-color: color-mix(in srgb, var(--text) 30%, transparent); }
+.rank-control select { min-height: 36px; padding: .3rem .7rem; border-radius: 8px; font-size: .82rem; }

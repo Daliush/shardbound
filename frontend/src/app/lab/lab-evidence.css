@@ -3,9 +3,8 @@
 .question-filters label { display: grid; color: var(--muted); font-size: .75rem; }
 .search-box { position: relative; align-items: center; }
 .search-box app-icon { position: absolute; left: .95rem; width: 16px; height: 16px; color: var(--muted); }
-.question-filters input, .question-filters select { width: 100%; min-height: 38px; font-size: .84rem; border: 1px solid var(--line); border-radius: 8px; background: transparent; }
+.question-filters input, .question-filters select { width: 100%; min-height: 40px; font-size: .84rem; border-radius: 8px; }
 .question-filters input { padding-left: 2.6rem; }
-.question-filters input:focus { outline: none; border-color: var(--text); }
 .question-list { margin-top: 1rem; }
 .question-row { display: grid; grid-template-columns: 1fr 140px 20px; align-items: center; gap: 1rem; width: 100%; padding: .9rem .6rem; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); border-radius: 0; text-align: left; transition: background 160ms ease; }
 .question-row:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 4%, transparent); border-color: color-mix(in srgb, var(--line) 60%, transparent); }

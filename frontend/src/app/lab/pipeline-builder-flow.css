@@ -27,7 +27,7 @@
 .effect.same, .effect.missing, .member small.same, .member small.missing { color: var(--muted); }
 .effect.current { color: var(--text); font-weight: 600; }
 .members { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 .65rem .7rem; }
-.member { min-height: 28px; padding: .2rem .55rem; gap: .3rem; border: 0; border-radius: 6px; font-size: .7rem; font-weight: 500; background: color-mix(in srgb, var(--text) 7%, transparent); transition: background 160ms ease, color 160ms ease, scale 160ms var(--ease-out); }
+.member { min-height: 28px; padding: .2rem .55rem; gap: .3rem; border: 0; border-radius: 6px; font-size: .7rem; font-weight: 500; background: color-mix(in srgb, var(--text) 7%, transparent); box-shadow: none; transition: background 160ms ease, color 160ms ease, scale 160ms var(--ease-out); }
 .member:hover:not([aria-pressed='true']):not(:disabled) { background: color-mix(in srgb, var(--text) 12%, transparent); border: 0; }
 .member:active { scale: .96; }
 .member[aria-pressed='true'] { background: var(--text); color: var(--lab-bg); }

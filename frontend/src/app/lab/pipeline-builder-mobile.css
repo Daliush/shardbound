@@ -13,5 +13,5 @@
 @media (max-width: 700px) {
   .choices { margin-left: 0; grid-template-columns: 1fr; }
   .builder-actions { grid-template-columns: 1fr; }
-  .builder-actions .quiet { display: none; }
+  .builder-actions .start { display: none; }
 }

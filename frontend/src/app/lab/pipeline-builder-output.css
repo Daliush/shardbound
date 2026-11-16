@@ -12,7 +12,4 @@
 .change.up { color: var(--heal); }.change.down { color: var(--alert); }.change.same { color: var(--muted); }
 .not-run { margin: .8rem 0 0; font-size: .8rem; line-height: 1.55; color: var(--muted); }
 .builder-actions { display: grid; gap: .4rem; margin-top: 1.2rem; }
-.builder-actions button { min-height: 38px; border-radius: 8px; font-size: .82rem; padding-inline: 1rem; transition: scale 160ms var(--ease-out), background 160ms ease; }
-.builder-actions button:active:not(:disabled) { scale: .97; }
-.builder-actions .quiet { color: var(--muted); }
-.builder-actions .quiet:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border-color: transparent; }
+.builder-actions button { min-height: 38px; border-radius: 8px; font-size: .82rem; padding-inline: 1rem; }

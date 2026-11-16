@@ -60,7 +60,7 @@
     </div>
     <div class="builder-actions">
       @if (match(); as run) { <button class="primary" (click)="compared.emit(key(run))">Compare in detail</button> }
-      <button class="quiet" [disabled]="isBest()" (click)="startFromBest()">Start from the best</button>
+      <button class="start" [disabled]="isBest()" (click)="startFromBest()">Start from the best</button>
     </div>
   </aside>
 </div>

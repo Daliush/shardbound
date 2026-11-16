@@ -5,7 +5,7 @@
 .shared-controls strong { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
 input[type='range'] { --range-fill: var(--text); }
 .presets { display: flex; gap: .3rem; }
-.presets button { font-size: .76rem; min-height: 32px; min-width: 34px; padding: .25rem; border-radius: 6px; background: transparent; border-color: var(--line); }
+.presets button { font-size: .78rem; min-height: 32px; min-width: 36px; padding: .25rem; border-radius: 6px; }
 .presets button[aria-pressed='true'] { color: var(--lab-bg); background: var(--text); border-color: transparent; }
 /* The legend, folded: some 160 names would be a wall; each chart already names its best pipeline. */
 .legend-fold { margin: .2rem 0 1.6rem; }

@@ -1,13 +1,13 @@
 /* Four tabs on one rule, the current one underlined by a bar that glides from tab to tab on a spring. */
 .lab-nav { position: relative; display: flex; align-items: flex-end; gap: 1.75rem; max-width: 100%; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .lab-nav::-webkit-scrollbar { display: none; }
-.lab-nav button { position: relative; z-index: 1; flex: none; min-height: 44px; padding: 0; border: 0; border-radius: 0; font-size: .9rem; color: var(--muted); background: transparent; transition: color 160ms ease; }
+.lab-nav button { position: relative; z-index: 1; flex: none; min-height: 44px; padding: 0; border: 0; border-radius: 0; font-size: .9rem; color: var(--muted); background: transparent; box-shadow: none; transition: color 160ms ease; }
 .lab-nav button:hover:not(:disabled) { color: var(--text); background: transparent; border: 0; }
 .lab-nav button[aria-current] { color: var(--text); font-weight: 500; }
 .tab-indicator { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; pointer-events: none; background: var(--text); }
 .tab-indicator[data-placed] { transition: transform var(--spring-snappy-duration) var(--spring-snappy), width var(--spring-snappy-duration) var(--spring-snappy); }
 .explore-nav { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .9rem; animation: how-in 300ms var(--ease-out) both; }
-.explore-nav button { min-height: 32px; padding: 0 .75rem; border: 0; border-radius: 6px; font-size: .8rem; color: var(--muted); background: transparent; transition: color 160ms ease, background 160ms ease; }
+.explore-nav button { min-height: 32px; padding: 0 .75rem; border: 0; border-radius: 6px; font-size: .8rem; color: var(--muted); background: transparent; box-shadow: none; transition: color 160ms ease, background 160ms ease; }
 .explore-nav button:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border: 0; }
 .explore-nav button[aria-current] { color: var(--text); background: var(--lab-subtle); }
 

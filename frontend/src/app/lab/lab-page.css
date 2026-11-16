@@ -7,19 +7,17 @@
 .identity-divider { align-self: center; width: 1px; height: 18px; background: var(--line); margin-inline: .25rem; }
 .benchmark-label { font: 400 .82rem var(--font-ui); color: var(--muted); }
 .lab-tools { display: flex; align-items: center; gap: .5rem; }
-.how { min-height: 36px; padding: 0 .9rem 0 .75rem; gap: .45rem; border: 1px solid var(--line); border-radius: 8px; font-size: .8rem; color: var(--text); background: transparent; transition: scale 160ms var(--ease-out), background 160ms ease, border-color 160ms ease; }
-.how:hover:not(:disabled) { background: var(--lab-subtle); border-color: color-mix(in srgb, var(--text) 35%, transparent); }
-.how:active { scale: .97; }
+.how { min-height: 36px; padding: 0 .9rem 0 .75rem; gap: .45rem; border-radius: 8px; font-size: .82rem; color: var(--text); }
 .how app-icon { width: 13px; height: 13px; }
 .how-in { animation: how-in 360ms var(--ease-out) both; }
 @keyframes how-in { from { opacity: 0; scale: .96; filter: blur(3px); } }
-.report-controls { display: flex; align-items: center; height: 36px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.report-controls label + label { border-left: 1px solid var(--line); }
-.report-controls select { min-height: 34px; padding: .2rem .7rem; border: 0; border-radius: 0; font-size: .76rem; background: transparent; }
-.report-controls select:hover { background: var(--lab-subtle); }
-.share { width: 36px; min-height: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: transparent; transition: color 160ms ease, scale 160ms var(--ease-out); }
-.share:hover:not(:disabled) { color: var(--text); background: var(--lab-subtle); border-color: color-mix(in srgb, var(--text) 35%, transparent); }
-.share:active { scale: .96; }
+/* The evaluation shown: three menus joined in one raised control. */
+.report-controls { display: flex; align-items: center; height: 36px; border: 1px solid var(--control-edge); border-radius: 8px; overflow: hidden; background: var(--control); box-shadow: var(--control-lit), var(--control-drop); }
+.report-controls label + label { border-left: 1px solid color-mix(in srgb, var(--control-edge) 60%, transparent); }
+.report-controls select { min-height: 34px; padding: .2rem .7rem; border: 0; border-radius: 0; font-size: .78rem; background-color: transparent; box-shadow: none; }
+.report-controls select:hover:not(:disabled) { background-color: var(--control-hover); }
+.report-controls select:active { scale: 1; }
+.share { width: 36px; min-height: 36px; height: 36px; padding: 0; border-radius: 8px; color: var(--text); }
 .share app-icon { width: 16px; height: 16px; }
 .copy-message { margin: -1rem 0 1rem auto; text-align: right; font-size: .75rem; color: var(--muted); }
 
