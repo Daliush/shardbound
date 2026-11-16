@@ -52,8 +52,11 @@
   --control-hover: #2f2d28;
   --control-edge: #6b675d;
   --control-edge-hover: #918c80;
-  --control-lit: inset 0 1px 0 #ffffff14;
-  --control-drop: 0 1px 0 #00000059, 0 2px 6px -2px #00000073;
+  --control-shine: #ffffff14;
+  --control-shadow: #00000059;
+  --control-shadow-far: #00000073;
+  --control-lit: inset 0 1px 0 var(--control-shine);
+  --control-drop: 0 1px 0 var(--control-shadow), 0 2px 6px -2px var(--control-shadow-far);
   /*
    * The sky above the page (lab-sky.css): a painting of the game's world faint over a dim ground, Ember's dusk at
    * night, Tide's morning mist by day, lit by the painting's sun (--sun-x, --sun-y, measured on the image). The light
@@ -115,8 +118,9 @@
   --control-hover: #ffffff;
   --control-edge: #7c7a71;
   --control-edge-hover: #4f4d47;
-  --control-lit: inset 0 1px 0 #ffffff;
-  --control-drop: 0 1px 0 #2a262017, 0 2px 6px -2px #2a26202e;
+  --control-shine: #ffffff;
+  --control-shadow: #2a262017;
+  --control-shadow-far: #2a26202e;
   --sun-x: 67.8vw;
   --sun-y: 15.6vw;
   --rays-from: 112deg;
@@ -161,12 +165,22 @@ html app-lab-page :where(input[type='search'], input[type='text']):focus { borde
 @property --lab-accent { syntax: '<color>'; inherits: true; initial-value: #e9e7e0; }
 @property --prism { syntax: '<color>'; inherits: true; initial-value: #dcd9d1; }
 @property --lab-gold { syntax: '<color>'; inherits: true; initial-value: #edc678; }
+@property --control { syntax: '<color>'; inherits: true; initial-value: #24221e; }
+@property --control-hover { syntax: '<color>'; inherits: true; initial-value: #2f2d28; }
+@property --control-edge { syntax: '<color>'; inherits: true; initial-value: #6b675d; }
+@property --control-edge-hover { syntax: '<color>'; inherits: true; initial-value: #918c80; }
+@property --control-shine { syntax: '<color>'; inherits: true; initial-value: #ffffff14; }
+@property --control-shadow { syntax: '<color>'; inherits: true; initial-value: #00000059; }
+@property --control-shadow-far { syntax: '<color>'; inherits: true; initial-value: #00000073; }
 :root[data-theme-switching]:has(app-lab-page) {
-  /* The ground and the surfaces move with the sun; the ink fades too, a little later and over less time, centred on
-     the moment the ground is half way, so that it crosses the ground's grey quickly. */
+  /* The ground, the surfaces and the controls move with the sun; the ink fades too, a little later and over less time,
+     centred on the moment the ground is half way, so that it crosses the ground's grey quickly. */
   transition: --lab-bg var(--switch-time) var(--switch-ease), --obsidian-950 var(--switch-time) var(--switch-ease), --obsidian-900 var(--switch-time) var(--switch-ease),
     --obsidian-800 var(--switch-time) var(--switch-ease), --lab-surface var(--switch-time) var(--switch-ease), --lab-subtle var(--switch-time) var(--switch-ease),
     --line var(--switch-time) var(--switch-ease), --lab-gold var(--switch-time) var(--switch-ease),
+    --control var(--switch-time) var(--switch-ease), --control-hover var(--switch-time) var(--switch-ease), --control-edge var(--switch-time) var(--switch-ease),
+    --control-edge-hover var(--switch-time) var(--switch-ease), --control-shine var(--switch-time) var(--switch-ease), --control-shadow var(--switch-time) var(--switch-ease),
+    --control-shadow-far var(--switch-time) var(--switch-ease),
     --text var(--ink-time) ease-in-out var(--ink-delay), --muted var(--ink-time) ease-in-out var(--ink-delay), --lab-accent var(--ink-time) ease-in-out var(--ink-delay), --prism var(--ink-time) ease-in-out var(--ink-delay);
 }
 :root:has(app-lab-page) { --switch-time: 1.8s; --switch-ease: cubic-bezier(.7, 0, .3, 1); --sun-ease: cubic-bezier(.45, 0, .25, 1); --ink-time: .8s; --ink-delay: .5s; }
